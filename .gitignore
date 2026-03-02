@@ -1,5 +1,9 @@
 # Node
 node_modules/
+**/node_modules
+**/.next
+**/dist
+.pnpm-store
 
 # Logs
 *.log
