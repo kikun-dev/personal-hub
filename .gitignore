@@ -1,0 +1,24 @@
+# Node
+node_modules/
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# OS
+.DS_Store
+Thumbs.db
+
+# VSCode
+.vscode/
+
+# Build
+dist/
+coverage/
+
+# Next (monorepo safety)
+.next/
