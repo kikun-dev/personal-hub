@@ -6,10 +6,16 @@ on:
     paths:
       - "apps/household-web/**"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/ci-household-web.yml"
   pull_request:
     paths:
       - "apps/household-web/**"
       - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/ci-household-web.yml"
 
 jobs:
   check:
