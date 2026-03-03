@@ -12,14 +12,19 @@ export function DeleteTransactionButton({
 }: DeleteTransactionButtonProps) {
   const [isConfirming, setIsConfirming] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleDelete = async () => {
     setIsDeleting(true);
+    setError(null);
     try {
-      await onDelete();
+      const result = await onDelete();
+      if (result.error) {
+        setError(result.error);
+        setIsConfirming(false);
+      }
     } finally {
       setIsDeleting(false);
-      setIsConfirming(false);
     }
   };
 
@@ -45,8 +50,13 @@ export function DeleteTransactionButton({
   }
 
   return (
-    <Button variant="ghost" onClick={() => setIsConfirming(true)}>
-      削除
-    </Button>
+    <div>
+      {error && (
+        <p className="mb-1 text-xs text-red-500">{error}</p>
+      )}
+      <Button variant="ghost" onClick={() => setIsConfirming(true)}>
+        削除
+      </Button>
+    </div>
   );
 }
