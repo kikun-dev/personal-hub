@@ -9,7 +9,8 @@ type TransactionListItemProps = {
 export function TransactionListItem({
   transaction,
 }: TransactionListItemProps) {
-  const isExpense = transaction.type === "expense";
+  const displayName = transaction.categoryName
+    ?? `${transaction.groupName} / ${transaction.activityType}`;
 
   return (
     <Link
@@ -23,7 +24,7 @@ export function TransactionListItem({
         <div>
           <div className="flex items-center gap-2">
             <span className="text-sm text-foreground">
-              {transaction.categoryName}
+              {displayName}
             </span>
             {transaction.isOshikatsu && (
               <span className="rounded-full bg-purple-100 px-2 py-0.5 text-[10px] font-medium text-purple-700 dark:bg-purple-900 dark:text-purple-300">
@@ -38,12 +39,7 @@ export function TransactionListItem({
           )}
         </div>
       </div>
-      <span
-        className={`text-sm font-medium ${
-          isExpense ? "text-red-500" : "text-green-600"
-        }`}
-      >
-        {isExpense ? "-" : "+"}
+      <span className="text-sm font-medium text-red-500">
         {formatYen(transaction.amount)}
       </span>
     </Link>

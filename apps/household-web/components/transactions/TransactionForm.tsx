@@ -31,9 +31,8 @@ function getLocalDateString(): string {
 function getDefaultValues(): CreateTransactionInput {
   return {
     date: getLocalDateString(),
-    type: "expense",
     amount: 0,
-    categoryId: "",
+    categoryId: null,
     paymentMethodId: null,
     memo: "",
     isOshikatsu: false,
@@ -55,7 +54,7 @@ export function TransactionForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredCategories = categories.filter((c) => c.type === values.type);
+  const expenseCategories = categories.filter((c) => c.type === "expense");
 
   const update = <K extends keyof CreateTransactionInput>(
     field: K,
@@ -69,30 +68,24 @@ export function TransactionForm({
     });
   };
 
-  const handleTypeChange = (type: "income" | "expense") => {
-    setValues((prev) => ({
-      ...prev,
-      type,
-      categoryId: "",
-      paymentMethodId: null,
-    }));
-  };
-
   const handleOshikatsuToggle = (enabled: boolean) => {
     setValues((prev) => ({
       ...prev,
       isOshikatsu: enabled,
+      categoryId: enabled ? null : "",
       groupName: enabled ? prev.groupName : null,
       activityType: enabled ? prev.activityType : null,
     }));
-    if (!enabled) {
-      setErrors((prev) => {
-        const next = { ...prev };
+    setErrors((prev) => {
+      const next = { ...prev };
+      if (enabled) {
+        delete next.categoryId;
+      } else {
         delete next.groupName;
         delete next.activityType;
-        return next;
-      });
-    }
+      }
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -124,86 +117,6 @@ export function TransactionForm({
         </p>
       )}
 
-      {/* 収入/支出切替 */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => handleTypeChange("expense")}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-            values.type === "expense"
-              ? "bg-red-500 text-white"
-              : "bg-foreground/5 text-foreground/60"
-          }`}
-        >
-          支出
-        </button>
-        <button
-          type="button"
-          onClick={() => handleTypeChange("income")}
-          className={`flex-1 rounded-lg py-2 text-sm font-medium transition-colors ${
-            values.type === "income"
-              ? "bg-green-600 text-white"
-              : "bg-foreground/5 text-foreground/60"
-          }`}
-        >
-          収入
-        </button>
-      </div>
-
-      {/* 金額 */}
-      <Input
-        id="amount"
-        label="金額"
-        type="number"
-        min={1}
-        placeholder="0"
-        value={values.amount || ""}
-        onChange={(e) => update("amount", Number(e.target.value))}
-        error={errors.amount}
-      />
-
-      {/* 日付 */}
-      <Input
-        id="date"
-        label="日付"
-        type="date"
-        value={values.date}
-        onChange={(e) => update("date", e.target.value)}
-        error={errors.date}
-      />
-
-      {/* カテゴリ */}
-      <Select
-        id="categoryId"
-        label="カテゴリ"
-        placeholder="選択してください"
-        options={filteredCategories.map((c) => ({
-          value: c.id,
-          label: c.name,
-        }))}
-        value={values.categoryId}
-        onChange={(e) => update("categoryId", e.target.value)}
-        error={errors.categoryId}
-      />
-
-      {/* 支払い方法 */}
-      {values.type === "expense" && (
-        <Select
-          id="paymentMethodId"
-          label="支払い方法"
-          placeholder="選択してください"
-          options={paymentMethods.map((p) => ({
-            value: p.id,
-            label: p.name,
-          }))}
-          value={values.paymentMethodId ?? ""}
-          onChange={(e) =>
-            update("paymentMethodId", e.target.value || null)
-          }
-          error={errors.paymentMethodId}
-        />
-      )}
-
       {/* 推し活トグル */}
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium text-foreground/70">
@@ -228,8 +141,8 @@ export function TransactionForm({
         </button>
       </div>
 
-      {/* 推し活フィールド */}
-      {values.isOshikatsu && (
+      {/* 推し活フィールド or カテゴリ */}
+      {values.isOshikatsu ? (
         <OshikatsuFields
           groupName={values.groupName}
           activityType={values.activityType}
@@ -240,7 +153,58 @@ export function TransactionForm({
             activityType: errors.activityType,
           }}
         />
+      ) : (
+        <Select
+          id="categoryId"
+          label="カテゴリ"
+          placeholder="選択してください"
+          options={expenseCategories.map((c) => ({
+            value: c.id,
+            label: c.name,
+          }))}
+          value={values.categoryId ?? ""}
+          onChange={(e) => update("categoryId", e.target.value || null)}
+          error={errors.categoryId}
+        />
       )}
+
+      {/* 日付 */}
+      <Input
+        id="date"
+        label="日付"
+        type="date"
+        value={values.date}
+        onChange={(e) => update("date", e.target.value)}
+        error={errors.date}
+      />
+
+      {/* 支払い方法 */}
+      <Select
+        id="paymentMethodId"
+        label="支払い方法"
+        placeholder="選択してください"
+        options={paymentMethods.map((p) => ({
+          value: p.id,
+          label: p.name,
+        }))}
+        value={values.paymentMethodId ?? ""}
+        onChange={(e) =>
+          update("paymentMethodId", e.target.value || null)
+        }
+        error={errors.paymentMethodId}
+      />
+
+      {/* 金額 */}
+      <Input
+        id="amount"
+        label="金額"
+        type="number"
+        min={1}
+        placeholder="0"
+        value={values.amount || ""}
+        onChange={(e) => update("amount", Number(e.target.value))}
+        error={errors.amount}
+      />
 
       {/* メモ */}
       <Input
