@@ -27,17 +27,19 @@ function getLocalDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-const defaultValues: CreateTransactionInput = {
-  date: getLocalDateString(),
-  type: "expense",
-  amount: 0,
-  categoryId: "",
-  paymentMethodId: null,
-  memo: "",
-  isOshikatsu: false,
-  groupName: null,
-  activityType: null,
-};
+function getDefaultValues(): CreateTransactionInput {
+  return {
+    date: getLocalDateString(),
+    type: "expense",
+    amount: 0,
+    categoryId: "",
+    paymentMethodId: null,
+    memo: "",
+    isOshikatsu: false,
+    groupName: null,
+    activityType: null,
+  };
+}
 
 export function TransactionForm({
   mode,
@@ -47,7 +49,7 @@ export function TransactionForm({
   onSubmit,
 }: TransactionFormProps) {
   const [values, setValues] = useState<CreateTransactionInput>(
-    initialValues ?? defaultValues
+    () => initialValues ?? getDefaultValues()
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
