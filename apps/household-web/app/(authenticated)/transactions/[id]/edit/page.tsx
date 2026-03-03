@@ -38,7 +38,6 @@ export default async function EditTransactionPage({
 
   const initialValues: UpdateTransactionInput = {
     date: transaction.date,
-    type: transaction.type,
     amount: transaction.amount,
     categoryId: transaction.categoryId,
     paymentMethodId: transaction.paymentMethodId,

@@ -2,10 +2,10 @@ export type Transaction = {
   id: string;
   userId: string;
   date: string;
-  type: "income" | "expense";
+  type: "expense";
   amount: number;
-  categoryId: string;
-  categoryName: string;
+  categoryId: string | null;
+  categoryName: string | null;
   paymentMethodId: string | null;
   paymentMethodName: string | null;
   memo: string;
@@ -18,9 +18,8 @@ export type Transaction = {
 
 export type CreateTransactionInput = {
   date: string;
-  type: "income" | "expense";
   amount: number;
-  categoryId: string;
+  categoryId: string | null;
   paymentMethodId: string | null;
   memo: string;
   isOshikatsu: boolean;

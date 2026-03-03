@@ -1,6 +1,5 @@
-import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
-import { OSHIKATSU_ACTIVITY_TYPES } from "@/lib/constants";
+import { OSHIKATSU_GROUPS, OSHIKATSU_ACTIVITY_TYPES } from "@/lib/constants";
 
 type OshikatsuFieldsProps = {
   groupName: string | null;
@@ -26,11 +25,14 @@ export function OshikatsuFields({
         推し活情報
       </p>
 
-      <Input
+      <Select
         id="groupName"
-        label="推しグループ名"
-        type="text"
-        placeholder="例: 乃木坂46"
+        label="推しグループ"
+        placeholder="選択してください"
+        options={OSHIKATSU_GROUPS.map((g) => ({
+          value: g,
+          label: g,
+        }))}
         value={groupName ?? ""}
         onChange={(e) => onGroupNameChange(e.target.value || null)}
         error={errors?.groupName}
