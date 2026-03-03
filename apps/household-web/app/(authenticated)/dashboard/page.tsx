@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createTransactionRepository } from "@/repositories/transactionRepository";
-import { getMonthlySummary } from "@/usecases/getMonthlySummary";
-import { listTransactions } from "@/usecases/listTransactions";
+import { calculateMonthlySummary } from "@/usecases/getMonthlySummary";
 import { MonthSelector } from "@/components/dashboard/MonthSelector";
 import { TransactionSummary } from "@/components/dashboard/TransactionSummary";
 import { TransactionList } from "@/components/transactions/TransactionList";
@@ -34,10 +33,8 @@ export default async function DashboardPage({
   } = await supabase.auth.getUser();
 
   const repo = createTransactionRepository(supabase);
-  const [summary, transactions] = await Promise.all([
-    getMonthlySummary(repo, user!.id, year, month),
-    listTransactions(repo, user!.id, { year, month }),
-  ]);
+  const transactions = await repo.findByMonth(user!.id, year, month);
+  const summary = calculateMonthlySummary(transactions, year, month);
 
   return (
     <div className="space-y-6">
