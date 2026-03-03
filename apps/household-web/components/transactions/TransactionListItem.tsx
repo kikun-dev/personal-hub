@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Transaction } from "@/types/transaction";
 import { formatYen, formatDate } from "@/lib/formatters";
 
@@ -11,7 +12,10 @@ export function TransactionListItem({
   const isExpense = transaction.type === "expense";
 
   return (
-    <div className="flex items-center justify-between border-b border-foreground/5 py-3 last:border-b-0">
+    <Link
+      href={`/transactions/${transaction.id}/edit`}
+      className="flex items-center justify-between border-b border-foreground/5 py-3 transition-colors hover:bg-foreground/[0.02] last:border-b-0"
+    >
       <div className="flex items-center gap-3">
         <span className="w-10 text-sm text-foreground/40">
           {formatDate(transaction.date)}
@@ -42,6 +46,6 @@ export function TransactionListItem({
         {isExpense ? "-" : "+"}
         {formatYen(transaction.amount)}
       </span>
-    </div>
+    </Link>
   );
 }
