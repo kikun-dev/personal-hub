@@ -19,8 +19,16 @@ type TransactionFormProps = {
   ) => Promise<{ errors?: ValidationError[] }>;
 };
 
+function getLocalDateString(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 const defaultValues: CreateTransactionInput = {
-  date: new Date().toISOString().split("T")[0],
+  date: getLocalDateString(),
   type: "expense",
   amount: 0,
   categoryId: "",
@@ -59,7 +67,12 @@ export function TransactionForm({
   };
 
   const handleTypeChange = (type: "income" | "expense") => {
-    setValues((prev) => ({ ...prev, type, categoryId: "" }));
+    setValues((prev) => ({
+      ...prev,
+      type,
+      categoryId: "",
+      paymentMethodId: null,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
