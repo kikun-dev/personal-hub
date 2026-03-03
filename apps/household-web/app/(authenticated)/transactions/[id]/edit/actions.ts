@@ -35,7 +35,7 @@ export async function updateTransactionAction(
   } catch (e) {
     if (e instanceof RepositoryError) {
       return {
-        errors: [{ field: "id", message: "取引が見つからないか、更新に失敗しました" }],
+        errors: [{ field: "_form", message: "取引が見つからないか、更新に失敗しました" }],
       };
     }
     throw e;
