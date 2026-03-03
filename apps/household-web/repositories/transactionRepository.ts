@@ -78,8 +78,8 @@ export function createTransactionRepository(
         .single();
 
       if (error) {
-        // PGRST116 = "行が見つからない" → null を返す
-        if (error.code === "PGRST116") {
+        // PGRST116 = "行が見つからない"、22P02 = "UUID形式不正" → null を返す
+        if (error.code === "PGRST116" || error.code === "22P02") {
           return null;
         }
         throw new RepositoryError("取引の取得に失敗しました", error);
