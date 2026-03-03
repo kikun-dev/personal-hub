@@ -11,8 +11,21 @@
 
 1. Issueを起点に作業開始
 2. ClaudeがIssueで設計提案・Decisionを明示
-3. Claudeが実装しPRを作成（Issueにリンク）
-4. Codexがレビューし、必要ならリファクタ
+3. Claudeが実装しPRを作成（Issueにリンク、`@codex review` をbodyに記載）
+4. Codexがレビューし、指摘をPRコメントに残す
+5. Claudeがレビュー指摘を修正し、PRに対応サマリーと `@codex review` をコメント
+6. 指摘がなくなるまで 4-5 を繰り返す
+7. レビュー完了後マージ
+
+### Codexレビュー対応の手順
+
+1. `gh api` でPRのレビューコメントを確認する
+2. 指摘内容を把握し、コードを修正する
+3. typecheck / lint を通過させる
+4. 修正を commit & push する
+5. PRに以下を含むコメントを追加する:
+   - 修正内容のサマリー（指摘の優先度ラベル付き）
+   - `@codex review`（再レビュー依頼）
 
 ---
 
