@@ -6,6 +6,10 @@ export function validateTransaction(
 ): ValidationError[] {
   const errors: ValidationError[] = [];
 
+  if (input.type !== "income" && input.type !== "expense") {
+    errors.push({ field: "type", message: "収入または支出を選択してください" });
+  }
+
   if (!input.date) {
     errors.push({ field: "date", message: "日付を選択してください" });
   }
