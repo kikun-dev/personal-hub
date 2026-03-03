@@ -96,11 +96,39 @@ CREATE POLICY "payment_methods_delete" ON payment_methods FOR DELETE
   USING (user_id = auth.uid());
 
 -- transactions: ユーザー自身のデータのみ
+-- INSERT/UPDATE は外部キー先が自分のデータまたはシステムデフォルトであることも検証
 CREATE POLICY "transactions_select" ON transactions FOR SELECT
   USING (user_id = auth.uid());
 CREATE POLICY "transactions_insert" ON transactions FOR INSERT
-  WITH CHECK (user_id = auth.uid());
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM categories
+      WHERE id = category_id AND (categories.user_id = auth.uid() OR categories.user_id IS NULL)
+    )
+    AND (
+      payment_method_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM payment_methods
+        WHERE id = payment_method_id AND (payment_methods.user_id = auth.uid() OR payment_methods.user_id IS NULL)
+      )
+    )
+  );
 CREATE POLICY "transactions_update" ON transactions FOR UPDATE
-  USING (user_id = auth.uid());
+  USING (user_id = auth.uid())
+  WITH CHECK (
+    user_id = auth.uid()
+    AND EXISTS (
+      SELECT 1 FROM categories
+      WHERE id = category_id AND (categories.user_id = auth.uid() OR categories.user_id IS NULL)
+    )
+    AND (
+      payment_method_id IS NULL
+      OR EXISTS (
+        SELECT 1 FROM payment_methods
+        WHERE id = payment_method_id AND (payment_methods.user_id = auth.uid() OR payment_methods.user_id IS NULL)
+      )
+    )
+  );
 CREATE POLICY "transactions_delete" ON transactions FOR DELETE
   USING (user_id = auth.uid());

@@ -78,7 +78,11 @@ export function createTransactionRepository(
         .single();
 
       if (error) {
-        return null;
+        // PGRST116 = "行が見つからない" → null を返す
+        if (error.code === "PGRST116") {
+          return null;
+        }
+        throw new RepositoryError("取引の取得に失敗しました", error);
       }
       return mapToTransaction(data as TransactionRow);
     },
