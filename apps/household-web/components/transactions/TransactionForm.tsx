@@ -72,7 +72,7 @@ export function TransactionForm({
     setValues((prev) => ({
       ...prev,
       isOshikatsu: enabled,
-      categoryId: enabled ? null : "",
+      categoryId: null,
       groupName: enabled ? prev.groupName : null,
       activityType: enabled ? prev.activityType : null,
     }));

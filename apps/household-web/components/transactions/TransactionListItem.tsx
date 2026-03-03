@@ -10,7 +10,8 @@ export function TransactionListItem({
   transaction,
 }: TransactionListItemProps) {
   const displayName = transaction.categoryName
-    ?? `${transaction.groupName} / ${transaction.activityType}`;
+    ?? ([transaction.groupName, transaction.activityType].filter(Boolean).join(" / ")
+    || "不明");
 
   return (
     <Link
