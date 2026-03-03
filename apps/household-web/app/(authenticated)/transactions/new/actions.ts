@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createTransactionRepository } from "@/repositories/transactionRepository";
 import { createTransaction } from "@/usecases/createTransaction";
@@ -15,7 +16,7 @@ export async function createTransactionAction(
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return { errors: [{ field: "auth", message: "認証が必要です" }] };
+    redirect("/login");
   }
 
   const repo = createTransactionRepository(supabase);
