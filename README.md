@@ -1,85 +1,109 @@
-# このリポジトリについて
+# personal-hub
 
-個人開発のための複数アプリを、共通基盤の上で育てていくプロジェクトです。
-
-例： - 推し活情報集約（公開可能） - 推し活に紐づく家計管理（非公開） -
-タスク管理（非公開）
+個人の生活・推し活・タスクを一元管理するための統合プラットフォーム。
+長期運用を前提に、迷わない構造・可読性・変更容易性を最優先に設計している。
 
 ------------------------------------------------------------------------
 
-# 重要な方針（北極星）
+## Apps
 
--   個人利用前提で設計する
--   長期運用で迷わない構造にする
--   可読性と変更容易性を最優先する
--   設計判断は履歴として残す
-
-------------------------------------------------------------------------
-
-# AIの役割分担
-
--   Claude：設計提案 + 実装
--   Codex：レビュー + リファクタリング
+  Directory              Brand    Description            Status
+  ---------------------- -------- ---------------------- -------------
+  `apps/household-web`   Ledger   支出特化型の家計管理   In Progress
+  `apps/oshikatsu-web`   Orbit    推し活管理             Planned
+  `apps/tasks-web`       Flow     タスク管理             Planned
 
 ------------------------------------------------------------------------
 
-# ドキュメント構成
+## Tech Stack
 
--   仕様（何を作るか）：`docs/`
--   設計判断の履歴：`docs/decisions/`
--   プロジェクト憲法：`rules/`
--   GitHub運用：`.github/`
--   Claude運用：`.claude/claude.md`
-
-------------------------------------------------------------------------
-
-# 開発環境
-
-## 前提
-
--   OS: Windows + WSL (Ubuntu)
--   Node.js: `.nvmrc` に記載のバージョン（nvm推奨）
--   パッケージマネージャ: npm
+-   **Runtime**: Node.js 24
+-   **Framework**: Next.js 16 (App Router) + TypeScript
+-   **Styling**: Tailwind CSS 4
+-   **Database / Auth**: Supabase (PostgreSQL + Google OAuth + RLS)
+-   **Package Manager**: pnpm (workspaces)
+-   **CI**: GitHub Actions
 
 ------------------------------------------------------------------------
 
-## セットアップ
+## Requirements
+
+-   Node.js 24.x
+-   pnpm 9+
+
+------------------------------------------------------------------------
+
+## Setup
 
 ``` bash
 nvm install
 nvm use
-npm ci
+pnpm install
 ```
 
 ------------------------------------------------------------------------
 
-## 開発（household-web）
+## Environment Variables
+
+各アプリで `.env.local` を設定してください。
+
+例（household-web）:
+
+    NEXT_PUBLIC_SUPABASE_URL=
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=
+
+`.env.local` は Git 管理されません。
+
+------------------------------------------------------------------------
+
+## Development
 
 ``` bash
-npm run dev:household
+# 全アプリ起動
+pnpm dev
+
+# household-web のみ
+pnpm --filter household-web dev
+
+# 型チェック
+pnpm --filter household-web typecheck
+
+# Lint
+pnpm --filter household-web lint
 ```
 
 ------------------------------------------------------------------------
 
-## 型チェック
+## Repository Structure
 
-``` bash
-npm run typecheck
-```
-
-------------------------------------------------------------------------
-
-## Lint
-
-``` bash
-npm run lint
-```
+    personal-hub/
+      apps/
+      packages/
+      docs/
+        ai/
+        decisions/   ← ADR
+      rules/
+      .github/
 
 ------------------------------------------------------------------------
 
-# 開発フロー
+## Architecture Principles
 
-1.  Issueを起点に作業を開始する
-2.  設計判断はIssueに残す
-3.  PRは実装ログとして扱う
-4.  長期影響のある設計判断は `docs/decisions/` にADRとして残す
+-   可読性を最優先
+-   UI / Domain / Data 層の責務分離
+-   設計判断は ADR (`docs/decisions/`) に記録
+-   小さな PR 単位で変更
+-   `main` への直接 push は禁止（PR + CI 必須）
+
+------------------------------------------------------------------------
+
+## AI-Assisted Development
+
+本プロジェクトは AI を活用した開発を行っている。
+
+-   **Claude Code**: 設計提案 / 実装補助
+-   **Codex**: PR レビュー / リファクタリング
+
+AI は補助であり、最終判断は人間が行う。
+
+詳細は `CLAUDE.md` を参照。

@@ -9,7 +9,7 @@ type TransactionRow = {
   date: string;
   type: string;
   amount: number;
-  category_id: string;
+  category_id: string | null;
   categories: { name: string } | null;
   payment_method_id: string | null;
   payment_methods: { name: string } | null;
@@ -26,10 +26,10 @@ function mapToTransaction(row: TransactionRow): Transaction {
     id: row.id,
     userId: row.user_id,
     date: row.date,
-    type: row.type as "income" | "expense",
+    type: "expense",
     amount: row.amount,
     categoryId: row.category_id,
-    categoryName: row.categories?.name ?? "",
+    categoryName: row.categories?.name ?? null,
     paymentMethodId: row.payment_method_id,
     paymentMethodName: row.payment_methods?.name ?? null,
     memo: row.memo,
@@ -93,9 +93,9 @@ export function createTransactionRepository(
         .insert({
           user_id: userId,
           date: input.date,
-          type: input.type,
+          type: "expense",
           amount: input.amount,
-          category_id: input.categoryId,
+          category_id: input.isOshikatsu ? null : input.categoryId,
           payment_method_id: input.paymentMethodId,
           memo: input.memo,
           is_oshikatsu: input.isOshikatsu,
@@ -116,9 +116,9 @@ export function createTransactionRepository(
         .from("transactions")
         .update({
           date: input.date,
-          type: input.type,
+          type: "expense",
           amount: input.amount,
-          category_id: input.categoryId,
+          category_id: input.isOshikatsu ? null : input.categoryId,
           payment_method_id: input.paymentMethodId,
           memo: input.memo,
           is_oshikatsu: input.isOshikatsu,

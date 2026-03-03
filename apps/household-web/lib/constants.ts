@@ -1,3 +1,12 @@
+export const OSHIKATSU_GROUPS = [
+  "乃木坂46",
+  "櫻坂46",
+  "日向坂46",
+  "その他",
+] as const;
+
+export type OshikatsuGroup = (typeof OSHIKATSU_GROUPS)[number];
+
 export const OSHIKATSU_ACTIVITY_TYPES = [
   "ライブ・コンサート",
   "グッズ購入",
