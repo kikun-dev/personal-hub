@@ -1,0 +1,52 @@
+name: CI - household-web
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/household-web/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/ci-household-web.yml"
+  pull_request:
+    paths:
+      - "apps/household-web/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/ci-household-web.yml"
+
+jobs:
+  check:
+    name: Typecheck / Lint / Build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/household-web
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: .
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Build
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
