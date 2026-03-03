@@ -1,4 +1,3 @@
-import type { TransactionRepository } from "@/types/repositories";
 import type { MonthlySummary, CategoryTotal } from "@/types/summary";
 import type { Transaction } from "@/types/transaction";
 
@@ -26,14 +25,11 @@ function calculateCategoryBreakdown(
   return Array.from(map.values()).sort((a, b) => b.total - a.total);
 }
 
-export async function getMonthlySummary(
-  repo: TransactionRepository,
-  userId: string,
+export function calculateMonthlySummary(
+  transactions: Transaction[],
   year: number,
   month: number
-): Promise<MonthlySummary> {
-  const transactions = await repo.findByMonth(userId, year, month);
-
+): MonthlySummary {
   let totalIncome = 0;
   let totalExpense = 0;
   let oshikatsuExpense = 0;
