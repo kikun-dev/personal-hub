@@ -80,14 +80,17 @@ export function TransactionForm({
     setIsSubmitting(true);
     setErrors({});
 
-    const result = await onSubmit(values);
+    try {
+      const result = await onSubmit(values);
 
-    if (result.errors) {
-      const errorMap: Record<string, string> = {};
-      for (const err of result.errors) {
-        errorMap[err.field] = err.message;
+      if (result.errors) {
+        const errorMap: Record<string, string> = {};
+        for (const err of result.errors) {
+          errorMap[err.field] = err.message;
+        }
+        setErrors(errorMap);
       }
-      setErrors(errorMap);
+    } finally {
       setIsSubmitting(false);
     }
   };
