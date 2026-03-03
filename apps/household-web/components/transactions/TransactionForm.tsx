@@ -117,6 +117,13 @@ export function TransactionForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
+      {/* 汎用エラー */}
+      {errors._form && (
+        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
+          {errors._form}
+        </p>
+      )}
+
       {/* 収入/支出切替 */}
       <div className="flex gap-2">
         <button
