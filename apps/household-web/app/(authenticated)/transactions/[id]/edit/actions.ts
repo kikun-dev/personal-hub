@@ -7,6 +7,7 @@ import { updateTransaction } from "@/usecases/updateTransaction";
 import { deleteTransaction } from "@/usecases/deleteTransaction";
 import type { UpdateTransactionInput } from "@/types/transaction";
 import type { ValidationError } from "@/types/errors";
+import { RepositoryError } from "@/types/errors";
 
 export async function updateTransactionAction(
   id: string,
@@ -22,13 +23,23 @@ export async function updateTransactionAction(
   }
 
   const repo = createTransactionRepository(supabase);
-  const result = await updateTransaction(repo, user.id, id, input);
 
-  if (!result.ok) {
-    return { errors: result.errors };
+  try {
+    const result = await updateTransaction(repo, user.id, id, input);
+
+    if (!result.ok) {
+      return { errors: result.errors };
+    }
+
+    return {};
+  } catch (e) {
+    if (e instanceof RepositoryError) {
+      return {
+        errors: [{ field: "id", message: "取引が見つからないか、更新に失敗しました" }],
+      };
+    }
+    throw e;
   }
-
-  return {};
 }
 
 export async function deleteTransactionAction(
@@ -44,7 +55,14 @@ export async function deleteTransactionAction(
   }
 
   const repo = createTransactionRepository(supabase);
-  await deleteTransaction(repo, user.id, id);
 
-  return {};
+  try {
+    await deleteTransaction(repo, user.id, id);
+    return {};
+  } catch (e) {
+    if (e instanceof RepositoryError) {
+      return { error: "取引の削除に失敗しました" };
+    }
+    throw e;
+  }
 }
