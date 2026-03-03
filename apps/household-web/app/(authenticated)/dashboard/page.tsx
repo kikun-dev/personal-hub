@@ -16,8 +16,17 @@ export default async function DashboardPage({
 }: DashboardPageProps) {
   const params = await searchParams;
   const now = new Date();
-  const year = params.year ? Number(params.year) : now.getFullYear();
-  const month = params.month ? Number(params.month) : now.getMonth() + 1;
+
+  const rawYear = Number(params.year);
+  const rawMonth = Number(params.month);
+  const year =
+    Number.isFinite(rawYear) && rawYear >= 2000 && rawYear <= 2100
+      ? rawYear
+      : now.getFullYear();
+  const month =
+    Number.isFinite(rawMonth) && rawMonth >= 1 && rawMonth <= 12
+      ? rawMonth
+      : now.getMonth() + 1;
 
   const supabase = await createClient();
   const {
