@@ -6,7 +6,8 @@ export type MonthlySummary = {
   balance: number;
   oshikatsuExpense: number;
   regularExpense: number;
-  categoryBreakdown: CategoryTotal[];
+  expenseBreakdown: CategoryTotal[];
+  incomeBreakdown: CategoryTotal[];
 };
 
 export type CategoryTotal = {
