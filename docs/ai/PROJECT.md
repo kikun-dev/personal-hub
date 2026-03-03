@@ -26,31 +26,69 @@ personal-hub は、日常生活を支える複数アプリを統合する
 
 - OS：Windows 11 + WSL2（Ubuntu）
 - Node：24（.nvmrc にて固定）
-- フロントエンド：Next.js（App Router） + TypeScript
-- パッケージ管理：npm
+- フロントエンド：Next.js 16（App Router） + TypeScript + Tailwind CSS 4
+- パッケージ管理：pnpm（workspaces）
+- データベース + 認証：Supabase（PostgreSQL + Google OAuth + RLS）
+- 状態管理：ライブラリなし（Server Components + useState + URL params）
+- チャート：recharts（Issue #22 で導入予定）
 - リポジトリ：GitHub（private）
+- CI：GitHub Actions（household-web 配下の変更時に typecheck / lint / build）
 - IDE：VS Code（Remote WSL）
 
 ---
 
 ## 4. モノレポ構成
 
+```
 personal-hub/
   apps/
-    household-web
-    oshikatsu-web
-    tasks-web
-  packages/
+    household-web/        ← Ledger（実装済み）
+    oshikatsu-web/        ← Orbit（未着手）
+    tasks-web/            ← Flow（未着手）
+  packages/               ← 共通パッケージ（将来）
   docs/
+    ai/                   ← AI向けドキュメント
+    decisions/            ← ADR（設計判断記録）
+  rules/                  ← プロジェクトルール
+  .github/                ← Issue/PRテンプレート、CI
   CLAUDE.md
-
+```
 
 - 各アプリは独立した Next.js アプリとして存在する
-- 将来的に共通パッケージ（packages配下）を導入する可能性あり
+- 将来的に共通パッケージ（packages 配下）を導入する可能性あり
 
 ---
 
-## 5. 設計方針
+## 5. household-web（Ledger）の現状
+
+### 機能
+- **支出記録**（支出のみ。収入は管理しない）
+- **推し活モード**（通常支出と推し活支出を切り替え可能）
+  - 推し活時はカテゴリ不要、代わりにグループ名 + 活動タイプを指定
+  - グループ名：乃木坂46, 櫻坂46, 日向坂46, その他（固定選択式）
+  - 活動タイプ：11種類（ライブ・コンサート、グッズ購入 等）
+- **ダッシュボード**（月次サマリー + 取引一覧）
+- **取引編集・削除**
+- **Google ログイン**
+
+### アーキテクチャ（3層）
+```
+app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
+                                         ↓
+                                    Supabase (PostgreSQL)
+```
+
+### DB テーブル
+- `transactions` — 取引（type は常に "expense"、category_id は nullable）
+- `categories` — カテゴリ（システムデフォルト + ユーザーカスタム）
+- `payment_methods` — 支払い方法（現金, クレカ×3, QR決済, 口座振替, その他）
+
+### 支払い方法
+現金, クレカ(三井住友NL), クレカ(楽天), クレカ(ヨドバシ), QR決済, 口座振替, その他
+
+---
+
+## 6. 設計方針
 
 - 可読性を最優先する
 - 境界（フォーム・API・外部入力）では必ずバリデーションを行う
@@ -60,23 +98,20 @@ personal-hub/
 
 ---
 
-## 6. 現時点で未決定の事項
+## 7. 決定済みの設計判断（ADR）
 
-以下はこれから Claude Code と設計する：
-
-- データ保存戦略（ローカルDB / クラウド / ハイブリッド）
-- マルチ端末同期の方法
-- 認証の有無
-- API層の分離有無
-- 共通ドメインパッケージの設計
-- 状態管理戦略
+| ADR | タイトル | 状態 |
+|---|---|---|
+| 0001 | 基本アーキテクチャとAI分担方針 | Accepted |
+| 0002 | Supabase の採用（DB + 認証） | Accepted |
+| 0003 | 状態管理方針 | Accepted |
+| 0004 | チャートライブラリ（recharts）採用 | 予定（Issue #22） |
 
 ---
 
-## 7. 非目標（現時点ではやらないこと）
+## 8. 非目標（現時点ではやらないこと）
 
-- CI構築
-- Docker導入
+- Docker 導入
 - 本番デプロイ戦略決定
 - パフォーマンス最適化
 
