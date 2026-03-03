@@ -8,6 +8,7 @@ import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
+import { OshikatsuFields } from "@/components/transactions/OshikatsuFields";
 
 type TransactionFormProps = {
   mode: "create" | "edit";
@@ -75,6 +76,23 @@ export function TransactionForm({
       categoryId: "",
       paymentMethodId: null,
     }));
+  };
+
+  const handleOshikatsuToggle = (enabled: boolean) => {
+    setValues((prev) => ({
+      ...prev,
+      isOshikatsu: enabled,
+      groupName: enabled ? prev.groupName : null,
+      activityType: enabled ? prev.activityType : null,
+    }));
+    if (!enabled) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.groupName;
+        delete next.activityType;
+        return next;
+      });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -176,6 +194,44 @@ export function TransactionForm({
             update("paymentMethodId", e.target.value || null)
           }
           error={errors.paymentMethodId}
+        />
+      )}
+
+      {/* 推し活トグル */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-foreground/70">
+          推し活
+        </span>
+        <button
+          type="button"
+          onClick={() => handleOshikatsuToggle(!values.isOshikatsu)}
+          className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full transition-colors ${
+            values.isOshikatsu
+              ? "bg-purple-500"
+              : "bg-foreground/10"
+          }`}
+          role="switch"
+          aria-checked={values.isOshikatsu}
+        >
+          <span
+            className={`pointer-events-none inline-block h-5 w-5 translate-y-0.5 rounded-full bg-white shadow-sm transition-transform ${
+              values.isOshikatsu ? "translate-x-5" : "translate-x-0.5"
+            }`}
+          />
+        </button>
+      </div>
+
+      {/* 推し活フィールド */}
+      {values.isOshikatsu && (
+        <OshikatsuFields
+          groupName={values.groupName}
+          activityType={values.activityType}
+          onGroupNameChange={(v) => update("groupName", v)}
+          onActivityTypeChange={(v) => update("activityType", v)}
+          errors={{
+            groupName: errors.groupName,
+            activityType: errors.activityType,
+          }}
         />
       )}
 
