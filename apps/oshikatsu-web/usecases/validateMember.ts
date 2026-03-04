@@ -1,13 +1,10 @@
 import type { CreateMemberInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
+import { BLOOD_TYPES, type BloodType } from "@/lib/constants";
+import { isValidHttpsUrl, isValidDateString } from "@/lib/validation";
 
-function isValidHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" || url.protocol === "http:";
-  } catch {
-    return false;
-  }
+function isBloodType(value: string): value is BloodType {
+  return (BLOOD_TYPES as readonly string[]).includes(value);
 }
 
 export function validateMember(input: CreateMemberInput): ValidationError[] {
@@ -15,10 +12,22 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
 
   if (!input.nameJa.trim()) {
     errors.push({ field: "nameJa", message: "名前（日本語）を入力してください" });
+  } else if (input.nameJa.length > 50) {
+    errors.push({ field: "nameJa", message: "名前（日本語）は50文字以内で入力してください" });
   }
 
   if (!input.nameKana.trim()) {
     errors.push({ field: "nameKana", message: "名前（かな）を入力してください" });
+  } else if (input.nameKana.length > 50) {
+    errors.push({ field: "nameKana", message: "名前（かな）は50文字以内で入力してください" });
+  }
+
+  if (input.nameEn && input.nameEn.length > 100) {
+    errors.push({ field: "nameEn", message: "名前（英語）は100文字以内で入力してください" });
+  }
+
+  if (input.hometown && input.hometown.length > 100) {
+    errors.push({ field: "hometown", message: "出身地は100文字以内で入力してください" });
   }
 
   if (input.groups.length === 0) {
@@ -31,16 +40,29 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     }
   }
 
-  if (input.heightCm && isNaN(Number(input.heightCm))) {
-    errors.push({ field: "heightCm", message: "身長は数値で入力してください" });
+  if (input.heightCm) {
+    const h = Number(input.heightCm);
+    if (isNaN(h)) {
+      errors.push({ field: "heightCm", message: "身長は数値で入力してください" });
+    } else if (h <= 0 || h >= 300) {
+      errors.push({ field: "heightCm", message: "身長は0より大きく300未満の値で入力してください" });
+    }
   }
 
-  if (input.imageUrl && !isValidHttpUrl(input.imageUrl)) {
-    errors.push({ field: "imageUrl", message: "画像URLはhttp(s)で始まる有効なURLを入力してください" });
+  if (input.bloodType && !isBloodType(input.bloodType)) {
+    errors.push({ field: "bloodType", message: "血液型はA, B, O, AB, 不明から選択してください" });
   }
 
-  if (input.blogUrl && !isValidHttpUrl(input.blogUrl)) {
-    errors.push({ field: "blogUrl", message: "ブログURLはhttp(s)で始まる有効なURLを入力してください" });
+  if (input.dateOfBirth && !isValidDateString(input.dateOfBirth)) {
+    errors.push({ field: "dateOfBirth", message: "生年月日はYYYY-MM-DD形式で入力してください" });
+  }
+
+  if (input.imageUrl && !isValidHttpsUrl(input.imageUrl)) {
+    errors.push({ field: "imageUrl", message: "画像URLはhttpsで始まる有効なURLを入力してください" });
+  }
+
+  if (input.blogUrl && !isValidHttpsUrl(input.blogUrl)) {
+    errors.push({ field: "blogUrl", message: "ブログURLはhttpsで始まる有効なURLを入力してください" });
   }
 
   return errors;

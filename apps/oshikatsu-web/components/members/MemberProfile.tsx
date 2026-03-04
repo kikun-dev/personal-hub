@@ -60,10 +60,11 @@ export function MemberProfile({ member }: MemberProfileProps) {
               </dd>
             </>
           )}
+          {/* null: 未入力（非表示）、"不明": ユーザーが明示的に選択（表示） */}
           {member.bloodType && (
             <>
               <dt className="text-foreground/50">血液型</dt>
-              <dd className="text-foreground">{member.bloodType}型</dd>
+              <dd className="text-foreground">{member.bloodType === "不明" ? "不明" : `${member.bloodType}型`}</dd>
             </>
           )}
           {member.heightCm && (
