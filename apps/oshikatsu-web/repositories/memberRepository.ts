@@ -252,43 +252,54 @@ export function createMemberRepository(
     },
 
     async findBirthdaysByMonth(month) {
-      // date 型に like は使えないため、全メンバー取得後にアプリ側でフィルタ
+      // RPC で ID のみ取得 → 詳細データは通常の select で取得（2往復）
+      // 理由: RPC に結合型を持たせるとメンテが困難。データ量は数百件程度のため問題なし
+      const { data: ids, error: rpcError } = await supabase
+        .rpc("find_birthday_member_ids_by_month", { target_month: month });
+
+      if (rpcError) {
+        throw new RepositoryError("誕生日メンバーの取得に失敗しました", rpcError);
+      }
+
+      if (!ids || ids.length === 0) return [];
+
       const { data, error } = await supabase
         .from("orbit_members")
         .select(MEMBER_SELECT)
-        .not("date_of_birth", "is", null)
+        .in("id", ids)
         .order("date_of_birth");
 
       if (error) {
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return (data as MemberRow[])
-        .filter((row) => {
-          const dob = new Date(row.date_of_birth + "T00:00:00");
-          return dob.getMonth() + 1 === month;
-        })
-        .map(mapToMemberWithGroups);
+      return (data as MemberRow[]).map(mapToMemberWithGroups);
     },
 
     async findBirthdaysByDate(month, day) {
-      // date 型に like は使えないため、全メンバー取得後にアプリ側でフィルタ
+      const { data: ids, error: rpcError } = await supabase
+        .rpc("find_birthday_member_ids_by_date", {
+          target_month: month,
+          target_day: day,
+        });
+
+      if (rpcError) {
+        throw new RepositoryError("誕生日メンバーの取得に失敗しました", rpcError);
+      }
+
+      if (!ids || ids.length === 0) return [];
+
       const { data, error } = await supabase
         .from("orbit_members")
         .select(MEMBER_SELECT)
-        .not("date_of_birth", "is", null)
+        .in("id", ids)
         .order("name_kana");
 
       if (error) {
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return (data as MemberRow[])
-        .filter((row) => {
-          const dob = new Date(row.date_of_birth + "T00:00:00");
-          return dob.getMonth() + 1 === month && dob.getDate() === day;
-        })
-        .map(mapToMemberWithGroups);
+      return (data as MemberRow[]).map(mapToMemberWithGroups);
     },
   };
 }

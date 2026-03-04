@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 
@@ -16,9 +17,11 @@ export function MemberCard({ member }: MemberCardProps) {
     >
       <div className="flex items-start gap-3">
         {member.imageUrl ? (
-          <img
+          <Image
             src={member.imageUrl}
             alt={member.nameJa}
+            width={64}
+            height={64}
             className="h-16 w-16 rounded-full object-cover"
           />
         ) : (

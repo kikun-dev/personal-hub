@@ -35,7 +35,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
         <h1 className="text-xl font-bold text-foreground">メンバー</h1>
         <span className="text-sm text-foreground/50">{members.length}人</span>
       </div>
-      <Suspense>
+      <Suspense fallback={<div className="h-10" />}>
         <MemberFilters groups={groups} />
       </Suspense>
       <MemberGrid members={members} />
