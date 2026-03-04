@@ -9,6 +9,12 @@ import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { BLOOD_TYPES } from "@/lib/constants";
 
+type GroupWithKey = CreateMemberGroupInput & { _key: string };
+
+type FormValues = Omit<CreateMemberInput, "groups"> & {
+  groups: GroupWithKey[];
+};
+
 type MemberFormProps = {
   mode: "create" | "edit";
   initialValues?: CreateMemberInput;
@@ -18,7 +24,11 @@ type MemberFormProps = {
   ) => Promise<{ errors?: ValidationError[] }>;
 };
 
-function getDefaultValues(): CreateMemberInput {
+function withKey(group: CreateMemberGroupInput): GroupWithKey {
+  return { ...group, _key: crypto.randomUUID() };
+}
+
+function getDefaultValues(): FormValues {
   return {
     nameJa: "",
     nameKana: "",
@@ -29,7 +39,26 @@ function getDefaultValues(): CreateMemberInput {
     hometown: "",
     imageUrl: "",
     blogUrl: "",
-    groups: [{ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }],
+    groups: [withKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" })],
+  };
+}
+
+function toFormValues(input: CreateMemberInput): FormValues {
+  return {
+    ...input,
+    groups: input.groups.map(withKey),
+  };
+}
+
+function toSubmitValues(form: FormValues): CreateMemberInput {
+  return {
+    ...form,
+    groups: form.groups.map((g) => ({
+    groupId: g.groupId,
+    generation: g.generation,
+    joinedAt: g.joinedAt,
+    graduatedAt: g.graduatedAt,
+  })),
   };
 }
 
@@ -39,15 +68,15 @@ export function MemberForm({
   groups,
   onSubmit,
 }: MemberFormProps) {
-  const [values, setValues] = useState<CreateMemberInput>(
-    () => initialValues ?? getDefaultValues()
+  const [values, setValues] = useState<FormValues>(
+    () => initialValues ? toFormValues(initialValues) : getDefaultValues()
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const update = <K extends keyof CreateMemberInput>(
+  const update = <K extends keyof FormValues>(
     field: K,
-    value: CreateMemberInput[K]
+    value: FormValues[K]
   ) => {
     setValues((prev) => ({ ...prev, [field]: value }));
     setErrors((prev) => {
@@ -80,7 +109,7 @@ export function MemberForm({
       ...prev,
       groups: [
         ...prev.groups,
-        { groupId: "", generation: "", joinedAt: "", graduatedAt: "" },
+        withKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
       ],
     }));
   };
@@ -98,7 +127,7 @@ export function MemberForm({
     setErrors({});
 
     try {
-      const result = await onSubmit(values);
+      const result = await onSubmit(toSubmitValues(values));
       if (result.errors) {
         const errorMap: Record<string, string> = {};
         for (const err of result.errors) {
@@ -207,7 +236,7 @@ export function MemberForm({
 
         {values.groups.map((g, i) => (
           <div
-            key={i}
+            key={g._key}
             className="space-y-3 rounded-lg border border-foreground/10 p-3"
           >
             <div className="flex items-center justify-between">

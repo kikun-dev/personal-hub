@@ -1,27 +1,16 @@
-"use client";
-
-import { useState } from "react";
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
 import { formatMonthLabel } from "@/lib/formatters";
-import { Button } from "@/components/ui/Button";
 
 type EventCalendarProps = {
   events: CalendarEvent[];
-  initialYear: number;
-  initialMonth: number;
+  year: number;
+  month: number;
 };
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
-export function EventCalendar({
-  events,
-  initialYear,
-  initialMonth,
-}: EventCalendarProps) {
-  const [year, setYear] = useState(initialYear);
-  const [month, setMonth] = useState(initialMonth);
-
+export function EventCalendar({ events, year, month }: EventCalendarProps) {
   const weeks = generateCalendarGrid(year, month);
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -33,37 +22,11 @@ export function EventCalendar({
     eventsByDate.set(event.date, existing);
   }
 
-  const prevMonth = () => {
-    if (month === 1) {
-      setYear(year - 1);
-      setMonth(12);
-    } else {
-      setMonth(month - 1);
-    }
-  };
-
-  const nextMonth = () => {
-    if (month === 12) {
-      setYear(year + 1);
-      setMonth(1);
-    } else {
-      setMonth(month + 1);
-    }
-  };
-
   return (
     <div className="rounded-lg border border-foreground/10 bg-background p-4">
-      <div className="mb-4 flex items-center justify-between">
-        <Button variant="ghost" onClick={prevMonth}>
-          ←
-        </Button>
-        <h2 className="text-sm font-medium text-foreground">
-          {formatMonthLabel(year, month)}
-        </h2>
-        <Button variant="ghost" onClick={nextMonth}>
-          →
-        </Button>
-      </div>
+      <h2 className="mb-4 text-center text-sm font-medium text-foreground">
+        {formatMonthLabel(year, month)}
+      </h2>
 
       <div className="grid grid-cols-7 gap-px">
         {WEEKDAYS.map((day, i) => (

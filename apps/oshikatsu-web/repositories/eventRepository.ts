@@ -256,23 +256,29 @@ export function createEventRepository(
     },
 
     async findOnThisDay(month, day) {
-      // date 型に like は使えないため、全イベント取得後にアプリ側でフィルタ
-      // データ量が増えた場合は RPC 関数に移行する
+      const { data: ids, error: rpcError } = await supabase
+        .rpc("find_event_ids_on_this_day", {
+          target_month: month,
+          target_day: day,
+        });
+
+      if (rpcError) {
+        throw new RepositoryError("過去のイベントの取得に失敗しました", rpcError);
+      }
+
+      if (!ids || ids.length === 0) return [];
+
       const { data, error } = await supabase
         .from("orbit_events")
         .select(EVENT_SELECT)
+        .in("id", ids)
         .order("date");
 
       if (error) {
         throw new RepositoryError("過去のイベントの取得に失敗しました", error);
       }
 
-      return (data as EventRow[])
-        .filter((row) => {
-          const d = new Date(row.date + "T00:00:00");
-          return d.getMonth() + 1 === month && d.getDate() === day;
-        })
-        .map(mapToEvent);
+      return (data as EventRow[]).map(mapToEvent);
     },
   };
 }

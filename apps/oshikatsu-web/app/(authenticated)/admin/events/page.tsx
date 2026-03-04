@@ -1,14 +1,32 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { MonthSelector } from "@/components/events/MonthSelector";
 import { formatDate } from "@/lib/formatters";
 
-export default async function AdminEventsPage() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
+type AdminEventsPageProps = {
+  searchParams: Promise<{ year?: string; month?: string }>;
+};
+
+export default async function AdminEventsPage({
+  searchParams,
+}: AdminEventsPageProps) {
+  const params = await searchParams;
+  const now = new Date();
+
+  const rawYear = Number(params.year);
+  const rawMonth = Number(params.month);
+  const year =
+    Number.isInteger(rawYear) && rawYear >= 2000 && rawYear <= 2100
+      ? rawYear
+      : now.getFullYear();
+  const month =
+    Number.isInteger(rawMonth) && rawMonth >= 1 && rawMonth <= 12
+      ? rawMonth
+      : now.getMonth() + 1;
 
   const supabase = await createClient();
   const repo = createEventRepository(supabase);
@@ -21,6 +39,16 @@ export default async function AdminEventsPage() {
         <Link href="/admin/events/new">
           <Button>新規追加</Button>
         </Link>
+      </div>
+
+      <div className="flex justify-center">
+        <Suspense fallback={<div className="h-10" />}>
+          <MonthSelector
+            year={year}
+            month={month}
+            basePath="/admin/events"
+          />
+        </Suspense>
       </div>
 
       <div className="overflow-x-auto">
@@ -70,7 +98,7 @@ export default async function AdminEventsPage() {
 
       {events.length === 0 && (
         <p className="py-12 text-center text-sm text-foreground/50">
-          今月のイベントはありません
+          この月のイベントはありません
         </p>
       )}
     </div>

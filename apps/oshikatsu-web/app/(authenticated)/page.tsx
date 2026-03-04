@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
@@ -7,11 +8,26 @@ import { getOnThisDay } from "@/usecases/getOnThisDay";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
 import { OnThisDay } from "@/components/events/OnThisDay";
+import { MonthSelector } from "@/components/events/MonthSelector";
 
-export default async function TopPage() {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth() + 1;
+type TopPageProps = {
+  searchParams: Promise<{ year?: string; month?: string }>;
+};
+
+export default async function TopPage({ searchParams }: TopPageProps) {
+  const params = await searchParams;
+  const now = new Date();
+
+  const rawYear = Number(params.year);
+  const rawMonth = Number(params.month);
+  const year =
+    Number.isInteger(rawYear) && rawYear >= 2000 && rawYear <= 2100
+      ? rawYear
+      : now.getFullYear();
+  const month =
+    Number.isInteger(rawMonth) && rawMonth >= 1 && rawMonth <= 12
+      ? rawMonth
+      : now.getMonth() + 1;
 
   const supabase = await createClient();
   const eventRepo = createEventRepository(supabase);
@@ -19,20 +35,21 @@ export default async function TopPage() {
 
   const [monthEvents, todayEvents, onThisDayEvents] = await Promise.all([
     getEventsForMonth(eventRepo, memberRepo, year, month),
-    getTodayEvents(eventRepo, memberRepo, today),
-    getOnThisDay(eventRepo, today),
+    getTodayEvents(eventRepo, memberRepo, now),
+    getOnThisDay(eventRepo, now),
   ]);
 
   return (
     <div className="space-y-6">
-      <h1 className="text-xl font-bold text-foreground">Orbit</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold text-foreground">Orbit</h1>
+        <Suspense fallback={<div className="h-10" />}>
+          <MonthSelector year={year} month={month} />
+        </Suspense>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        <EventCalendar
-          events={monthEvents}
-          initialYear={year}
-          initialMonth={month}
-        />
+        <EventCalendar events={monthEvents} year={year} month={month} />
 
         <div className="space-y-6">
           <EventList
@@ -41,7 +58,7 @@ export default async function TopPage() {
             emptyMessage="今日のイベントはありません"
           />
 
-          <OnThisDay events={onThisDayEvents} today={today} />
+          <OnThisDay events={onThisDayEvents} today={now} />
         </div>
       </div>
     </div>

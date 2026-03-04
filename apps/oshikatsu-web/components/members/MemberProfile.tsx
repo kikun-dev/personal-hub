@@ -1,3 +1,4 @@
+import Image from "next/image";
 import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
@@ -15,9 +16,11 @@ export function MemberProfile({ member }: MemberProfileProps) {
       {/* ヘッダー */}
       <div className="flex items-start gap-4">
         {member.imageUrl ? (
-          <img
+          <Image
             src={member.imageUrl}
             alt={member.nameJa}
+            width={96}
+            height={96}
             className="h-24 w-24 rounded-full object-cover"
           />
         ) : (
