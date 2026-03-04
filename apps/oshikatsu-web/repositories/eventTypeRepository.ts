@@ -10,6 +10,8 @@ type EventTypeRow = {
   sort_order: number;
 };
 
+const EVENT_TYPE_SELECT = "id, name, color, sort_order";
+
 function mapToEventType(row: EventTypeRow): EventType {
   return {
     id: row.id,
@@ -26,7 +28,7 @@ export function createEventTypeRepository(
     async findAll() {
       const { data, error } = await supabase
         .from("orbit_event_types")
-        .select("*")
+        .select(EVENT_TYPE_SELECT)
         .order("sort_order");
 
       if (error) {

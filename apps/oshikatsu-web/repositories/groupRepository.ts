@@ -13,6 +13,8 @@ type GroupRow = {
   sort_order: number;
 };
 
+const GROUP_SELECT = "id, name_ja, name_en, color, is_active, successor_id, sort_order";
+
 function mapToGroup(row: GroupRow): Group {
   return {
     id: row.id,
@@ -32,7 +34,7 @@ export function createGroupRepository(
     async findAll() {
       const { data, error } = await supabase
         .from("orbit_groups")
-        .select("*")
+        .select(GROUP_SELECT)
         .order("sort_order");
 
       if (error) {
@@ -44,7 +46,7 @@ export function createGroupRepository(
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_groups")
-        .select("*")
+        .select(GROUP_SELECT)
         .eq("id", id)
         .single();
 

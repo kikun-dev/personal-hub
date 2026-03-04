@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
 import { formatTime } from "@/lib/formatters";
+import { BIRTHDAY_COLOR } from "@/lib/constants";
 
 type EventListProps = {
   events: CalendarEvent[];
@@ -26,7 +27,7 @@ export function EventList({
             <div key={i} className="flex items-start gap-2 text-sm">
               {event.type === "birthday" ? (
                 <>
-                  <Badge label="誕生日" color="#D946EF" />
+                  <Badge label="誕生日" color={BIRTHDAY_COLOR} />
                   <div>
                     <Link
                       href={`/members/${event.memberId}`}

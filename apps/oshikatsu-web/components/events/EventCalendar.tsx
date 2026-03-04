@@ -1,6 +1,7 @@
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
 import { formatMonthLabel } from "@/lib/formatters";
+import { BIRTHDAY_COLOR } from "@/lib/constants";
 
 type EventCalendarProps = {
   events: CalendarEvent[];
@@ -75,7 +76,7 @@ export function EventCalendar({ events, year, month }: EventCalendarProps) {
                       style={{
                         backgroundColor:
                           e.type === "birthday"
-                            ? "#D946EF"
+                            ? BIRTHDAY_COLOR
                             : e.eventTypeColor,
                       }}
                     />
