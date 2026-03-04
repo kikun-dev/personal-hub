@@ -20,8 +20,8 @@
 
 ### 未完了（マージ前後の対応）
 
-- [ ] Supabase で SQL マイグレーション実行（001〜003）
-- [ ] PR #29 レビュー・マージ
+- [x] Supabase で SQL マイグレーション実行（001〜003）
+- [x] PR #29 レビュー・マージ
 - [ ] Vercel デプロイ設定（oshikatsu-web）
 - [ ] Supabase Dashboard で本番 Redirect URL 追加
 - [ ] メンバーデータの初期投入
