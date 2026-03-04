@@ -81,6 +81,7 @@ export function OshikatsuDonutChart({ data }: OshikatsuDonutChartProps) {
             outerRadius={95}
             paddingAngle={1}
             dataKey="value"
+            legendType="none"
           >
             {outerData.map((entry, index) => (
               <Cell
