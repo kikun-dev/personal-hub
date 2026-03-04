@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@personal-hub/supabase/client";
 import { useRouter } from "next/navigation";
 
 type HeaderProps = {

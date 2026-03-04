@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@personal-hub/supabase/server";
 import { createTransactionRepository } from "@/repositories/transactionRepository";
 import { updateTransaction } from "@/usecases/updateTransaction";
 import { deleteTransaction } from "@/usecases/deleteTransaction";

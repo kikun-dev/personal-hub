@@ -10,12 +10,9 @@ importers:
 
   apps/household-web:
     dependencies:
-      '@supabase/ssr':
-        specifier: ^0.9.0
-        version: 0.9.0(@supabase/supabase-js@2.98.0)
-      '@supabase/supabase-js':
-        specifier: ^2.98.0
-        version: 2.98.0
+      '@personal-hub/supabase':
+        specifier: workspace:*
+        version: link:../../packages/supabase
       next:
         specifier: 16.1.6
         version: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
@@ -50,6 +47,22 @@ importers:
       tailwindcss:
         specifier: ^4
         version: 4.2.1
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+
+  packages/supabase:
+    dependencies:
+      '@supabase/ssr':
+        specifier: ^0.9.0
+        version: 0.9.0(@supabase/supabase-js@2.98.0)
+      '@supabase/supabase-js':
+        specifier: ^2.98.0
+        version: 2.98.0
+      next:
+        specifier: '>=15'
+        version: 16.1.6(@babel/core@7.29.0)(react-dom@19.2.3(react@19.2.3))(react@19.2.3)
+    devDependencies:
       typescript:
         specifier: ^5
         version: 5.9.3
