@@ -7,11 +7,11 @@
 
 ## Apps
 
-  Directory              Brand    Description            Status
-  ---------------------- -------- ---------------------- -------------
-  `apps/household-web`   Ledger   支出特化型の家計管理   In Progress
-  `apps/oshikatsu-web`   Orbit    推し活管理             Planned
-  `apps/tasks-web`       Flow     タスク管理             Planned
+| Directory | Brand | Description | Status |
+| --- | --- | --- | --- |
+| `apps/household-web` | Ledger | 支出特化型の家計管理 | In Progress |
+| `apps/oshikatsu-web` | Orbit | 推し活管理 | Planned |
+| `apps/tasks-web` | Flow | タスク管理 | Planned |
 
 ------------------------------------------------------------------------
 
