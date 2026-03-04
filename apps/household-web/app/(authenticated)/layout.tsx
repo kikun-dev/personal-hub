@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@personal-hub/supabase/server";
 import { Header } from "@/components/layout/Header";
 
 export default async function AuthenticatedLayout({

@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@personal-hub/supabase/server";
 import { createTransactionRepository } from "@/repositories/transactionRepository";
 import { calculateMonthlySummary } from "@/usecases/getMonthlySummary";
 import { MonthSelector } from "@/components/dashboard/MonthSelector";

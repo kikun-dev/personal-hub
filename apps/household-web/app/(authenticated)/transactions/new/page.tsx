@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@personal-hub/supabase/server";
 import { createCategoryRepository } from "@/repositories/categoryRepository";
 import { createPaymentMethodRepository } from "@/repositories/paymentMethodRepository";
 import { TransactionForm } from "@/components/transactions/TransactionForm";

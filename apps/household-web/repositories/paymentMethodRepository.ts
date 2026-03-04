@@ -1,4 +1,4 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@personal-hub/supabase";
 import type { PaymentMethod } from "@/types/paymentMethod";
 import type { PaymentMethodRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
