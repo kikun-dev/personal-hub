@@ -5,6 +5,7 @@ import { createEventRepository } from "@/repositories/eventRepository";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { MonthSelector } from "@/components/events/MonthSelector";
+import { parseMonthParams } from "@/lib/dateParams";
 import { formatDate } from "@/lib/formatters";
 
 type AdminEventsPageProps = {
@@ -15,18 +16,7 @@ export default async function AdminEventsPage({
   searchParams,
 }: AdminEventsPageProps) {
   const params = await searchParams;
-  const now = new Date();
-
-  const rawYear = Number(params.year);
-  const rawMonth = Number(params.month);
-  const year =
-    Number.isInteger(rawYear) && rawYear >= 2000 && rawYear <= 2100
-      ? rawYear
-      : now.getFullYear();
-  const month =
-    Number.isInteger(rawMonth) && rawMonth >= 1 && rawMonth <= 12
-      ? rawMonth
-      : now.getMonth() + 1;
+  const { year, month } = parseMonthParams(params);
 
   const supabase = await createClient();
   const repo = createEventRepository(supabase);

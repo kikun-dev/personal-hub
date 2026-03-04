@@ -9,6 +9,7 @@ import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
 import { OnThisDay } from "@/components/events/OnThisDay";
 import { MonthSelector } from "@/components/events/MonthSelector";
+import { parseMonthParams } from "@/lib/dateParams";
 
 type TopPageProps = {
   searchParams: Promise<{ year?: string; month?: string }>;
@@ -17,17 +18,7 @@ type TopPageProps = {
 export default async function TopPage({ searchParams }: TopPageProps) {
   const params = await searchParams;
   const now = new Date();
-
-  const rawYear = Number(params.year);
-  const rawMonth = Number(params.month);
-  const year =
-    Number.isInteger(rawYear) && rawYear >= 2000 && rawYear <= 2100
-      ? rawYear
-      : now.getFullYear();
-  const month =
-    Number.isInteger(rawMonth) && rawMonth >= 1 && rawMonth <= 12
-      ? rawMonth
-      : now.getMonth() + 1;
+  const { year, month } = parseMonthParams(params);
 
   const supabase = await createClient();
   const eventRepo = createEventRepository(supabase);

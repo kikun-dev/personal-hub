@@ -43,7 +43,7 @@
 
 ### 未完了（マージ前後の対応）
 
-- [ ] Supabase で SQL マイグレーション実行（004）
+- [x] Supabase で SQL マイグレーション実行（004）
 
 ### 残タスク（バリデーション強化）
 
@@ -59,6 +59,16 @@
 - [ ] `groupRepository`, `eventTypeRepository` の `select("*")` を明示的カラム指定に変更（P2）
 - [ ] Repository update の非アトミック操作を RPC 関数でトランザクション化（P1: create は補償処理済み）
 - [ ] Issue #27 の改善項目（Supabase 共有パッケージ）
+
+### 残タスク（UI/設定）
+
+- [ ] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（P2: 現在は `*.supabase.co`）
+- [ ] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）
+- [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）
+- [ ] 誕生日ドットの色 `#D946EF` を定数に抽出（P2）
+- [ ] Header ナビに admin/events リンクを追加検討（P2）
+- [ ] household-web の MonthSelector に `basePath` prop をバックポート（P2: cross-app 改善）
+- [ ] household-web の MonthSelector Suspense に fallback 追加（P2: cross-app 改善）
 
 ---
 

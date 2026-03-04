@@ -256,6 +256,8 @@ export function createEventRepository(
     },
 
     async findOnThisDay(month, day) {
+      // RPC で ID のみ取得 → 詳細データは通常の select で取得（2往復）
+      // 理由: RPC に結合型を持たせるとメンテが困難。データ量は数百件程度のため問題なし
       const { data: ids, error: rpcError } = await supabase
         .rpc("find_event_ids_on_this_day", {
           target_month: month,
