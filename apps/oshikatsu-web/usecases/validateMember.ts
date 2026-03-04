@@ -1,7 +1,11 @@
 import type { CreateMemberInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
-import { BLOOD_TYPES } from "@/lib/constants";
+import { BLOOD_TYPES, type BloodType } from "@/lib/constants";
 import { isValidHttpsUrl, isValidDateString } from "@/lib/validation";
+
+function isBloodType(value: string): value is BloodType {
+  return (BLOOD_TYPES as readonly string[]).includes(value);
+}
 
 export function validateMember(input: CreateMemberInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -41,12 +45,12 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     if (isNaN(h)) {
       errors.push({ field: "heightCm", message: "身長は数値で入力してください" });
     } else if (h <= 0 || h >= 300) {
-      errors.push({ field: "heightCm", message: "身長は0〜300cmの範囲で入力してください" });
+      errors.push({ field: "heightCm", message: "身長は0より大きく300未満の値で入力してください" });
     }
   }
 
-  if (input.bloodType && !(BLOOD_TYPES as readonly string[]).includes(input.bloodType)) {
-    errors.push({ field: "bloodType", message: "血液型はA, B, O, ABから選択してください" });
+  if (input.bloodType && !isBloodType(input.bloodType)) {
+    errors.push({ field: "bloodType", message: "血液型はA, B, O, AB, 不明から選択してください" });
   }
 
   if (input.dateOfBirth && !isValidDateString(input.dateOfBirth)) {

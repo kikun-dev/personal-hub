@@ -45,7 +45,7 @@
 
 - [x] Supabase で SQL マイグレーション実行（004）
 
-### 残タスク（バリデーション強化）— Issue #32 で対応済み
+### 残タスク（バリデーション強化）— Issue #32 → PR #35 で対応済み
 
 - [x] テキストフィールドの最大長チェック追加（P1: DB 側も TEXT 制約なし）
 - [x] `validateEvent` で `endDate >= date` チェック追加（P1）
@@ -53,14 +53,14 @@
 - [x] `bloodType` のサーバーサイドバリデーション追加（P2）
 - [x] `dateOfBirth` のフォーマットバリデーション追加（P2）
 
-### 残タスク（コード品質）— Issue #32 で一部対応済み
+### 残タスク（コード品質）— Issue #32 → PR #35 で一部対応済み
 
 - [x] `GROUP_COLORS` 定数の使用状況確認・整理（P2: 未使用のため削除）
 - [x] `groupRepository`, `eventTypeRepository` の `select("*")` を明示的カラム指定に変更（P2）
 - [ ] Repository update の非アトミック操作を RPC 関数でトランザクション化（P1: create は補償処理済み）
 - [ ] Issue #27 の改善項目（Supabase 共有パッケージ）
 
-### 残タスク（UI/設定）— Issue #32 / #33
+### 残タスク（UI/設定）— Issue #32 → PR #35 / Issue #33
 
 - [ ] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（P2: 現在は `*.supabase.co`）
 - [x] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）

@@ -169,6 +169,7 @@ export function MemberForm({
         label="名前（英語）"
         value={values.nameEn}
         onChange={(e) => update("nameEn", e.target.value)}
+        error={errors.nameEn}
       />
 
       <Input
@@ -177,6 +178,7 @@ export function MemberForm({
         type="date"
         value={values.dateOfBirth}
         onChange={(e) => update("dateOfBirth", e.target.value)}
+        error={errors.dateOfBirth}
       />
 
       <Select
@@ -186,6 +188,7 @@ export function MemberForm({
         options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt === "不明" ? "不明" : `${bt}型` }))}
         value={values.bloodType}
         onChange={(e) => update("bloodType", e.target.value)}
+        error={errors.bloodType}
       />
 
       <Input
@@ -202,6 +205,7 @@ export function MemberForm({
         label="出身地"
         value={values.hometown}
         onChange={(e) => update("hometown", e.target.value)}
+        error={errors.hometown}
       />
 
       <Input
@@ -210,6 +214,7 @@ export function MemberForm({
         type="url"
         value={values.imageUrl}
         onChange={(e) => update("imageUrl", e.target.value)}
+        error={errors.imageUrl}
       />
 
       <Input
@@ -218,6 +223,7 @@ export function MemberForm({
         type="url"
         value={values.blogUrl}
         onChange={(e) => update("blogUrl", e.target.value)}
+        error={errors.blogUrl}
       />
 
       {/* グループ所属 */}

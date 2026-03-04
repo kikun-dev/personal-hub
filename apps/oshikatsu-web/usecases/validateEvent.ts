@@ -1,6 +1,6 @@
 import type { CreateEventInput } from "@/types/event";
 import type { ValidationError } from "@/types/errors";
-import { isValidHttpUrl } from "@/lib/validation";
+import { isValidHttpUrl, isValidDateString } from "@/lib/validation";
 
 export function validateEvent(input: CreateEventInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -21,9 +21,13 @@ export function validateEvent(input: CreateEventInput): ValidationError[] {
 
   if (!input.date) {
     errors.push({ field: "date", message: "日付を選択してください" });
+  } else if (!isValidDateString(input.date)) {
+    errors.push({ field: "date", message: "日付はYYYY-MM-DD形式で入力してください" });
   }
 
-  if (input.endDate && input.date && input.endDate < input.date) {
+  if (input.endDate && !isValidDateString(input.endDate)) {
+    errors.push({ field: "endDate", message: "終了日はYYYY-MM-DD形式で入力してください" });
+  } else if (input.endDate && input.date && input.endDate < input.date) {
     errors.push({ field: "endDate", message: "終了日は開始日以降の日付を選択してください" });
   }
 

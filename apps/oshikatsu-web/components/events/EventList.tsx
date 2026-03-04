@@ -23,8 +23,8 @@ export function EventList({
         <p className="text-sm text-foreground/40">{emptyMessage}</p>
       ) : (
         <div className="space-y-2">
-          {events.map((event, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm">
+          {events.map((event) => (
+            <div key={event.type === "birthday" ? `birthday-${event.memberId}-${event.date}` : `event-${event.id}`} className="flex items-start gap-2 text-sm">
               {event.type === "birthday" ? (
                 <>
                   <Badge label="誕生日" color={BIRTHDAY_COLOR} />
