@@ -9,8 +9,8 @@
 
 | Directory | Brand | Description | Status |
 | --- | --- | --- | --- |
-| `apps/household-web` | Ledger | 支出特化型の家計管理 | In Progress |
-| `apps/oshikatsu-web` | Orbit | 推し活管理 | Planned |
+| `apps/household-web` | Ledger | 支出特化型の家計管理 | Deployed |
+| `apps/oshikatsu-web` | Orbit | 坂道グループ総合データベース | Phase 1 Complete |
 | `apps/tasks-web` | Flow | タスク管理 | Planned |
 
 ------------------------------------------------------------------------
@@ -23,6 +23,7 @@
 -   **Database / Auth**: Supabase (PostgreSQL + Google OAuth + RLS)
 -   **Package Manager**: pnpm (workspaces)
 -   **CI**: GitHub Actions
+-   **Deploy**: Vercel
 
 ------------------------------------------------------------------------
 
@@ -56,20 +57,31 @@ pnpm install
 
 ------------------------------------------------------------------------
 
+## Shared Packages
+
+| Directory | Name | Description |
+| --- | --- | --- |
+| `packages/supabase` | `@personal-hub/supabase` | Supabase クライアント・認証ユーティリティ |
+
+---
+
 ## Development
 
 ``` bash
 # 全アプリ起動
 pnpm dev
 
-# household-web のみ
-pnpm --filter household-web dev
+# 個別アプリ起動
+pnpm --filter household-web dev     # port 3000
+pnpm --filter oshikatsu-web dev     # port 3001
 
 # 型チェック
 pnpm --filter household-web typecheck
+pnpm --filter oshikatsu-web typecheck
 
 # Lint
 pnpm --filter household-web lint
+pnpm --filter oshikatsu-web lint
 ```
 
 ------------------------------------------------------------------------
@@ -78,10 +90,15 @@ pnpm --filter household-web lint
 
     personal-hub/
       apps/
+        household-web/       ← Ledger
+        oshikatsu-web/       ← Orbit
+        tasks-web/           ← Flow (未着手)
       packages/
+        supabase/            ← 認証・DB 共有パッケージ
       docs/
-        ai/
-        decisions/   ← ADR
+        ai/                  ← AI 向けドキュメント
+        decisions/           ← ADR（設計判断記録）
+        orbit-roadmap.md     ← Orbit ロードマップ・残タスク
       rules/
       .github/
 

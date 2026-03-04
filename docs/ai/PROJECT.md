@@ -30,9 +30,10 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - パッケージ管理：pnpm（workspaces）
 - データベース + 認証：Supabase（PostgreSQL + Google OAuth + RLS）
 - 状態管理：ライブラリなし（Server Components + useState + URL params）
-- チャート：recharts（Issue #22 で導入予定）
+- チャート：recharts（household-web で導入済み）
 - リポジトリ：GitHub（private）
-- CI：GitHub Actions（household-web 配下の変更時に typecheck / lint / build）
+- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build）
+- デプロイ：Vercel（household-web デプロイ済み）
 - IDE：VS Code（Remote WSL）
 
 ---
@@ -42,10 +43,11 @@ personal-hub は、日常生活を支える複数アプリを統合する
 ```
 personal-hub/
   apps/
-    household-web/        ← Ledger（実装済み）
-    oshikatsu-web/        ← Orbit（未着手）
+    household-web/        ← Ledger（実装済み・デプロイ済み）
+    oshikatsu-web/        ← Orbit（Phase 1 実装済み・PR #29）
     tasks-web/            ← Flow（未着手）
-  packages/               ← 共通パッケージ（将来）
+  packages/
+    supabase/             ← @personal-hub/supabase（認証・DB クライアント共有）
   docs/
     ai/                   ← AI向けドキュメント
     decisions/            ← ADR（設計判断記録）
@@ -55,7 +57,7 @@ personal-hub/
 ```
 
 - 各アプリは独立した Next.js アプリとして存在する
-- 将来的に共通パッケージ（packages 配下）を導入する可能性あり
+- `packages/supabase` は認証・DB クライアントの共有パッケージ（PR #26 で導入済み）
 
 ---
 
@@ -88,7 +90,37 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 
 ---
 
-## 6. 設計方針
+## 6. oshikatsu-web（Orbit）の現状
+
+### 機能（Phase 1）
+- **トップページ**（月間カレンダー + 今日のイベント + 今日はなんの日）
+- **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
+- **メンバー詳細**（プロフィール + グループ履歴）
+- **管理画面**（メンバー CRUD + イベント CRUD）
+- **Google ログイン**
+
+### アーキテクチャ（3層）
+household-web と同パターン。Repository に `userId` パラメータなし（グローバルデータ）。
+
+### DB テーブル（`orbit_` プレフィクス）
+- `orbit_groups` — グループ（5件。successor_id で改名関係）
+- `orbit_members` — メンバープロフィール
+- `orbit_member_groups` — メンバー×グループ（多対多）
+- `orbit_event_types` — イベント種別（10件）
+- `orbit_events` — イベント
+- `orbit_event_groups` — イベント×グループ
+- `orbit_event_members` — イベント×メンバー
+
+### RLS 方針
+グローバルデータのため `auth.role() = 'authenticated'` で統一。
+将来の公開時は SELECT を `true` に変更するだけ。
+
+### 今後の予定
+`docs/orbit-roadmap.md` を参照。設計判断は ADR 0005。
+
+---
+
+## 7. 設計方針
 
 - 可読性を最優先する
 - 境界（フォーム・API・外部入力）では必ずバリデーションを行う
@@ -98,21 +130,21 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 
 ---
 
-## 7. 決定済みの設計判断（ADR）
+## 8. 決定済みの設計判断（ADR）
 
 | ADR | タイトル | 状態 |
 |---|---|---|
 | 0001 | 基本アーキテクチャとAI分担方針 | Accepted |
 | 0002 | Supabase の採用（DB + 認証） | Accepted |
 | 0003 | 状態管理方針 | Accepted |
-| 0004 | チャートライブラリ（recharts）採用 | 予定（Issue #22） |
+| 0004 | チャートライブラリ（recharts）採用 | Accepted |
+| 0005 | Orbit Phase 1 設計 | Accepted |
 
 ---
 
-## 8. 非目標（現時点ではやらないこと）
+## 9. 非目標（現時点ではやらないこと）
 
 - Docker 導入
-- 本番デプロイ戦略決定
 - パフォーマンス最適化
 
 これらは設計完了後に検討する。
