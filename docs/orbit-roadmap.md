@@ -30,11 +30,33 @@
 
 ## Phase 1.5: 改善・安定化
 
-- [ ] カレンダー月切り替え時のサーバーデータ再取得（現在はクライアント側のみ）
-- [ ] 誕生日/OnThisDay クエリの RPC 関数化（データ量増加時）
+### パフォーマンス
+
+- [ ] カレンダー月切り替え時のサーバーデータ再取得（P1: 現在はクライアント側のみで別月はデータなし）
+- [ ] 誕生日/OnThisDay クエリの RPC 関数化（P1: 全件取得→アプリ側フィルタの改善）
+
+### バリデーション強化
+
+- [ ] テキストフィールドの最大長チェック追加（P1: DB 側も TEXT 制約なし）
+- [ ] `validateEvent` で `endDate >= date` チェック追加（P1）
+- [ ] `heightCm` の範囲チェック追加（P1: 0 < x < 300）
+- [ ] `bloodType` のサーバーサイドバリデーション追加（P2）
+- [ ] `dateOfBirth` のフォーマットバリデーション追加（P2）
+
+### UI/UX
+
 - [ ] `next/image` への移行（外部ドメイン設定が必要）
 - [ ] メンバー一覧のソート強化（現役→OG、期生順）
 - [ ] Header のモバイル対応（ハンバーガーメニュー等）
+- [ ] Admin events ページに月ナビゲーション追加（P2: 現在は当月のみ表示）
+- [ ] MemberForm/EventForm のグループ子フォームに安定した React key を使用（P2）
+- [ ] `MemberFilters` の `Suspense` に fallback 追加（P2）
+
+### コード品質
+
+- [ ] `GROUP_COLORS` 定数の使用状況確認・整理（P2: DB カラーと重複の可能性）
+- [ ] `groupRepository`, `eventTypeRepository` の `select("*")` を明示的カラム指定に変更（P2）
+- [ ] Repository update の非アトミック操作を RPC 関数でトランザクション化（P1: create は補償処理済み）
 - [ ] Issue #27 の改善項目（Supabase 共有パッケージ）
 
 ---
@@ -89,3 +111,5 @@
 | 全件取得フィルタ | 誕生日/OnThisDay で全メンバー/全イベントを取得 | データ量増加時に RPC 関数に移行 |
 | カレンダー月切り替え | クライアント側のみ。データは初期ロード時の月のみ | Phase 1.5 で Server Action or API Route で対応 |
 | middleware 非推奨警告 | Next.js 16 で `middleware.ts` が deprecated | middleware 削除時に `proxy.ts` に移行 |
+| Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | Phase 1.5 で RPC 関数化 |
+| `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |

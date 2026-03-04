@@ -172,6 +172,8 @@ export function createMemberRepository(
           .insert(groupRows);
 
         if (groupError) {
+          // 補償処理: グループ登録失敗時は作成したメンバーを削除
+          await supabase.from("orbit_members").delete().eq("id", member.id);
           throw new RepositoryError("メンバーのグループ登録に失敗しました", groupError);
         }
       }

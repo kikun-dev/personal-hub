@@ -143,6 +143,8 @@ export function createEventRepository(
             }))
           );
         if (groupError) {
+          // 補償処理: グループ登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
+          await supabase.from("orbit_events").delete().eq("id", event.id);
           throw new RepositoryError("イベントのグループ登録に失敗しました", groupError);
         }
       }
@@ -157,6 +159,8 @@ export function createEventRepository(
             }))
           );
         if (memberError) {
+          // 補償処理: メンバー登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
+          await supabase.from("orbit_events").delete().eq("id", event.id);
           throw new RepositoryError("イベントのメンバー登録に失敗しました", memberError);
         }
       }
