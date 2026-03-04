@@ -3,8 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createTransactionRepository } from "@/repositories/transactionRepository";
 import { calculateMonthlySummary } from "@/usecases/getMonthlySummary";
 import { MonthSelector } from "@/components/dashboard/MonthSelector";
-import { TransactionSummary } from "@/components/dashboard/TransactionSummary";
-import { TransactionList } from "@/components/transactions/TransactionList";
+import { DashboardContent } from "@/components/dashboard/DashboardContent";
 
 type DashboardPageProps = {
   searchParams: Promise<{ year?: string; month?: string }>;
@@ -45,14 +44,7 @@ export default async function DashboardPage({
         </Suspense>
       </div>
 
-      <TransactionSummary summary={summary} />
-
-      <div>
-        <h2 className="mb-3 text-sm font-medium text-foreground/60">
-          取引一覧
-        </h2>
-        <TransactionList transactions={transactions} />
-      </div>
+      <DashboardContent summary={summary} transactions={transactions} />
     </div>
   );
 }
