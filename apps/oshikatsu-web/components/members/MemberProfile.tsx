@@ -63,7 +63,7 @@ export function MemberProfile({ member }: MemberProfileProps) {
           {member.bloodType && (
             <>
               <dt className="text-foreground/50">血液型</dt>
-              <dd className="text-foreground">{member.bloodType}型</dd>
+              <dd className="text-foreground">{member.bloodType === "不明" ? "不明" : `${member.bloodType}型`}</dd>
             </>
           )}
           {member.heightCm && (

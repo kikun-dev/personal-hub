@@ -183,7 +183,7 @@ export function MemberForm({
         id="bloodType"
         label="血液型"
         placeholder="選択してください"
-        options={BLOOD_TYPES.map((bt) => ({ value: bt, label: `${bt}型` }))}
+        options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt === "不明" ? "不明" : `${bt}型` }))}
         value={values.bloodType}
         onChange={(e) => update("bloodType", e.target.value)}
       />
