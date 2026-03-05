@@ -21,6 +21,7 @@ type MemberSnsRow = {
   sns_type: string;
   display_name: string;
   url: string;
+  hashtag: string | null;
   sort_order: number;
 };
 
@@ -48,6 +49,10 @@ type MemberRow = {
   hometown: string | null;
   image_url: string | null;
   blog_url: string | null;
+  blog_hashtag: string | null;
+  talk_app_name: string | null;
+  talk_app_url: string | null;
+  talk_app_hashtag: string | null;
   orbit_member_groups: MemberGroupRow[];
   orbit_member_sns?: MemberSnsRow[];
   orbit_member_regular_works?: MemberRegularWorkRow[];
@@ -81,6 +86,10 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
     hometown: row.hometown,
     imageUrl: row.image_url,
     blogUrl: row.blog_url,
+    blogHashtag: row.blog_hashtag,
+    talkAppName: row.talk_app_name,
+    talkAppUrl: row.talk_app_url,
+    talkAppHashtag: row.talk_app_hashtag,
     groups: (row.orbit_member_groups ?? []).map(mapToMemberGroup),
     sns: (row.orbit_member_sns ?? [])
       .map((sns) => ({
@@ -88,6 +97,7 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
         snsType: sns.sns_type as SnsType,
         displayName: sns.display_name,
         url: sns.url,
+        hashtag: sns.hashtag ?? "",
         sortOrder: sns.sort_order,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder),
@@ -119,6 +129,7 @@ const MEMBER_SELECT = `
     sns_type,
     display_name,
     url,
+    hashtag,
     sort_order
   ),
   orbit_member_regular_works(
@@ -168,7 +179,7 @@ export function createMemberRepository(
 
   async function replaceMemberSns(
     memberId: string,
-    inputSns: { snsType: string; displayName: string; url: string }[]
+    inputSns: { snsType: string; displayName: string; url: string; hashtag: string }[]
   ): Promise<void> {
     const { error: deleteError } = await supabase
       .from("orbit_member_sns")
@@ -186,6 +197,7 @@ export function createMemberRepository(
       sns_type: sns.snsType,
       display_name: sns.displayName,
       url: sns.url,
+      hashtag: sns.hashtag || null,
       sort_order: index,
     }));
 
@@ -313,6 +325,10 @@ export function createMemberRepository(
           hometown: input.hometown || null,
           image_url: input.imageUrl || null,
           blog_url: input.blogUrl || null,
+          blog_hashtag: input.blogHashtag || null,
+          talk_app_name: input.talkAppName || null,
+          talk_app_url: input.talkAppUrl || null,
+          talk_app_hashtag: input.talkAppHashtag || null,
         })
         .select("id")
         .single();
@@ -357,6 +373,10 @@ export function createMemberRepository(
           hometown: input.hometown || null,
           image_url: input.imageUrl || null,
           blog_url: input.blogUrl || null,
+          blog_hashtag: input.blogHashtag || null,
+          talk_app_name: input.talkAppName || null,
+          talk_app_url: input.talkAppUrl || null,
+          talk_app_hashtag: input.talkAppHashtag || null,
         })
         .eq("id", id);
 

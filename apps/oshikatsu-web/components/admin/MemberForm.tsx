@@ -64,6 +64,10 @@ function getDefaultValues(): FormValues {
     hometown: "",
     imageUrl: "",
     blogUrl: "",
+    blogHashtag: "",
+    talkAppName: "",
+    talkAppUrl: "",
+    talkAppHashtag: "",
     groups: [
       withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
     ],
@@ -94,6 +98,7 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
       snsType: sns.snsType,
       displayName: sns.displayName,
       url: sns.url,
+      hashtag: sns.hashtag,
     })),
     regularWorks: form.regularWorks.map((work) => ({
       workType: work.workType,
@@ -209,7 +214,10 @@ export function MemberForm({
   const addSns = () => {
     setValues((prev) => ({
       ...prev,
-      sns: [...prev.sns, withSnsKey({ snsType: "x", displayName: "", url: "" })],
+      sns: [
+        ...prev.sns,
+        withSnsKey({ snsType: "x", displayName: "", url: "", hashtag: "" }),
+      ],
     }));
   };
 
@@ -395,6 +403,38 @@ export function MemberForm({
         onChange={(e) => update("blogUrl", e.target.value)}
         error={errors.blogUrl}
       />
+      <Input
+        id="blogHashtag"
+        label="ブログ ハッシュタグ"
+        placeholder="#example"
+        value={values.blogHashtag}
+        onChange={(e) => update("blogHashtag", e.target.value)}
+        error={errors.blogHashtag}
+      />
+
+      <Input
+        id="talkAppName"
+        label="トークアプリ名"
+        value={values.talkAppName}
+        onChange={(e) => update("talkAppName", e.target.value)}
+        error={errors.talkAppName}
+      />
+      <Input
+        id="talkAppUrl"
+        label="トークアプリ URL"
+        type="url"
+        value={values.talkAppUrl}
+        onChange={(e) => update("talkAppUrl", e.target.value)}
+        error={errors.talkAppUrl}
+      />
+      <Input
+        id="talkAppHashtag"
+        label="トークアプリ ハッシュタグ"
+        placeholder="#example"
+        value={values.talkAppHashtag}
+        onChange={(e) => update("talkAppHashtag", e.target.value)}
+        error={errors.talkAppHashtag}
+      />
 
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -509,6 +549,14 @@ export function MemberForm({
               value={sns.url}
               onChange={(e) => updateSns(i, "url", e.target.value)}
               error={errors[`sns.${i}.url`]}
+            />
+            <Input
+              id={`snsHashtag-${i}`}
+              label="ハッシュタグ"
+              placeholder="#example"
+              value={sns.hashtag}
+              onChange={(e) => updateSns(i, "hashtag", e.target.value)}
+              error={errors[`sns.${i}.hashtag`]}
             />
           </div>
         ))}

@@ -142,30 +142,54 @@ export function MemberProfile({ member }: MemberProfileProps) {
       </Card>
 
       {/* 外部リンク */}
-      {(member.blogUrl || member.sns.length > 0) && (
+      {(member.blogUrl || member.sns.length > 0 || member.talkAppUrl) && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">リンク</h2>
           <div className="space-y-2 text-sm">
             {member.blogUrl && (
-              <a
-                href={member.blogUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-500 hover:underline"
-              >
-                ブログ
-              </a>
+              <div>
+                <a
+                  href={member.blogUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-500 hover:underline"
+                >
+                  ブログ
+                </a>
+                {member.blogHashtag && (
+                  <p className="text-xs text-foreground/50">{member.blogHashtag}</p>
+                )}
+              </div>
+            )}
+            {member.talkAppUrl && (
+              <div>
+                <a
+                  href={member.talkAppUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-500 hover:underline"
+                >
+                  {member.talkAppName || "トークアプリ"}
+                </a>
+                {member.talkAppHashtag && (
+                  <p className="text-xs text-foreground/50">{member.talkAppHashtag}</p>
+                )}
+              </div>
             )}
             {member.sns.map((sns) => (
-              <a
-                key={sns.id}
-                href={sns.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block text-blue-500 hover:underline"
-              >
-                {sns.displayName} ({sns.snsType})
-              </a>
+              <div key={sns.id}>
+                <a
+                  href={sns.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block text-blue-500 hover:underline"
+                >
+                  {sns.displayName} ({sns.snsType})
+                </a>
+                {sns.hashtag && (
+                  <p className="text-xs text-foreground/50">{sns.hashtag}</p>
+                )}
+              </div>
             ))}
           </div>
         </Card>

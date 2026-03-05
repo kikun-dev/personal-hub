@@ -42,6 +42,10 @@ export default async function EditMemberPage({
     hometown: member.hometown ?? "",
     imageUrl: member.imageUrl ?? "",
     blogUrl: member.blogUrl ?? "",
+    blogHashtag: member.blogHashtag ?? "",
+    talkAppName: member.talkAppName ?? "",
+    talkAppUrl: member.talkAppUrl ?? "",
+    talkAppHashtag: member.talkAppHashtag ?? "",
     groups: member.groups.map((g) => ({
       groupId: g.groupId,
       generation: g.generation ?? "",
@@ -52,6 +56,7 @@ export default async function EditMemberPage({
       snsType: sns.snsType,
       displayName: sns.displayName,
       url: sns.url,
+      hashtag: sns.hashtag,
     })),
     regularWorks: member.regularWorks.map((work) => ({
       workType: work.workType,

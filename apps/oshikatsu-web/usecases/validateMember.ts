@@ -8,7 +8,11 @@ import {
   type SnsType,
   type RegularWorkType,
 } from "@/lib/constants";
-import { isValidHttpsUrl, isValidDateString } from "@/lib/validation";
+import {
+  isValidHttpsUrl,
+  isValidDateString,
+  isValidHashtag,
+} from "@/lib/validation";
 
 function isBloodType(value: string): value is BloodType {
   return (BLOOD_TYPES as readonly string[]).includes(value);
@@ -100,6 +104,19 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
   if (input.blogUrl && !isValidHttpsUrl(input.blogUrl)) {
     errors.push({ field: "blogUrl", message: "ブログURLはhttpsで始まる有効なURLを入力してください" });
   }
+  if (input.blogHashtag && !isValidHashtag(input.blogHashtag)) {
+    errors.push({ field: "blogHashtag", message: "ブログのハッシュタグは#から始めて入力してください" });
+  }
+
+  if (input.talkAppName && input.talkAppName.length > 100) {
+    errors.push({ field: "talkAppName", message: "トークアプリ名は100文字以内で入力してください" });
+  }
+  if (input.talkAppUrl && !isValidHttpsUrl(input.talkAppUrl)) {
+    errors.push({ field: "talkAppUrl", message: "トークアプリURLはhttpsで始まる有効なURLを入力してください" });
+  }
+  if (input.talkAppHashtag && !isValidHashtag(input.talkAppHashtag)) {
+    errors.push({ field: "talkAppHashtag", message: "トークアプリのハッシュタグは#から始めて入力してください" });
+  }
 
   for (let i = 0; i < input.sns.length; i++) {
     const sns = input.sns[i];
@@ -119,6 +136,10 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
       errors.push({ field: `sns.${i}.url`, message: "SNS URLを入力してください" });
     } else if (!isValidHttpsUrl(sns.url)) {
       errors.push({ field: `sns.${i}.url`, message: "SNS URLはhttpsで始まる有効なURLを入力してください" });
+    }
+
+    if (sns.hashtag && !isValidHashtag(sns.hashtag)) {
+      errors.push({ field: `sns.${i}.hashtag`, message: "SNSハッシュタグは#から始めて入力してください" });
     }
   }
 

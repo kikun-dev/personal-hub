@@ -15,6 +15,10 @@ export type Member = {
   hometown: string | null;
   imageUrl: string | null;
   blogUrl: string | null;
+  blogHashtag: string | null;
+  talkAppName: string | null;
+  talkAppUrl: string | null;
+  talkAppHashtag: string | null;
 };
 
 export type MemberGroup = {
@@ -38,6 +42,7 @@ export type MemberSns = {
   snsType: SnsType;
   displayName: string;
   url: string;
+  hashtag: string;
   sortOrder: number;
 };
 
@@ -64,6 +69,10 @@ export type CreateMemberInput = {
   hometown: string;
   imageUrl: string;
   blogUrl: string;
+  blogHashtag: string;
+  talkAppName: string;
+  talkAppUrl: string;
+  talkAppHashtag: string;
   groups: CreateMemberGroupInput[];
   sns: CreateMemberSnsInput[];
   regularWorks: CreateMemberRegularWorkInput[];
@@ -80,6 +89,7 @@ export type CreateMemberSnsInput = {
   snsType: SnsType;
   displayName: string;
   url: string;
+  hashtag: string;
 };
 
 export type CreateMemberRegularWorkInput = {

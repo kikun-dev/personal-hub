@@ -25,3 +25,7 @@ export function isValidDateString(value: string): boolean {
   // new Date("2025-02-30") → 2025-03-02 のようなずれを検出
   return date.toISOString().startsWith(value);
 }
+
+export function isValidHashtag(value: string): boolean {
+  return value.startsWith("#") && value.length > 1;
+}
