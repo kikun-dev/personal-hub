@@ -21,6 +21,19 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const { year, month, day } = parseCalendarDateParams(params, now);
   const selectedDate = new Date(year, month - 1, day);
   const selectedDateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  const isSelectedToday =
+    year === now.getFullYear() &&
+    month === now.getMonth() + 1 &&
+    day === now.getDate();
+  const eventListTitle = isSelectedToday
+    ? "今日のイベント"
+    : `${month}/${day}のイベント`;
+  const eventListEmptyMessage = isSelectedToday
+    ? "今日のイベントはありません"
+    : `${month}/${day}のイベントはありません`;
+  const onThisDayTitle = isSelectedToday
+    ? "今日はなんの日"
+    : `${month}/${day}はなんの日`;
 
   const supabase = await createClient();
   const eventRepo = createEventRepository(supabase);
@@ -52,14 +65,14 @@ export default async function TopPage({ searchParams }: TopPageProps) {
         <div className="space-y-6">
           <EventList
             events={selectedDateEvents}
-            title={`${month}/${day}のイベント`}
-            emptyMessage={`${month}/${day}のイベントはありません`}
+            title={eventListTitle}
+            emptyMessage={eventListEmptyMessage}
           />
 
           <OnThisDay
             events={onThisDayEvents}
             selectedDate={selectedDate}
-            title={`${month}/${day}はなんの日`}
+            title={onThisDayTitle}
           />
         </div>
       </div>
