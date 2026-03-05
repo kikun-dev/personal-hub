@@ -9,7 +9,10 @@ import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
 import { OnThisDay } from "@/components/events/OnThisDay";
 import { MonthSelector } from "@/components/events/MonthSelector";
-import { parseCalendarDateParams } from "@/lib/dateParams";
+import {
+  getTodayInAppTimeZone,
+  parseCalendarDateParams,
+} from "@/lib/dateParams";
 
 type TopPageProps = {
   searchParams: Promise<{ year?: string; month?: string; day?: string }>;
@@ -17,7 +20,7 @@ type TopPageProps = {
 
 export default async function TopPage({ searchParams }: TopPageProps) {
   const params = await searchParams;
-  const now = new Date();
+  const now = getTodayInAppTimeZone();
   const { year, month, day } = parseCalendarDateParams(params, now);
   const selectedDate = new Date(year, month - 1, day);
   const selectedDateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;

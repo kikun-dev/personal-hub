@@ -3,6 +3,7 @@ import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
 import { formatMonthLabel } from "@/lib/formatters";
 import { BIRTHDAY_COLOR } from "@/lib/constants";
+import { getTodayInAppTimeZone } from "@/lib/dateParams";
 
 type EventCalendarProps = {
   events: CalendarEvent[];
@@ -20,7 +21,7 @@ export function EventCalendar({
   selectedDateStr,
 }: EventCalendarProps) {
   const weeks = generateCalendarGrid(year, month);
-  const today = new Date();
+  const today = getTodayInAppTimeZone();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   const eventsByDate = new Map<string, CalendarEvent[]>();

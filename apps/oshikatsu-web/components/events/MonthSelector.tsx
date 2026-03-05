@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatMonthLabel } from "@/lib/formatters";
-import { getDaysInMonth } from "@/lib/dateParams";
+import { getDaysInMonth, getTodayInAppTimeZone } from "@/lib/dateParams";
 
 type MonthSelectorProps = {
   year: number;
@@ -88,7 +88,7 @@ export function MonthSelector({
   };
 
   const handleToday = () => {
-    const now = new Date();
+    const now = getTodayInAppTimeZone();
     navigate(
       now.getFullYear(),
       now.getMonth() + 1,
