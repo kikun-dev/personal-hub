@@ -42,6 +42,14 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
     } else if (!isSongPosition(m.position)) {
       errors.push({ field: `members.${i}.position`, message: "無効なポジションです" });
     }
+
+    const positionOrder = Number(m.positionOrder);
+    if (!Number.isInteger(positionOrder) || positionOrder < 0) {
+      errors.push({
+        field: `members.${i}.positionOrder`,
+        message: "表示順は0以上の整数で入力してください",
+      });
+    }
   }
 
   // 重複メンバーチェック
