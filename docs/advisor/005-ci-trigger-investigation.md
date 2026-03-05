@@ -36,6 +36,7 @@
 確認結果:
 - `event=pull_request` + `branch=feature/top-date-selection` の runs は `total_count: 0`
 - つまり PR イベントに対する Actions run 自体が作成されていない
+- 追加検証: 遅延後に作成された run `22730947350` は `event=pull_request` かつ `headSha=a3cdef2884de0c5c1701801cceefd26c4ac84e86`（PR #42 最新コミット）であり、PRイベント処理遅延として整合
 
 ## 3. 切り分け対応
 
