@@ -60,11 +60,44 @@ export function MemberProfile({ member }: MemberProfileProps) {
               </dd>
             </>
           )}
+          {member.zodiac && (
+            <>
+              <dt className="text-foreground/50">星座</dt>
+              <dd className="text-foreground">{member.zodiac}</dd>
+            </>
+          )}
           {/* null: 未入力（非表示）、"不明": ユーザーが明示的に選択（表示） */}
           {member.bloodType && (
             <>
               <dt className="text-foreground/50">血液型</dt>
               <dd className="text-foreground">{member.bloodType === "不明" ? "不明" : `${member.bloodType}型`}</dd>
+            </>
+          )}
+          {member.callName && (
+            <>
+              <dt className="text-foreground/50">コール名</dt>
+              <dd className="text-foreground">{member.callName}</dd>
+            </>
+          )}
+          {member.penlightColor1 && member.penlightColor2 && (
+            <>
+              <dt className="text-foreground/50">サイリウム</dt>
+              <dd className="flex items-center gap-2 text-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    className="inline-block h-3 w-3 rounded-full border border-foreground/20"
+                    style={{ backgroundColor: member.penlightColor1 }}
+                  />
+                  {member.penlightColor1}
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span
+                    className="inline-block h-3 w-3 rounded-full border border-foreground/20"
+                    style={{ backgroundColor: member.penlightColor2 }}
+                  />
+                  {member.penlightColor2}
+                </span>
+              </dd>
             </>
           )}
           {member.heightCm && (
@@ -109,17 +142,50 @@ export function MemberProfile({ member }: MemberProfileProps) {
       </Card>
 
       {/* 外部リンク */}
-      {member.blogUrl && (
+      {(member.blogUrl || member.sns.length > 0) && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">リンク</h2>
-          <a
-            href={member.blogUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:underline"
-          >
-            ブログ
-          </a>
+          <div className="space-y-2 text-sm">
+            {member.blogUrl && (
+              <a
+                href={member.blogUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-blue-500 hover:underline"
+              >
+                ブログ
+              </a>
+            )}
+            {member.sns.map((sns) => (
+              <a
+                key={sns.id}
+                href={sns.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block text-blue-500 hover:underline"
+              >
+                {sns.displayName} ({sns.snsType})
+              </a>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* レギュラー仕事 */}
+      {member.regularWorks.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">レギュラー仕事</h2>
+          <div className="space-y-2">
+            {member.regularWorks.map((work) => (
+              <div key={work.id} className="rounded-lg border border-foreground/10 p-3">
+                <p className="text-sm font-medium text-foreground">{work.name}</p>
+                <p className="text-xs text-foreground/50">{work.workType}</p>
+                <p className="text-xs text-foreground/50">
+                  {formatDate(work.startDate)} 〜 {work.endDate ? formatDate(work.endDate) : "継続中"}
+                </p>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
     </div>

@@ -2,17 +2,29 @@
 
 import { useState } from "react";
 import type { Group } from "@/types/group";
-import type { CreateMemberInput, CreateMemberGroupInput } from "@/types/member";
+import type {
+  CreateMemberInput,
+  CreateMemberGroupInput,
+  CreateMemberSnsInput,
+  CreateMemberRegularWorkInput,
+} from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { BLOOD_TYPES } from "@/lib/constants";
+import { BLOOD_TYPES, SNS_TYPES, REGULAR_WORK_TYPES } from "@/lib/constants";
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
+type SnsWithKey = CreateMemberSnsInput & { _key: string };
+type RegularWorkWithKey = CreateMemberRegularWorkInput & { _key: string };
 
-type FormValues = Omit<CreateMemberInput, "groups"> & {
+type FormValues = Omit<
+  CreateMemberInput,
+  "groups" | "sns" | "regularWorks"
+> & {
   groups: GroupWithKey[];
+  sns: SnsWithKey[];
+  regularWorks: RegularWorkWithKey[];
 };
 
 type MemberFormProps = {
@@ -24,8 +36,18 @@ type MemberFormProps = {
   ) => Promise<{ errors?: ValidationError[] }>;
 };
 
-function withKey(group: CreateMemberGroupInput): GroupWithKey {
+function withGroupKey(group: CreateMemberGroupInput): GroupWithKey {
   return { ...group, _key: crypto.randomUUID() };
+}
+
+function withSnsKey(sns: CreateMemberSnsInput): SnsWithKey {
+  return { ...sns, _key: crypto.randomUUID() };
+}
+
+function withRegularWorkKey(
+  work: CreateMemberRegularWorkInput
+): RegularWorkWithKey {
+  return { ...work, _key: crypto.randomUUID() };
 }
 
 function getDefaultValues(): FormValues {
@@ -35,18 +57,27 @@ function getDefaultValues(): FormValues {
     nameEn: "",
     dateOfBirth: "",
     bloodType: "",
+    callName: "",
+    penlightColor1: "",
+    penlightColor2: "",
     heightCm: "",
     hometown: "",
     imageUrl: "",
     blogUrl: "",
-    groups: [withKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" })],
+    groups: [
+      withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
+    ],
+    sns: [],
+    regularWorks: [],
   };
 }
 
 function toFormValues(input: CreateMemberInput): FormValues {
   return {
     ...input,
-    groups: input.groups.map(withKey),
+    groups: input.groups.map(withGroupKey),
+    sns: input.sns.map(withSnsKey),
+    regularWorks: input.regularWorks.map(withRegularWorkKey),
   };
 }
 
@@ -54,11 +85,22 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
   return {
     ...form,
     groups: form.groups.map((g) => ({
-    groupId: g.groupId,
-    generation: g.generation,
-    joinedAt: g.joinedAt,
-    graduatedAt: g.graduatedAt,
-  })),
+      groupId: g.groupId,
+      generation: g.generation,
+      joinedAt: g.joinedAt,
+      graduatedAt: g.graduatedAt,
+    })),
+    sns: form.sns.map((sns) => ({
+      snsType: sns.snsType,
+      displayName: sns.displayName,
+      url: sns.url,
+    })),
+    regularWorks: form.regularWorks.map((work) => ({
+      workType: work.workType,
+      name: work.name,
+      startDate: work.startDate,
+      endDate: work.endDate,
+    })),
   };
 }
 
@@ -69,10 +111,26 @@ export function MemberForm({
   onSubmit,
 }: MemberFormProps) {
   const [values, setValues] = useState<FormValues>(
-    () => initialValues ? toFormValues(initialValues) : getDefaultValues()
+    () => (initialValues ? toFormValues(initialValues) : getDefaultValues())
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const mainGroupId = values.groups[0]?.groupId ?? "";
+  const mainGroup = groups.find((group) => group.id === mainGroupId);
+  const penlightOptions = (mainGroup?.penlightColors ?? []).map((color) => ({
+    value: color.hex,
+    label: `${color.name} (${color.hex})`,
+  }));
+
+  const generationOptions = (groupId: string) => {
+    const group = groups.find((g) => g.id === groupId);
+    const maxGeneration = group?.maxGeneration ?? 20;
+    return Array.from({ length: maxGeneration }, (_, i) => ({
+      value: String(i + 1),
+      label: `${i + 1}期`,
+    }));
+  };
 
   const update = <K extends keyof FormValues>(
     field: K,
@@ -94,12 +152,22 @@ export function MemberForm({
     setValues((prev) => {
       const newGroups = [...prev.groups];
       newGroups[index] = { ...newGroups[index], [field]: value };
+      if (field === "groupId" && newGroups[index].generation) {
+        const options = generationOptions(value);
+        if (!options.some((option) => option.value === newGroups[index].generation)) {
+          newGroups[index].generation = "";
+        }
+      }
       return { ...prev, groups: newGroups };
     });
     setErrors((prev) => {
       const next = { ...prev };
       delete next[`groups.${index}.${field}`];
       delete next["groups"];
+      if (field === "groupId") {
+        delete next.penlightColor1;
+        delete next.penlightColor2;
+      }
       return next;
     });
   };
@@ -109,7 +177,7 @@ export function MemberForm({
       ...prev,
       groups: [
         ...prev.groups,
-        withKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
+        withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
       ],
     }));
   };
@@ -118,6 +186,76 @@ export function MemberForm({
     setValues((prev) => ({
       ...prev,
       groups: prev.groups.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateSns = (
+    index: number,
+    field: keyof CreateMemberSnsInput,
+    value: string
+  ) => {
+    setValues((prev) => {
+      const next = [...prev.sns];
+      next[index] = { ...next[index], [field]: value };
+      return { ...prev, sns: next };
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`sns.${index}.${field}`];
+      return next;
+    });
+  };
+
+  const addSns = () => {
+    setValues((prev) => ({
+      ...prev,
+      sns: [...prev.sns, withSnsKey({ snsType: "x", displayName: "", url: "" })],
+    }));
+  };
+
+  const removeSns = (index: number) => {
+    setValues((prev) => ({
+      ...prev,
+      sns: prev.sns.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateRegularWork = (
+    index: number,
+    field: keyof CreateMemberRegularWorkInput,
+    value: string
+  ) => {
+    setValues((prev) => {
+      const next = [...prev.regularWorks];
+      next[index] = { ...next[index], [field]: value };
+      return { ...prev, regularWorks: next };
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`regularWorks.${index}.${field}`];
+      return next;
+    });
+  };
+
+  const addRegularWork = () => {
+    setValues((prev) => ({
+      ...prev,
+      regularWorks: [
+        ...prev.regularWorks,
+        withRegularWorkKey({
+          workType: "tv",
+          name: "",
+          startDate: "",
+          endDate: "",
+        }),
+      ],
+    }));
+  };
+
+  const removeRegularWork = (index: number) => {
+    setValues((prev) => ({
+      ...prev,
+      regularWorks: prev.regularWorks.filter((_, i) => i !== index),
     }));
   };
 
@@ -173,6 +311,14 @@ export function MemberForm({
       />
 
       <Input
+        id="callName"
+        label="コール名"
+        value={values.callName}
+        onChange={(e) => update("callName", e.target.value)}
+        error={errors.callName}
+      />
+
+      <Input
         id="dateOfBirth"
         label="生年月日"
         type="date"
@@ -185,11 +331,35 @@ export function MemberForm({
         id="bloodType"
         label="血液型"
         placeholder="選択してください"
-        options={BLOOD_TYPES.map((bt) => ({ value: bt, label: bt === "不明" ? "不明" : `${bt}型` }))}
+        options={BLOOD_TYPES.map((bt) => ({
+          value: bt,
+          label: bt === "不明" ? "不明" : `${bt}型`,
+        }))}
         value={values.bloodType}
         onChange={(e) => update("bloodType", e.target.value)}
         error={errors.bloodType}
       />
+
+      <div className="grid grid-cols-2 gap-3">
+        <Select
+          id="penlightColor1"
+          label="サイリウムカラー1*"
+          placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
+          options={penlightOptions}
+          value={values.penlightColor1}
+          onChange={(e) => update("penlightColor1", e.target.value)}
+          error={errors.penlightColor1}
+        />
+        <Select
+          id="penlightColor2"
+          label="サイリウムカラー2*"
+          placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
+          options={penlightOptions}
+          value={values.penlightColor2}
+          onChange={(e) => update("penlightColor2", e.target.value)}
+          error={errors.penlightColor2}
+        />
+      </div>
 
       <Input
         id="heightCm"
@@ -226,29 +396,22 @@ export function MemberForm({
         error={errors.blogUrl}
       />
 
-      {/* グループ所属 */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">
-            グループ所属*
-          </label>
+          <label className="text-sm font-medium text-foreground/70">グループ所属*</label>
           <Button type="button" variant="ghost" onClick={addGroup}>
             + 追加
           </Button>
         </div>
-        {errors.groups && (
-          <p className="text-xs text-red-500">{errors.groups}</p>
-        )}
+        {errors.groups && <p className="text-xs text-red-500">{errors.groups}</p>}
 
-        {values.groups.map((g, i) => (
+        {values.groups.map((groupValue, i) => (
           <div
-            key={g._key}
+            key={groupValue._key}
             className="space-y-3 rounded-lg border border-foreground/10 p-3"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground/50">
-                グループ {i + 1}
-              </span>
+              <span className="text-xs text-foreground/50">グループ {i + 1}</span>
               {values.groups.length > 1 && (
                 <button
                   type="button"
@@ -259,6 +422,7 @@ export function MemberForm({
                 </button>
               )}
             </div>
+
             <Select
               id={`group-${i}`}
               label="グループ"
@@ -267,30 +431,34 @@ export function MemberForm({
                 value: group.id,
                 label: group.nameJa,
               }))}
-              value={g.groupId}
+              value={groupValue.groupId}
               onChange={(e) => updateGroup(i, "groupId", e.target.value)}
               error={errors[`groups.${i}.groupId`]}
             />
-            <Input
+
+            <Select
               id={`generation-${i}`}
               label="期生"
-              placeholder="例: 1期生"
-              value={g.generation}
+              placeholder={groupValue.groupId ? "選択してください" : "先にグループを選択"}
+              options={generationOptions(groupValue.groupId)}
+              value={groupValue.generation}
               onChange={(e) => updateGroup(i, "generation", e.target.value)}
+              error={errors[`groups.${i}.generation`]}
             />
+
             <div className="grid grid-cols-2 gap-3">
               <Input
                 id={`joinedAt-${i}`}
                 label="加入日"
                 type="date"
-                value={g.joinedAt}
+                value={groupValue.joinedAt}
                 onChange={(e) => updateGroup(i, "joinedAt", e.target.value)}
               />
               <Input
                 id={`graduatedAt-${i}`}
                 label="卒業日"
                 type="date"
-                value={g.graduatedAt}
+                value={groupValue.graduatedAt}
                 onChange={(e) => updateGroup(i, "graduatedAt", e.target.value)}
               />
             </div>
@@ -298,12 +466,117 @@ export function MemberForm({
         ))}
       </div>
 
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground/70">SNS</label>
+          <Button type="button" variant="ghost" onClick={addSns}>
+            + 追加
+          </Button>
+        </div>
+
+        {values.sns.map((sns, i) => (
+          <div key={sns._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-foreground/50">SNS {i + 1}</span>
+              <button
+                type="button"
+                onClick={() => removeSns(i)}
+                className="text-xs text-red-500 hover:text-red-600"
+              >
+                削除
+              </button>
+            </div>
+            <Select
+              id={`snsType-${i}`}
+              label="種類"
+              placeholder="選択してください"
+              options={SNS_TYPES.map((type) => ({ value: type.value, label: type.label }))}
+              value={sns.snsType}
+              onChange={(e) => updateSns(i, "snsType", e.target.value)}
+              error={errors[`sns.${i}.snsType`]}
+            />
+            <Input
+              id={`snsDisplayName-${i}`}
+              label="表示名"
+              value={sns.displayName}
+              onChange={(e) => updateSns(i, "displayName", e.target.value)}
+              error={errors[`sns.${i}.displayName`]}
+            />
+            <Input
+              id={`snsUrl-${i}`}
+              label="URL"
+              type="url"
+              value={sns.url}
+              onChange={(e) => updateSns(i, "url", e.target.value)}
+              error={errors[`sns.${i}.url`]}
+            />
+          </div>
+        ))}
+      </div>
+
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground/70">レギュラー仕事</label>
+          <Button type="button" variant="ghost" onClick={addRegularWork}>
+            + 追加
+          </Button>
+        </div>
+
+        {values.regularWorks.map((work, i) => (
+          <div key={work._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-foreground/50">仕事 {i + 1}</span>
+              <button
+                type="button"
+                onClick={() => removeRegularWork(i)}
+                className="text-xs text-red-500 hover:text-red-600"
+              >
+                削除
+              </button>
+            </div>
+            <Select
+              id={`workType-${i}`}
+              label="種別"
+              placeholder="選択してください"
+              options={REGULAR_WORK_TYPES.map((type) => ({
+                value: type.value,
+                label: type.label,
+              }))}
+              value={work.workType}
+              onChange={(e) => updateRegularWork(i, "workType", e.target.value)}
+              error={errors[`regularWorks.${i}.workType`]}
+            />
+            <Input
+              id={`workName-${i}`}
+              label="名前"
+              value={work.name}
+              onChange={(e) => updateRegularWork(i, "name", e.target.value)}
+              error={errors[`regularWorks.${i}.name`]}
+            />
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                id={`workStartDate-${i}`}
+                label="開始日"
+                type="date"
+                value={work.startDate}
+                onChange={(e) => updateRegularWork(i, "startDate", e.target.value)}
+                error={errors[`regularWorks.${i}.startDate`]}
+              />
+              <Input
+                id={`workEndDate-${i}`}
+                label="終了日"
+                type="date"
+                value={work.endDate}
+                onChange={(e) => updateRegularWork(i, "endDate", e.target.value)}
+                error={errors[`regularWorks.${i}.endDate`]}
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+
       <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting
-          ? "保存中..."
-          : mode === "create"
-            ? "登録する"
-            : "更新する"}
+        {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}
       </Button>
     </form>
   );

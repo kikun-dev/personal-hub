@@ -35,6 +35,9 @@ export default async function EditMemberPage({
     nameEn: member.nameEn ?? "",
     dateOfBirth: member.dateOfBirth ?? "",
     bloodType: member.bloodType ?? "",
+    callName: member.callName ?? "",
+    penlightColor1: member.penlightColor1 ?? "",
+    penlightColor2: member.penlightColor2 ?? "",
     heightCm: member.heightCm?.toString() ?? "",
     hometown: member.hometown ?? "",
     imageUrl: member.imageUrl ?? "",
@@ -44,6 +47,17 @@ export default async function EditMemberPage({
       generation: g.generation ?? "",
       joinedAt: g.joinedAt ?? "",
       graduatedAt: g.graduatedAt ?? "",
+    })),
+    sns: member.sns.map((sns) => ({
+      snsType: sns.snsType,
+      displayName: sns.displayName,
+      url: sns.url,
+    })),
+    regularWorks: member.regularWorks.map((work) => ({
+      workType: work.workType,
+      name: work.name,
+      startDate: work.startDate,
+      endDate: work.endDate ?? "",
     })),
   };
 

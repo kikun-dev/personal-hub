@@ -3,17 +3,29 @@ import type { Group } from "@/types/group";
 import type { GroupRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 
+type GroupPenlightColorRow = {
+  id: string;
+  name: string;
+  hex: string;
+  sort_order: number;
+};
+
 type GroupRow = {
   id: string;
   name_ja: string;
   name_en: string | null;
   color: string;
+  max_generation: number | null;
   is_active: boolean;
   successor_id: string | null;
   sort_order: number;
+  orbit_group_penlight_colors?: GroupPenlightColorRow[];
 };
 
-const GROUP_SELECT = "id, name_ja, name_en, color, is_active, successor_id, sort_order";
+const GROUP_SELECT = `
+  id, name_ja, name_en, color, max_generation, is_active, successor_id, sort_order,
+  orbit_group_penlight_colors(id, name, hex, sort_order)
+`;
 
 function mapToGroup(row: GroupRow): Group {
   return {
@@ -21,9 +33,18 @@ function mapToGroup(row: GroupRow): Group {
     nameJa: row.name_ja,
     nameEn: row.name_en,
     color: row.color,
+    maxGeneration: row.max_generation,
     isActive: row.is_active,
     successorId: row.successor_id,
     sortOrder: row.sort_order,
+    penlightColors: (row.orbit_group_penlight_colors ?? [])
+      .map((color) => ({
+        id: color.id,
+        name: color.name,
+        hex: color.hex,
+        sortOrder: color.sort_order,
+      }))
+      .sort((a, b) => a.sortOrder - b.sortOrder),
   };
 }
 

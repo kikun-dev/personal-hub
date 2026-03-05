@@ -3,6 +3,7 @@ import type { MemberWithGroups, UpdateMemberInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import type { Result } from "@/types/result";
 import { validateMember } from "./validateMember";
+import { calculateZodiac } from "@/lib/zodiac";
 
 export async function updateMember(
   repo: MemberRepository,
@@ -14,6 +15,9 @@ export async function updateMember(
     return { ok: false, errors };
   }
 
-  const member = await repo.update(id, input);
+  const member = await repo.update(id, {
+    ...input,
+    zodiac: calculateZodiac(input.dateOfBirth) ?? "",
+  });
   return { ok: true, data: member };
 }
