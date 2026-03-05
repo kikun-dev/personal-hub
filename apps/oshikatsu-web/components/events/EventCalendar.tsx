@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
 import { formatMonthLabel } from "@/lib/formatters";
@@ -7,11 +8,17 @@ type EventCalendarProps = {
   events: CalendarEvent[];
   year: number;
   month: number;
+  selectedDateStr: string;
 };
 
 const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"];
 
-export function EventCalendar({ events, year, month }: EventCalendarProps) {
+export function EventCalendar({
+  events,
+  year,
+  month,
+  selectedDateStr,
+}: EventCalendarProps) {
   const weeks = generateCalendarGrid(year, month);
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
@@ -48,6 +55,11 @@ export function EventCalendar({ events, year, month }: EventCalendarProps) {
         {weeks.flat().map((day) => {
           const dayEvents = eventsByDate.get(day.dateStr) ?? [];
           const isToday = day.dateStr === todayStr;
+          const isSelected = day.dateStr === selectedDateStr;
+          const [targetYear, targetMonth, targetDay] = day.dateStr
+            .split("-")
+            .map((v) => Number(v));
+          const href = `/?year=${targetYear}&month=${targetMonth}&day=${targetDay}`;
 
           return (
             <div
@@ -58,15 +70,18 @@ export function EventCalendar({ events, year, month }: EventCalendarProps) {
                   : "text-foreground/20"
               }`}
             >
-              <span
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                  isToday
+              <Link
+                href={href}
+                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs transition-colors hover:bg-foreground/10 ${
+                  isSelected
                     ? "bg-foreground font-bold text-background"
-                    : ""
+                    : isToday
+                      ? "ring-1 ring-foreground/40"
+                      : ""
                 }`}
               >
                 {day.date}
-              </span>
+              </Link>
               {dayEvents.length > 0 && (
                 <div className="mt-0.5 flex justify-center gap-0.5">
                   {dayEvents.slice(0, 3).map((e, i) => (

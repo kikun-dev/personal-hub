@@ -22,8 +22,8 @@
 
 - [x] Supabase で SQL マイグレーション実行（001〜003）
 - [x] PR #29 レビュー・マージ
-- [ ] Vercel デプロイ設定（oshikatsu-web）
-- [ ] Supabase Dashboard で本番 Redirect URL 追加
+- [x] Vercel デプロイ設定（oshikatsu-web）
+- [x] Supabase Dashboard で本番 Redirect URL 追加
 - [ ] メンバーデータの初期投入
 
 ---
@@ -62,6 +62,7 @@
 
 ### 残タスク（UI/設定）— Issue #32 → PR #35 / Issue #33
 
+- [x] トップ画面: 日付選択連動（選択日のイベント/なんの日更新 + Today ボタン）— Issue #40 → PR #41
 - [ ] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（P2: 現在は `*.supabase.co`）
 - [x] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）
 - [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）
