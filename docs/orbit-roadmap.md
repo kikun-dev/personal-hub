@@ -62,6 +62,7 @@
 
 ### 残タスク（UI/設定）— Issue #32 → PR #35 / Issue #33
 
+- [ ] トップ画面: 日付選択連動（選択日のイベント/なんの日更新 + Today ボタン）— Issue #40
 - [ ] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（P2: 現在は `*.supabase.co`）
 - [x] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）
 - [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）

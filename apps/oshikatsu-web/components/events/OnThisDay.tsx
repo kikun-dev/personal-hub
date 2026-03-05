@@ -3,22 +3,27 @@ import { Badge } from "@/components/ui/Badge";
 
 type OnThisDayProps = {
   events: Event[];
-  today: Date;
+  selectedDate: Date;
+  title?: string;
+  emptyMessage?: string;
 };
 
-export function OnThisDay({ events, today }: OnThisDayProps) {
-  const currentYear = today.getFullYear();
+export function OnThisDay({
+  events,
+  selectedDate,
+  title = "今日はなんの日",
+  emptyMessage = "過去のイベントはありません",
+}: OnThisDayProps) {
+  const currentYear = selectedDate.getFullYear();
 
   return (
     <div className="rounded-lg border border-foreground/10 bg-background p-4">
       <h2 className="mb-3 text-sm font-medium text-foreground/70">
-        今日はなんの日
+        {title}
       </h2>
 
       {events.length === 0 ? (
-        <p className="text-sm text-foreground/40">
-          過去のイベントはありません
-        </p>
+        <p className="text-sm text-foreground/40">{emptyMessage}</p>
       ) : (
         <div className="space-y-2">
           {events.map((event) => {

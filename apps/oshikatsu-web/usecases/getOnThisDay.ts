@@ -3,11 +3,11 @@ import type { Event } from "@/types/event";
 
 export async function getOnThisDay(
   repo: EventRepository,
-  today: Date
+  targetDate: Date
 ): Promise<Event[]> {
-  const month = today.getMonth() + 1;
-  const day = today.getDate();
-  const currentYear = today.getFullYear();
+  const month = targetDate.getMonth() + 1;
+  const day = targetDate.getDate();
+  const currentYear = targetDate.getFullYear();
 
   const events = await repo.findOnThisDay(month, day);
 
