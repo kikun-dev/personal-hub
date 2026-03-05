@@ -25,7 +25,8 @@ export function Header({ userEmail }: HeaderProps) {
   const navItems = [
     { href: "/", label: "トップ" },
     { href: "/members", label: "メンバー" },
-    { href: "/admin/members", label: "管理" },
+    { href: "/songs", label: "楽曲" },
+    { href: "/admin", label: "管理" },
   ];
 
   const isActive = (href: string) =>
