@@ -2,6 +2,7 @@ import type { Group } from "./group";
 import type { MemberWithGroups, CreateMemberInput, UpdateMemberInput, MemberFilters } from "./member";
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
+import type { Song, CreateSongInput, UpdateSongInput, SongFilters } from "./song";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -30,4 +31,13 @@ export type EventRepository = {
 
 export type EventTypeRepository = {
   findAll(): Promise<EventType[]>;
+};
+
+export type SongRepository = {
+  findAll(filters?: SongFilters): Promise<Song[]>;
+  findById(id: string): Promise<Song | null>;
+  create(input: CreateSongInput): Promise<Song>;
+  update(id: string, input: UpdateSongInput): Promise<Song>;
+  delete(id: string): Promise<void>;
+  findByMemberId(memberId: string): Promise<Song[]>;
 };
