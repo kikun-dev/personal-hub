@@ -42,8 +42,11 @@ export function MonthSelector({
   };
 
   const currentDay = (() => {
-    const rawDay = Number(searchParams.get("day"));
-    if (Number.isInteger(rawDay)) return rawDay;
+    const dayParam = searchParams.get("day");
+    if (dayParam !== null) {
+      const rawDay = Number(dayParam);
+      if (Number.isInteger(rawDay)) return rawDay;
+    }
     return day ?? 1;
   })();
 
