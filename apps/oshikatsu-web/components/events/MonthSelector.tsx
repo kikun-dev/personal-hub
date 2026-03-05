@@ -21,6 +21,7 @@ export function MonthSelector({
 }: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  // day を使う画面（トップ）と使わない画面（管理）を同一コンポーネントで扱う。
   const hasDayContext = searchParams.has("day") || day !== undefined;
 
   const navigate = (newYear: number, newMonth: number, newDay?: number) => {
