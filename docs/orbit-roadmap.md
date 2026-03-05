@@ -66,7 +66,7 @@
 - [x] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）
 - [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）
 - [x] 誕生日ドットの色 `#D946EF` を定数に抽出（P2）
-- [ ] Header ナビに admin/events リンクを追加検討（P2）
+- [x] Header ナビに「管理」→ `/admin` ハブに変更、「楽曲」リンク追加（Phase 2 で対応）
 - [ ] household-web の MonthSelector に `basePath` prop をバックポート（P2: cross-app 改善）
 - [ ] household-web の MonthSelector Suspense に fallback 追加（P2: cross-app 改善）
 
@@ -74,15 +74,26 @@
 
 ## Phase 2: コンテンツ拡充
 
-### 楽曲データベース
+### 楽曲データベース — PR #37 で対応済み（Issue #36）
 
-| テーブル（想定） | 説明 |
-|---|---|
-| `orbit_songs` | 楽曲（タイトル, 作詞, 作曲, リリース日） |
-| `orbit_song_members` | 楽曲×メンバー（ポジション: センター/フロント/アンダー 等） |
+#### 完了済み
 
-- 楽曲一覧・詳細ページ
-- メンバー詳細ページに参加楽曲セクション追加
+- [x] DB マイグレーション（`orbit_songs`, `orbit_song_groups`, `orbit_song_members`）
+- [x] 楽曲は複数グループに所属可能（M:N）
+- [x] フォーメーション表示（ポジション: フロント/2列目/3列目/アンダー + センター★マーク）
+- [x] 型定義 + 定数（`Song`, `SongMember`, `SONG_POSITIONS`）
+- [x] Repository 層（CRUD + `findByMemberId`）
+- [x] UseCase 層（validate / create / update / delete / list / get）
+- [x] Admin ハブページ（`/admin` — メンバー/イベント/楽曲管理への入口）
+- [x] 楽曲管理画面（一覧 / 作成 / 編集 / 削除）
+- [x] SongForm フォーメーションビルダー（ポジション別メンバー追加・並び替え・センター指定）
+- [x] 楽曲公開ページ（一覧 + グループフィルタ / 詳細 + フォーメーション表示）
+- [x] Supabase マイグレーション実行（006, 007）
+- [x] RPC 関数本体の `public.` スキーマ修飾修正（007）
+
+#### 未完了
+
+- [ ] メンバー詳細ページに参加楽曲セクション追加
 
 ### リリース作品
 
