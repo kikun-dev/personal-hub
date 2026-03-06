@@ -3,10 +3,10 @@ import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
-import { GROUP_PENLIGHT_COLOR_NAMES } from "@/lib/constants";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
+  mainGroupPenlightColorNames?: string[];
 };
 
 const CIRCLED_NUMBERS = [
@@ -21,10 +21,12 @@ function formatPenlightLabel(colorName: string, orderedColorNames: string[]): st
   return `${prefix}${colorName}`;
 }
 
-export function MemberProfile({ member }: MemberProfileProps) {
+export function MemberProfile({
+  member,
+  mainGroupPenlightColorNames = [],
+}: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
-  const mainGroupName = member.groups[0]?.groupNameJa ?? "";
-  const orderedPenlightColors = GROUP_PENLIGHT_COLOR_NAMES[mainGroupName] ?? [];
+  const orderedPenlightColors = mainGroupPenlightColorNames;
   const hasOutgoingInfo = Boolean(
     member.blogUrl ||
       member.blogHashtag ||

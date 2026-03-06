@@ -10,10 +10,15 @@ type MemberGroupRow = {
   generation: string | null;
   joined_at: string | null;
   graduated_at: string | null;
-  orbit_groups: {
-    name_ja: string;
-    color: string;
-  };
+  orbit_groups:
+    | {
+        name_ja: string;
+        color: string;
+      }
+    | Array<{
+        name_ja: string;
+        color: string;
+      }>;
 };
 
 type MemberSnsRow = {
@@ -58,12 +63,74 @@ type MemberRow = {
   orbit_member_regular_works?: MemberRegularWorkRow[];
 };
 
+type MemberGroupRpcInput = {
+  group_id: string;
+  generation: string | null;
+  joined_at: string | null;
+  graduated_at: string | null;
+};
+
+type MemberSnsRpcInput = {
+  sns_type: string;
+  display_name: string;
+  url: string;
+  hashtag: string | null;
+  sort_order: number;
+};
+
+type MemberRegularWorkRpcInput = {
+  work_type: string;
+  name: string;
+  start_date: string;
+  end_date: string | null;
+  sort_order: number;
+};
+
+function toMemberGroupRpcInput(
+  groups: { groupId: string; generation: string; joinedAt: string; graduatedAt: string }[]
+): MemberGroupRpcInput[] {
+  return groups.map((group) => ({
+    group_id: group.groupId,
+    generation: group.generation || null,
+    joined_at: group.joinedAt || null,
+    graduated_at: group.graduatedAt || null,
+  }));
+}
+
+function toMemberSnsRpcInput(
+  snsList: { snsType: string; displayName: string; url: string; hashtag: string }[]
+): MemberSnsRpcInput[] {
+  return snsList.map((sns, index) => ({
+    sns_type: sns.snsType,
+    display_name: sns.displayName,
+    url: sns.url,
+    hashtag: sns.hashtag || null,
+    sort_order: index,
+  }));
+}
+
+function toMemberRegularWorkRpcInput(
+  works: { workType: string; name: string; startDate: string; endDate: string }[]
+): MemberRegularWorkRpcInput[] {
+  return works.map((work, index) => ({
+    work_type: work.workType,
+    name: work.name,
+    start_date: work.startDate,
+    end_date: work.endDate || null,
+    sort_order: index,
+  }));
+}
+
 function mapToMemberGroup(row: MemberGroupRow): MemberGroup {
+  const orbitGroup = Array.isArray(row.orbit_groups)
+    ? row.orbit_groups[0]
+    : row.orbit_groups;
+
   return {
     id: row.id,
     groupId: row.group_id,
-    groupNameJa: row.orbit_groups.name_ja,
-    groupColor: row.orbit_groups.color,
+    groupNameJa: orbitGroup?.name_ja ?? "",
+    groupColor: orbitGroup?.color ?? "#6B7280",
     generation: row.generation,
     joinedAt: row.joined_at,
     graduatedAt: row.graduated_at,
@@ -114,8 +181,28 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
   };
 }
 
-const MEMBER_SELECT = `
-  *,
+const MEMBER_BASE_SELECT = `
+  id,
+  name_ja,
+  name_kana,
+  name_en,
+  date_of_birth,
+  zodiac,
+  blood_type,
+  call_name,
+  penlight_color_1,
+  penlight_color_2,
+  height_cm,
+  hometown,
+  image_url,
+  blog_url,
+  blog_hashtag,
+  talk_app_name,
+  talk_app_url,
+  talk_app_hashtag
+`;
+
+const MEMBER_GROUPS_SELECT = `
   orbit_member_groups(
     id,
     group_id,
@@ -123,7 +210,10 @@ const MEMBER_SELECT = `
     joined_at,
     graduated_at,
     orbit_groups(name_ja, color)
-  ),
+  )
+`;
+
+const MEMBER_SNS_SELECT = `
   orbit_member_sns(
     id,
     sns_type,
@@ -131,7 +221,10 @@ const MEMBER_SELECT = `
     url,
     hashtag,
     sort_order
-  ),
+  )
+`;
+
+const MEMBER_REGULAR_WORKS_SELECT = `
   orbit_member_regular_works(
     id,
     work_type,
@@ -140,6 +233,18 @@ const MEMBER_SELECT = `
     end_date,
     sort_order
   )
+`;
+
+const MEMBER_LIST_SELECT = `
+  ${MEMBER_BASE_SELECT},
+  ${MEMBER_GROUPS_SELECT}
+`;
+
+const MEMBER_DETAIL_SELECT = `
+  ${MEMBER_BASE_SELECT},
+  ${MEMBER_GROUPS_SELECT},
+  ${MEMBER_SNS_SELECT},
+  ${MEMBER_REGULAR_WORKS_SELECT}
 `;
 
 export function createMemberRepository(
@@ -247,7 +352,7 @@ export function createMemberRepository(
     async findAll(filters) {
       let query = supabase
         .from("orbit_members")
-        .select(MEMBER_SELECT)
+        .select(MEMBER_LIST_SELECT)
         .order("name_kana");
 
       if (filters?.groupId) {
@@ -295,7 +400,7 @@ export function createMemberRepository(
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_members")
-        .select(MEMBER_SELECT)
+        .select(MEMBER_DETAIL_SELECT)
         .eq("id", id)
         .single();
 
@@ -357,36 +462,33 @@ export function createMemberRepository(
     },
 
     async update(id, input) {
-      const { error: memberError } = await supabase
-        .from("orbit_members")
-        .update({
-          name_ja: input.nameJa,
-          name_kana: input.nameKana,
-          name_en: input.nameEn || null,
-          date_of_birth: input.dateOfBirth || null,
-          zodiac: input.zodiac || null,
-          blood_type: input.bloodType || null,
-          call_name: input.callName || null,
-          penlight_color_1: input.penlightColor1 || null,
-          penlight_color_2: input.penlightColor2 || null,
-          height_cm: input.heightCm ? Number(input.heightCm) : null,
-          hometown: input.hometown || null,
-          image_url: input.imageUrl || null,
-          blog_url: input.blogUrl || null,
-          blog_hashtag: input.blogHashtag || null,
-          talk_app_name: input.talkAppName || null,
-          talk_app_url: input.talkAppUrl || null,
-          talk_app_hashtag: input.talkAppHashtag || null,
-        })
-        .eq("id", id);
+      const { error: rpcError } = await supabase.rpc("update_member_with_relations", {
+        p_member_id: id,
+        p_name_ja: input.nameJa,
+        p_name_kana: input.nameKana,
+        p_name_en: input.nameEn || null,
+        p_date_of_birth: input.dateOfBirth || null,
+        p_zodiac: input.zodiac || null,
+        p_blood_type: input.bloodType || null,
+        p_call_name: input.callName || null,
+        p_penlight_color_1: input.penlightColor1 || null,
+        p_penlight_color_2: input.penlightColor2 || null,
+        p_height_cm: input.heightCm ? Number(input.heightCm) : null,
+        p_hometown: input.hometown || null,
+        p_image_url: input.imageUrl || null,
+        p_blog_url: input.blogUrl || null,
+        p_blog_hashtag: input.blogHashtag || null,
+        p_talk_app_name: input.talkAppName || null,
+        p_talk_app_url: input.talkAppUrl || null,
+        p_talk_app_hashtag: input.talkAppHashtag || null,
+        p_groups: toMemberGroupRpcInput(input.groups),
+        p_sns: toMemberSnsRpcInput(input.sns),
+        p_regular_works: toMemberRegularWorkRpcInput(input.regularWorks),
+      });
 
-      if (memberError) {
-        throw new RepositoryError("メンバーの更新に失敗しました", memberError);
+      if (rpcError) {
+        throw new RepositoryError("メンバーの更新に失敗しました", rpcError);
       }
-
-      await replaceMemberGroups(id, input.groups);
-      await replaceMemberSns(id, input.sns);
-      await replaceMemberRegularWorks(id, input.regularWorks);
 
       const updated = await this.findById(id);
       if (!updated) {
@@ -420,7 +522,7 @@ export function createMemberRepository(
 
       const { data, error } = await supabase
         .from("orbit_members")
-        .select(MEMBER_SELECT)
+        .select(MEMBER_LIST_SELECT)
         .in("id", ids)
         .order("date_of_birth");
 
@@ -446,7 +548,7 @@ export function createMemberRepository(
 
       const { data, error } = await supabase
         .from("orbit_members")
-        .select(MEMBER_SELECT)
+        .select(MEMBER_LIST_SELECT)
         .in("id", ids)
         .order("name_kana");
 

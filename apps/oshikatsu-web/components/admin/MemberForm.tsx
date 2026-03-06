@@ -16,8 +16,6 @@ import {
   BLOOD_TYPES,
   SNS_TYPES,
   REGULAR_WORK_TYPES,
-  GROUP_MAX_GENERATIONS,
-  GROUP_PENLIGHT_COLOR_NAMES,
 } from "@/lib/constants";
 import { calculateZodiac } from "@/lib/zodiac";
 
@@ -140,18 +138,10 @@ export function MemberForm({
 
   const mainGroupId = values.groups[0]?.groupId ?? "";
   const mainGroup = groups.find((group) => group.id === mainGroupId);
-  const fixedPenlightNames =
-    (mainGroup && GROUP_PENLIGHT_COLOR_NAMES[mainGroup.nameJa]) ?? [];
-  const penlightOptions =
-    fixedPenlightNames.length > 0
-      ? fixedPenlightNames.map((name, index) => ({
-          value: name,
-          label: buildOrderedLabel(index, name),
-        }))
-      : (mainGroup?.penlightColors ?? []).map((color, index) => ({
-          value: color.hex,
-          label: buildOrderedLabel(index, color.name),
-        }));
+  const penlightOptions = (mainGroup?.penlightColors ?? []).map((color, index) => ({
+    value: color.name,
+    label: buildOrderedLabel(index, color.name),
+  }));
 
   const zodiacPreview = values.dateOfBirth
     ? calculateZodiac(values.dateOfBirth) ?? ""
@@ -159,9 +149,7 @@ export function MemberForm({
 
   const generationOptions = (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
-    const maxGeneration = group
-      ? (GROUP_MAX_GENERATIONS[group.nameJa] ?? group.maxGeneration ?? 20)
-      : 20;
+    const maxGeneration = group?.maxGeneration ?? 20;
     return Array.from({ length: maxGeneration }, (_, i) => ({
       value: String(i + 1),
       label: `${i + 1}期`,
