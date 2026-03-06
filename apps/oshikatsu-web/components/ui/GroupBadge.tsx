@@ -7,6 +7,6 @@ type GroupBadgeProps = {
 };
 
 export function GroupBadge({ groupName, groupColor, generation }: GroupBadgeProps) {
-  const label = generation ? `${groupName} ${generation}` : groupName;
+  const label = generation ? `${groupName} ${generation}期生` : groupName;
   return <Badge label={label} color={groupColor} />;
 }

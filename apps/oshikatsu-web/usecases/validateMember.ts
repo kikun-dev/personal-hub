@@ -1,10 +1,31 @@
 import type { CreateMemberInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
-import { BLOOD_TYPES, type BloodType } from "@/lib/constants";
-import { isValidHttpsUrl, isValidDateString } from "@/lib/validation";
+import {
+  BLOOD_TYPES,
+  SNS_TYPES,
+  REGULAR_WORK_TYPES,
+  type BloodType,
+  type SnsType,
+  type RegularWorkType,
+} from "@/lib/constants";
+import {
+  isValidHttpsUrl,
+  isValidDateString,
+  isValidHashtag,
+} from "@/lib/validation";
 
 function isBloodType(value: string): value is BloodType {
   return (BLOOD_TYPES as readonly string[]).includes(value);
+}
+
+function isSnsType(value: string): value is SnsType {
+  return (SNS_TYPES as readonly { value: string }[]).some((type) => type.value === value);
+}
+
+function isRegularWorkType(value: string): value is RegularWorkType {
+  return (REGULAR_WORK_TYPES as readonly { value: string }[]).some(
+    (type) => type.value === value
+  );
 }
 
 export function validateMember(input: CreateMemberInput): ValidationError[] {
@@ -26,8 +47,19 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     errors.push({ field: "nameEn", message: "名前（英語）は100文字以内で入力してください" });
   }
 
+  if (input.callName && input.callName.length > 100) {
+    errors.push({ field: "callName", message: "コール名は100文字以内で入力してください" });
+  }
+
   if (input.hometown && input.hometown.length > 100) {
     errors.push({ field: "hometown", message: "出身地は100文字以内で入力してください" });
+  }
+
+  if (!input.penlightColor1.trim()) {
+    errors.push({ field: "penlightColor1", message: "サイリウムカラー1を選択してください" });
+  }
+  if (!input.penlightColor2.trim()) {
+    errors.push({ field: "penlightColor2", message: "サイリウムカラー2を選択してください" });
   }
 
   if (input.groups.length === 0) {
@@ -35,8 +67,16 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
   }
 
   for (let i = 0; i < input.groups.length; i++) {
-    if (!input.groups[i].groupId) {
+    const group = input.groups[i];
+    if (!group.groupId) {
       errors.push({ field: `groups.${i}.groupId`, message: "グループを選択してください" });
+    }
+
+    if (group.generation) {
+      const generation = Number(group.generation);
+      if (!Number.isInteger(generation) || generation <= 0 || generation > 50) {
+        errors.push({ field: `groups.${i}.generation`, message: "期生は1〜50の整数で選択してください" });
+      }
     }
   }
 
@@ -63,6 +103,77 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
 
   if (input.blogUrl && !isValidHttpsUrl(input.blogUrl)) {
     errors.push({ field: "blogUrl", message: "ブログURLはhttpsで始まる有効なURLを入力してください" });
+  }
+  if (input.blogHashtag && !isValidHashtag(input.blogHashtag)) {
+    errors.push({ field: "blogHashtag", message: "ブログのハッシュタグは#から始めて入力してください" });
+  }
+
+  if (input.talkAppName && input.talkAppName.length > 100) {
+    errors.push({ field: "talkAppName", message: "トークアプリ名は100文字以内で入力してください" });
+  }
+  if (input.talkAppUrl && !isValidHttpsUrl(input.talkAppUrl)) {
+    errors.push({ field: "talkAppUrl", message: "トークアプリURLはhttpsで始まる有効なURLを入力してください" });
+  }
+  if (input.talkAppHashtag && !isValidHashtag(input.talkAppHashtag)) {
+    errors.push({ field: "talkAppHashtag", message: "トークアプリのハッシュタグは#から始めて入力してください" });
+  }
+
+  for (let i = 0; i < input.sns.length; i++) {
+    const sns = input.sns[i];
+    if (!sns.snsType) {
+      errors.push({ field: `sns.${i}.snsType`, message: "SNS種別を選択してください" });
+    } else if (!isSnsType(sns.snsType)) {
+      errors.push({ field: `sns.${i}.snsType`, message: "無効なSNS種別です" });
+    }
+
+    if (!sns.displayName.trim()) {
+      errors.push({ field: `sns.${i}.displayName`, message: "SNS表示名を入力してください" });
+    } else if (sns.displayName.length > 100) {
+      errors.push({ field: `sns.${i}.displayName`, message: "SNS表示名は100文字以内で入力してください" });
+    }
+
+    if (!sns.url.trim()) {
+      errors.push({ field: `sns.${i}.url`, message: "SNS URLを入力してください" });
+    } else if (!isValidHttpsUrl(sns.url)) {
+      errors.push({ field: `sns.${i}.url`, message: "SNS URLはhttpsで始まる有効なURLを入力してください" });
+    }
+
+    if (sns.hashtag && !isValidHashtag(sns.hashtag)) {
+      errors.push({ field: `sns.${i}.hashtag`, message: "SNSハッシュタグは#から始めて入力してください" });
+    }
+  }
+
+  for (let i = 0; i < input.regularWorks.length; i++) {
+    const work = input.regularWorks[i];
+    if (!work.workType) {
+      errors.push({ field: `regularWorks.${i}.workType`, message: "仕事種別を選択してください" });
+    } else if (!isRegularWorkType(work.workType)) {
+      errors.push({ field: `regularWorks.${i}.workType`, message: "無効な仕事種別です" });
+    }
+
+    if (!work.name.trim()) {
+      errors.push({ field: `regularWorks.${i}.name`, message: "仕事名を入力してください" });
+    } else if (work.name.length > 100) {
+      errors.push({ field: `regularWorks.${i}.name`, message: "仕事名は100文字以内で入力してください" });
+    }
+
+    if (!work.startDate || !isValidDateString(work.startDate)) {
+      errors.push({ field: `regularWorks.${i}.startDate`, message: "開始日はYYYY-MM-DD形式で入力してください" });
+    }
+
+    if (work.endDate && !isValidDateString(work.endDate)) {
+      errors.push({ field: `regularWorks.${i}.endDate`, message: "終了日はYYYY-MM-DD形式で入力してください" });
+    }
+
+    if (
+      work.startDate &&
+      isValidDateString(work.startDate) &&
+      work.endDate &&
+      isValidDateString(work.endDate) &&
+      work.endDate < work.startDate
+    ) {
+      errors.push({ field: `regularWorks.${i}.endDate`, message: "終了日は開始日以降を入力してください" });
+    }
   }
 
   return errors;

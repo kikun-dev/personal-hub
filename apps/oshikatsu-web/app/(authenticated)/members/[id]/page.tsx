@@ -2,7 +2,9 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createMemberRepository } from "@/repositories/memberRepository";
+import { createGroupRepository } from "@/repositories/groupRepository";
 import { getMember } from "@/usecases/getMember";
+import { getGroups } from "@/usecases/getGroups";
 import { MemberProfile } from "@/components/members/MemberProfile";
 import { Button } from "@/components/ui/Button";
 
@@ -15,12 +17,23 @@ export default async function MemberDetailPage({
 }: MemberDetailPageProps) {
   const { id } = await params;
   const supabase = await createClient();
-  const repo = createMemberRepository(supabase);
-  const member = await getMember(repo, id);
+  const memberRepo = createMemberRepository(supabase);
+  const groupRepo = createGroupRepository(supabase);
+  const [member, groups] = await Promise.all([
+    getMember(memberRepo, id),
+    getGroups(groupRepo),
+  ]);
 
   if (!member) {
     notFound();
   }
+
+  const mainGroupId = member.groups[0]?.groupId;
+  const mainGroupPenlightColorNames = mainGroupId
+    ? (groups.find((group) => group.id === mainGroupId)?.penlightColors ?? []).map(
+        (color) => color.name,
+      )
+    : [];
 
   return (
     <div className="space-y-4">
@@ -35,7 +48,10 @@ export default async function MemberDetailPage({
           <Button variant="secondary">編集</Button>
         </Link>
       </div>
-      <MemberProfile member={member} />
+      <MemberProfile
+        member={member}
+        mainGroupPenlightColorNames={mainGroupPenlightColorNames}
+      />
     </div>
   );
 }

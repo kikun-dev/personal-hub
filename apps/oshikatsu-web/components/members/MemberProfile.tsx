@@ -6,10 +6,35 @@ import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
+  mainGroupPenlightColorNames?: string[];
 };
 
-export function MemberProfile({ member }: MemberProfileProps) {
+const CIRCLED_NUMBERS = [
+  "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
+  "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳",
+] as const;
+
+function formatPenlightLabel(colorName: string, orderedColorNames: string[]): string {
+  const index = orderedColorNames.indexOf(colorName);
+  if (index === -1) return colorName;
+  const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
+  return `${prefix}${colorName}`;
+}
+
+export function MemberProfile({
+  member,
+  mainGroupPenlightColorNames = [],
+}: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
+  const orderedPenlightColors = mainGroupPenlightColorNames;
+  const hasOutgoingInfo = Boolean(
+    member.blogUrl ||
+      member.blogHashtag ||
+      member.talkAppName ||
+      member.talkAppUrl ||
+      member.talkAppHashtag ||
+      member.sns.length > 0,
+  );
 
   return (
     <div className="space-y-6">
@@ -60,11 +85,33 @@ export function MemberProfile({ member }: MemberProfileProps) {
               </dd>
             </>
           )}
+          {member.zodiac && (
+            <>
+              <dt className="text-foreground/50">星座</dt>
+              <dd className="text-foreground">{member.zodiac}</dd>
+            </>
+          )}
           {/* null: 未入力（非表示）、"不明": ユーザーが明示的に選択（表示） */}
           {member.bloodType && (
             <>
               <dt className="text-foreground/50">血液型</dt>
               <dd className="text-foreground">{member.bloodType === "不明" ? "不明" : `${member.bloodType}型`}</dd>
+            </>
+          )}
+          {member.callName && (
+            <>
+              <dt className="text-foreground/50">コール名</dt>
+              <dd className="text-foreground">{member.callName}</dd>
+            </>
+          )}
+          {member.penlightColor1 && member.penlightColor2 && (
+            <>
+              <dt className="text-foreground/50">サイリウム</dt>
+              <dd className="text-foreground">
+                {formatPenlightLabel(member.penlightColor1, orderedPenlightColors)}
+                {" × "}
+                {formatPenlightLabel(member.penlightColor2, orderedPenlightColors)}
+              </dd>
             </>
           )}
           {member.heightCm && (
@@ -108,18 +155,90 @@ export function MemberProfile({ member }: MemberProfileProps) {
         </div>
       </Card>
 
-      {/* 外部リンク */}
-      {member.blogUrl && (
+      {/* 発信情報 */}
+      {hasOutgoingInfo && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">リンク</h2>
-          <a
-            href={member.blogUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-sm text-blue-500 hover:underline"
-          >
-            ブログ
-          </a>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">発信情報</h2>
+          <div className="space-y-2 text-sm">
+            {(member.blogUrl || member.blogHashtag) && (
+              <div>
+                {member.blogUrl ? (
+                  <a
+                    href={member.blogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-blue-500 hover:underline"
+                  >
+                    ブログ
+                  </a>
+                ) : (
+                  <p className="text-foreground">ブログ</p>
+                )}
+                {member.blogHashtag && (
+                  <p className="text-xs text-foreground/50">{member.blogHashtag}</p>
+                )}
+              </div>
+            )}
+            {(member.talkAppName || member.talkAppUrl || member.talkAppHashtag) && (
+              <div>
+                {member.talkAppUrl ? (
+                  <a
+                    href={member.talkAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-blue-500 hover:underline"
+                  >
+                    {member.talkAppName || "トークアプリ"}
+                  </a>
+                ) : (
+                  <p className="text-foreground">{member.talkAppName || "トークアプリ"}</p>
+                )}
+                {member.talkAppHashtag && (
+                  <p className="text-xs text-foreground/50">{member.talkAppHashtag}</p>
+                )}
+              </div>
+            )}
+            {member.sns.map((sns) => {
+              const snsLabel = sns.displayName ? `${sns.displayName} (${sns.snsType})` : sns.snsType;
+              return (
+                <div key={sns.id}>
+                  {sns.url ? (
+                    <a
+                      href={sns.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-blue-500 hover:underline"
+                    >
+                      {snsLabel}
+                    </a>
+                  ) : (
+                    <p className="text-foreground">{snsLabel}</p>
+                  )}
+                  {sns.hashtag && (
+                    <p className="text-xs text-foreground/50">{sns.hashtag}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {/* レギュラー仕事 */}
+      {member.regularWorks.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">レギュラー仕事</h2>
+          <div className="space-y-2">
+            {member.regularWorks.map((work) => (
+              <div key={work.id} className="rounded-lg border border-foreground/10 p-3">
+                <p className="text-sm font-medium text-foreground">{work.name}</p>
+                <p className="text-xs text-foreground/50">{work.workType}</p>
+                <p className="text-xs text-foreground/50">
+                  {formatDate(work.startDate)} 〜 {work.endDate ? formatDate(work.endDate) : "継続中"}
+                </p>
+              </div>
+            ))}
+          </div>
         </Card>
       )}
     </div>
