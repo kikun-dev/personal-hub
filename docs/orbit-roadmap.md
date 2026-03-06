@@ -63,8 +63,8 @@
 ### 残タスク（UI/設定）— Issue #32 → PR #35 / Issue #33
 
 - [x] トップ画面: 日付選択連動（選択日のイベント/なんの日更新 + Today ボタン）— Issue #40 → PR #41
-- [ ] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（P2: 現在は `*.supabase.co`）
-- [x] `imageUrl` バリデーションを `https://` のみに制限（P2: `next/image` が `https` 必須のため）
+- [x] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（Issue #46）
+- [x] メンバー画像バリデーションを Storage object path + 既存 https 互換へ更新（Issue #46）
 - [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）
 - [x] 誕生日ドットの色 `#D946EF` を定数に抽出（P2）
 - [x] Header ナビに「管理」→ `/admin` ハブに変更、「楽曲」リンク追加（Phase 2 で対応）
@@ -91,14 +91,14 @@
 
 ### メンバー画像アップロード移行 — Issue #46
 
-#### 対応予定
+#### 完了済み
 
-- [ ] Supabase Storage バケット/ポリシー追加（public + authenticated upload）
-- [ ] メンバー登録/編集フォームをURL入力からファイルアップロードUIへ変更
-- [ ] `orbit_members.image_url` にStorage object pathを保存
-- [ ] 画像表示時に object path を public URL へ変換（既存https値は後方互換）
-- [ ] 画像再アップロード時に旧オブジェクトを削除して置換
-- [ ] 画像バリデーションをStorage path前提へ更新
+- [x] Supabase Storage バケット/ポリシー追加（public + authenticated upload）
+- [x] メンバー登録/編集フォームをURL入力からファイルアップロードUIへ変更
+- [x] `orbit_members.image_url` にStorage object pathを保存
+- [x] 画像表示時に object path を public URL へ変換（既存https値は後方互換）
+- [x] 画像再アップロード時に旧オブジェクトを削除して置換
+- [x] 画像バリデーションをStorage path前提へ更新
 
 ### 楽曲データベース — PR #37 で対応済み（Issue #36）
 
