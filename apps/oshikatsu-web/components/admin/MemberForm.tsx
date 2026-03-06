@@ -12,7 +12,14 @@ import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import { BLOOD_TYPES, SNS_TYPES, REGULAR_WORK_TYPES } from "@/lib/constants";
+import {
+  BLOOD_TYPES,
+  SNS_TYPES,
+  REGULAR_WORK_TYPES,
+  GROUP_MAX_GENERATIONS,
+  GROUP_PENLIGHT_COLOR_NAMES,
+} from "@/lib/constants";
+import { calculateZodiac } from "@/lib/zodiac";
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
 type SnsWithKey = CreateMemberSnsInput & { _key: string };
@@ -35,6 +42,11 @@ type MemberFormProps = {
     values: CreateMemberInput
   ) => Promise<{ errors?: ValidationError[] }>;
 };
+
+const CIRCLED_NUMBERS = [
+  "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
+  "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳",
+] as const;
 
 function withGroupKey(group: CreateMemberGroupInput): GroupWithKey {
   return { ...group, _key: crypto.randomUUID() };
@@ -109,6 +121,11 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
   };
 }
 
+function buildOrderedLabel(index: number, label: string): string {
+  const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
+  return `${prefix}${label}`;
+}
+
 export function MemberForm({
   mode,
   initialValues,
@@ -123,14 +140,28 @@ export function MemberForm({
 
   const mainGroupId = values.groups[0]?.groupId ?? "";
   const mainGroup = groups.find((group) => group.id === mainGroupId);
-  const penlightOptions = (mainGroup?.penlightColors ?? []).map((color) => ({
-    value: color.hex,
-    label: `${color.name} (${color.hex})`,
-  }));
+  const fixedPenlightNames =
+    (mainGroup && GROUP_PENLIGHT_COLOR_NAMES[mainGroup.nameJa]) ?? [];
+  const penlightOptions =
+    fixedPenlightNames.length > 0
+      ? fixedPenlightNames.map((name, index) => ({
+          value: name,
+          label: buildOrderedLabel(index, name),
+        }))
+      : (mainGroup?.penlightColors ?? []).map((color, index) => ({
+          value: color.hex,
+          label: buildOrderedLabel(index, color.name),
+        }));
+
+  const zodiacPreview = values.dateOfBirth
+    ? calculateZodiac(values.dateOfBirth) ?? ""
+    : "";
 
   const generationOptions = (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
-    const maxGeneration = group?.maxGeneration ?? 20;
+    const maxGeneration = group
+      ? (GROUP_MAX_GENERATIONS[group.nameJa] ?? group.maxGeneration ?? 20)
+      : 20;
     return Array.from({ length: maxGeneration }, (_, i) => ({
       value: String(i + 1),
       label: `${i + 1}期`,
@@ -163,13 +194,23 @@ export function MemberForm({
           newGroups[index].generation = "";
         }
       }
+
+      if (field === "groupId" && index === 0) {
+        return {
+          ...prev,
+          groups: newGroups,
+          penlightColor1: "",
+          penlightColor2: "",
+        };
+      }
       return { ...prev, groups: newGroups };
     });
+
     setErrors((prev) => {
       const next = { ...prev };
       delete next[`groups.${index}.${field}`];
       delete next["groups"];
-      if (field === "groupId") {
+      if (field === "groupId" && index === 0) {
         delete next.penlightColor1;
         delete next.penlightColor2;
       }
@@ -188,10 +229,18 @@ export function MemberForm({
   };
 
   const removeGroup = (index: number) => {
-    setValues((prev) => ({
-      ...prev,
-      groups: prev.groups.filter((_, i) => i !== index),
-    }));
+    setValues((prev) => {
+      const nextGroups = prev.groups.filter((_, i) => i !== index);
+      if (index === 0) {
+        return {
+          ...prev,
+          groups: nextGroups,
+          penlightColor1: "",
+          penlightColor2: "",
+        };
+      }
+      return { ...prev, groups: nextGroups };
+    });
   };
 
   const updateSns = (
@@ -287,158 +336,90 @@ export function MemberForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-6">
       {errors._form && (
         <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
           {errors._form}
         </p>
       )}
 
-      <Input
-        id="nameJa"
-        label="名前（日本語）*"
-        value={values.nameJa}
-        onChange={(e) => update("nameJa", e.target.value)}
-        error={errors.nameJa}
-      />
-
-      <Input
-        id="nameKana"
-        label="名前（かな）*"
-        value={values.nameKana}
-        onChange={(e) => update("nameKana", e.target.value)}
-        error={errors.nameKana}
-      />
-
-      <Input
-        id="nameEn"
-        label="名前（英語）"
-        value={values.nameEn}
-        onChange={(e) => update("nameEn", e.target.value)}
-        error={errors.nameEn}
-      />
-
-      <Input
-        id="callName"
-        label="コール名"
-        value={values.callName}
-        onChange={(e) => update("callName", e.target.value)}
-        error={errors.callName}
-      />
-
-      <Input
-        id="dateOfBirth"
-        label="生年月日"
-        type="date"
-        value={values.dateOfBirth}
-        onChange={(e) => update("dateOfBirth", e.target.value)}
-        error={errors.dateOfBirth}
-      />
-
-      <Select
-        id="bloodType"
-        label="血液型"
-        placeholder="選択してください"
-        options={BLOOD_TYPES.map((bt) => ({
-          value: bt,
-          label: bt === "不明" ? "不明" : `${bt}型`,
-        }))}
-        value={values.bloodType}
-        onChange={(e) => update("bloodType", e.target.value)}
-        error={errors.bloodType}
-      />
-
-      <div className="grid grid-cols-2 gap-3">
-        <Select
-          id="penlightColor1"
-          label="サイリウムカラー1*"
-          placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
-          options={penlightOptions}
-          value={values.penlightColor1}
-          onChange={(e) => update("penlightColor1", e.target.value)}
-          error={errors.penlightColor1}
+      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
+        <h2 className="text-sm font-medium text-foreground/70">プロフィール情報</h2>
+        <Input
+          id="nameJa"
+          label="名前（日本語）*"
+          value={values.nameJa}
+          onChange={(e) => update("nameJa", e.target.value)}
+          error={errors.nameJa}
+        />
+        <Input
+          id="nameKana"
+          label="名前（かな）*"
+          value={values.nameKana}
+          onChange={(e) => update("nameKana", e.target.value)}
+          error={errors.nameKana}
+        />
+        <Input
+          id="nameEn"
+          label="名前（英語）"
+          value={values.nameEn}
+          onChange={(e) => update("nameEn", e.target.value)}
+          error={errors.nameEn}
+        />
+        <Input
+          id="hometown"
+          label="出身地"
+          value={values.hometown}
+          onChange={(e) => update("hometown", e.target.value)}
+          error={errors.hometown}
+        />
+        <Input
+          id="dateOfBirth"
+          label="生年月日"
+          type="date"
+          value={values.dateOfBirth}
+          onChange={(e) => update("dateOfBirth", e.target.value)}
+          error={errors.dateOfBirth}
+        />
+        <Input
+          id="zodiacPreview"
+          label="星座（自動計算）"
+          value={zodiacPreview}
+          readOnly
         />
         <Select
-          id="penlightColor2"
-          label="サイリウムカラー2*"
-          placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
-          options={penlightOptions}
-          value={values.penlightColor2}
-          onChange={(e) => update("penlightColor2", e.target.value)}
-          error={errors.penlightColor2}
+          id="bloodType"
+          label="血液型"
+          placeholder="選択してください"
+          options={BLOOD_TYPES.map((bt) => ({
+            value: bt,
+            label: bt === "不明" ? "不明" : `${bt}型`,
+          }))}
+          value={values.bloodType}
+          onChange={(e) => update("bloodType", e.target.value)}
+          error={errors.bloodType}
         />
-      </div>
+        <Input
+          id="heightCm"
+          label="身長 (cm)"
+          type="number"
+          value={values.heightCm}
+          onChange={(e) => update("heightCm", e.target.value)}
+          error={errors.heightCm}
+        />
+        <Input
+          id="imageUrl"
+          label="画像 URL"
+          type="url"
+          value={values.imageUrl}
+          onChange={(e) => update("imageUrl", e.target.value)}
+          error={errors.imageUrl}
+        />
+      </section>
 
-      <Input
-        id="heightCm"
-        label="身長 (cm)"
-        type="number"
-        value={values.heightCm}
-        onChange={(e) => update("heightCm", e.target.value)}
-        error={errors.heightCm}
-      />
-
-      <Input
-        id="hometown"
-        label="出身地"
-        value={values.hometown}
-        onChange={(e) => update("hometown", e.target.value)}
-        error={errors.hometown}
-      />
-
-      <Input
-        id="imageUrl"
-        label="画像 URL"
-        type="url"
-        value={values.imageUrl}
-        onChange={(e) => update("imageUrl", e.target.value)}
-        error={errors.imageUrl}
-      />
-
-      <Input
-        id="blogUrl"
-        label="ブログ URL"
-        type="url"
-        value={values.blogUrl}
-        onChange={(e) => update("blogUrl", e.target.value)}
-        error={errors.blogUrl}
-      />
-      <Input
-        id="blogHashtag"
-        label="ブログ ハッシュタグ"
-        placeholder="#example"
-        value={values.blogHashtag}
-        onChange={(e) => update("blogHashtag", e.target.value)}
-        error={errors.blogHashtag}
-      />
-
-      <Input
-        id="talkAppName"
-        label="トークアプリ名"
-        value={values.talkAppName}
-        onChange={(e) => update("talkAppName", e.target.value)}
-        error={errors.talkAppName}
-      />
-      <Input
-        id="talkAppUrl"
-        label="トークアプリ URL"
-        type="url"
-        value={values.talkAppUrl}
-        onChange={(e) => update("talkAppUrl", e.target.value)}
-        error={errors.talkAppUrl}
-      />
-      <Input
-        id="talkAppHashtag"
-        label="トークアプリ ハッシュタグ"
-        placeholder="#example"
-        value={values.talkAppHashtag}
-        onChange={(e) => update("talkAppHashtag", e.target.value)}
-        error={errors.talkAppHashtag}
-      />
-
-      <div className="space-y-3">
+      <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">グループ所属*</label>
+          <h2 className="text-sm font-medium text-foreground/70">所属グループ情報</h2>
           <Button type="button" variant="ghost" onClick={addGroup}>
             + 追加
           </Button>
@@ -467,10 +448,7 @@ export function MemberForm({
               id={`group-${i}`}
               label="グループ"
               placeholder="選択してください"
-              options={groups.map((group) => ({
-                value: group.id,
-                label: group.nameJa,
-              }))}
+              options={groups.map((group) => ({ value: group.id, label: group.nameJa }))}
               value={groupValue.groupId}
               onChange={(e) => updateGroup(i, "groupId", e.target.value)}
               error={errors[`groups.${i}.groupId`]}
@@ -504,67 +482,142 @@ export function MemberForm({
             </div>
           </div>
         ))}
-      </div>
+      </section>
 
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">SNS</label>
-          <Button type="button" variant="ghost" onClick={addSns}>
-            + 追加
-          </Button>
+      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
+        <h2 className="text-sm font-medium text-foreground/70">ライブ情報</h2>
+        <Input
+          id="callName"
+          label="コール名"
+          value={values.callName}
+          onChange={(e) => update("callName", e.target.value)}
+          error={errors.callName}
+        />
+        <div className="grid grid-cols-2 gap-3">
+          <Select
+            id="penlightColor1"
+            label="サイリウムカラー1*"
+            placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
+            options={penlightOptions}
+            value={values.penlightColor1}
+            onChange={(e) => update("penlightColor1", e.target.value)}
+            error={errors.penlightColor1}
+          />
+          <Select
+            id="penlightColor2"
+            label="サイリウムカラー2*"
+            placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
+            options={penlightOptions}
+            value={values.penlightColor2}
+            onChange={(e) => update("penlightColor2", e.target.value)}
+            error={errors.penlightColor2}
+          />
         </div>
+      </section>
 
-        {values.sns.map((sns, i) => (
-          <div key={sns._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground/50">SNS {i + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeSns(i)}
-                className="text-xs text-red-500 hover:text-red-600"
-              >
-                削除
-              </button>
-            </div>
-            <Select
-              id={`snsType-${i}`}
-              label="種類"
-              placeholder="選択してください"
-              options={SNS_TYPES.map((type) => ({ value: type.value, label: type.label }))}
-              value={sns.snsType}
-              onChange={(e) => updateSns(i, "snsType", e.target.value)}
-              error={errors[`sns.${i}.snsType`]}
-            />
-            <Input
-              id={`snsDisplayName-${i}`}
-              label="表示名"
-              value={sns.displayName}
-              onChange={(e) => updateSns(i, "displayName", e.target.value)}
-              error={errors[`sns.${i}.displayName`]}
-            />
-            <Input
-              id={`snsUrl-${i}`}
-              label="URL"
-              type="url"
-              value={sns.url}
-              onChange={(e) => updateSns(i, "url", e.target.value)}
-              error={errors[`sns.${i}.url`]}
-            />
-            <Input
-              id={`snsHashtag-${i}`}
-              label="ハッシュタグ"
-              placeholder="#example"
-              value={sns.hashtag}
-              onChange={(e) => updateSns(i, "hashtag", e.target.value)}
-              error={errors[`sns.${i}.hashtag`]}
-            />
+      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
+        <h2 className="text-sm font-medium text-foreground/70">発信情報</h2>
+        <Input
+          id="blogUrl"
+          label="ブログ URL"
+          type="url"
+          value={values.blogUrl}
+          onChange={(e) => update("blogUrl", e.target.value)}
+          error={errors.blogUrl}
+        />
+        <Input
+          id="blogHashtag"
+          label="ブログ ハッシュタグ"
+          placeholder="#example"
+          value={values.blogHashtag}
+          onChange={(e) => update("blogHashtag", e.target.value)}
+          error={errors.blogHashtag}
+        />
+
+        <Input
+          id="talkAppName"
+          label="トークアプリ名"
+          value={values.talkAppName}
+          onChange={(e) => update("talkAppName", e.target.value)}
+          error={errors.talkAppName}
+        />
+        <Input
+          id="talkAppUrl"
+          label="トークアプリ URL"
+          type="url"
+          value={values.talkAppUrl}
+          onChange={(e) => update("talkAppUrl", e.target.value)}
+          error={errors.talkAppUrl}
+        />
+        <Input
+          id="talkAppHashtag"
+          label="トークアプリ ハッシュタグ"
+          placeholder="#example"
+          value={values.talkAppHashtag}
+          onChange={(e) => update("talkAppHashtag", e.target.value)}
+          error={errors.talkAppHashtag}
+        />
+
+        <div className="space-y-3 rounded-lg border border-foreground/10 p-3">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-foreground/70">SNS</label>
+            <Button type="button" variant="ghost" onClick={addSns}>
+              + 追加
+            </Button>
           </div>
-        ))}
-      </div>
 
-      <div className="space-y-3">
+          {values.sns.map((sns, i) => (
+            <div key={sns._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground/50">SNS {i + 1}</span>
+                <button
+                  type="button"
+                  onClick={() => removeSns(i)}
+                  className="text-xs text-red-500 hover:text-red-600"
+                >
+                  削除
+                </button>
+              </div>
+              <Select
+                id={`snsType-${i}`}
+                label="種類"
+                placeholder="選択してください"
+                options={SNS_TYPES.map((type) => ({ value: type.value, label: type.label }))}
+                value={sns.snsType}
+                onChange={(e) => updateSns(i, "snsType", e.target.value)}
+                error={errors[`sns.${i}.snsType`]}
+              />
+              <Input
+                id={`snsDisplayName-${i}`}
+                label="表示名"
+                value={sns.displayName}
+                onChange={(e) => updateSns(i, "displayName", e.target.value)}
+                error={errors[`sns.${i}.displayName`]}
+              />
+              <Input
+                id={`snsUrl-${i}`}
+                label="URL"
+                type="url"
+                value={sns.url}
+                onChange={(e) => updateSns(i, "url", e.target.value)}
+                error={errors[`sns.${i}.url`]}
+              />
+              <Input
+                id={`snsHashtag-${i}`}
+                label="ハッシュタグ"
+                placeholder="#example"
+                value={sns.hashtag}
+                onChange={(e) => updateSns(i, "hashtag", e.target.value)}
+                error={errors[`sns.${i}.hashtag`]}
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">レギュラー仕事</label>
+          <h2 className="text-sm font-medium text-foreground/70">レギュラー仕事</h2>
           <Button type="button" variant="ghost" onClick={addRegularWork}>
             + 追加
           </Button>
@@ -586,10 +639,7 @@ export function MemberForm({
               id={`workType-${i}`}
               label="種別"
               placeholder="選択してください"
-              options={REGULAR_WORK_TYPES.map((type) => ({
-                value: type.value,
-                label: type.label,
-              }))}
+              options={REGULAR_WORK_TYPES.map((type) => ({ value: type.value, label: type.label }))}
               value={work.workType}
               onChange={(e) => updateRegularWork(i, "workType", e.target.value)}
               error={errors[`regularWorks.${i}.workType`]}
@@ -621,7 +671,7 @@ export function MemberForm({
             </div>
           </div>
         ))}
-      </div>
+      </section>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}
