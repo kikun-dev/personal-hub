@@ -3,13 +3,36 @@ import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
+import { GROUP_PENLIGHT_COLOR_NAMES } from "@/lib/constants";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
 };
 
+const CIRCLED_NUMBERS = [
+  "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
+  "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳",
+] as const;
+
+function formatPenlightLabel(colorName: string, orderedColorNames: string[]): string {
+  const index = orderedColorNames.indexOf(colorName);
+  if (index === -1) return colorName;
+  const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
+  return `${prefix}${colorName}`;
+}
+
 export function MemberProfile({ member }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
+  const mainGroupName = member.groups[0]?.groupNameJa ?? "";
+  const orderedPenlightColors = GROUP_PENLIGHT_COLOR_NAMES[mainGroupName] ?? [];
+  const hasOutgoingInfo = Boolean(
+    member.blogUrl ||
+      member.blogHashtag ||
+      member.talkAppName ||
+      member.talkAppUrl ||
+      member.talkAppHashtag ||
+      member.sns.length > 0,
+  );
 
   return (
     <div className="space-y-6">
@@ -82,21 +105,10 @@ export function MemberProfile({ member }: MemberProfileProps) {
           {member.penlightColor1 && member.penlightColor2 && (
             <>
               <dt className="text-foreground/50">サイリウム</dt>
-              <dd className="flex items-center gap-2 text-foreground">
-                <span className="inline-flex items-center gap-1">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full border border-foreground/20"
-                    style={{ backgroundColor: member.penlightColor1 }}
-                  />
-                  {member.penlightColor1}
-                </span>
-                <span className="inline-flex items-center gap-1">
-                  <span
-                    className="inline-block h-3 w-3 rounded-full border border-foreground/20"
-                    style={{ backgroundColor: member.penlightColor2 }}
-                  />
-                  {member.penlightColor2}
-                </span>
+              <dd className="text-foreground">
+                {formatPenlightLabel(member.penlightColor1, orderedPenlightColors)}
+                {" × "}
+                {formatPenlightLabel(member.penlightColor2, orderedPenlightColors)}
               </dd>
             </>
           )}
@@ -141,56 +153,71 @@ export function MemberProfile({ member }: MemberProfileProps) {
         </div>
       </Card>
 
-      {/* 外部リンク */}
-      {(member.blogUrl || member.sns.length > 0 || member.talkAppUrl) && (
+      {/* 発信情報 */}
+      {hasOutgoingInfo && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">リンク</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">発信情報</h2>
           <div className="space-y-2 text-sm">
-            {member.blogUrl && (
+            {(member.blogUrl || member.blogHashtag) && (
               <div>
-                <a
-                  href={member.blogUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-500 hover:underline"
-                >
-                  ブログ
-                </a>
+                {member.blogUrl ? (
+                  <a
+                    href={member.blogUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-blue-500 hover:underline"
+                  >
+                    ブログ
+                  </a>
+                ) : (
+                  <p className="text-foreground">ブログ</p>
+                )}
                 {member.blogHashtag && (
                   <p className="text-xs text-foreground/50">{member.blogHashtag}</p>
                 )}
               </div>
             )}
-            {member.talkAppUrl && (
+            {(member.talkAppName || member.talkAppUrl || member.talkAppHashtag) && (
               <div>
-                <a
-                  href={member.talkAppUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-500 hover:underline"
-                >
-                  {member.talkAppName || "トークアプリ"}
-                </a>
+                {member.talkAppUrl ? (
+                  <a
+                    href={member.talkAppUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block text-blue-500 hover:underline"
+                  >
+                    {member.talkAppName || "トークアプリ"}
+                  </a>
+                ) : (
+                  <p className="text-foreground">{member.talkAppName || "トークアプリ"}</p>
+                )}
                 {member.talkAppHashtag && (
                   <p className="text-xs text-foreground/50">{member.talkAppHashtag}</p>
                 )}
               </div>
             )}
-            {member.sns.map((sns) => (
-              <div key={sns.id}>
-                <a
-                  href={sns.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block text-blue-500 hover:underline"
-                >
-                  {sns.displayName} ({sns.snsType})
-                </a>
-                {sns.hashtag && (
-                  <p className="text-xs text-foreground/50">{sns.hashtag}</p>
-                )}
-              </div>
-            ))}
+            {member.sns.map((sns) => {
+              const snsLabel = sns.displayName ? `${sns.displayName} (${sns.snsType})` : sns.snsType;
+              return (
+                <div key={sns.id}>
+                  {sns.url ? (
+                    <a
+                      href={sns.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-blue-500 hover:underline"
+                    >
+                      {snsLabel}
+                    </a>
+                  ) : (
+                    <p className="text-foreground">{snsLabel}</p>
+                  )}
+                  {sns.hashtag && (
+                    <p className="text-xs text-foreground/50">{sns.hashtag}</p>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </Card>
       )}
