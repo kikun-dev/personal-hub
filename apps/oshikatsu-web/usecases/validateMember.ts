@@ -13,6 +13,10 @@ import {
   isValidDateString,
   isValidHashtag,
 } from "@/lib/validation";
+import {
+  isMemberImageLegacyPublicUrl,
+  isMemberImageStoragePath,
+} from "@/lib/memberImage";
 
 function isBloodType(value: string): value is BloodType {
   return (BLOOD_TYPES as readonly string[]).includes(value);
@@ -97,8 +101,15 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     errors.push({ field: "dateOfBirth", message: "生年月日はYYYY-MM-DD形式で入力してください" });
   }
 
-  if (input.imageUrl && !isValidHttpsUrl(input.imageUrl)) {
-    errors.push({ field: "imageUrl", message: "画像URLはhttpsで始まる有効なURLを入力してください" });
+  if (
+    input.imageUrl &&
+    !isMemberImageStoragePath(input.imageUrl) &&
+    !isMemberImageLegacyPublicUrl(input.imageUrl)
+  ) {
+    errors.push({
+      field: "imageUrl",
+      message: "画像はStorageパスまたは旧Supabase公開URLを指定してください",
+    });
   }
 
   if (input.blogUrl && !isValidHttpsUrl(input.blogUrl)) {

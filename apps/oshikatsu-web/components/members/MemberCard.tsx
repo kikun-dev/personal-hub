@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
+import { resolveMemberImageSrc } from "@/lib/memberImage";
 
 type MemberCardProps = {
   member: MemberWithGroups;
@@ -9,6 +10,7 @@ type MemberCardProps = {
 
 export function MemberCard({ member }: MemberCardProps) {
   const isActive = member.groups.some((g) => g.graduatedAt === null);
+  const imageSrc = resolveMemberImageSrc(member.imageUrl);
 
   return (
     <Link
@@ -16,9 +18,9 @@ export function MemberCard({ member }: MemberCardProps) {
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
       <div className="flex items-start gap-3">
-        {member.imageUrl ? (
+        {imageSrc ? (
           <Image
-            src={member.imageUrl}
+            src={imageSrc}
             alt={member.nameJa}
             width={64}
             height={64}

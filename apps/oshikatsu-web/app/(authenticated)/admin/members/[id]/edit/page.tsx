@@ -7,7 +7,7 @@ import { getGroups } from "@/usecases/getGroups";
 import { MemberForm } from "@/components/admin/MemberForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateMemberAction, deleteMemberAction } from "./actions";
-import type { UpdateMemberInput } from "@/types/member";
+import type { UpdateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 
 type EditMemberPageProps = {
@@ -67,10 +67,11 @@ export default async function EditMemberPage({
   };
 
   async function handleSubmit(
-    values: UpdateMemberInput
+    values: UpdateMemberInput,
+    imageFile?: MemberImageUploadInput
   ): Promise<{ errors?: ValidationError[] }> {
     "use server";
-    const result = await updateMemberAction(id, values);
+    const result = await updateMemberAction(id, values, imageFile);
     if (!result.errors) {
       redirect(`/members/${id}`);
     }

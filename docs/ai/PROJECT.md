@@ -97,6 +97,7 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 - **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
 - **メンバー詳細**（プロフィール + グループ履歴）
 - **管理画面**（メンバー CRUD + イベント CRUD）
+  - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
 - **Google ログイン**
 
 ### アーキテクチャ（3層）
