@@ -1,14 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { createClient as createBrowserClient } from "@personal-hub/supabase/client";
+import { useEffect, useState } from "react";
 import type { Group } from "@/types/group";
 import type {
   CreateMemberInput,
   CreateMemberGroupInput,
   CreateMemberSnsInput,
   CreateMemberRegularWorkInput,
+  MemberImageUploadInput,
 } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
@@ -22,9 +22,7 @@ import {
 import { calculateZodiac } from "@/lib/zodiac";
 import {
   MEMBER_IMAGE_ALLOWED_MIME_TYPES,
-  MEMBER_IMAGE_BUCKET,
   MEMBER_IMAGE_MAX_BYTES,
-  getMemberImageExtensionFromMimeType,
   isAllowedMemberImageMimeType,
   resolveMemberImageSrc,
 } from "@/lib/memberImage";
@@ -44,11 +42,11 @@ type FormValues = Omit<
 
 type MemberFormProps = {
   mode: "create" | "edit";
-  memberId?: string;
   initialValues?: CreateMemberInput;
   groups: Group[];
   onSubmit: (
-    values: CreateMemberInput
+    values: CreateMemberInput,
+    imageFile?: MemberImageUploadInput
   ) => Promise<{ errors?: ValidationError[] }>;
 };
 
@@ -135,14 +133,33 @@ function buildOrderedLabel(index: number, label: string): string {
   return `${prefix}${label}`;
 }
 
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("invalid_file_reader_result"));
+        return;
+      }
+      const base64 = result.split(",")[1];
+      if (!base64) {
+        reject(new Error("invalid_base64_data"));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
 export function MemberForm({
   mode,
-  memberId,
   initialValues,
   groups,
   onSubmit,
 }: MemberFormProps) {
-  const supabaseRef = useRef(createBrowserClient());
   const [values, setValues] = useState<FormValues>(
     () => (initialValues ? toFormValues(initialValues) : getDefaultValues())
   );
@@ -377,42 +394,24 @@ export function MemberForm({
     update("imageUrl", "");
   };
 
-  const uploadMemberImage = async (file: File): Promise<string> => {
-    const extension = getMemberImageExtensionFromMimeType(file.type);
-    if (!extension) {
-      throw new Error("unsupported_image_type");
-    }
-
-    const keyPrefix = memberId ? `members/${memberId}` : "members/new";
-    const objectPath = `${keyPrefix}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-    const { error } = await supabaseRef.current.storage
-      .from(MEMBER_IMAGE_BUCKET)
-      .upload(objectPath, file, {
-        upsert: false,
-        contentType: file.type,
-        cacheControl: "31536000",
-      });
-
-    if (error) {
-      throw error;
-    }
-
-    return objectPath;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
-    let uploadedImagePath: string | null = null;
+    let imageFile: MemberImageUploadInput | undefined;
 
     try {
       const submitValues = toSubmitValues(values);
       if (pendingImageFile) {
         setIsUploadingImage(true);
         try {
-          uploadedImagePath = await uploadMemberImage(pendingImageFile);
-          submitValues.imageUrl = uploadedImagePath;
+          const base64Data = await readFileAsBase64(pendingImageFile);
+          imageFile = {
+            fileName: pendingImageFile.name,
+            mimeType: pendingImageFile.type,
+            size: pendingImageFile.size,
+            base64Data,
+          };
         } catch {
           setErrors({
             imageUrl: "画像アップロードに失敗しました。時間をおいて再度お試しください",
@@ -423,11 +422,8 @@ export function MemberForm({
         }
       }
 
-      const result = await onSubmit(submitValues);
+      const result = await onSubmit(submitValues, imageFile);
       if (result.errors) {
-        if (uploadedImagePath) {
-          await supabaseRef.current.storage.from(MEMBER_IMAGE_BUCKET).remove([uploadedImagePath]);
-        }
         const errorMap: Record<string, string> = {};
         for (const err of result.errors) {
           errorMap[err.field] = err.message;

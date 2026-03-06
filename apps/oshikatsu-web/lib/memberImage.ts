@@ -12,6 +12,8 @@ const MEMBER_IMAGE_MIME_TO_EXTENSION: Record<string, string> = {
   "image/webp": "webp",
 };
 
+const MEMBER_IMAGE_PUBLIC_PATH_PREFIX = `/storage/v1/object/public/${MEMBER_IMAGE_BUCKET}/`;
+
 function encodeStoragePath(path: string): string {
   return path
     .split("/")
@@ -19,21 +21,33 @@ function encodeStoragePath(path: string): string {
     .join("/");
 }
 
-export function isMemberImageHttpUrl(value: string): boolean {
-  return /^https:\/\//i.test(value);
-}
-
 export function isMemberImageStoragePath(value: string): boolean {
   if (!value.trim()) return false;
-  if (isMemberImageHttpUrl(value)) return false;
+  if (/^https:\/\//i.test(value)) return false;
   if (value.startsWith("/")) return false;
   if (value.includes("..")) return false;
   return true;
 }
 
+export function isMemberImageLegacyPublicUrl(value: string): boolean {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return false;
+
+  try {
+    const currentProjectUrl = new URL(supabaseUrl);
+    const legacyUrl = new URL(value);
+    if (legacyUrl.protocol !== "https:") return false;
+    if (legacyUrl.hostname !== currentProjectUrl.hostname) return false;
+    return legacyUrl.pathname.startsWith(MEMBER_IMAGE_PUBLIC_PATH_PREFIX);
+  } catch {
+    return false;
+  }
+}
+
 export function resolveMemberImageSrc(value: string | null): string | null {
   if (!value) return null;
-  if (isMemberImageHttpUrl(value)) return value;
+  if (isMemberImageLegacyPublicUrl(value)) return value;
+  if (!isMemberImageStoragePath(value)) return null;
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   if (!supabaseUrl) return null;

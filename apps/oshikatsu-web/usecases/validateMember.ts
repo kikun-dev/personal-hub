@@ -14,7 +14,7 @@ import {
   isValidHashtag,
 } from "@/lib/validation";
 import {
-  isMemberImageHttpUrl,
+  isMemberImageLegacyPublicUrl,
   isMemberImageStoragePath,
 } from "@/lib/memberImage";
 
@@ -104,11 +104,11 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
   if (
     input.imageUrl &&
     !isMemberImageStoragePath(input.imageUrl) &&
-    !isMemberImageHttpUrl(input.imageUrl)
+    !isMemberImageLegacyPublicUrl(input.imageUrl)
   ) {
     errors.push({
       field: "imageUrl",
-      message: "画像はアップロード画像またはhttps URLを指定してください",
+      message: "画像はStorageパスまたは旧Supabase公開URLを指定してください",
     });
   }
 

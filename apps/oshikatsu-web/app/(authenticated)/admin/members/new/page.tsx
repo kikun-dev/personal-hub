@@ -4,7 +4,7 @@ import { createGroupRepository } from "@/repositories/groupRepository";
 import { getGroups } from "@/usecases/getGroups";
 import { MemberForm } from "@/components/admin/MemberForm";
 import { createMemberAction } from "./actions";
-import type { CreateMemberInput } from "@/types/member";
+import type { CreateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewMemberPage() {
@@ -13,10 +13,11 @@ export default async function NewMemberPage() {
   const groups = await getGroups(groupRepo);
 
   async function handleSubmit(
-    values: CreateMemberInput
+    values: CreateMemberInput,
+    imageFile?: MemberImageUploadInput
   ): Promise<{ errors?: ValidationError[] }> {
     "use server";
-    const result = await createMemberAction(values);
+    const result = await createMemberAction(values, imageFile);
     if (!result.errors) {
       redirect("/admin/members");
     }

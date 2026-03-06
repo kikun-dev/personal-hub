@@ -41,3 +41,14 @@ export type SongRepository = {
   delete(id: string): Promise<void>;
   findByMemberId(memberId: string): Promise<Song[]>;
 };
+
+export type MemberImageRepository = {
+  upload(input: {
+    objectPath: string;
+    body: Uint8Array;
+    contentType: string;
+    cacheControl: string;
+    upsert: boolean;
+  }): Promise<void>;
+  remove(objectPaths: string[]): Promise<void>;
+};

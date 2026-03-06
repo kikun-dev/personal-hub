@@ -96,7 +96,7 @@
 - [x] Supabase Storage バケット/ポリシー追加（public + authenticated upload）
 - [x] メンバー登録/編集フォームをURL入力からファイルアップロードUIへ変更
 - [x] `orbit_members.image_url` にStorage object pathを保存
-- [x] 画像表示時に object path を public URL へ変換（既存https値は後方互換）
+- [x] 画像表示時に object path を public URL へ変換（旧Supabase公開URLのみ後方互換）
 - [x] 画像再アップロード時に旧オブジェクトを削除して置換
 - [x] 画像バリデーションをStorage path前提へ更新
 

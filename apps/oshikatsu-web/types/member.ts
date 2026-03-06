@@ -101,6 +101,13 @@ export type CreateMemberRegularWorkInput = {
 
 export type UpdateMemberInput = CreateMemberInput;
 
+export type MemberImageUploadInput = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+  base64Data: string;
+};
+
 export type MemberFilters = {
   groupId?: string;
   status?: "active" | "graduated" | "all";
