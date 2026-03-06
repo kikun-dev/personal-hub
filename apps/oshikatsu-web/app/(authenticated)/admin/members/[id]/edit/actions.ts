@@ -8,6 +8,10 @@ import { deleteMember } from "@/usecases/deleteMember";
 import type { UpdateMemberInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
+import {
+  MEMBER_IMAGE_BUCKET,
+  isMemberImageStoragePath,
+} from "@/lib/memberImage";
 
 export async function updateMemberAction(
   id: string,
@@ -25,9 +29,18 @@ export async function updateMemberAction(
   const repo = createMemberRepository(supabase);
 
   try {
+    const existing = await repo.findById(id);
     const result = await updateMember(repo, id, input);
     if (!result.ok) {
       return { errors: result.errors };
+    }
+
+    if (
+      existing?.imageUrl &&
+      existing.imageUrl !== input.imageUrl &&
+      isMemberImageStoragePath(existing.imageUrl)
+    ) {
+      await supabase.storage.from(MEMBER_IMAGE_BUCKET).remove([existing.imageUrl]);
     }
     return {};
   } catch (e) {
@@ -55,7 +68,12 @@ export async function deleteMemberAction(
   const repo = createMemberRepository(supabase);
 
   try {
+    const existing = await repo.findById(id);
     await deleteMember(repo, id);
+
+    if (existing?.imageUrl && isMemberImageStoragePath(existing.imageUrl)) {
+      await supabase.storage.from(MEMBER_IMAGE_BUCKET).remove([existing.imageUrl]);
+    }
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

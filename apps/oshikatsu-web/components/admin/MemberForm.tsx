@@ -1,6 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useRef, useState } from "react";
+import { createClient as createBrowserClient } from "@personal-hub/supabase/client";
 import type { Group } from "@/types/group";
 import type {
   CreateMemberInput,
@@ -18,6 +20,14 @@ import {
   REGULAR_WORK_TYPES,
 } from "@/lib/constants";
 import { calculateZodiac } from "@/lib/zodiac";
+import {
+  MEMBER_IMAGE_ALLOWED_MIME_TYPES,
+  MEMBER_IMAGE_BUCKET,
+  MEMBER_IMAGE_MAX_BYTES,
+  getMemberImageExtensionFromMimeType,
+  isAllowedMemberImageMimeType,
+  resolveMemberImageSrc,
+} from "@/lib/memberImage";
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
 type SnsWithKey = CreateMemberSnsInput & { _key: string };
@@ -34,6 +44,7 @@ type FormValues = Omit<
 
 type MemberFormProps = {
   mode: "create" | "edit";
+  memberId?: string;
   initialValues?: CreateMemberInput;
   groups: Group[];
   onSubmit: (
@@ -126,15 +137,20 @@ function buildOrderedLabel(index: number, label: string): string {
 
 export function MemberForm({
   mode,
+  memberId,
   initialValues,
   groups,
   onSubmit,
 }: MemberFormProps) {
+  const supabaseRef = useRef(createBrowserClient());
   const [values, setValues] = useState<FormValues>(
     () => (initialValues ? toFormValues(initialValues) : getDefaultValues())
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
+  const [pendingImagePreviewUrl, setPendingImagePreviewUrl] = useState<string | null>(null);
 
   const mainGroupId = values.groups[0]?.groupId ?? "";
   const mainGroup = groups.find((group) => group.id === mainGroupId);
@@ -146,6 +162,16 @@ export function MemberForm({
   const zodiacPreview = values.dateOfBirth
     ? calculateZodiac(values.dateOfBirth) ?? ""
     : "";
+  const savedImageSrc = resolveMemberImageSrc(values.imageUrl);
+  const previewImageSrc = pendingImagePreviewUrl ?? savedImageSrc;
+
+  useEffect(() => {
+    return () => {
+      if (pendingImagePreviewUrl) {
+        URL.revokeObjectURL(pendingImagePreviewUrl);
+      }
+    };
+  }, [pendingImagePreviewUrl]);
 
   const generationOptions = (groupId: string) => {
     const group = groups.find((g) => g.id === groupId);
@@ -304,14 +330,104 @@ export function MemberForm({
     }));
   };
 
+  const clearPendingImage = () => {
+    if (pendingImagePreviewUrl) {
+      URL.revokeObjectURL(pendingImagePreviewUrl);
+    }
+    setPendingImagePreviewUrl(null);
+    setPendingImageFile(null);
+  };
+
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!isAllowedMemberImageMimeType(file.type)) {
+      clearPendingImage();
+      setErrors((prev) => ({
+        ...prev,
+        imageUrl: `画像形式は ${MEMBER_IMAGE_ALLOWED_MIME_TYPES.join(", ")} のみ対応しています`,
+      }));
+      return;
+    }
+
+    if (file.size > MEMBER_IMAGE_MAX_BYTES) {
+      clearPendingImage();
+      setErrors((prev) => ({
+        ...prev,
+        imageUrl: `画像サイズは ${Math.floor(MEMBER_IMAGE_MAX_BYTES / (1024 * 1024))}MB 以下にしてください`,
+      }));
+      return;
+    }
+
+    if (pendingImagePreviewUrl) {
+      URL.revokeObjectURL(pendingImagePreviewUrl);
+    }
+    setPendingImageFile(file);
+    setPendingImagePreviewUrl(URL.createObjectURL(file));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.imageUrl;
+      return next;
+    });
+  };
+
+  const clearImage = () => {
+    clearPendingImage();
+    update("imageUrl", "");
+  };
+
+  const uploadMemberImage = async (file: File): Promise<string> => {
+    const extension = getMemberImageExtensionFromMimeType(file.type);
+    if (!extension) {
+      throw new Error("unsupported_image_type");
+    }
+
+    const keyPrefix = memberId ? `members/${memberId}` : "members/new";
+    const objectPath = `${keyPrefix}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+    const { error } = await supabaseRef.current.storage
+      .from(MEMBER_IMAGE_BUCKET)
+      .upload(objectPath, file, {
+        upsert: false,
+        contentType: file.type,
+        cacheControl: "31536000",
+      });
+
+    if (error) {
+      throw error;
+    }
+
+    return objectPath;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    let uploadedImagePath: string | null = null;
 
     try {
-      const result = await onSubmit(toSubmitValues(values));
+      const submitValues = toSubmitValues(values);
+      if (pendingImageFile) {
+        setIsUploadingImage(true);
+        try {
+          uploadedImagePath = await uploadMemberImage(pendingImageFile);
+          submitValues.imageUrl = uploadedImagePath;
+        } catch {
+          setErrors({
+            imageUrl: "画像アップロードに失敗しました。時間をおいて再度お試しください",
+          });
+          return;
+        } finally {
+          setIsUploadingImage(false);
+        }
+      }
+
+      const result = await onSubmit(submitValues);
       if (result.errors) {
+        if (uploadedImagePath) {
+          await supabaseRef.current.storage.from(MEMBER_IMAGE_BUCKET).remove([uploadedImagePath]);
+        }
         const errorMap: Record<string, string> = {};
         for (const err of result.errors) {
           errorMap[err.field] = err.message;
@@ -320,6 +436,7 @@ export function MemberForm({
       }
     } finally {
       setIsSubmitting(false);
+      setIsUploadingImage(false);
     }
   };
 
@@ -395,14 +512,44 @@ export function MemberForm({
           onChange={(e) => update("heightCm", e.target.value)}
           error={errors.heightCm}
         />
-        <Input
-          id="imageUrl"
-          label="画像 URL"
-          type="url"
-          value={values.imageUrl}
-          onChange={(e) => update("imageUrl", e.target.value)}
-          error={errors.imageUrl}
-        />
+        <div>
+          <label
+            htmlFor="imageFile"
+            className="mb-1 block text-sm font-medium text-foreground/70"
+          >
+            プロフィール画像
+          </label>
+          <input
+            id="imageFile"
+            type="file"
+            accept={MEMBER_IMAGE_ALLOWED_MIME_TYPES.join(",")}
+            onChange={handleImageFileChange}
+            className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-foreground/10 file:px-3 file:py-1.5 file:text-sm ${
+              errors.imageUrl ? "border-red-400" : "border-foreground/10"
+            }`}
+          />
+          <p className="mt-1 text-xs text-foreground/50">
+            JPEG / PNG / WebP、最大 {Math.floor(MEMBER_IMAGE_MAX_BYTES / (1024 * 1024))}
+            MB
+          </p>
+          {errors.imageUrl && <p className="mt-1 text-xs text-red-500">{errors.imageUrl}</p>}
+
+          {previewImageSrc && (
+            <div className="mt-3 space-y-2 rounded-lg border border-foreground/10 p-3">
+              <Image
+                src={previewImageSrc}
+                alt="プロフィール画像プレビュー"
+                width={160}
+                height={160}
+                unoptimized={previewImageSrc.startsWith("blob:")}
+                className="h-40 w-40 rounded-lg object-cover"
+              />
+              <Button type="button" variant="ghost" onClick={clearImage}>
+                画像を外す
+              </Button>
+            </div>
+          )}
+        </div>
       </section>
 
       <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
@@ -661,8 +808,14 @@ export function MemberForm({
         ))}
       </section>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
-        {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}
+      <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full">
+        {isUploadingImage
+          ? "画像をアップロード中..."
+          : isSubmitting
+            ? "保存中..."
+            : mode === "create"
+              ? "登録する"
+              : "更新する"}
       </Button>
     </form>
   );

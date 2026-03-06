@@ -3,6 +3,7 @@ import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
+import { resolveMemberImageSrc } from "@/lib/memberImage";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
@@ -26,6 +27,7 @@ export function MemberProfile({
   mainGroupPenlightColorNames = [],
 }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
+  const imageSrc = resolveMemberImageSrc(member.imageUrl);
   const orderedPenlightColors = mainGroupPenlightColorNames;
   const hasOutgoingInfo = Boolean(
     member.blogUrl ||
@@ -40,9 +42,9 @@ export function MemberProfile({
     <div className="space-y-6">
       {/* ヘッダー */}
       <div className="flex items-start gap-4">
-        {member.imageUrl ? (
+        {imageSrc ? (
           <Image
-            src={member.imageUrl}
+            src={imageSrc}
             alt={member.nameJa}
             width={96}
             height={96}

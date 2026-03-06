@@ -89,6 +89,17 @@
 - [ ] メンバー詳細表示への反映
 - [ ] DB マイグレーション + 型/Repository/UseCase/バリデーション対応
 
+### メンバー画像アップロード移行 — Issue #46
+
+#### 対応予定
+
+- [ ] Supabase Storage バケット/ポリシー追加（public + authenticated upload）
+- [ ] メンバー登録/編集フォームをURL入力からファイルアップロードUIへ変更
+- [ ] `orbit_members.image_url` にStorage object pathを保存
+- [ ] 画像表示時に object path を public URL へ変換（既存https値は後方互換）
+- [ ] 画像再アップロード時に旧オブジェクトを削除して置換
+- [ ] 画像バリデーションをStorage path前提へ更新
+
 ### 楽曲データベース — PR #37 で対応済み（Issue #36）
 
 #### 完了済み

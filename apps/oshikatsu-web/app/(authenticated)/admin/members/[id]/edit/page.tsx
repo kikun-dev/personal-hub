@@ -97,6 +97,7 @@ export default async function EditMemberPage({
       </div>
       <MemberForm
         mode="edit"
+        memberId={id}
         initialValues={initialValues}
         groups={groups}
         onSubmit={handleSubmit}
