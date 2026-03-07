@@ -16,7 +16,7 @@ const eslintConfig = defineConfig([
               name: "@personal-hub/supabase",
               allowTypeImports: true,
               message:
-                "runtime import はサブパス（@personal-hub/supabase/client|server|middleware|auth-callback）を使用してください",
+                "runtime import はサブパス（@personal-hub/supabase/client|server|proxy|auth-callback）を使用してください",
             },
           ],
         },
