@@ -9,6 +9,7 @@ import { uploadMemberImage } from "@/usecases/uploadMemberImage";
 import { removeMemberImages } from "@/usecases/removeMemberImages";
 import type { CreateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
+import { RepositoryError } from "@/types/errors";
 
 async function cleanupUploadedMemberImage(
   uploadedImagePath: string | null,
@@ -62,6 +63,15 @@ export async function createMemberAction(
     return {};
   } catch (e) {
     await cleanupUploadedMemberImage(uploadedImagePath, memberImageRepo);
+    if (e instanceof RepositoryError) {
+      console.error("createMemberAction: repository error", {
+        message: e.message,
+        cause: e.cause,
+      });
+      return {
+        errors: [{ field: "_form", message: "メンバーの作成に失敗しました" }],
+      };
+    }
     throw e;
   }
 }
