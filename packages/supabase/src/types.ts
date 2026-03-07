@@ -1,7 +1,15 @@
 export type { SupabaseClient } from "@supabase/supabase-js";
 
+export type AuthRouteMergeMode = "merge" | "replace";
+
 /** Auth middleware ファクトリの設定 */
 export type AuthMiddlewareConfig = {
+  /**
+   * publicRoutes / publicExactPaths の扱い
+   * - merge (default): デフォルト配列 + カスタム配列を結合（重複除去）
+   * - replace: カスタム配列で置き換え
+   */
+  routeMergeMode?: AuthRouteMergeMode;
   /** 認証不要なルートプレフィックス (default: ["/login", "/auth"]) */
   publicRoutes?: string[];
   /** 認証不要な完全一致パス (default: ["/"]) */
