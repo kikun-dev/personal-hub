@@ -12,6 +12,10 @@ ALTER TABLE public.orbit_members
   ADD CONSTRAINT orbit_members_height_cm_range_check
   CHECK (height_cm IS NULL OR (height_cm > 0 AND height_cm < 300));
 
+-- NOTE:
+-- p_height_cm の型を INT -> NUMERIC(4,1) に変更するため、同一シグネチャ前提の
+-- CREATE OR REPLACE FUNCTION では置換できない。オーバーロードが増えると
+-- Supabase RPC 解決が曖昧化するため、旧シグネチャを DROP して再作成する。
 DROP FUNCTION IF EXISTS public.update_member_with_relations(
   UUID,
   TEXT,
