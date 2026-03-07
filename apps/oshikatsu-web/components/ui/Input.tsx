@@ -36,7 +36,6 @@ export function Input({ label, error, id, className = "", ...props }: InputProps
           <input
             {...dateProps}
             id={id}
-            inputMode="numeric"
             placeholder={placeholder ?? "YYYY-MM-DD"}
             className={inputClassName}
             value={dateValue}
