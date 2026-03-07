@@ -39,7 +39,7 @@ export default async function DashboardPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">ダッシュボード</h1>
-        <Suspense>
+        <Suspense fallback={<div className="h-10" />}>
           <MonthSelector year={year} month={month} />
         </Suspense>
       </div>

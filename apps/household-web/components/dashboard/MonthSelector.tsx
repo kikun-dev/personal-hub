@@ -6,9 +6,14 @@ import { formatMonthLabel } from "@/lib/formatters";
 type MonthSelectorProps = {
   year: number;
   month: number;
+  basePath?: string;
 };
 
-export function MonthSelector({ year, month }: MonthSelectorProps) {
+export function MonthSelector({
+  year,
+  month,
+  basePath = "/dashboard",
+}: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -16,7 +21,7 @@ export function MonthSelector({ year, month }: MonthSelectorProps) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("year", String(newYear));
     params.set("month", String(newMonth));
-    router.push(`/dashboard?${params.toString()}`);
+    router.push(`${basePath}?${params.toString()}`);
   };
 
   const isAtMin = year === 2000 && month === 1;

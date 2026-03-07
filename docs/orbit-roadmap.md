@@ -57,19 +57,19 @@
 
 - [x] `GROUP_COLORS` 定数の使用状況確認・整理（P2: 未使用のため削除）
 - [x] `groupRepository`, `eventTypeRepository` の `select("*")` を明示的カラム指定に変更（P2）
-- [ ] Repository update の非アトミック操作を RPC 関数でトランザクション化（P1: create は補償処理済み）
+- [x] Repository update の非アトミック操作を RPC 関数でトランザクション化（Issue #33）
 - [ ] Issue #27 の改善項目（Supabase 共有パッケージ）
 
 ### 残タスク（UI/設定）— Issue #32 → PR #35 / Issue #33
 
 - [x] トップ画面: 日付選択連動（選択日のイベント/なんの日更新 + Today ボタン）— Issue #40 → PR #41
 - [x] `next.config.ts` の `remotePatterns` を自プロジェクトの hostname に限定（Issue #46）
-- [x] メンバー画像バリデーションを Storage object path + 既存 https 互換へ更新（Issue #46）
-- [ ] EventCalendar の月ラベルと MonthSelector の重複表示を解消（P2）
+- [x] メンバー画像バリデーションを Storage object path + 旧Supabase公開URL互換へ更新（Issue #46）
+- [x] EventCalendar の月ラベルと MonthSelector の重複表示を解消（Issue #33）
 - [x] 誕生日ドットの色 `#D946EF` を定数に抽出（P2）
 - [x] Header ナビに「管理」→ `/admin` ハブに変更、「楽曲」リンク追加（Phase 2 で対応）
-- [ ] household-web の MonthSelector に `basePath` prop をバックポート（P2: cross-app 改善）
-- [ ] household-web の MonthSelector Suspense に fallback 追加（P2: cross-app 改善）
+- [x] household-web の MonthSelector に `basePath` prop をバックポート（Issue #33）
+- [x] household-web の MonthSelector Suspense に fallback 追加（Issue #33）
 
 ---
 
