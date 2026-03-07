@@ -8,6 +8,10 @@ ALTER TABLE public.orbit_members
     ELSE height_cm::NUMERIC(4,1)
   END;
 
+ALTER TABLE public.orbit_members
+  ADD CONSTRAINT orbit_members_height_cm_range_check
+  CHECK (height_cm IS NULL OR (height_cm > 0 AND height_cm < 300));
+
 DROP FUNCTION IF EXISTS public.update_member_with_relations(
   UUID,
   TEXT,
