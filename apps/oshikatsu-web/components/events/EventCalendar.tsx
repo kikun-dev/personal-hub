@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
-import { formatMonthLabel } from "@/lib/formatters";
 import { BIRTHDAY_COLOR } from "@/lib/constants";
 import { getTodayInAppTimeZone } from "@/lib/dateParams";
 
@@ -33,10 +32,6 @@ export function EventCalendar({
 
   return (
     <div className="rounded-lg border border-foreground/10 bg-background p-4">
-      <h2 className="mb-4 text-center text-sm font-medium text-foreground">
-        {formatMonthLabel(year, month)}
-      </h2>
-
       <div className="grid grid-cols-7 gap-px">
         {WEEKDAYS.map((day, i) => (
           <div

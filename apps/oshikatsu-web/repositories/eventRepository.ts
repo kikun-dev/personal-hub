@@ -173,68 +173,22 @@ export function createEventRepository(
     },
 
     async update(id, input) {
-      const { error: eventError } = await supabase
-        .from("orbit_events")
-        .update({
-          event_type_id: input.eventTypeId,
-          title: input.title,
-          description: input.description || "",
-          date: input.date,
-          end_date: input.endDate || null,
-          start_time: input.startTime || null,
-          venue: input.venue || null,
-          url: input.url || null,
-        })
-        .eq("id", id);
+      const { error: rpcError } = await supabase.rpc("update_event_with_relations", {
+        p_event_id: id,
+        p_event_type_id: input.eventTypeId,
+        p_title: input.title,
+        p_description: input.description || "",
+        p_date: input.date,
+        p_end_date: input.endDate || null,
+        p_start_time: input.startTime || null,
+        p_venue: input.venue || null,
+        p_url: input.url || null,
+        p_group_ids: input.groupIds,
+        p_member_ids: input.memberIds,
+      });
 
-      if (eventError) {
-        throw new RepositoryError("イベントの更新に失敗しました", eventError);
-      }
-
-      // グループ: 全削除→再挿入
-      const { error: deleteGroupError } = await supabase
-        .from("orbit_event_groups")
-        .delete()
-        .eq("event_id", id);
-      if (deleteGroupError) {
-        throw new RepositoryError("イベントのグループ更新に失敗しました", deleteGroupError);
-      }
-
-      if (input.groupIds.length > 0) {
-        const { error: groupError } = await supabase
-          .from("orbit_event_groups")
-          .insert(
-            input.groupIds.map((groupId) => ({
-              event_id: id,
-              group_id: groupId,
-            }))
-          );
-        if (groupError) {
-          throw new RepositoryError("イベントのグループ登録に失敗しました", groupError);
-        }
-      }
-
-      // メンバー: 全削除→再挿入
-      const { error: deleteMemberError } = await supabase
-        .from("orbit_event_members")
-        .delete()
-        .eq("event_id", id);
-      if (deleteMemberError) {
-        throw new RepositoryError("イベントのメンバー更新に失敗しました", deleteMemberError);
-      }
-
-      if (input.memberIds.length > 0) {
-        const { error: memberError } = await supabase
-          .from("orbit_event_members")
-          .insert(
-            input.memberIds.map((memberId) => ({
-              event_id: id,
-              member_id: memberId,
-            }))
-          );
-        if (memberError) {
-          throw new RepositoryError("イベントのメンバー登録に失敗しました", memberError);
-        }
+      if (rpcError) {
+        throw new RepositoryError("イベントの更新に失敗しました", rpcError);
       }
 
       const updated = await this.findById(id);
