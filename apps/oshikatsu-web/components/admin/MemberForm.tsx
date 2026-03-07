@@ -504,6 +504,10 @@ export function MemberForm({
           id="heightCm"
           label="身長 (cm)"
           type="number"
+          step="0.1"
+          min="0.1"
+          max="299.9"
+          inputMode="decimal"
           value={values.heightCm}
           onChange={(e) => update("heightCm", e.target.value)}
           error={errors.heightCm}
