@@ -1,9 +1,9 @@
 import { type NextRequest } from "next/server";
-import { createAuthMiddleware } from "@personal-hub/supabase/middleware";
+import { createAuthProxy } from "@personal-hub/supabase/proxy";
 
-const updateSession = createAuthMiddleware();
+const updateSession = createAuthProxy();
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
 

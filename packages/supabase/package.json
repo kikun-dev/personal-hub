@@ -20,6 +20,10 @@
       "types": "./src/middleware.ts",
       "default": "./src/middleware.ts"
     },
+    "./proxy": {
+      "types": "./src/proxy.ts",
+      "default": "./src/proxy.ts"
+    },
     "./auth-callback": {
       "types": "./src/auth-callback.ts",
       "default": "./src/auth-callback.ts"
