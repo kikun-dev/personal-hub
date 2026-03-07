@@ -59,11 +59,17 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     errors.push({ field: "hometown", message: "出身地は100文字以内で入力してください" });
   }
 
-  if (!input.penlightColor1.trim()) {
-    errors.push({ field: "penlightColor1", message: "サイリウムカラー1を選択してください" });
-  }
-  if (!input.penlightColor2.trim()) {
-    errors.push({ field: "penlightColor2", message: "サイリウムカラー2を選択してください" });
+  const hasPenlightColor1 = input.penlightColor1.trim().length > 0;
+  const hasPenlightColor2 = input.penlightColor2.trim().length > 0;
+  if (hasPenlightColor1 !== hasPenlightColor2) {
+    errors.push({
+      field: "penlightColor1",
+      message: "サイリウムカラーは2色セットで入力するか、未入力にしてください",
+    });
+    errors.push({
+      field: "penlightColor2",
+      message: "サイリウムカラーは2色セットで入力するか、未入力にしてください",
+    });
   }
 
   if (input.groups.length === 0) {

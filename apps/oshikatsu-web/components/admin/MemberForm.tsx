@@ -627,7 +627,7 @@ export function MemberForm({
         <div className="grid grid-cols-2 gap-3">
           <Select
             id="penlightColor1"
-            label="サイリウムカラー1*"
+            label="サイリウムカラー1"
             placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
             options={penlightOptions}
             value={values.penlightColor1}
@@ -636,7 +636,7 @@ export function MemberForm({
           />
           <Select
             id="penlightColor2"
-            label="サイリウムカラー2*"
+            label="サイリウムカラー2"
             placeholder={mainGroup ? "選択してください" : "先頭の所属グループを選択してください"}
             options={penlightOptions}
             value={values.penlightColor2}
