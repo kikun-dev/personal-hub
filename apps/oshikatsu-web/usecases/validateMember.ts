@@ -32,6 +32,10 @@ function isRegularWorkType(value: string): value is RegularWorkType {
   );
 }
 
+function isValidHeightCm(value: string): boolean {
+  return /^\d+(?:\.\d)?$/.test(value);
+}
+
 export function validateMember(input: CreateMemberInput): ValidationError[] {
   const errors: ValidationError[] = [];
 
@@ -90,12 +94,15 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     }
   }
 
-  if (input.heightCm) {
-    const h = Number(input.heightCm);
-    if (isNaN(h)) {
-      errors.push({ field: "heightCm", message: "身長は数値で入力してください" });
-    } else if (h <= 0 || h >= 300) {
-      errors.push({ field: "heightCm", message: "身長は0より大きく300未満の値で入力してください" });
+  const heightCm = input.heightCm.trim();
+  if (heightCm) {
+    if (!isValidHeightCm(heightCm)) {
+      errors.push({ field: "heightCm", message: "身長は数値（小数1桁まで）で入力してください" });
+    } else {
+      const h = Number(heightCm);
+      if (h <= 0 || h >= 300) {
+        errors.push({ field: "heightCm", message: "身長は0より大きく300未満の値で入力してください" });
+      }
     }
   }
 
