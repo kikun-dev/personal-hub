@@ -132,6 +132,14 @@ AS $$
 BEGIN
   IF NOT EXISTS (
     SELECT 1
+    FROM public.orbit_tracks
+    WHERE id = NEW.id
+  ) THEN
+    RETURN NULL;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1
     FROM public.orbit_release_tracks
     WHERE track_id = NEW.id
   ) THEN
