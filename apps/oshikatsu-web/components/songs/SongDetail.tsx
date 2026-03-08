@@ -1,4 +1,5 @@
 import type { Song } from "@/types/song";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { formatDate } from "@/lib/formatters";
@@ -40,7 +41,10 @@ export function SongDetail({ song }: { song: Song }) {
           {song.releases.map((release) => (
             <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-foreground/10 p-3">
               <p className="font-medium text-foreground">
-                {release.releaseTitle}（{RELEASE_TYPE_LABELS[release.releaseType]}）
+                <Link href={`/releases/${release.releaseId}`} className="hover:underline">
+                  {release.releaseTitle}
+                </Link>
+                （{RELEASE_TYPE_LABELS[release.releaseType]}）
               </p>
               <p className="mt-1 text-xs text-foreground/60">
                 {release.trackNumber}曲目

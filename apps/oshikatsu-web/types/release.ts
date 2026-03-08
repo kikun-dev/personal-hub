@@ -22,6 +22,12 @@ export type ReleaseBonusVideo = {
   sortOrder: number;
 };
 
+export type ReleaseTrack = {
+  trackId: string;
+  trackTitle: string;
+  trackNumber: number;
+};
+
 export type Release = {
   id: string;
   title: string;
@@ -35,6 +41,7 @@ export type Release = {
   participantMemberIds: string[];
   participantMemberNames: string[];
   bonusVideos: ReleaseBonusVideo[];
+  tracks: ReleaseTrack[];
 };
 
 export type CreateReleaseBonusVideoInput = {
@@ -60,3 +67,7 @@ export type ReleaseFilters = {
   groupId?: string;
   releaseType?: ReleaseType;
 };
+
+export function isReleaseType(value: string): value is ReleaseType {
+  return (RELEASE_TYPES as readonly string[]).includes(value);
+}

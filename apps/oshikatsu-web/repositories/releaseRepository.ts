@@ -39,6 +39,19 @@ type ReleaseMemberRow = {
   orbit_members: ReleaseMemberNameRow;
 };
 
+type ReleaseTrackRow = {
+  track_number: number;
+  orbit_tracks:
+    | {
+        id: string;
+        title: string;
+      }
+    | Array<{
+        id: string;
+        title: string;
+      }>;
+};
+
 type ReleaseRow = {
   id: string;
   title: string;
@@ -50,6 +63,7 @@ type ReleaseRow = {
   orbit_groups: ReleaseGroupRow;
   orbit_release_bonus_videos?: ReleaseBonusVideoRow[];
   orbit_release_members?: ReleaseMemberRow[];
+  orbit_release_tracks?: ReleaseTrackRow[];
 };
 
 const RELEASE_SELECT = `
@@ -62,7 +76,8 @@ const RELEASE_SELECT = `
   artwork_path,
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
-  orbit_release_members(member_id, orbit_members(name_ja))
+  orbit_release_members(member_id, orbit_members(name_ja)),
+  orbit_release_tracks(track_number, orbit_tracks(id, title))
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
@@ -101,6 +116,24 @@ function mapToRelease(row: ReleaseRow): Release {
         sortOrder: bonus.sort_order,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder),
+    tracks: (row.orbit_release_tracks ?? [])
+      .map((item) => {
+        const track = Array.isArray(item.orbit_tracks)
+          ? item.orbit_tracks[0]
+          : item.orbit_tracks;
+        if (!track) return null;
+        return {
+          trackId: track.id,
+          trackTitle: track.title,
+          trackNumber: item.track_number,
+        };
+      })
+      .filter((item): item is {
+        trackId: string;
+        trackTitle: string;
+        trackNumber: number;
+      } => Boolean(item))
+      .sort((a, b) => a.trackNumber - b.trackNumber),
   };
 }
 
