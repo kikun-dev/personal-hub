@@ -154,6 +154,7 @@
 - [ ] 制作陣マスタ管理画面の新規追加（Issue #62）
   - [ ] 一覧/詳細/CRUD と担当（複数）管理を実装
   - [ ] 導線はトップ右ナビからのみ提供（上部ヘッダー非表示）
+  - [ ] Header用ナビ（簡易）とTop右ナビ（完全版）の定義を分離する
 
 ### ライブ情報 + セットリスト
 
@@ -187,3 +188,4 @@
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
+| Top右ナビとHeaderの項目定義が共有 | #60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了 | Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離予定 |
