@@ -2,7 +2,6 @@ import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   Release,
   CreateReleaseInput,
-  CreateReleaseBonusVideoInput,
   ReleaseType,
 } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
@@ -163,38 +162,6 @@ function toNumbering(
   return Number(numbering);
 }
 
-function toBonusVideoInserts(
-  releaseId: string,
-  bonusVideos: CreateReleaseBonusVideoInput[]
-): Array<{
-    release_id: string;
-    edition: string;
-    title: string;
-    description: string | null;
-    sort_order: number;
-  }> {
-  return bonusVideos.map((bonus, index) => ({
-    release_id: releaseId,
-    edition: bonus.edition.trim(),
-    title: bonus.title.trim(),
-    description: bonus.description.trim() || null,
-    sort_order: index,
-  }));
-}
-
-function toReleaseMemberInserts(
-  releaseId: string,
-  memberIds: string[]
-): Array<{
-    release_id: string;
-    member_id: string;
-  }> {
-  return memberIds.map((memberId) => ({
-    release_id: releaseId,
-    member_id: memberId,
-  }));
-}
-
 function toBonusVideoRpcInput(
   bonusVideos: CreateReleaseInput["bonusVideos"]
 ): Array<{
@@ -212,54 +179,6 @@ function toBonusVideoRpcInput(
 export function createReleaseRepository(
   supabase: SupabaseClient
 ): ReleaseRepository {
-  async function replaceBonusVideos(
-    releaseId: string,
-    bonusVideos: CreateReleaseInput["bonusVideos"]
-  ): Promise<void> {
-    const { error: deleteError } = await supabase
-      .from("orbit_release_bonus_videos")
-      .delete()
-      .eq("release_id", releaseId);
-
-    if (deleteError) {
-      throw new RepositoryError("特典映像の更新に失敗しました", deleteError);
-    }
-
-    if (bonusVideos.length === 0) return;
-
-    const { error: insertError } = await supabase
-      .from("orbit_release_bonus_videos")
-      .insert(toBonusVideoInserts(releaseId, bonusVideos));
-
-    if (insertError) {
-      throw new RepositoryError("特典映像の登録に失敗しました", insertError);
-    }
-  }
-
-  async function replaceReleaseMembers(
-    releaseId: string,
-    memberIds: string[]
-  ): Promise<void> {
-    const { error: deleteError } = await supabase
-      .from("orbit_release_members")
-      .delete()
-      .eq("release_id", releaseId);
-
-    if (deleteError) {
-      throw new RepositoryError("参加メンバーの更新に失敗しました", deleteError);
-    }
-
-    if (memberIds.length === 0) return;
-
-    const { error: insertError } = await supabase
-      .from("orbit_release_members")
-      .insert(toReleaseMemberInserts(releaseId, memberIds));
-
-    if (insertError) {
-      throw new RepositoryError("参加メンバーの登録に失敗しました", insertError);
-    }
-  }
-
   return {
     async findAll(filters) {
       let query = supabase
@@ -303,32 +222,26 @@ export function createReleaseRepository(
     async create(input) {
       const numbering = toNumbering(input.releaseType, input.numbering);
 
-      const { data, error } = await supabase
-        .from("orbit_releases")
-        .insert({
-          title: input.title.trim(),
-          group_id: input.groupId,
-          release_type: input.releaseType,
-          numbering,
-          release_date: input.releaseDate || null,
-          artwork_path: input.artworkPath || null,
-        })
-        .select("id")
-        .single();
+      const { data: releaseId, error: rpcError } = await supabase.rpc("create_release_with_relations", {
+        p_title: input.title.trim(),
+        p_group_id: input.groupId,
+        p_release_type: input.releaseType,
+        p_numbering: numbering,
+        p_release_date: input.releaseDate || null,
+        p_artwork_path: input.artworkPath || null,
+        p_bonus_videos: toBonusVideoRpcInput(input.bonusVideos),
+        p_member_ids: input.participantMemberIds,
+      });
 
-      if (error) {
-        throw new RepositoryError("リリースの作成に失敗しました", error);
+      if (rpcError) {
+        throw new RepositoryError("リリースの作成に失敗しました", rpcError);
       }
 
-      try {
-        await replaceBonusVideos(data.id, input.bonusVideos);
-        await replaceReleaseMembers(data.id, input.participantMemberIds);
-      } catch (e) {
-        await supabase.from("orbit_releases").delete().eq("id", data.id);
-        throw e;
+      if (typeof releaseId !== "string") {
+        throw new RepositoryError("作成したリリースIDの取得に失敗しました", null);
       }
 
-      const created = await this.findById(data.id);
+      const created = await this.findById(releaseId);
       if (!created) {
         throw new RepositoryError("作成したリリースの取得に失敗しました", null);
       }
