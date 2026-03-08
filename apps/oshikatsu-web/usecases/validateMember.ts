@@ -3,10 +3,8 @@ import type { ValidationError } from "@/types/errors";
 import {
   BLOOD_TYPES,
   SNS_TYPES,
-  REGULAR_WORK_TYPES,
   type BloodType,
   type SnsType,
-  type RegularWorkType,
 } from "@/lib/constants";
 import {
   isValidHttpsUrl,
@@ -24,12 +22,6 @@ function isBloodType(value: string): value is BloodType {
 
 function isSnsType(value: string): value is SnsType {
   return (SNS_TYPES as readonly { value: string }[]).some((type) => type.value === value);
-}
-
-function isRegularWorkType(value: string): value is RegularWorkType {
-  return (REGULAR_WORK_TYPES as readonly { value: string }[]).some(
-    (type) => type.value === value
-  );
 }
 
 function isValidHeightCm(value: string): boolean {
@@ -61,6 +53,10 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
 
   if (input.hometown && input.hometown.length > 100) {
     errors.push({ field: "hometown", message: "出身地は100文字以内で入力してください" });
+  }
+
+  if (input.memo && input.memo.length > 500) {
+    errors.push({ field: "memo", message: "メモは500文字以内で入力してください" });
   }
 
   const hasPenlightColor1 = input.penlightColor1.trim().length > 0;
@@ -167,36 +163,20 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     }
   }
 
-  for (let i = 0; i < input.regularWorks.length; i++) {
-    const work = input.regularWorks[i];
-    if (!work.workType) {
-      errors.push({ field: `regularWorks.${i}.workType`, message: "仕事種別を選択してください" });
-    } else if (!isRegularWorkType(work.workType)) {
-      errors.push({ field: `regularWorks.${i}.workType`, message: "無効な仕事種別です" });
+  for (let i = 0; i < input.histories.length; i++) {
+    const history = input.histories[i];
+    if (!history.date || !isValidDateString(history.date)) {
+      errors.push({ field: `histories.${i}.date`, message: "日付はYYYY-MM-DD形式で入力してください" });
     }
 
-    if (!work.name.trim()) {
-      errors.push({ field: `regularWorks.${i}.name`, message: "仕事名を入力してください" });
-    } else if (work.name.length > 100) {
-      errors.push({ field: `regularWorks.${i}.name`, message: "仕事名は100文字以内で入力してください" });
+    if (!history.event.trim()) {
+      errors.push({ field: `histories.${i}.event`, message: "出来事を入力してください" });
+    } else if (history.event.length > 100) {
+      errors.push({ field: `histories.${i}.event`, message: "出来事は100文字以内で入力してください" });
     }
 
-    if (!work.startDate || !isValidDateString(work.startDate)) {
-      errors.push({ field: `regularWorks.${i}.startDate`, message: "開始日はYYYY-MM-DD形式で入力してください" });
-    }
-
-    if (work.endDate && !isValidDateString(work.endDate)) {
-      errors.push({ field: `regularWorks.${i}.endDate`, message: "終了日はYYYY-MM-DD形式で入力してください" });
-    }
-
-    if (
-      work.startDate &&
-      isValidDateString(work.startDate) &&
-      work.endDate &&
-      isValidDateString(work.endDate) &&
-      work.endDate < work.startDate
-    ) {
-      errors.push({ field: `regularWorks.${i}.endDate`, message: "終了日は開始日以降を入力してください" });
+    if (history.note.length > 500) {
+      errors.push({ field: `histories.${i}.note`, message: "備考は500文字以内で入力してください" });
     }
   }
 

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import type { ReactNode } from "react";
 import type { MemberWithGroups } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
@@ -20,6 +21,51 @@ function formatPenlightLabel(colorName: string, orderedColorNames: string[]): st
   if (index === -1) return colorName;
   const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
   return `${prefix}${colorName}`;
+}
+
+function toUtcDate(dateString: string): Date | null {
+  const [year, month, day] = dateString.split("-").map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function getTodayInJst(): string {
+  const now = new Date();
+  const jstNow = new Date(now.getTime() + 9 * 60 * 60 * 1000);
+  return jstNow.toISOString().slice(0, 10);
+}
+
+function calculateTenureDays(joinedAt: string | null, graduatedAt: string | null): number | null {
+  if (!joinedAt) return null;
+  const startDate = toUtcDate(joinedAt);
+  const endDate = toUtcDate(graduatedAt ?? getTodayInJst());
+  if (!startDate || !endDate) return null;
+
+  const diffMs = endDate.getTime() - startDate.getTime();
+  if (diffMs < 0) return null;
+  return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
+}
+
+function linkifyNote(note: string): ReactNode[] {
+  const urlRegex = /(https?:\/\/[^\s]+)/g;
+  const parts = note.split(urlRegex);
+
+  return parts.map((part, index) => {
+    if (/^https?:\/\//.test(part)) {
+      return (
+        <a
+          key={`${part}-${index}`}
+          href={part}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+        >
+          {part}
+        </a>
+      );
+    }
+    return part;
+  });
 }
 
 export function MemberProfile({
@@ -129,31 +175,43 @@ export function MemberProfile({
             </>
           )}
         </dl>
+        {member.memo && (
+          <div className="mt-3 border-t border-foreground/10 pt-3">
+            <h3 className="text-sm text-foreground/50">メモ</h3>
+            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{member.memo}</p>
+          </div>
+        )}
       </Card>
 
       {/* グループ履歴 */}
       <Card>
         <h2 className="mb-3 text-sm font-medium text-foreground/70">グループ履歴</h2>
         <div className="space-y-2">
-          {member.groups.map((g) => (
-            <div
-              key={g.id}
-              className="flex items-center justify-between text-sm"
-            >
-              <div className="flex items-center gap-2">
-                <GroupBadge
-                  groupName={g.groupNameJa}
-                  groupColor={g.groupColor}
-                  generation={g.generation}
-                />
+          {member.groups.map((g) => {
+            const tenureDays = calculateTenureDays(g.joinedAt, g.graduatedAt);
+            return (
+              <div
+                key={g.id}
+                className="flex items-center justify-between text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <GroupBadge
+                    groupName={g.groupNameJa}
+                    groupColor={g.groupColor}
+                    generation={g.generation}
+                  />
+                </div>
+                <div className="text-right text-foreground/50">
+                  <p>
+                    {g.joinedAt && formatDate(g.joinedAt)}
+                    {g.joinedAt && " 〜 "}
+                    {g.graduatedAt ? formatDate(g.graduatedAt) : "現役"}
+                  </p>
+                  {tenureDays !== null && <p className="text-xs">在籍{tenureDays}日</p>}
+                </div>
               </div>
-              <div className="text-foreground/50">
-                {g.joinedAt && formatDate(g.joinedAt)}
-                {g.joinedAt && " 〜 "}
-                {g.graduatedAt ? formatDate(g.graduatedAt) : "現役"}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </Card>
 
@@ -226,20 +284,33 @@ export function MemberProfile({
         </Card>
       )}
 
-      {/* レギュラー仕事 */}
-      {member.regularWorks.length > 0 && (
+      {/* 来歴 */}
+      {member.histories.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">レギュラー仕事</h2>
-          <div className="space-y-2">
-            {member.regularWorks.map((work) => (
-              <div key={work.id} className="rounded-lg border border-foreground/10 p-3">
-                <p className="text-sm font-medium text-foreground">{work.name}</p>
-                <p className="text-xs text-foreground/50">{work.workType}</p>
-                <p className="text-xs text-foreground/50">
-                  {formatDate(work.startDate)} 〜 {work.endDate ? formatDate(work.endDate) : "継続中"}
-                </p>
-              </div>
-            ))}
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">来歴</h2>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-foreground/10 text-foreground/50">
+                  <th className="px-2 py-2 font-medium">日付</th>
+                  <th className="px-2 py-2 font-medium">出来事</th>
+                  <th className="px-2 py-2 font-medium">備考</th>
+                </tr>
+              </thead>
+              <tbody>
+                {member.histories.map((history) => (
+                  <tr key={history.id} className="border-b border-foreground/10 align-top">
+                    <td className="px-2 py-2 whitespace-nowrap text-foreground/70">
+                      {formatDate(history.date)}
+                    </td>
+                    <td className="px-2 py-2 text-foreground">{history.event}</td>
+                    <td className="px-2 py-2 whitespace-pre-wrap text-foreground/70">
+                      {history.note ? linkifyNote(history.note) : "-"}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </Card>
       )}
