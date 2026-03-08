@@ -17,6 +17,11 @@ const sections = [
     title: "楽曲管理",
     description: "楽曲の追加・編集・削除を行います",
   },
+  {
+    href: "/admin/releases",
+    title: "リリース管理",
+    description: "リリース作品の追加・編集・削除を行います",
+  },
 ];
 
 export default function AdminPage() {
