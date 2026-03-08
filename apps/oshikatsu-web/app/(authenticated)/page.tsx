@@ -9,6 +9,7 @@ import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
 import { OnThisDay } from "@/components/events/OnThisDay";
 import { MonthSelector } from "@/components/events/MonthSelector";
+import { TopNavigationPanel } from "@/components/layout/TopNavigationPanel";
 import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
@@ -49,15 +50,20 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   ]);
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">Orbit</h1>
-        <Suspense fallback={<div className="h-10" />}>
-          <MonthSelector year={year} month={month} day={day} showTodayButton />
-        </Suspense>
-      </div>
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+      <div className="space-y-6">
+        <div className="flex items-center">
+          <Suspense fallback={<div className="h-10" />}>
+            <MonthSelector
+              year={year}
+              month={month}
+              day={day}
+              showTodayButton
+              splitTodayButton
+            />
+          </Suspense>
+        </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
         <EventCalendar
           events={monthEvents}
           year={year}
@@ -65,7 +71,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           selectedDateStr={selectedDateStr}
         />
 
-        <div className="space-y-6">
+        <div className="grid gap-6 md:grid-cols-2">
           <EventList
             events={selectedDateEvents}
             title={eventListTitle}
@@ -79,6 +85,10 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           />
         </div>
       </div>
+
+      <aside className="hidden lg:block">
+        <TopNavigationPanel />
+      </aside>
     </div>
   );
 }

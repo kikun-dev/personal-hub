@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/client";
+import { APP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
 
 type HeaderProps = {
   userEmail: string;
@@ -22,18 +23,6 @@ export function Header({ userEmail }: HeaderProps) {
     router.push("/login");
   };
 
-  const navItems = [
-    { href: "/", label: "トップ" },
-    { href: "/members", label: "メンバー" },
-    { href: "/songs", label: "楽曲" },
-    { href: "/releases", label: "リリース" },
-    { href: "/admin", label: "管理" },
-  ];
-
-  const isActive = (href: string) =>
-    pathname === href ||
-    (href !== "/" && pathname.startsWith(href));
-
   return (
     <header className="border-b border-foreground/10 bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
@@ -43,12 +32,12 @@ export function Header({ userEmail }: HeaderProps) {
           </Link>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">
-            {navItems.map((item) => (
+            {APP_NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={`text-sm transition-colors ${
-                  isActive(item.href)
+                  isNavigationItemActive(pathname, item.href)
                     ? "font-medium text-foreground"
                     : "text-foreground/60 hover:text-foreground"
                 }`}
@@ -92,13 +81,13 @@ export function Header({ userEmail }: HeaderProps) {
       {isMenuOpen && (
         <div className="border-t border-foreground/10 px-4 py-3 md:hidden">
           <nav className="flex flex-col gap-2">
-            {navItems.map((item) => (
+            {APP_NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={closeMenu}
                 className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                  isActive(item.href)
+                  isNavigationItemActive(pathname, item.href)
                     ? "bg-foreground/5 font-medium text-foreground"
                     : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
                 }`}

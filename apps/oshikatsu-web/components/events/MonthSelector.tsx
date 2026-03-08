@@ -10,6 +10,7 @@ type MonthSelectorProps = {
   day?: number;
   basePath?: string;
   showTodayButton?: boolean;
+  splitTodayButton?: boolean;
 };
 
 export function MonthSelector({
@@ -18,6 +19,7 @@ export function MonthSelector({
   day,
   basePath = "/",
   showTodayButton = false,
+  splitTodayButton = false,
 }: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,16 +98,8 @@ export function MonthSelector({
     );
   };
 
-  return (
+  const navigationControls = (
     <div className="flex items-center gap-4">
-      {showTodayButton && (
-        <button
-          onClick={handleToday}
-          className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
-        >
-          Today
-        </button>
-      )}
       <button
         onClick={handlePrev}
         disabled={isAtMin}
@@ -123,6 +117,34 @@ export function MonthSelector({
       >
         翌月 →
       </button>
+    </div>
+  );
+
+  if (showTodayButton && splitTodayButton) {
+    return (
+      <div className="flex w-full items-center justify-between gap-4">
+        <button
+          onClick={handleToday}
+          className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          Today
+        </button>
+        {navigationControls}
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-4">
+      {showTodayButton && (
+        <button
+          onClick={handleToday}
+          className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+        >
+          Today
+        </button>
+      )}
+      {navigationControls}
     </div>
   );
 }
