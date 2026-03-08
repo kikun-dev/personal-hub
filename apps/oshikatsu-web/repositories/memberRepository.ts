@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@personal-hub/supabase";
 import type { MemberWithGroups, MemberGroup } from "@/types/member";
 import type { MemberRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
-import type { SnsType, RegularWorkType } from "@/lib/constants";
+import type { SnsType } from "@/lib/constants";
 
 type MemberGroupRow = {
   id: string;
@@ -30,12 +30,11 @@ type MemberSnsRow = {
   sort_order: number;
 };
 
-type MemberRegularWorkRow = {
+type MemberHistoryRow = {
   id: string;
-  work_type: string;
-  name: string;
-  start_date: string;
-  end_date: string | null;
+  date: string;
+  event: string;
+  note: string | null;
   sort_order: number;
 };
 
@@ -52,6 +51,7 @@ type MemberRow = {
   penlight_color_2: string | null;
   height_cm: number | null;
   hometown: string | null;
+  memo: string | null;
   image_url: string | null;
   blog_url: string | null;
   blog_hashtag: string | null;
@@ -60,7 +60,7 @@ type MemberRow = {
   talk_app_hashtag: string | null;
   orbit_member_groups: MemberGroupRow[];
   orbit_member_sns?: MemberSnsRow[];
-  orbit_member_regular_works?: MemberRegularWorkRow[];
+  orbit_member_histories?: MemberHistoryRow[];
 };
 
 type MemberGroupRpcInput = {
@@ -78,11 +78,10 @@ type MemberSnsRpcInput = {
   sort_order: number;
 };
 
-type MemberRegularWorkRpcInput = {
-  work_type: string;
-  name: string;
-  start_date: string;
-  end_date: string | null;
+type MemberHistoryRpcInput = {
+  date: string;
+  event: string;
+  note: string | null;
   sort_order: number;
 };
 
@@ -109,14 +108,13 @@ function toMemberSnsRpcInput(
   }));
 }
 
-function toMemberRegularWorkRpcInput(
-  works: { workType: string; name: string; startDate: string; endDate: string }[]
-): MemberRegularWorkRpcInput[] {
-  return works.map((work, index) => ({
-    work_type: work.workType,
-    name: work.name,
-    start_date: work.startDate,
-    end_date: work.endDate || null,
+function toMemberHistoryRpcInput(
+  histories: { date: string; event: string; note: string }[]
+): MemberHistoryRpcInput[] {
+  return histories.map((history, index) => ({
+    date: history.date,
+    event: history.event,
+    note: history.note || null,
     sort_order: index,
   }));
 }
@@ -151,6 +149,7 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
     penlightColor2: row.penlight_color_2,
     heightCm: row.height_cm,
     hometown: row.hometown,
+    memo: row.memo,
     imageUrl: row.image_url,
     blogUrl: row.blog_url,
     blogHashtag: row.blog_hashtag,
@@ -168,16 +167,20 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
         sortOrder: sns.sort_order,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder),
-    regularWorks: (row.orbit_member_regular_works ?? [])
-      .map((work) => ({
-        id: work.id,
-        workType: work.work_type as RegularWorkType,
-        name: work.name,
-        startDate: work.start_date,
-        endDate: work.end_date,
-        sortOrder: work.sort_order,
+    histories: (row.orbit_member_histories ?? [])
+      .map((history) => ({
+        id: history.id,
+        date: history.date,
+        event: history.event,
+        note: history.note ?? "",
+        sortOrder: history.sort_order,
       }))
-      .sort((a, b) => a.sortOrder - b.sortOrder),
+      .sort((a, b) => {
+        if (a.date !== b.date) {
+          return a.date < b.date ? -1 : 1;
+        }
+        return a.sortOrder - b.sortOrder;
+      }),
   };
 }
 
@@ -194,6 +197,7 @@ const MEMBER_BASE_SELECT = `
   penlight_color_2,
   height_cm,
   hometown,
+  memo,
   image_url,
   blog_url,
   blog_hashtag,
@@ -224,13 +228,12 @@ const MEMBER_SNS_SELECT = `
   )
 `;
 
-const MEMBER_REGULAR_WORKS_SELECT = `
-  orbit_member_regular_works(
+const MEMBER_HISTORIES_SELECT = `
+  orbit_member_histories(
     id,
-    work_type,
-    name,
-    start_date,
-    end_date,
+    date,
+    event,
+    note,
     sort_order
   )
 `;
@@ -244,7 +247,7 @@ const MEMBER_DETAIL_SELECT = `
   ${MEMBER_BASE_SELECT},
   ${MEMBER_GROUPS_SELECT},
   ${MEMBER_SNS_SELECT},
-  ${MEMBER_REGULAR_WORKS_SELECT}
+  ${MEMBER_HISTORIES_SELECT}
 `;
 
 export function createMemberRepository(
@@ -315,36 +318,35 @@ export function createMemberRepository(
     }
   }
 
-  async function replaceMemberRegularWorks(
+  async function replaceMemberHistories(
     memberId: string,
-    inputWorks: { workType: string; name: string; startDate: string; endDate: string }[]
+    inputHistories: { date: string; event: string; note: string }[]
   ): Promise<void> {
     const { error: deleteError } = await supabase
-      .from("orbit_member_regular_works")
+      .from("orbit_member_histories")
       .delete()
       .eq("member_id", memberId);
 
     if (deleteError) {
-      throw new RepositoryError("レギュラー仕事の更新に失敗しました", deleteError);
+      throw new RepositoryError("来歴の更新に失敗しました", deleteError);
     }
 
-    if (inputWorks.length === 0) return;
+    if (inputHistories.length === 0) return;
 
-    const workRows = inputWorks.map((work, index) => ({
+    const historyRows = inputHistories.map((history, index) => ({
       member_id: memberId,
-      work_type: work.workType,
-      name: work.name,
-      start_date: work.startDate,
-      end_date: work.endDate || null,
+      date: history.date,
+      event: history.event,
+      note: history.note || null,
       sort_order: index,
     }));
 
     const { error: insertError } = await supabase
-      .from("orbit_member_regular_works")
-      .insert(workRows);
+      .from("orbit_member_histories")
+      .insert(historyRows);
 
     if (insertError) {
-      throw new RepositoryError("レギュラー仕事の登録に失敗しました", insertError);
+      throw new RepositoryError("来歴の登録に失敗しました", insertError);
     }
   }
 
@@ -428,6 +430,7 @@ export function createMemberRepository(
           penlight_color_2: input.penlightColor2 || null,
           height_cm: input.heightCm ? Number(input.heightCm) : null,
           hometown: input.hometown || null,
+          memo: input.memo || null,
           image_url: input.imageUrl || null,
           blog_url: input.blogUrl || null,
           blog_hashtag: input.blogHashtag || null,
@@ -445,7 +448,7 @@ export function createMemberRepository(
       try {
         await replaceMemberGroups(member.id, input.groups);
         await replaceMemberSns(member.id, input.sns);
-        await replaceMemberRegularWorks(member.id, input.regularWorks);
+        await replaceMemberHistories(member.id, input.histories);
       } catch (e) {
         await supabase.from("orbit_members").delete().eq("id", member.id);
         if (e instanceof RepositoryError) {
@@ -475,6 +478,7 @@ export function createMemberRepository(
         p_penlight_color_2: input.penlightColor2 || null,
         p_height_cm: input.heightCm ? Number(input.heightCm) : null,
         p_hometown: input.hometown || null,
+        p_memo: input.memo || null,
         p_image_url: input.imageUrl || null,
         p_blog_url: input.blogUrl || null,
         p_blog_hashtag: input.blogHashtag || null,
@@ -483,7 +487,7 @@ export function createMemberRepository(
         p_talk_app_hashtag: input.talkAppHashtag || null,
         p_groups: toMemberGroupRpcInput(input.groups),
         p_sns: toMemberSnsRpcInput(input.sns),
-        p_regular_works: toMemberRegularWorkRpcInput(input.regularWorks),
+        p_histories: toMemberHistoryRpcInput(input.histories),
       });
 
       if (rpcError) {

@@ -40,6 +40,7 @@ export default async function EditMemberPage({
     penlightColor2: member.penlightColor2 ?? "",
     heightCm: member.heightCm?.toString() ?? "",
     hometown: member.hometown ?? "",
+    memo: member.memo ?? "",
     imageUrl: member.imageUrl ?? "",
     blogUrl: member.blogUrl ?? "",
     blogHashtag: member.blogHashtag ?? "",
@@ -58,11 +59,10 @@ export default async function EditMemberPage({
       url: sns.url,
       hashtag: sns.hashtag,
     })),
-    regularWorks: member.regularWorks.map((work) => ({
-      workType: work.workType,
-      name: work.name,
-      startDate: work.startDate,
-      endDate: work.endDate ?? "",
+    histories: member.histories.map((history) => ({
+      date: history.date,
+      event: history.event,
+      note: history.note,
     })),
   };
 

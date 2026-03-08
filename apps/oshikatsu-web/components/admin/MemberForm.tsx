@@ -7,18 +7,15 @@ import type {
   CreateMemberInput,
   CreateMemberGroupInput,
   CreateMemberSnsInput,
-  CreateMemberRegularWorkInput,
+  CreateMemberHistoryInput,
   MemberImageUploadInput,
 } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
-import {
-  BLOOD_TYPES,
-  SNS_TYPES,
-  REGULAR_WORK_TYPES,
-} from "@/lib/constants";
+import { Textarea } from "@/components/ui/Textarea";
+import { BLOOD_TYPES, SNS_TYPES } from "@/lib/constants";
 import { calculateZodiac } from "@/lib/zodiac";
 import {
   MEMBER_IMAGE_ALLOWED_MIME_TYPES,
@@ -29,15 +26,15 @@ import {
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
 type SnsWithKey = CreateMemberSnsInput & { _key: string };
-type RegularWorkWithKey = CreateMemberRegularWorkInput & { _key: string };
+type HistoryWithKey = CreateMemberHistoryInput & { _key: string };
 
 type FormValues = Omit<
   CreateMemberInput,
-  "groups" | "sns" | "regularWorks"
+  "groups" | "sns" | "histories"
 > & {
   groups: GroupWithKey[];
   sns: SnsWithKey[];
-  regularWorks: RegularWorkWithKey[];
+  histories: HistoryWithKey[];
 };
 
 type MemberFormProps = {
@@ -63,10 +60,10 @@ function withSnsKey(sns: CreateMemberSnsInput): SnsWithKey {
   return { ...sns, _key: crypto.randomUUID() };
 }
 
-function withRegularWorkKey(
-  work: CreateMemberRegularWorkInput
-): RegularWorkWithKey {
-  return { ...work, _key: crypto.randomUUID() };
+function withHistoryKey(
+  history: CreateMemberHistoryInput
+): HistoryWithKey {
+  return { ...history, _key: crypto.randomUUID() };
 }
 
 function getDefaultValues(): FormValues {
@@ -81,6 +78,7 @@ function getDefaultValues(): FormValues {
     penlightColor2: "",
     heightCm: "",
     hometown: "",
+    memo: "",
     imageUrl: "",
     blogUrl: "",
     blogHashtag: "",
@@ -91,7 +89,7 @@ function getDefaultValues(): FormValues {
       withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
     ],
     sns: [],
-    regularWorks: [],
+    histories: [],
   };
 }
 
@@ -100,7 +98,7 @@ function toFormValues(input: CreateMemberInput): FormValues {
     ...input,
     groups: input.groups.map(withGroupKey),
     sns: input.sns.map(withSnsKey),
-    regularWorks: input.regularWorks.map(withRegularWorkKey),
+    histories: input.histories.map(withHistoryKey),
   };
 }
 
@@ -119,11 +117,10 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
       url: sns.url,
       hashtag: sns.hashtag,
     })),
-    regularWorks: form.regularWorks.map((work) => ({
-      workType: work.workType,
-      name: work.name,
-      startDate: work.startDate,
-      endDate: work.endDate,
+    histories: form.histories.map((history) => ({
+      date: history.date,
+      event: history.event,
+      note: history.note,
     })),
   };
 }
@@ -308,42 +305,41 @@ export function MemberForm({
     }));
   };
 
-  const updateRegularWork = (
+  const updateHistory = (
     index: number,
-    field: keyof CreateMemberRegularWorkInput,
+    field: keyof CreateMemberHistoryInput,
     value: string
   ) => {
     setValues((prev) => {
-      const next = [...prev.regularWorks];
+      const next = [...prev.histories];
       next[index] = { ...next[index], [field]: value };
-      return { ...prev, regularWorks: next };
+      return { ...prev, histories: next };
     });
     setErrors((prev) => {
       const next = { ...prev };
-      delete next[`regularWorks.${index}.${field}`];
+      delete next[`histories.${index}.${field}`];
       return next;
     });
   };
 
-  const addRegularWork = () => {
+  const addHistory = () => {
     setValues((prev) => ({
       ...prev,
-      regularWorks: [
-        ...prev.regularWorks,
-        withRegularWorkKey({
-          workType: "tv",
-          name: "",
-          startDate: "",
-          endDate: "",
+      histories: [
+        ...prev.histories,
+        withHistoryKey({
+          date: "",
+          event: "",
+          note: "",
         }),
       ],
     }));
   };
 
-  const removeRegularWork = (index: number) => {
+  const removeHistory = (index: number) => {
     setValues((prev) => ({
       ...prev,
-      regularWorks: prev.regularWorks.filter((_, i) => i !== index),
+      histories: prev.histories.filter((_, i) => i !== index),
     }));
   };
 
@@ -550,6 +546,14 @@ export function MemberForm({
             </div>
           )}
         </div>
+        <Textarea
+          id="memo"
+          label="メモ"
+          value={values.memo}
+          onChange={(e) => update("memo", e.target.value)}
+          error={errors.memo}
+          rows={4}
+        />
       </section>
 
       <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
@@ -752,58 +756,47 @@ export function MemberForm({
 
       <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground/70">レギュラー仕事</h2>
-          <Button type="button" variant="ghost" onClick={addRegularWork}>
+          <h2 className="text-sm font-medium text-foreground/70">来歴</h2>
+          <Button type="button" variant="ghost" onClick={addHistory}>
             + 追加
           </Button>
         </div>
 
-        {values.regularWorks.map((work, i) => (
-          <div key={work._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
+        {values.histories.map((history, i) => (
+          <div key={history._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground/50">仕事 {i + 1}</span>
+              <span className="text-xs text-foreground/50">来歴 {i + 1}</span>
               <button
                 type="button"
-                onClick={() => removeRegularWork(i)}
+                onClick={() => removeHistory(i)}
                 className="text-xs text-red-500 hover:text-red-600"
               >
                 削除
               </button>
             </div>
-            <Select
-              id={`workType-${i}`}
-              label="種別"
-              placeholder="選択してください"
-              options={REGULAR_WORK_TYPES.map((type) => ({ value: type.value, label: type.label }))}
-              value={work.workType}
-              onChange={(e) => updateRegularWork(i, "workType", e.target.value)}
-              error={errors[`regularWorks.${i}.workType`]}
+            <Input
+              id={`historyDate-${i}`}
+              label="日付"
+              type="date"
+              value={history.date}
+              onChange={(e) => updateHistory(i, "date", e.target.value)}
+              error={errors[`histories.${i}.date`]}
             />
             <Input
-              id={`workName-${i}`}
-              label="名前"
-              value={work.name}
-              onChange={(e) => updateRegularWork(i, "name", e.target.value)}
-              error={errors[`regularWorks.${i}.name`]}
+              id={`historyEvent-${i}`}
+              label="出来事"
+              value={history.event}
+              onChange={(e) => updateHistory(i, "event", e.target.value)}
+              error={errors[`histories.${i}.event`]}
             />
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                id={`workStartDate-${i}`}
-                label="開始日"
-                type="date"
-                value={work.startDate}
-                onChange={(e) => updateRegularWork(i, "startDate", e.target.value)}
-                error={errors[`regularWorks.${i}.startDate`]}
-              />
-              <Input
-                id={`workEndDate-${i}`}
-                label="終了日"
-                type="date"
-                value={work.endDate}
-                onChange={(e) => updateRegularWork(i, "endDate", e.target.value)}
-                error={errors[`regularWorks.${i}.endDate`]}
-              />
-            </div>
+            <Textarea
+              id={`historyNote-${i}`}
+              label="備考"
+              value={history.note}
+              onChange={(e) => updateHistory(i, "note", e.target.value)}
+              error={errors[`histories.${i}.note`]}
+              rows={3}
+            />
           </div>
         ))}
       </section>

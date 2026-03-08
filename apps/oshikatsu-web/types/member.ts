@@ -1,4 +1,4 @@
-import type { SnsType, RegularWorkType } from "@/lib/constants";
+import type { SnsType } from "@/lib/constants";
 
 export type Member = {
   id: string;
@@ -13,6 +13,7 @@ export type Member = {
   penlightColor2: string | null;
   heightCm: number | null;
   hometown: string | null;
+  memo: string | null;
   imageUrl: string | null;
   blogUrl: string | null;
   blogHashtag: string | null;
@@ -34,7 +35,7 @@ export type MemberGroup = {
 export type MemberWithGroups = Member & {
   groups: MemberGroup[];
   sns: MemberSns[];
-  regularWorks: MemberRegularWork[];
+  histories: MemberHistory[];
 };
 
 export type MemberSns = {
@@ -46,12 +47,11 @@ export type MemberSns = {
   sortOrder: number;
 };
 
-export type MemberRegularWork = {
+export type MemberHistory = {
   id: string;
-  workType: RegularWorkType;
-  name: string;
-  startDate: string;
-  endDate: string | null;
+  date: string;
+  event: string;
+  note: string;
   sortOrder: number;
 };
 
@@ -73,9 +73,10 @@ export type CreateMemberInput = {
   talkAppName: string;
   talkAppUrl: string;
   talkAppHashtag: string;
+  memo: string;
   groups: CreateMemberGroupInput[];
   sns: CreateMemberSnsInput[];
-  regularWorks: CreateMemberRegularWorkInput[];
+  histories: CreateMemberHistoryInput[];
 };
 
 export type CreateMemberGroupInput = {
@@ -92,11 +93,10 @@ export type CreateMemberSnsInput = {
   hashtag: string;
 };
 
-export type CreateMemberRegularWorkInput = {
-  workType: RegularWorkType;
-  name: string;
-  startDate: string;
-  endDate: string;
+export type CreateMemberHistoryInput = {
+  date: string;
+  event: string;
+  note: string;
 };
 
 export type UpdateMemberInput = CreateMemberInput;

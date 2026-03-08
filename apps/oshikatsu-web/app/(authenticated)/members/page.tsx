@@ -20,7 +20,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
 
   const filters: MemberFiltersType = {
     groupId: params.groupId,
-    status: (params.status as MemberFiltersType["status"]) ?? "all",
+    status: (params.status as MemberFiltersType["status"]) ?? "active",
     generation: params.generation,
   };
 

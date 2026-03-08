@@ -12,11 +12,13 @@ export function MemberFilters({ groups }: MemberFiltersProps) {
   const searchParams = useSearchParams();
 
   const currentGroupId = searchParams.get("groupId") ?? "";
-  const currentStatus = searchParams.get("status") ?? "all";
+  const currentStatus = searchParams.get("status") ?? "active";
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "all") {
+    if (key === "status") {
+      params.set(key, value);
+    } else if (value && value !== "all") {
       params.set(key, value);
     } else {
       params.delete(key);
