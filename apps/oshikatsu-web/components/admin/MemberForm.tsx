@@ -470,14 +470,6 @@ export function MemberForm({
           onChange={(e) => update("hometown", e.target.value)}
           error={errors.hometown}
         />
-        <Textarea
-          id="memo"
-          label="メモ"
-          value={values.memo}
-          onChange={(e) => update("memo", e.target.value)}
-          error={errors.memo}
-          rows={4}
-        />
         <Input
           id="dateOfBirth"
           label="生年月日"
@@ -554,6 +546,14 @@ export function MemberForm({
             </div>
           )}
         </div>
+        <Textarea
+          id="memo"
+          label="メモ"
+          value={values.memo}
+          onChange={(e) => update("memo", e.target.value)}
+          error={errors.memo}
+          rows={4}
+        />
       </section>
 
       <section className="space-y-3 rounded-lg border border-foreground/10 p-4">

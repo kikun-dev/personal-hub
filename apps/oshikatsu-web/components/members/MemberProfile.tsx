@@ -192,13 +192,13 @@ export function MemberProfile({
               <dd className="text-foreground">{member.hometown}</dd>
             </>
           )}
+          {member.memo && (
+            <>
+              <dt className="col-span-2 border-t border-foreground/10 pt-3 text-foreground/50">メモ</dt>
+              <dd className="col-span-2 whitespace-pre-wrap text-foreground">{member.memo}</dd>
+            </>
+          )}
         </dl>
-        {member.memo && (
-          <div className="mt-3 border-t border-foreground/10 pt-3">
-            <h3 className="text-sm text-foreground/50">メモ</h3>
-            <p className="mt-1 whitespace-pre-wrap text-sm text-foreground">{member.memo}</p>
-          </div>
-        )}
       </Card>
 
       {/* グループ履歴 */}

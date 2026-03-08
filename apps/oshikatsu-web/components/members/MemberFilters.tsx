@@ -16,7 +16,9 @@ export function MemberFilters({ groups }: MemberFiltersProps) {
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (value && value !== "all") {
+    if (key === "status") {
+      params.set(key, value);
+    } else if (value && value !== "all") {
       params.set(key, value);
     } else {
       params.delete(key);
