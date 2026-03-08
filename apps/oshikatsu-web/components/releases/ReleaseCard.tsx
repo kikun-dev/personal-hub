@@ -18,7 +18,7 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
         {release.groupNameJa} / {RELEASE_TYPE_LABELS[release.releaseType]}
         {release.numbering ? ` / ${release.numbering}` : ""}
       </p>
-      <p className="mt-1 text-xs text-foreground/50">曲目: {release.tracks.length}曲</p>
+      <p className="mt-1 text-xs text-foreground/50">曲目: {release.trackCount}曲</p>
       {release.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">{formatDate(release.releaseDate)}</p>
       )}

@@ -593,7 +593,7 @@ export function SongForm({
                 />
                 <Input
                   id={`costume-image-${costume._key}`}
-                  label="画像（Storage path）*"
+                  label="画像（Storage path: costumes/...）*"
                   value={costume.imagePath}
                   onChange={(e) => updateCostume(costume._key, "imagePath", e.target.value)}
                   error={errors[`costumes.${index}.imagePath`]}

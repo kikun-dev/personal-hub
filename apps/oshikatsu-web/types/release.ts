@@ -38,6 +38,7 @@ export type Release = {
   numbering: number | null;
   releaseDate: string | null;
   artworkPath: string | null;
+  trackCount: number;
   participantMemberIds: string[];
   participantMemberNames: string[];
   bonusVideos: ReleaseBonusVideo[];

@@ -136,6 +136,10 @@ type FormationRowIdRow = {
   row_number: number;
 };
 
+type GroupTrackIdRow = {
+  track_id: string;
+};
+
 const SONG_LIST_SELECT = `
   id,
   title,
@@ -839,8 +843,28 @@ export function createSongRepository(
     return (data as unknown as SongRow[]).map(mapSong);
   }
 
+  async function findTrackIdsByGroupId(groupId: string): Promise<string[]> {
+    const { data, error } = await supabase
+      .from("orbit_release_tracks")
+      .select("track_id, orbit_releases!inner(group_id)")
+      .eq("orbit_releases.group_id", groupId);
+
+    if (error) {
+      throw new RepositoryError("楽曲一覧の取得に失敗しました", error);
+    }
+
+    return uniqueStrings(
+      ((data as GroupTrackIdRow[]) ?? []).map((row) => row.track_id)
+    );
+  }
+
   return {
     async findAll(filters) {
+      if (filters?.groupId) {
+        const trackIds = await findTrackIdsByGroupId(filters.groupId);
+        return findManyByIds(trackIds, SONG_LIST_SELECT);
+      }
+
       const { data, error } = await supabase
         .from("orbit_tracks")
         .select(SONG_LIST_SELECT)
@@ -850,13 +874,7 @@ export function createSongRepository(
         throw new RepositoryError("楽曲一覧の取得に失敗しました", error);
       }
 
-      let songs = (data as unknown as SongRow[]).map(mapSong);
-
-      if (filters?.groupId) {
-        songs = songs.filter((song) => song.groupIds.includes(filters.groupId as string));
-      }
-
-      return songs;
+      return (data as unknown as SongRow[]).map(mapSong);
     },
 
     async findById(id) {
@@ -930,23 +948,20 @@ export function createSongRepository(
       const mv = parseMv(input.mv);
       const costumes = parseCostumes(input.costumes);
 
-      const { error: trackError } = await supabase
-        .from("orbit_tracks")
-        .update({
-          title: input.title.trim(),
-          duration_seconds: durationSeconds,
-        })
-        .eq("id", id);
+      const { error: rpcError } = await supabase.rpc("update_track_with_relations", {
+        p_track_id: id,
+        p_title: input.title.trim(),
+        p_duration_seconds: durationSeconds,
+        p_release_links: releaseLinks,
+        p_credits: credits,
+        p_formation_rows: formationRows,
+        p_mv: mv,
+        p_costumes: costumes,
+      });
 
-      if (trackError) {
-        throw new RepositoryError("楽曲の更新に失敗しました", trackError);
+      if (rpcError) {
+        throw new RepositoryError("楽曲の更新に失敗しました", rpcError);
       }
-
-      await replaceReleaseLinks(id, releaseLinks);
-      await replaceCredits(id, credits);
-      await replaceFormation(id, releaseLinks.map((link) => link.releaseId), formationRows);
-      await replaceMv(id, mv);
-      await replaceCostumes(id, costumes);
 
       const updated = await this.findById(id);
       if (!updated) {

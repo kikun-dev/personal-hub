@@ -4,7 +4,7 @@ import type {
 } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { isValidDateString, isValidHttpUrl } from "@/lib/validation";
-import { isStorageObjectPath } from "@/lib/releaseImage";
+import { isTrackCostumeImagePath } from "@/lib/releaseImage";
 import { splitCreditNames } from "@/lib/songCredits";
 
 const CREDIT_ROLE_FIELDS: Array<{ role: SongCreditRole; field: keyof CreateSongInput }> = [
@@ -195,10 +195,10 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
         field: `costumes.${i}.imagePath`,
         message: "衣装画像のStorage pathを入力してください",
       });
-    } else if (!isStorageObjectPath(costume.imagePath)) {
+    } else if (!isTrackCostumeImagePath(costume.imagePath)) {
       errors.push({
         field: `costumes.${i}.imagePath`,
-        message: "衣装画像はStorage object path形式で入力してください",
+        message: "衣装画像はcostumes/配下のStorage object path形式で入力してください",
       });
     } else if (costume.imagePath.length > 500) {
       errors.push({

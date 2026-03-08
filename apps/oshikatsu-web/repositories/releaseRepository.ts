@@ -41,7 +41,7 @@ type ReleaseMemberRow = {
 
 type ReleaseTrackRow = {
   track_number: number;
-  orbit_tracks:
+  orbit_tracks?:
     | {
         id: string;
         title: string;
@@ -49,7 +49,8 @@ type ReleaseTrackRow = {
     | Array<{
         id: string;
         title: string;
-      }>;
+      }>
+    | null;
 };
 
 type ReleaseRow = {
@@ -66,7 +67,20 @@ type ReleaseRow = {
   orbit_release_tracks?: ReleaseTrackRow[];
 };
 
-const RELEASE_SELECT = `
+const RELEASE_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  release_type,
+  numbering,
+  release_date,
+  artwork_path,
+  orbit_groups(name_ja, color),
+  orbit_release_members(member_id, orbit_members(name_ja)),
+  orbit_release_tracks(track_number)
+`;
+
+const RELEASE_DETAIL_SELECT = `
   id,
   title,
   group_id,
@@ -105,6 +119,7 @@ function mapToRelease(row: ReleaseRow): Release {
     numbering: row.numbering,
     releaseDate: row.release_date,
     artworkPath: row.artwork_path,
+    trackCount: row.orbit_release_tracks?.length ?? 0,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     bonusVideos: (row.orbit_release_bonus_videos ?? [])
@@ -180,6 +195,20 @@ function toReleaseMemberInserts(
   }));
 }
 
+function toBonusVideoRpcInput(
+  bonusVideos: CreateReleaseInput["bonusVideos"]
+): Array<{
+  edition: string;
+  title: string;
+  description: string | null;
+}> {
+  return bonusVideos.map((bonus) => ({
+    edition: bonus.edition.trim(),
+    title: bonus.title.trim(),
+    description: bonus.description.trim() || null,
+  }));
+}
+
 export function createReleaseRepository(
   supabase: SupabaseClient
 ): ReleaseRepository {
@@ -235,7 +264,7 @@ export function createReleaseRepository(
     async findAll(filters) {
       let query = supabase
         .from("orbit_releases")
-        .select(RELEASE_SELECT)
+        .select(RELEASE_LIST_SELECT)
         .order("release_date", { ascending: false, nullsFirst: false })
         .order("created_at", { ascending: false });
 
@@ -257,7 +286,7 @@ export function createReleaseRepository(
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_releases")
-        .select(RELEASE_SELECT)
+        .select(RELEASE_DETAIL_SELECT)
         .eq("id", id)
         .single();
 
@@ -314,24 +343,21 @@ export function createReleaseRepository(
 
       const numbering = toNumbering(input.releaseType, input.numbering);
 
-      const { error } = await supabase
-        .from("orbit_releases")
-        .update({
-          title: input.title.trim(),
-          group_id: input.groupId,
-          release_type: input.releaseType,
-          numbering,
-          release_date: input.releaseDate || null,
-          artwork_path: input.artworkPath || null,
-        })
-        .eq("id", id);
+      const { error: rpcError } = await supabase.rpc("update_release_with_relations", {
+        p_release_id: id,
+        p_title: input.title.trim(),
+        p_group_id: input.groupId,
+        p_release_type: input.releaseType,
+        p_numbering: numbering,
+        p_release_date: input.releaseDate || null,
+        p_artwork_path: input.artworkPath || null,
+        p_bonus_videos: toBonusVideoRpcInput(input.bonusVideos),
+        p_member_ids: input.participantMemberIds,
+      });
 
-      if (error) {
-        throw new RepositoryError("リリースの更新に失敗しました", error);
+      if (rpcError) {
+        throw new RepositoryError("リリースの更新に失敗しました", rpcError);
       }
-
-      await replaceBonusVideos(id, input.bonusVideos);
-      await replaceReleaseMembers(id, input.participantMemberIds);
 
       const updated = await this.findById(id);
       if (!updated) {

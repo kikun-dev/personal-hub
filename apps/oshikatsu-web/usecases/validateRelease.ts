@@ -2,7 +2,7 @@ import type { CreateReleaseInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
 import { RELEASE_TYPES } from "@/types/release";
 import { isValidDateString } from "@/lib/validation";
-import { isStorageObjectPath } from "@/lib/releaseImage";
+import { isReleaseArtworkPath } from "@/lib/releaseImage";
 
 function isReleaseType(value: string): boolean {
   return (RELEASE_TYPES as readonly string[]).includes(value);
@@ -53,10 +53,10 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
     errors.push({ field: "releaseDate", message: "リリース日はYYYY-MM-DD形式で入力してください" });
   }
 
-  if (input.artworkPath && !isStorageObjectPath(input.artworkPath)) {
+  if (input.artworkPath && !isReleaseArtworkPath(input.artworkPath)) {
     errors.push({
       field: "artworkPath",
-      message: "アートワークはStorage object path形式で入力してください",
+      message: "アートワークはreleases/配下のStorage object path形式で入力してください",
     });
   }
 

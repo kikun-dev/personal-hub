@@ -1,5 +1,7 @@
 export const RELEASE_IMAGE_BUCKET = "release-images";
 export const TRACK_COSTUME_IMAGE_BUCKET = "track-costume-images";
+export const RELEASE_IMAGE_PATH_PREFIX = "releases/";
+export const TRACK_COSTUME_IMAGE_PATH_PREFIX = "costumes/";
 
 function encodeStoragePath(path: string): string {
   return path
@@ -14,6 +16,14 @@ export function isStorageObjectPath(value: string): boolean {
   if (value.startsWith("/")) return false;
   if (value.includes("..")) return false;
   return true;
+}
+
+export function isReleaseArtworkPath(value: string): boolean {
+  return isStorageObjectPath(value) && value.startsWith(RELEASE_IMAGE_PATH_PREFIX);
+}
+
+export function isTrackCostumeImagePath(value: string): boolean {
+  return isStorageObjectPath(value) && value.startsWith(TRACK_COSTUME_IMAGE_PATH_PREFIX);
 }
 
 export function resolveReleaseImageSrc(value: string | null): string | null {

@@ -254,7 +254,7 @@ export function ReleaseForm({
 
       <Input
         id="artworkPath"
-        label="曲目アートワーク（Storage path）"
+        label="曲目アートワーク（Storage path: releases/...）"
         value={values.artworkPath}
         onChange={(e) => update("artworkPath", e.target.value)}
         error={errors.artworkPath}
