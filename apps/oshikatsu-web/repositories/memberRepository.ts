@@ -30,14 +30,6 @@ type MemberSnsRow = {
   sort_order: number;
 };
 
-type MemberHistoryRow = {
-  id: string;
-  date: string;
-  event: string;
-  note: string | null;
-  sort_order: number;
-};
-
 type MemberRow = {
   id: string;
   name_ja: string;
@@ -60,7 +52,6 @@ type MemberRow = {
   talk_app_hashtag: string | null;
   orbit_member_groups: MemberGroupRow[];
   orbit_member_sns?: MemberSnsRow[];
-  orbit_member_histories?: MemberHistoryRow[];
 };
 
 type MemberGroupRpcInput = {
@@ -75,13 +66,6 @@ type MemberSnsRpcInput = {
   display_name: string;
   url: string;
   hashtag: string | null;
-  sort_order: number;
-};
-
-type MemberHistoryRpcInput = {
-  date: string;
-  event: string;
-  note: string | null;
   sort_order: number;
 };
 
@@ -104,17 +88,6 @@ function toMemberSnsRpcInput(
     display_name: sns.displayName,
     url: sns.url,
     hashtag: sns.hashtag || null,
-    sort_order: index,
-  }));
-}
-
-function toMemberHistoryRpcInput(
-  histories: { date: string; event: string; note: string }[]
-): MemberHistoryRpcInput[] {
-  return histories.map((history, index) => ({
-    date: history.date,
-    event: history.event,
-    note: history.note || null,
     sort_order: index,
   }));
 }
@@ -167,20 +140,6 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
         sortOrder: sns.sort_order,
       }))
       .sort((a, b) => a.sortOrder - b.sortOrder),
-    histories: (row.orbit_member_histories ?? [])
-      .map((history) => ({
-        id: history.id,
-        date: history.date,
-        event: history.event,
-        note: history.note ?? "",
-        sortOrder: history.sort_order,
-      }))
-      .sort((a, b) => {
-        if (a.date !== b.date) {
-          return a.date < b.date ? -1 : 1;
-        }
-        return a.sortOrder - b.sortOrder;
-      }),
   };
 }
 
@@ -228,16 +187,6 @@ const MEMBER_SNS_SELECT = `
   )
 `;
 
-const MEMBER_HISTORIES_SELECT = `
-  orbit_member_histories(
-    id,
-    date,
-    event,
-    note,
-    sort_order
-  )
-`;
-
 const MEMBER_LIST_SELECT = `
   ${MEMBER_BASE_SELECT},
   ${MEMBER_GROUPS_SELECT}
@@ -246,8 +195,7 @@ const MEMBER_LIST_SELECT = `
 const MEMBER_DETAIL_SELECT = `
   ${MEMBER_BASE_SELECT},
   ${MEMBER_GROUPS_SELECT},
-  ${MEMBER_SNS_SELECT},
-  ${MEMBER_HISTORIES_SELECT}
+  ${MEMBER_SNS_SELECT}
 `;
 
 export function createMemberRepository(
@@ -315,38 +263,6 @@ export function createMemberRepository(
 
     if (insertError) {
       throw new RepositoryError("SNS情報の登録に失敗しました", insertError);
-    }
-  }
-
-  async function replaceMemberHistories(
-    memberId: string,
-    inputHistories: { date: string; event: string; note: string }[]
-  ): Promise<void> {
-    const { error: deleteError } = await supabase
-      .from("orbit_member_histories")
-      .delete()
-      .eq("member_id", memberId);
-
-    if (deleteError) {
-      throw new RepositoryError("来歴の更新に失敗しました", deleteError);
-    }
-
-    if (inputHistories.length === 0) return;
-
-    const historyRows = inputHistories.map((history, index) => ({
-      member_id: memberId,
-      date: history.date,
-      event: history.event,
-      note: history.note || null,
-      sort_order: index,
-    }));
-
-    const { error: insertError } = await supabase
-      .from("orbit_member_histories")
-      .insert(historyRows);
-
-    if (insertError) {
-      throw new RepositoryError("来歴の登録に失敗しました", insertError);
     }
   }
 
@@ -448,7 +364,6 @@ export function createMemberRepository(
       try {
         await replaceMemberGroups(member.id, input.groups);
         await replaceMemberSns(member.id, input.sns);
-        await replaceMemberHistories(member.id, input.histories);
       } catch (e) {
         await supabase.from("orbit_members").delete().eq("id", member.id);
         if (e instanceof RepositoryError) {
@@ -487,7 +402,6 @@ export function createMemberRepository(
         p_talk_app_hashtag: input.talkAppHashtag || null,
         p_groups: toMemberGroupRpcInput(input.groups),
         p_sns: toMemberSnsRpcInput(input.sns),
-        p_histories: toMemberHistoryRpcInput(input.histories),
       });
 
       if (rpcError) {

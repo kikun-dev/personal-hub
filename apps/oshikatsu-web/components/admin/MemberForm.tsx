@@ -7,7 +7,6 @@ import type {
   CreateMemberInput,
   CreateMemberGroupInput,
   CreateMemberSnsInput,
-  CreateMemberHistoryInput,
   MemberImageUploadInput,
 } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
@@ -26,15 +25,13 @@ import {
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
 type SnsWithKey = CreateMemberSnsInput & { _key: string };
-type HistoryWithKey = CreateMemberHistoryInput & { _key: string };
 
 type FormValues = Omit<
   CreateMemberInput,
-  "groups" | "sns" | "histories"
+  "groups" | "sns"
 > & {
   groups: GroupWithKey[];
   sns: SnsWithKey[];
-  histories: HistoryWithKey[];
 };
 
 type MemberFormProps = {
@@ -60,12 +57,6 @@ function withSnsKey(sns: CreateMemberSnsInput): SnsWithKey {
   return { ...sns, _key: crypto.randomUUID() };
 }
 
-function withHistoryKey(
-  history: CreateMemberHistoryInput
-): HistoryWithKey {
-  return { ...history, _key: crypto.randomUUID() };
-}
-
 function getDefaultValues(): FormValues {
   return {
     nameJa: "",
@@ -89,7 +80,6 @@ function getDefaultValues(): FormValues {
       withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
     ],
     sns: [],
-    histories: [],
   };
 }
 
@@ -98,7 +88,6 @@ function toFormValues(input: CreateMemberInput): FormValues {
     ...input,
     groups: input.groups.map(withGroupKey),
     sns: input.sns.map(withSnsKey),
-    histories: input.histories.map(withHistoryKey),
   };
 }
 
@@ -116,11 +105,6 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
       displayName: sns.displayName,
       url: sns.url,
       hashtag: sns.hashtag,
-    })),
-    histories: form.histories.map((history) => ({
-      date: history.date,
-      event: history.event,
-      note: history.note,
     })),
   };
 }
@@ -302,44 +286,6 @@ export function MemberForm({
     setValues((prev) => ({
       ...prev,
       sns: prev.sns.filter((_, i) => i !== index),
-    }));
-  };
-
-  const updateHistory = (
-    index: number,
-    field: keyof CreateMemberHistoryInput,
-    value: string
-  ) => {
-    setValues((prev) => {
-      const next = [...prev.histories];
-      next[index] = { ...next[index], [field]: value };
-      return { ...prev, histories: next };
-    });
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[`histories.${index}.${field}`];
-      return next;
-    });
-  };
-
-  const addHistory = () => {
-    setValues((prev) => ({
-      ...prev,
-      histories: [
-        ...prev.histories,
-        withHistoryKey({
-          date: "",
-          event: "",
-          note: "",
-        }),
-      ],
-    }));
-  };
-
-  const removeHistory = (index: number) => {
-    setValues((prev) => ({
-      ...prev,
-      histories: prev.histories.filter((_, i) => i !== index),
     }));
   };
 
@@ -752,53 +698,6 @@ export function MemberForm({
             </div>
           ))}
         </div>
-      </section>
-
-      <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground/70">来歴</h2>
-          <Button type="button" variant="ghost" onClick={addHistory}>
-            + 追加
-          </Button>
-        </div>
-
-        {values.histories.map((history, i) => (
-          <div key={history._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground/50">来歴 {i + 1}</span>
-              <button
-                type="button"
-                onClick={() => removeHistory(i)}
-                className="text-xs text-red-500 hover:text-red-600"
-              >
-                削除
-              </button>
-            </div>
-            <Input
-              id={`historyDate-${i}`}
-              label="日付"
-              type="date"
-              value={history.date}
-              onChange={(e) => updateHistory(i, "date", e.target.value)}
-              error={errors[`histories.${i}.date`]}
-            />
-            <Input
-              id={`historyEvent-${i}`}
-              label="出来事"
-              value={history.event}
-              onChange={(e) => updateHistory(i, "event", e.target.value)}
-              error={errors[`histories.${i}.event`]}
-            />
-            <Textarea
-              id={`historyNote-${i}`}
-              label="備考"
-              value={history.note}
-              onChange={(e) => updateHistory(i, "note", e.target.value)}
-              error={errors[`histories.${i}.note`]}
-              rows={3}
-            />
-          </div>
-        ))}
       </section>
 
       <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full">

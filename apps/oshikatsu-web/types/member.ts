@@ -35,7 +35,6 @@ export type MemberGroup = {
 export type MemberWithGroups = Member & {
   groups: MemberGroup[];
   sns: MemberSns[];
-  histories: MemberHistory[];
 };
 
 export type MemberSns = {
@@ -52,7 +51,6 @@ export type MemberHistory = {
   date: string;
   event: string;
   note: string;
-  sortOrder: number;
 };
 
 export type CreateMemberInput = {
@@ -76,7 +74,6 @@ export type CreateMemberInput = {
   memo: string;
   groups: CreateMemberGroupInput[];
   sns: CreateMemberSnsInput[];
-  histories: CreateMemberHistoryInput[];
 };
 
 export type CreateMemberGroupInput = {
@@ -91,12 +88,6 @@ export type CreateMemberSnsInput = {
   displayName: string;
   url: string;
   hashtag: string;
-};
-
-export type CreateMemberHistoryInput = {
-  date: string;
-  event: string;
-  note: string;
 };
 
 export type UpdateMemberInput = CreateMemberInput;

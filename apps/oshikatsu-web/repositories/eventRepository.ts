@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@personal-hub/supabase";
 import type { Event } from "@/types/event";
+import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 
@@ -10,6 +11,7 @@ type EventRow = {
     name: string;
     color: string;
   };
+  is_member_history: boolean;
   title: string;
   description: string;
   date: string;
@@ -32,6 +34,7 @@ function mapToEvent(row: EventRow): Event {
     eventTypeId: row.event_type_id,
     eventTypeName: row.orbit_event_types.name,
     eventTypeColor: row.orbit_event_types.color,
+    isMemberHistory: row.is_member_history,
     title: row.title,
     description: row.description,
     date: row.date,
@@ -44,6 +47,16 @@ function mapToEvent(row: EventRow): Event {
       (g) => g.orbit_groups.name_ja
     ),
     memberIds: (row.orbit_event_members ?? []).map((m) => m.member_id),
+  };
+}
+
+function mapToMemberHistory(row: Pick<EventRow, "id" | "date" | "title" | "description" | "url">): MemberHistory {
+  const noteParts = [row.description.trim(), row.url ?? ""].filter((v) => v.length > 0);
+  return {
+    id: row.id,
+    date: row.date,
+    event: row.title,
+    note: noteParts.join("\n"),
   };
 }
 
@@ -113,6 +126,30 @@ export function createEventRepository(
       return mapToEvent(data as EventRow);
     },
 
+    async findHistoryByMemberId(memberId) {
+      const { data, error } = await supabase
+        .from("orbit_events")
+        .select(`
+          id,
+          date,
+          title,
+          description,
+          url,
+          orbit_event_members!inner(member_id)
+        `)
+        .eq("is_member_history", true)
+        .eq("orbit_event_members.member_id", memberId)
+        .order("date", { ascending: true })
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        throw new RepositoryError("メンバー来歴イベントの取得に失敗しました", error);
+      }
+
+      return (data as Array<Pick<EventRow, "id" | "date" | "title" | "description" | "url">>)
+        .map(mapToMemberHistory);
+    },
+
     async create(input) {
       const { data: event, error: eventError } = await supabase
         .from("orbit_events")
@@ -120,6 +157,7 @@ export function createEventRepository(
           event_type_id: input.eventTypeId,
           title: input.title,
           description: input.description || "",
+          is_member_history: input.isMemberHistory,
           date: input.date,
           end_date: input.endDate || null,
           start_time: input.startTime || null,
@@ -178,6 +216,7 @@ export function createEventRepository(
         p_event_type_id: input.eventTypeId,
         p_title: input.title,
         p_description: input.description || "",
+        p_is_member_history: input.isMemberHistory,
         p_date: input.date,
         p_end_date: input.endDate || null,
         p_start_time: input.startTime || null,

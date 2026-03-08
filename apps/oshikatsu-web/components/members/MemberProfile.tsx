@@ -1,6 +1,6 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberWithGroups, MemberHistory } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
@@ -8,6 +8,7 @@ import { resolveMemberImageSrc } from "@/lib/memberImage";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
+  histories: MemberHistory[];
   mainGroupPenlightColorNames?: string[];
 };
 
@@ -88,6 +89,7 @@ function linkifyNote(note: string): ReactNode[] {
 
 export function MemberProfile({
   member,
+  histories,
   mainGroupPenlightColorNames = [],
 }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
@@ -303,7 +305,7 @@ export function MemberProfile({
       )}
 
       {/* 来歴 */}
-      {member.histories.length > 0 && (
+      {histories.length > 0 && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">来歴</h2>
           <div className="overflow-x-auto">
@@ -316,7 +318,7 @@ export function MemberProfile({
                 </tr>
               </thead>
               <tbody>
-                {member.histories.map((history) => (
+                {histories.map((history) => (
                   <tr key={history.id} className="border-b border-foreground/10 align-top">
                     <td className="px-2 py-2 whitespace-nowrap text-foreground/70">
                       {formatDate(history.date)}
