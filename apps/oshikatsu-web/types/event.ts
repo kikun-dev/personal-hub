@@ -3,6 +3,7 @@ export type Event = {
   eventTypeId: string;
   eventTypeName: string;
   eventTypeColor: string;
+  isMemberHistory: boolean;
   title: string;
   description: string;
   date: string;
@@ -24,6 +25,7 @@ export type CreateEventInput = {
   startTime: string;
   venue: string;
   url: string;
+  isMemberHistory: boolean;
   groupIds: string[];
   memberIds: string[];
 };

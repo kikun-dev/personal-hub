@@ -43,5 +43,9 @@ export function validateEvent(input: CreateEventInput): ValidationError[] {
     errors.push({ field: "groupIds", message: "1つ以上のグループを選択してください" });
   }
 
+  if (input.isMemberHistory && input.memberIds.length === 0) {
+    errors.push({ field: "memberIds", message: "来歴として保存する場合は1人以上のメンバーを選択してください" });
+  }
+
   return errors;
 }

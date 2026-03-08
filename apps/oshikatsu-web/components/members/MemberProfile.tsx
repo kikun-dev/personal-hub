@@ -1,13 +1,19 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberWithGroups, MemberHistory } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
+import {
+  parseMarkdownLinks,
+  splitTrailingPunctuation,
+  isHttpUrl,
+} from "@/lib/linkParser";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
+  histories: MemberHistory[];
   mainGroupPenlightColorNames?: string[];
 };
 
@@ -46,30 +52,24 @@ function calculateTenureDays(joinedAt: string | null, graduatedAt: string | null
   return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
-const TRAILING_PUNCTUATION_REGEX = /[.,!?:;)\]}'"。、，．！？：；）］｝」』】》〉]+$/u;
+function linkifyRawText(text: string, keyPrefix: string): ReactNode[] {
+  const rawUrlRegex = /https?:\/\/[^\s]+/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
 
-function splitTrailingPunctuation(url: string): { cleanUrl: string; trailing: string } {
-  const match = url.match(TRAILING_PUNCTUATION_REGEX);
-  if (!match) {
-    return { cleanUrl: url, trailing: "" };
-  }
+  for (const match of text.matchAll(rawUrlRegex)) {
+    const fullMatch = match[0];
+    if (!fullMatch) continue;
 
-  const trailing = match[0];
-  return {
-    cleanUrl: url.slice(0, -trailing.length),
-    trailing,
-  };
-}
+    const startIndex = match.index ?? 0;
+    if (lastIndex < startIndex) {
+      nodes.push(text.slice(lastIndex, startIndex));
+    }
 
-function linkifyNote(note: string): ReactNode[] {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = note.split(urlRegex);
-
-  return parts.map((part, index) => {
-    if (/^https?:\/\//.test(part)) {
-      const { cleanUrl, trailing } = splitTrailingPunctuation(part);
-      return (
-        <span key={`${part}-${index}`}>
+    const { cleanUrl, trailing } = splitTrailingPunctuation(fullMatch);
+    if (isHttpUrl(cleanUrl)) {
+      nodes.push(
+        <span key={`${keyPrefix}-url-${startIndex}`}>
           <a
             href={cleanUrl}
             target="_blank"
@@ -81,13 +81,65 @@ function linkifyNote(note: string): ReactNode[] {
           {trailing}
         </span>
       );
+    } else {
+      nodes.push(fullMatch);
     }
-    return part;
-  });
+
+    lastIndex = startIndex + fullMatch.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+function linkifyNote(note: string): ReactNode[] {
+  const markdownLinks = parseMarkdownLinks(note);
+
+  if (markdownLinks.length === 0) {
+    return linkifyRawText(note, "plain");
+  }
+
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+
+  for (const markdownLink of markdownLinks) {
+    if (cursor < markdownLink.start) {
+      nodes.push(
+        ...linkifyRawText(
+          note.slice(cursor, markdownLink.start),
+          `segment-${markdownLink.start}`
+        )
+      );
+    }
+
+    nodes.push(
+      <a
+        key={`md-${markdownLink.start}`}
+        href={markdownLink.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline"
+      >
+        {markdownLink.label}
+      </a>
+    );
+
+    cursor = markdownLink.end;
+  }
+
+  if (cursor < note.length) {
+    nodes.push(...linkifyRawText(note.slice(cursor), `tail-${cursor}`));
+  }
+
+  return nodes;
 }
 
 export function MemberProfile({
   member,
+  histories,
   mainGroupPenlightColorNames = [],
 }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
@@ -303,7 +355,7 @@ export function MemberProfile({
       )}
 
       {/* 来歴 */}
-      {member.histories.length > 0 && (
+      {histories.length > 0 && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">来歴</h2>
           <div className="overflow-x-auto">
@@ -316,7 +368,7 @@ export function MemberProfile({
                 </tr>
               </thead>
               <tbody>
-                {member.histories.map((history) => (
+                {histories.map((history) => (
                   <tr key={history.id} className="border-b border-foreground/10 align-top">
                     <td className="px-2 py-2 whitespace-nowrap text-foreground/70">
                       {formatDate(history.date)}

@@ -95,9 +95,10 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 ### 機能（Phase 1）
 - **トップページ**（月間カレンダー + 今日のイベント + 今日はなんの日）
 - **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
-- **メンバー詳細**（プロフィール + グループ履歴）
+- **メンバー詳細**（プロフィール + グループ履歴 + 来歴）
 - **管理画面**（メンバー CRUD + イベント CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
+  - 来歴はイベント管理で `is_member_history` を付与して管理（メンバー画面側での来歴入力は廃止）
 - **Google ログイン**
 
 ### アーキテクチャ（3層）
@@ -108,7 +109,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_members` — メンバープロフィール
 - `orbit_member_groups` — メンバー×グループ（多対多）
 - `orbit_event_types` — イベント種別（10件）
-- `orbit_events` — イベント
+- `orbit_events` — イベント（`is_member_history` フラグで来歴兼用）
 - `orbit_event_groups` — イベント×グループ
 - `orbit_event_members` — イベント×メンバー
 

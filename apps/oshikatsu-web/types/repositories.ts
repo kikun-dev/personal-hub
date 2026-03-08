@@ -1,5 +1,11 @@
 import type { Group } from "./group";
-import type { MemberWithGroups, CreateMemberInput, UpdateMemberInput, MemberFilters } from "./member";
+import type {
+  MemberWithGroups,
+  MemberHistory,
+  CreateMemberInput,
+  UpdateMemberInput,
+  MemberFilters,
+} from "./member";
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
 import type { Song, CreateSongInput, UpdateSongInput, SongFilters } from "./song";
@@ -23,6 +29,7 @@ export type EventRepository = {
   findByMonth(year: number, month: number): Promise<Event[]>;
   findByDate(year: number, month: number, day: number): Promise<Event[]>;
   findById(id: string): Promise<Event | null>;
+  findHistoryByMemberId(memberId: string): Promise<MemberHistory[]>;
   create(input: CreateEventInput): Promise<Event>;
   update(id: string, input: UpdateEventInput): Promise<Event>;
   delete(id: string): Promise<void>;

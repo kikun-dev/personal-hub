@@ -32,6 +32,7 @@ function getDefaultValues(): CreateEventInput {
     startTime: "",
     venue: "",
     url: "",
+    isMemberHistory: false,
     groupIds: [],
     memberIds: [],
   };
@@ -84,6 +85,11 @@ export function EventForm({
         ? prev.memberIds.filter((id) => id !== memberId)
         : [...prev.memberIds, memberId],
     }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.memberIds;
+      return next;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -182,6 +188,16 @@ export function EventForm({
         onChange={(e) => update("description", e.target.value)}
       />
 
+      <label className="flex items-center gap-2 rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground">
+        <input
+          type="checkbox"
+          checked={values.isMemberHistory}
+          onChange={(e) => update("isMemberHistory", e.target.checked)}
+          className="rounded"
+        />
+        <span>このイベントをメンバー来歴に表示する</span>
+      </label>
+
       {/* グループ選択 */}
       <div>
         <label className="mb-1 block text-sm font-medium text-foreground/70">
@@ -217,8 +233,11 @@ export function EventForm({
       {members.length > 0 && (
         <div>
           <label className="mb-1 block text-sm font-medium text-foreground/70">
-            関連メンバー（任意）
+            {values.isMemberHistory ? "関連メンバー*" : "関連メンバー（任意）"}
           </label>
+          {errors.memberIds && (
+            <p className="mb-1 text-xs text-red-500">{errors.memberIds}</p>
+          )}
           <div className="max-h-48 overflow-y-auto rounded-lg border border-foreground/10 p-2">
             {members.map((member) => (
               <label

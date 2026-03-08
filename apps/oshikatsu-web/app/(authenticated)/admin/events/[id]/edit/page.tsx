@@ -43,6 +43,7 @@ export default async function EditEventPage({
     startTime: event.startTime ?? "",
     venue: event.venue ?? "",
     url: event.url ?? "",
+    isMemberHistory: event.isMemberHistory,
     groupIds: event.groupIds,
     memberIds: event.memberIds,
   };

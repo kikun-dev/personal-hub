@@ -59,11 +59,6 @@ export default async function EditMemberPage({
       url: sns.url,
       hashtag: sns.hashtag,
     })),
-    histories: member.histories.map((history) => ({
-      date: history.date,
-      event: history.event,
-      note: history.note,
-    })),
   };
 
   async function handleSubmit(

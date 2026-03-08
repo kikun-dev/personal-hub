@@ -163,22 +163,5 @@ export function validateMember(input: CreateMemberInput): ValidationError[] {
     }
   }
 
-  for (let i = 0; i < input.histories.length; i++) {
-    const history = input.histories[i];
-    if (!history.date || !isValidDateString(history.date)) {
-      errors.push({ field: `histories.${i}.date`, message: "日付はYYYY-MM-DD形式で入力してください" });
-    }
-
-    if (!history.event.trim()) {
-      errors.push({ field: `histories.${i}.event`, message: "出来事を入力してください" });
-    } else if (history.event.length > 100) {
-      errors.push({ field: `histories.${i}.event`, message: "出来事は100文字以内で入力してください" });
-    }
-
-    if (history.note.length > 500) {
-      errors.push({ field: `histories.${i}.note`, message: "備考は500文字以内で入力してください" });
-    }
-  }
-
   return errors;
 }
