@@ -54,7 +54,13 @@ export default async function TopPage({ searchParams }: TopPageProps) {
       <div className="space-y-6">
         <div className="flex items-center">
           <Suspense fallback={<div className="h-10" />}>
-            <MonthSelector year={year} month={month} day={day} showTodayButton />
+            <MonthSelector
+              year={year}
+              month={month}
+              day={day}
+              showTodayButton
+              splitTodayButton
+            />
           </Suspense>
         </div>
 
