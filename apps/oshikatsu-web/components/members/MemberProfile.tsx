@@ -46,22 +46,40 @@ function calculateTenureDays(joinedAt: string | null, graduatedAt: string | null
   return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
+const TRAILING_PUNCTUATION_REGEX = /[.,!?:;)\]}'"。、，．！？：；）］｝」』】》〉]+$/u;
+
+function splitTrailingPunctuation(url: string): { cleanUrl: string; trailing: string } {
+  const match = url.match(TRAILING_PUNCTUATION_REGEX);
+  if (!match) {
+    return { cleanUrl: url, trailing: "" };
+  }
+
+  const trailing = match[0];
+  return {
+    cleanUrl: url.slice(0, -trailing.length),
+    trailing,
+  };
+}
+
 function linkifyNote(note: string): ReactNode[] {
   const urlRegex = /(https?:\/\/[^\s]+)/g;
   const parts = note.split(urlRegex);
 
   return parts.map((part, index) => {
     if (/^https?:\/\//.test(part)) {
+      const { cleanUrl, trailing } = splitTrailingPunctuation(part);
       return (
-        <a
-          key={`${part}-${index}`}
-          href={part}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:underline"
-        >
-          {part}
-        </a>
+        <span key={`${part}-${index}`}>
+          <a
+            href={cleanUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 hover:underline"
+          >
+            {cleanUrl}
+          </a>
+          {trailing}
+        </span>
       );
     }
     return part;
