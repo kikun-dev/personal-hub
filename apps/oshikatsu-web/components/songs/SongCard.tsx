@@ -18,9 +18,12 @@ export function SongCard({ song }: SongCardProps) {
           {song.groupNames.join(" / ")}
         </p>
       )}
+      <p className="mt-1 text-xs text-foreground/50">
+        紐づけリリース: {song.releases.length}件
+      </p>
       {song.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">
-          {formatDate(song.releaseDate)}
+          初回リリース: {formatDate(song.releaseDate)}
         </p>
       )}
     </Link>

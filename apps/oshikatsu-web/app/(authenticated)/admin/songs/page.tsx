@@ -1,23 +1,14 @@
 import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
 import { listSongs } from "@/usecases/listSongs";
-import { getGroups } from "@/usecases/getGroups";
 import { Button } from "@/components/ui/Button";
-import { GroupBadge } from "@/components/ui/GroupBadge";
 import { formatDate } from "@/lib/formatters";
-import type { Group } from "@/types/group";
 
 export default async function AdminSongsPage() {
   const supabase = await createClient();
 
-  const [songs, groups] = await Promise.all([
-    listSongs(createSongRepository(supabase)),
-    getGroups(createGroupRepository(supabase)),
-  ]);
-
-  const groupMap = new Map<string, Group>(groups.map((g) => [g.id, g]));
+  const songs = await listSongs(createSongRepository(supabase));
 
   return (
     <div className="space-y-4">
@@ -47,17 +38,7 @@ export default async function AdminSongsPage() {
                 <td className="py-2 pr-4 text-foreground">{song.title}</td>
                 <td className="py-2 pr-4">
                   <div className="flex flex-wrap gap-1">
-                    {song.groupIds.map((groupId) => {
-                      const group = groupMap.get(groupId);
-                      if (!group) return null;
-                      return (
-                        <GroupBadge
-                          key={groupId}
-                          groupName={group.nameJa}
-                          groupColor={group.color}
-                        />
-                      );
-                    })}
+                    {song.groupNames.length > 0 ? song.groupNames.join(" / ") : "—"}
                   </div>
                 </td>
                 <td className="py-2 pr-4 text-foreground/70">

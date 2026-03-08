@@ -1,9 +1,9 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
-import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
-import { getGroups } from "@/usecases/getGroups";
+import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { listMembers } from "@/usecases/listMembers";
+import { listReleases } from "@/usecases/listReleases";
 import { SongForm } from "@/components/admin/SongForm";
 import { createSongAction } from "./actions";
 import type { CreateSongInput } from "@/types/song";
@@ -12,8 +12,8 @@ import type { ValidationError } from "@/types/errors";
 export default async function NewSongPage() {
   const supabase = await createClient();
 
-  const [groups, members] = await Promise.all([
-    getGroups(createGroupRepository(supabase)),
+  const [releases, members] = await Promise.all([
+    listReleases(createReleaseRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
   ]);
 
@@ -33,7 +33,7 @@ export default async function NewSongPage() {
       <h1 className="text-xl font-bold text-foreground">楽曲を追加</h1>
       <SongForm
         mode="create"
-        groups={groups}
+        releases={releases}
         members={members}
         onSubmit={handleSubmit}
       />

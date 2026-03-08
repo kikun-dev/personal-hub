@@ -6,6 +6,7 @@ import { createSongRepository } from "@/repositories/songRepository";
 import { createSong } from "@/usecases/createSong";
 import type { CreateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
+import { RepositoryError } from "@/types/errors";
 
 export async function createSongAction(
   input: CreateSongInput
@@ -20,11 +21,20 @@ export async function createSongAction(
   }
 
   const repo = createSongRepository(supabase);
-  const result = await createSong(repo, input);
+  try {
+    const result = await createSong(repo, input);
 
-  if (!result.ok) {
-    return { errors: result.errors };
+    if (!result.ok) {
+      return { errors: result.errors };
+    }
+
+    return {};
+  } catch (e) {
+    if (e instanceof RepositoryError) {
+      return {
+        errors: [{ field: "_form", message: "楽曲の作成に失敗しました" }],
+      };
+    }
+    throw e;
   }
-
-  return {};
 }
