@@ -52,8 +52,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-foreground">Orbit</h1>
+        <div className="flex items-center">
           <Suspense fallback={<div className="h-10" />}>
             <MonthSelector year={year} month={month} day={day} showTodayButton />
           </Suspense>
