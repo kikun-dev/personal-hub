@@ -13,6 +13,12 @@ type ReleaseDetailProps = {
 
 export function ReleaseDetail({ release }: ReleaseDetailProps) {
   const artworkSrc = resolveReleaseImageSrc(release.artworkPath);
+  const bonusByEdition = new Map<string, typeof release.bonusVideos>();
+  for (const bonus of release.bonusVideos) {
+    const list = bonusByEdition.get(bonus.edition) ?? [];
+    list.push(bonus);
+    bonusByEdition.set(bonus.edition, list);
+  }
 
   return (
     <div className="space-y-6">
@@ -85,16 +91,23 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
       {release.bonusVideos.length > 0 && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">特典映像</h2>
-          <ul className="space-y-2">
-            {release.bonusVideos.map((bonus) => (
-              <li key={bonus.id} className="rounded-lg border border-foreground/10 p-3 text-sm">
-                <p className="font-medium text-foreground">{bonus.edition}: {bonus.title}</p>
-                {bonus.description && (
-                  <p className="mt-1 whitespace-pre-wrap text-xs text-foreground/60">{bonus.description}</p>
-                )}
-              </li>
+          <div className="space-y-4">
+            {Array.from(bonusByEdition.entries()).map(([edition, items]) => (
+              <section key={edition} className="space-y-2">
+                <p className="text-xs font-medium text-foreground/60">{edition}</p>
+                <ul className="space-y-2">
+                  {items.map((bonus) => (
+                    <li key={bonus.id} className="rounded-lg border border-foreground/10 p-3 text-sm">
+                      <p className="font-medium text-foreground">{bonus.title}</p>
+                      {bonus.description && (
+                        <p className="mt-1 whitespace-pre-wrap text-xs text-foreground/60">{bonus.description}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </section>
             ))}
-          </ul>
+          </div>
         </Card>
       )}
 
