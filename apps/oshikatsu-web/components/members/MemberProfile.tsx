@@ -5,6 +5,11 @@ import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
+import {
+  parseMarkdownLinks,
+  splitTrailingPunctuation,
+  isHttpUrl,
+} from "@/lib/linkParser";
 
 type MemberProfileProps = {
   member: MemberWithGroups;
@@ -47,53 +52,24 @@ function calculateTenureDays(joinedAt: string | null, graduatedAt: string | null
   return Math.floor(diffMs / (1000 * 60 * 60 * 24)) + 1;
 }
 
-const TRAILING_PUNCTUATION_REGEX = /[.,!?:;)\]}'"。、，．！？：；）］｝」』】》〉]+$/u;
-
-function splitTrailingPunctuation(url: string): { cleanUrl: string; trailing: string } {
-  const match = url.match(TRAILING_PUNCTUATION_REGEX);
-  if (!match) {
-    return { cleanUrl: url, trailing: "" };
-  }
-
-  const trailing = match[0];
-  return {
-    cleanUrl: url.slice(0, -trailing.length),
-    trailing,
-  };
-}
-
-function linkifyNote(note: string): ReactNode[] {
-  const tokenRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
+function linkifyRawText(text: string, keyPrefix: string): ReactNode[] {
+  const rawUrlRegex = /https?:\/\/[^\s]+/g;
   const nodes: ReactNode[] = [];
   let lastIndex = 0;
 
-  for (const match of note.matchAll(tokenRegex)) {
+  for (const match of text.matchAll(rawUrlRegex)) {
     const fullMatch = match[0];
-    const markdownLabel = match[1];
-    const markdownUrl = match[2];
-    const rawUrl = match[3];
-    const startIndex = match.index ?? 0;
+    if (!fullMatch) continue;
 
+    const startIndex = match.index ?? 0;
     if (lastIndex < startIndex) {
-      nodes.push(note.slice(lastIndex, startIndex));
+      nodes.push(text.slice(lastIndex, startIndex));
     }
 
-    if (markdownLabel && markdownUrl) {
+    const { cleanUrl, trailing } = splitTrailingPunctuation(fullMatch);
+    if (isHttpUrl(cleanUrl)) {
       nodes.push(
-        <a
-          key={`md-${startIndex}`}
-          href={markdownUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-500 hover:underline"
-        >
-          {markdownLabel}
-        </a>
-      );
-    } else if (rawUrl) {
-      const { cleanUrl, trailing } = splitTrailingPunctuation(rawUrl);
-      nodes.push(
-        <span key={`url-${startIndex}`}>
+        <span key={`${keyPrefix}-url-${startIndex}`}>
           <a
             href={cleanUrl}
             target="_blank"
@@ -105,13 +81,57 @@ function linkifyNote(note: string): ReactNode[] {
           {trailing}
         </span>
       );
+    } else {
+      nodes.push(fullMatch);
     }
 
     lastIndex = startIndex + fullMatch.length;
   }
 
-  if (lastIndex < note.length) {
-    nodes.push(note.slice(lastIndex));
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes;
+}
+
+function linkifyNote(note: string): ReactNode[] {
+  const markdownLinks = parseMarkdownLinks(note);
+
+  if (markdownLinks.length === 0) {
+    return linkifyRawText(note, "plain");
+  }
+
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+
+  for (const markdownLink of markdownLinks) {
+    if (cursor < markdownLink.start) {
+      nodes.push(
+        ...linkifyRawText(
+          note.slice(cursor, markdownLink.start),
+          `segment-${markdownLink.start}`
+        )
+      );
+    }
+
+    nodes.push(
+      <a
+        key={`md-${markdownLink.start}`}
+        href={markdownLink.url}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-blue-500 hover:underline"
+      >
+        {markdownLink.label}
+      </a>
+    );
+
+    cursor = markdownLink.end;
+  }
+
+  if (cursor < note.length) {
+    nodes.push(...linkifyRawText(note.slice(cursor), `tail-${cursor}`));
   }
 
   return nodes;

@@ -3,6 +3,10 @@ import type { Event } from "@/types/event";
 import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
+import {
+  extractHttpUrlsFromText,
+  splitTrailingPunctuation,
+} from "@/lib/linkParser";
 
 type EventRow = {
   id: string;
@@ -28,14 +32,8 @@ type EventRow = {
   }[];
 };
 
-const TRAILING_PUNCTUATION_REGEX = /[.,!?:;)\]}'"。、，．！？：；）］｝」』】》〉]+$/u;
-
-function trimTrailingPunctuation(value: string): string {
-  return value.replace(TRAILING_PUNCTUATION_REGEX, "");
-}
-
 function normalizeUrlForCompare(value: string): string {
-  const trimmed = trimTrailingPunctuation(value.trim());
+  const trimmed = splitTrailingPunctuation(value.trim()).cleanUrl;
   if (!trimmed) return "";
 
   try {
@@ -45,24 +43,6 @@ function normalizeUrlForCompare(value: string): string {
   } catch {
     return trimmed;
   }
-}
-
-function extractUrlsFromText(text: string): Set<string> {
-  const found = new Set<string>();
-
-  const markdownLinkRegex = /\[[^\]]+\]\((https?:\/\/[^\s)]+)\)/g;
-  for (const match of text.matchAll(markdownLinkRegex)) {
-    const normalized = normalizeUrlForCompare(match[1] ?? "");
-    if (normalized) found.add(normalized);
-  }
-
-  const rawUrlRegex = /https?:\/\/[^\s]+/g;
-  for (const match of text.matchAll(rawUrlRegex)) {
-    const normalized = normalizeUrlForCompare(match[0] ?? "");
-    if (normalized) found.add(normalized);
-  }
-
-  return found;
 }
 
 function mapToEvent(row: EventRow): Event {
@@ -94,7 +74,9 @@ function mapToMemberHistory(row: Pick<EventRow, "id" | "date" | "title" | "descr
 
   if (eventUrl) {
     const normalizedEventUrl = normalizeUrlForCompare(eventUrl);
-    const urlsInDescription = extractUrlsFromText(description);
+    const urlsInDescription = new Set(
+      extractHttpUrlsFromText(description).map(normalizeUrlForCompare)
+    );
     if (!urlsInDescription.has(normalizedEventUrl)) {
       noteParts.push(eventUrl);
     }
