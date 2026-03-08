@@ -63,14 +63,37 @@ function splitTrailingPunctuation(url: string): { cleanUrl: string; trailing: st
 }
 
 function linkifyNote(note: string): ReactNode[] {
-  const urlRegex = /(https?:\/\/[^\s]+)/g;
-  const parts = note.split(urlRegex);
+  const tokenRegex = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)|(https?:\/\/[^\s]+)/g;
+  const nodes: ReactNode[] = [];
+  let lastIndex = 0;
 
-  return parts.map((part, index) => {
-    if (/^https?:\/\//.test(part)) {
-      const { cleanUrl, trailing } = splitTrailingPunctuation(part);
-      return (
-        <span key={`${part}-${index}`}>
+  for (const match of note.matchAll(tokenRegex)) {
+    const fullMatch = match[0];
+    const markdownLabel = match[1];
+    const markdownUrl = match[2];
+    const rawUrl = match[3];
+    const startIndex = match.index ?? 0;
+
+    if (lastIndex < startIndex) {
+      nodes.push(note.slice(lastIndex, startIndex));
+    }
+
+    if (markdownLabel && markdownUrl) {
+      nodes.push(
+        <a
+          key={`md-${startIndex}`}
+          href={markdownUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-500 hover:underline"
+        >
+          {markdownLabel}
+        </a>
+      );
+    } else if (rawUrl) {
+      const { cleanUrl, trailing } = splitTrailingPunctuation(rawUrl);
+      nodes.push(
+        <span key={`url-${startIndex}`}>
           <a
             href={cleanUrl}
             target="_blank"
@@ -83,8 +106,15 @@ function linkifyNote(note: string): ReactNode[] {
         </span>
       );
     }
-    return part;
-  });
+
+    lastIndex = startIndex + fullMatch.length;
+  }
+
+  if (lastIndex < note.length) {
+    nodes.push(note.slice(lastIndex));
+  }
+
+  return nodes;
 }
 
 export function MemberProfile({

@@ -28,6 +28,43 @@ type EventRow = {
   }[];
 };
 
+const TRAILING_PUNCTUATION_REGEX = /[.,!?:;)\]}'"。、，．！？：；）］｝」』】》〉]+$/u;
+
+function trimTrailingPunctuation(value: string): string {
+  return value.replace(TRAILING_PUNCTUATION_REGEX, "");
+}
+
+function normalizeUrlForCompare(value: string): string {
+  const trimmed = trimTrailingPunctuation(value.trim());
+  if (!trimmed) return "";
+
+  try {
+    const parsed = new URL(trimmed);
+    const normalizedPath = parsed.pathname.replace(/\/+$/g, "") || "/";
+    return `${parsed.protocol}//${parsed.host}${normalizedPath}${parsed.search}${parsed.hash}`;
+  } catch {
+    return trimmed;
+  }
+}
+
+function extractUrlsFromText(text: string): Set<string> {
+  const found = new Set<string>();
+
+  const markdownLinkRegex = /\[[^\]]+\]\((https?:\/\/[^\s)]+)\)/g;
+  for (const match of text.matchAll(markdownLinkRegex)) {
+    const normalized = normalizeUrlForCompare(match[1] ?? "");
+    if (normalized) found.add(normalized);
+  }
+
+  const rawUrlRegex = /https?:\/\/[^\s]+/g;
+  for (const match of text.matchAll(rawUrlRegex)) {
+    const normalized = normalizeUrlForCompare(match[0] ?? "");
+    if (normalized) found.add(normalized);
+  }
+
+  return found;
+}
+
 function mapToEvent(row: EventRow): Event {
   return {
     id: row.id,
@@ -51,7 +88,18 @@ function mapToEvent(row: EventRow): Event {
 }
 
 function mapToMemberHistory(row: Pick<EventRow, "id" | "date" | "title" | "description" | "url">): MemberHistory {
-  const noteParts = [row.description.trim(), row.url ?? ""].filter((v) => v.length > 0);
+  const description = row.description.trim();
+  const noteParts = description ? [description] : [];
+  const eventUrl = row.url?.trim() ?? "";
+
+  if (eventUrl) {
+    const normalizedEventUrl = normalizeUrlForCompare(eventUrl);
+    const urlsInDescription = extractUrlsFromText(description);
+    if (!urlsInDescription.has(normalizedEventUrl)) {
+      noteParts.push(eventUrl);
+    }
+  }
+
   return {
     id: row.id,
     date: row.date,
