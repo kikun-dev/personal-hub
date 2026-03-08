@@ -9,6 +9,12 @@ import type {
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
 import type { Song, CreateSongInput, UpdateSongInput, SongFilters } from "./song";
+import type {
+  Release,
+  CreateReleaseInput,
+  UpdateReleaseInput,
+  ReleaseFilters,
+} from "./release";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -38,6 +44,14 @@ export type EventRepository = {
 
 export type EventTypeRepository = {
   findAll(): Promise<EventType[]>;
+};
+
+export type ReleaseRepository = {
+  findAll(filters?: ReleaseFilters): Promise<Release[]>;
+  findById(id: string): Promise<Release | null>;
+  create(input: CreateReleaseInput): Promise<Release>;
+  update(id: string, input: UpdateReleaseInput): Promise<Release>;
+  delete(id: string): Promise<void>;
 };
 
 export type SongRepository = {

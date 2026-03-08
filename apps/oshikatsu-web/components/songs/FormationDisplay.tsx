@@ -1,25 +1,12 @@
-import type { SongMember } from "@/types/song";
-import { SONG_POSITIONS } from "@/lib/constants";
+import type { SongFormationRow } from "@/types/song";
 import { Card } from "@/components/ui/Card";
 
 type FormationDisplayProps = {
-  members: SongMember[];
+  rows: SongFormationRow[];
 };
 
-export function FormationDisplay({ members }: FormationDisplayProps) {
-  if (members.length === 0) {
-    return null;
-  }
-
-  // Group members by position in SONG_POSITIONS order
-  const groupedByPosition = SONG_POSITIONS.map((position) => ({
-    position,
-    members: members
-      .filter((m) => m.position === position)
-      .sort((a, b) => a.positionOrder - b.positionOrder),
-  })).filter((group) => group.members.length > 0);
-
-  if (groupedByPosition.length === 0) {
+export function FormationDisplay({ rows }: FormationDisplayProps) {
+  if (rows.length === 0) {
     return null;
   }
 
@@ -29,26 +16,18 @@ export function FormationDisplay({ members }: FormationDisplayProps) {
         フォーメーション
       </h2>
       <div className="space-y-4">
-        {groupedByPosition.map(({ position, members: positionMembers }) => (
-          <div key={position} className="space-y-1">
-            {/* Position divider */}
+        {rows.map((row) => (
+          <div key={row.rowNumber} className="space-y-1">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-foreground/10" />
-              <span className="text-xs text-foreground/50">{position}</span>
+              <span className="text-xs text-foreground/50">{row.rowNumber}列目</span>
               <div className="h-px flex-1 bg-foreground/10" />
             </div>
-            {/* Members */}
             <p className="text-center text-sm text-foreground">
-              {positionMembers.map((member, index) => (
-                <span key={member.id}>
+              {row.members.map((member, index) => (
+                <span key={`${row.rowNumber}-${member.memberId}`}>
                   {index > 0 && " ・ "}
-                  {member.isCenter ? (
-                    <span className="font-bold">
-                      ★{member.memberNameJa}★
-                    </span>
-                  ) : (
-                    member.memberNameJa
-                  )}
+                  {member.memberNameJa}
                 </span>
               ))}
             </p>

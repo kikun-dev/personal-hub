@@ -1,11 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
+import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { getSong } from "@/usecases/getSong";
-import { getGroups } from "@/usecases/getGroups";
 import { listMembers } from "@/usecases/listMembers";
+import { listReleases } from "@/usecases/listReleases";
 import { SongForm } from "@/components/admin/SongForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateSongAction, deleteSongAction } from "./actions";
@@ -22,9 +22,9 @@ export default async function EditSongPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [song, groups, members] = await Promise.all([
+  const [song, releases, members] = await Promise.all([
     getSong(createSongRepository(supabase), id),
-    getGroups(createGroupRepository(supabase)),
+    listReleases(createReleaseRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
   ]);
 
@@ -34,15 +34,42 @@ export default async function EditSongPage({
 
   const initialValues: CreateSongInput = {
     title: song.title,
-    lyricsBy: song.lyricsBy ?? "",
-    musicBy: song.musicBy ?? "",
-    releaseDate: song.releaseDate ?? "",
-    groupIds: song.groupIds,
-    members: song.members.map((m) => ({
-      memberId: m.memberId,
-      position: m.position,
-      positionOrder: String(m.positionOrder),
-      isCenter: m.isCenter,
+    durationSeconds: song.durationSeconds ? String(song.durationSeconds) : "",
+    releaseLinks: song.releases.map((release) => ({
+      releaseId: release.releaseId,
+      trackNumber: String(release.trackNumber),
+    })),
+    lyricsPeople: song.credits
+      .filter((credit) => credit.role === "lyrics")
+      .map((credit) => credit.personName)
+      .join(", "),
+    musicPeople: song.credits
+      .filter((credit) => credit.role === "music")
+      .map((credit) => credit.personName)
+      .join(", "),
+    arrangementPeople: song.credits
+      .filter((credit) => credit.role === "arrangement")
+      .map((credit) => credit.personName)
+      .join(", "),
+    choreographyPeople: song.credits
+      .filter((credit) => credit.role === "choreography")
+      .map((credit) => credit.personName)
+      .join(", "),
+    formationRows: song.formationRows.map((row) => ({
+      memberCount: String(row.memberCount),
+      memberIds: row.members.map((member) => member.memberId),
+    })),
+    mv: {
+      url: song.mv?.url ?? "",
+      directorName: song.mv?.directorName ?? "",
+      location: song.mv?.location ?? "",
+      publishedOn: song.mv?.publishedOn ?? "",
+      memo: song.mv?.memo ?? "",
+    },
+    costumes: song.costumes.map((costume) => ({
+      stylistName: costume.stylistName,
+      imagePath: costume.imagePath,
+      note: costume.note ?? "",
     })),
   };
 
@@ -78,7 +105,7 @@ export default async function EditSongPage({
       <SongForm
         mode="edit"
         initialValues={initialValues}
-        groups={groups}
+        releases={releases}
         members={members}
         onSubmit={handleSubmit}
       />

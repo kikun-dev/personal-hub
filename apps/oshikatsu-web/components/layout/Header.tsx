@@ -26,6 +26,7 @@ export function Header({ userEmail }: HeaderProps) {
     { href: "/", label: "トップ" },
     { href: "/members", label: "メンバー" },
     { href: "/songs", label: "楽曲" },
+    { href: "/releases", label: "リリース" },
     { href: "/admin", label: "管理" },
   ];
 
