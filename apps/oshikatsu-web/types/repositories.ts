@@ -15,7 +15,11 @@ import type {
   UpdateSongInput,
   SongFilters,
 } from "./song";
-import type { Person } from "./person";
+import type {
+  Person,
+  CreatePersonInput,
+  UpdatePersonInput,
+} from "./person";
 import type {
   Release,
   CreateReleaseInput,
@@ -55,6 +59,10 @@ export type EventTypeRepository = {
 
 export type PersonRepository = {
   findAll(): Promise<Person[]>;
+  findById(id: string): Promise<Person | null>;
+  create(input: CreatePersonInput): Promise<Person>;
+  update(id: string, input: UpdatePersonInput): Promise<Person>;
+  delete(id: string): Promise<void>;
 };
 
 export type ReleaseRepository = {

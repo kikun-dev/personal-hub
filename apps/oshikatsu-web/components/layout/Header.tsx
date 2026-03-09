@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/client";
-import { APP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
+import { HEADER_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
 
 type HeaderProps = {
   userEmail: string;
@@ -32,7 +32,7 @@ export function Header({ userEmail }: HeaderProps) {
           </Link>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">
-            {APP_NAV_ITEMS.map((item) => (
+            {HEADER_NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -81,7 +81,7 @@ export function Header({ userEmail }: HeaderProps) {
       {isMenuOpen && (
         <div className="border-t border-foreground/10 px-4 py-3 md:hidden">
           <nav className="flex flex-col gap-2">
-            {APP_NAV_ITEMS.map((item) => (
+            {HEADER_NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
