@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { APP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
+import { TOP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
 
 export function TopNavigationPanel() {
   const pathname = usePathname();
@@ -12,7 +12,7 @@ export function TopNavigationPanel() {
     <Card className="sticky top-6">
       <h2 className="text-sm font-medium text-foreground/70">ナビゲーション</h2>
       <nav className="mt-3 flex flex-col gap-2">
-        {APP_NAV_ITEMS.map((item) => (
+        {TOP_NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}
