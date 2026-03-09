@@ -152,30 +152,51 @@ export function ReleaseForm({
   const [pendingArtworkFile, setPendingArtworkFile] = useState<File | null>(null);
   const [pendingArtworkPreviewUrl, setPendingArtworkPreviewUrl] = useState<string | null>(null);
   const [trackQueries, setTrackQueries] = useState<Record<string, string>>({});
+  const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
 
   const trackTitleById = useMemo(
     () => new Map<string, string>(tracks.map((track) => [track.id, track.title])),
     [tracks]
   );
 
-  const selectableMembers = useMemo(() => {
-    if (!values.groupId) {
-      return members;
-    }
-
-    return members.filter((member) =>
-      member.groups.some((group) => group.groupId === values.groupId)
-    );
+  const participantOptions = useMemo(() => {
+    return members
+      .map((member) => ({
+        id: member.id,
+        nameJa: member.nameJa,
+        isInReleaseGroup:
+          values.groupId.length > 0
+            ? member.groups.some((group) => group.groupId === values.groupId)
+            : true,
+      }))
+      .sort((a, b) => a.nameJa.localeCompare(b.nameJa));
   }, [members, values.groupId]);
 
-  useEffect(() => {
-    const allowedMemberIds = new Set(selectableMembers.map((member) => member.id));
+  const selectedParticipantMemberIds = useMemo(
+    () => new Set(values.participantMemberIds),
+    [values.participantMemberIds]
+  );
 
-    setValues((prev) => ({
-      ...prev,
-      participantMemberIds: prev.participantMemberIds.filter((memberId) => allowedMemberIds.has(memberId)),
-    }));
-  }, [selectableMembers]);
+  const visibleParticipantOptions = useMemo(() => {
+    if (showAllParticipantMembers) {
+      return participantOptions;
+    }
+
+    return participantOptions.filter(
+      (option) => option.isInReleaseGroup || selectedParticipantMemberIds.has(option.id)
+    );
+  }, [participantOptions, selectedParticipantMemberIds, showAllParticipantMembers]);
+
+  const outOfGroupSelectedMemberNames = useMemo(
+    () =>
+      participantOptions
+        .filter(
+          (option) =>
+            selectedParticipantMemberIds.has(option.id) && !option.isInReleaseGroup
+        )
+        .map((option) => option.nameJa),
+    [participantOptions, selectedParticipantMemberIds]
+  );
 
   useEffect(() => {
     return () => {
@@ -674,14 +695,34 @@ export function ReleaseForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
-          参加メンバー
-        </label>
+        <div className="mb-1 flex items-center justify-between">
+          <label className="block text-sm font-medium text-foreground/70">
+            参加メンバー
+          </label>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setShowAllParticipantMembers((prev) => !prev)}
+          >
+            {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
+          </Button>
+        </div>
         {errors.participantMemberIds && (
           <p className="mb-1 text-xs text-red-500">{errors.participantMemberIds}</p>
         )}
+        {!showAllParticipantMembers && values.groupId && (
+          <p className="mb-2 text-xs text-foreground/50">
+            同グループ在籍歴のあるメンバーを優先表示中です
+          </p>
+        )}
+        {outOfGroupSelectedMemberNames.length > 0 && (
+          <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            注意: リリースグループ外のメンバーが選択されています（
+            {outOfGroupSelectedMemberNames.join(" / ")}）
+          </p>
+        )}
         <div className="max-h-64 overflow-y-auto rounded-lg border border-foreground/10 p-2">
-          {selectableMembers.map((member) => (
+          {visibleParticipantOptions.map((member) => (
             <label
               key={member.id}
               className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-foreground/5"
@@ -692,10 +733,15 @@ export function ReleaseForm({
                 onChange={() => toggleParticipant(member.id)}
                 className="rounded"
               />
-              <span className="text-foreground">{member.nameJa}</span>
+              <span className="text-foreground">
+                {member.nameJa}
+                {!member.isInReleaseGroup && (
+                  <span className="ml-1 text-xs text-amber-600">(グループ外)</span>
+                )}
+              </span>
             </label>
           ))}
-          {selectableMembers.length === 0 && (
+          {visibleParticipantOptions.length === 0 && (
             <p className="px-2 py-1 text-xs text-foreground/40">
               選択中グループに在籍歴のあるメンバーがいません
             </p>
