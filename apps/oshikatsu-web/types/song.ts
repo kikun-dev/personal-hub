@@ -50,6 +50,9 @@ export type SongCostume = {
 export type Song = {
   id: string;
   title: string;
+  groupId: string;
+  groupNameJa: string;
+  groupColor: string;
   durationSeconds: number | null;
   releaseDate: string | null;
   groupIds: string[];
@@ -87,6 +90,7 @@ export type CreateSongCostumeInput = {
 
 export type CreateSongInput = {
   title: string;
+  groupId: string;
   durationSeconds: string;
   releaseLinks: CreateSongReleaseLinkInput[];
   lyricsPeople: string;

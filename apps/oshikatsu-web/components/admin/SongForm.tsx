@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import type { Group } from "@/types/group";
 import type { Release } from "@/types/release";
 import type { MemberWithGroups } from "@/types/member";
 import type {
@@ -28,6 +29,7 @@ type FormValues = Omit<CreateSongInput, "releaseLinks" | "formationRows" | "cost
 type SongFormProps = {
   mode: "create" | "edit";
   initialValues?: CreateSongInput;
+  groups: Group[];
   releases: Release[];
   members: MemberWithGroups[];
   people: string[];
@@ -72,6 +74,7 @@ function withCostumeKey(costume: CreateSongCostumeInput): FormCostume {
 function getDefaultValues(): FormValues {
   return {
     title: "",
+    groupId: "",
     durationSeconds: "",
     releaseLinks: [withReleaseKey({ releaseId: "", trackNumber: "1" })],
     lyricsPeople: "",
@@ -102,6 +105,7 @@ function toFormValues(input: CreateSongInput): FormValues {
 function toSubmitValues(values: FormValues): CreateSongInput {
   return {
     title: values.title,
+    groupId: values.groupId,
     durationSeconds: values.durationSeconds,
     releaseLinks: values.releaseLinks.map((link) => ({
       releaseId: link.releaseId,
@@ -145,6 +149,7 @@ function hasMvValue(mv: CreateSongInput["mv"]): boolean {
 export function SongForm({
   mode,
   initialValues,
+  groups,
   releases,
   members,
   people,
@@ -165,6 +170,7 @@ export function SongForm({
   const [isMvFormVisible, setIsMvFormVisible] = useState<boolean>(
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
+  const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
 
   const releaseMap = useMemo(
     () => new Map<string, Release>(releases.map((release) => [release.id, release])),
@@ -173,6 +179,17 @@ export function SongForm({
 
   const memberNameById = useMemo(
     () => new Map<string, string>(members.map((member) => [member.id, member.nameJa])),
+    [members]
+  );
+
+  const memberGroupIdsById = useMemo(
+    () =>
+      new Map<string, Set<string>>(
+        members.map((member) => [
+          member.id,
+          new Set(member.groups.map((memberGroup) => memberGroup.groupId)),
+        ])
+      ),
     [members]
   );
 
@@ -192,9 +209,44 @@ export function SongForm({
     }
 
     return Array.from(options.entries())
-      .map(([memberId, memberName]) => ({ memberId, memberName }))
+      .map(([memberId, memberName]) => ({
+        memberId,
+        memberName,
+        isInSongGroup:
+          values.groupId.length > 0
+            ? (memberGroupIdsById.get(memberId)?.has(values.groupId) ?? false)
+            : true,
+      }))
       .sort((a, b) => a.memberName.localeCompare(b.memberName));
-  }, [memberNameById, releaseMap, values.releaseLinks]);
+  }, [memberGroupIdsById, memberNameById, releaseMap, values.groupId, values.releaseLinks]);
+
+  const selectedFormationMemberIds = useMemo(() => {
+    const selected = new Set<string>();
+    for (const row of values.formationRows) {
+      for (const memberId of row.memberIds) {
+        selected.add(memberId);
+      }
+    }
+    return selected;
+  }, [values.formationRows]);
+
+  const visibleParticipantOptions = useMemo(() => {
+    if (showAllParticipantMembers) {
+      return participantOptions;
+    }
+
+    return participantOptions.filter((option) =>
+      option.isInSongGroup || selectedFormationMemberIds.has(option.memberId)
+    );
+  }, [participantOptions, selectedFormationMemberIds, showAllParticipantMembers]);
+
+  const outOfGroupSelectedMemberNames = useMemo(
+    () =>
+      participantOptions
+        .filter((option) => selectedFormationMemberIds.has(option.memberId) && !option.isInSongGroup)
+        .map((option) => option.memberName),
+    [participantOptions, selectedFormationMemberIds]
+  );
 
   useEffect(() => {
     const allowed = new Set(participantOptions.map((option) => option.memberId));
@@ -435,6 +487,28 @@ export function SongForm({
         error={errors.title}
       />
 
+      <div>
+        <label htmlFor="groupId" className="mb-1 block text-sm font-medium text-foreground/70">
+          楽曲グループ*
+        </label>
+        <select
+          id="groupId"
+          value={values.groupId}
+          onChange={(e) => update("groupId", e.target.value)}
+          className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+        >
+          <option value="">選択してください</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.nameJa}
+            </option>
+          ))}
+        </select>
+        {errors.groupId && (
+          <p className="mt-1 text-xs text-red-500">{errors.groupId}</p>
+        )}
+      </div>
+
       <Input
         id="durationSeconds"
         label="時間（秒）"
@@ -603,13 +677,33 @@ export function SongForm({
       <div>
         <div className="mb-2 flex items-center justify-between">
           <label className="text-sm font-medium text-foreground/70">フォーメーション</label>
-          <Button type="button" variant="ghost" onClick={addFormationRow}>
-            + 列を追加
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAllParticipantMembers((prev) => !prev)}
+            >
+              {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
+            </Button>
+            <Button type="button" variant="ghost" onClick={addFormationRow}>
+              + 列を追加
+            </Button>
+          </div>
         </div>
         {errors.formationRows && <p className="mb-2 text-xs text-red-500">{errors.formationRows}</p>}
         {participantOptions.length === 0 && values.formationRows.length > 0 && (
           <p className="mb-2 text-xs text-foreground/50">リリースを選択すると参加メンバーを割り当てできます</p>
+        )}
+        {!showAllParticipantMembers && values.groupId && (
+          <p className="mb-2 text-xs text-foreground/50">
+            同グループ在籍歴のあるメンバーを優先表示中です
+          </p>
+        )}
+        {outOfGroupSelectedMemberNames.length > 0 && (
+          <p className="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+            注意: 楽曲グループ外のメンバーが選択されています（
+            {outOfGroupSelectedMemberNames.join(" / ")}）
+          </p>
         )}
         <div className="space-y-3">
           {values.formationRows.map((row, index) => {
@@ -644,7 +738,7 @@ export function SongForm({
                     <p className="mb-1 text-xs text-red-500">{errors[`formationRows.${index}.memberIds`]}</p>
                   )}
                   <div className="max-h-40 overflow-y-auto rounded border border-foreground/10 p-2">
-                    {participantOptions.map((option) => {
+                    {visibleParticipantOptions.map((option) => {
                       const checked = row.memberIds.includes(option.memberId);
                       const disabled = !checked && row.memberIds.length >= memberCount;
 
@@ -659,11 +753,16 @@ export function SongForm({
                             disabled={disabled}
                             onChange={() => toggleFormationMember(row._key, option.memberId)}
                           />
-                          <span>{option.memberName}</span>
+                          <span>
+                            {option.memberName}
+                            {!option.isInSongGroup && (
+                              <span className="ml-1 text-xs text-amber-600">(グループ外)</span>
+                            )}
+                          </span>
                         </label>
                       );
                     })}
-                    {participantOptions.length === 0 && (
+                    {visibleParticipantOptions.length === 0 && (
                       <p className="text-xs text-foreground/40">選択可能なメンバーがいません</p>
                     )}
                   </div>

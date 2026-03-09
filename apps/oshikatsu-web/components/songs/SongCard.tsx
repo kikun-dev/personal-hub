@@ -7,15 +7,17 @@ type SongCardProps = {
 };
 
 export function SongCard({ song }: SongCardProps) {
+  const groupLabel = song.groupNameJa || song.groupNames.join(" / ");
+
   return (
     <Link
       href={`/songs/${song.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
       <p className="text-sm font-medium text-foreground">{song.title}</p>
-      {song.groupNames.length > 0 && (
+      {groupLabel && (
         <p className="mt-1 text-xs text-foreground/50">
-          {song.groupNames.join(" / ")}
+          {groupLabel}
         </p>
       )}
       <p className="mt-1 text-xs text-foreground/50">

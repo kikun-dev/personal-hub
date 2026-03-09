@@ -24,6 +24,16 @@ type ReleaseGroupRel =
       color: string;
     }>;
 
+type SongGroupRel =
+  | {
+      name_ja: string;
+      color: string;
+    }
+  | Array<{
+      name_ja: string;
+      color: string;
+    }>;
+
 type ReleaseRel =
   | {
       id: string;
@@ -114,6 +124,8 @@ type CostumeRow = {
 type SongRow = {
   id: string;
   title: string;
+  group_id: string;
+  orbit_groups: SongGroupRel;
   duration_seconds: number | null;
   orbit_release_tracks?: TrackReleaseRow[];
   orbit_track_credits?: TrackCreditRow[];
@@ -122,13 +134,11 @@ type SongRow = {
   orbit_track_costumes?: CostumeRow[];
 };
 
-type GroupTrackIdRow = {
-  track_id: string;
-};
-
 const SONG_LIST_SELECT = `
   id,
   title,
+  group_id,
+  orbit_groups(name_ja, color),
   duration_seconds,
   orbit_release_tracks(
     release_id,
@@ -147,6 +157,8 @@ const SONG_LIST_SELECT = `
 const SONG_DETAIL_SELECT = `
   id,
   title,
+  group_id,
+  orbit_groups(name_ja, color),
   duration_seconds,
   orbit_release_tracks(
     release_id,
@@ -304,6 +316,7 @@ function mapCostumes(rows: CostumeRow[] | undefined): SongCostume[] {
 }
 
 function mapSong(row: SongRow): Song {
+  const songGroup = pickFirst(row.orbit_groups);
   const releases = (row.orbit_release_tracks ?? [])
     .map(mapRelease)
     .filter((release): release is SongReleaseLink => Boolean(release))
@@ -332,14 +345,13 @@ function mapSong(row: SongRow): Song {
   return {
     id: row.id,
     title: row.title,
+    groupId: row.group_id,
+    groupNameJa: songGroup?.name_ja ?? "",
+    groupColor: songGroup?.color ?? "#6B7280",
     durationSeconds: row.duration_seconds,
     releaseDate,
-    groupIds: uniqueStrings(releases.map((release) => release.groupId)),
-    groupNames: uniqueStrings(
-      releases
-        .map((release) => release.groupNameJa)
-        .filter(Boolean)
-    ),
+    groupIds: [row.group_id],
+    groupNames: songGroup?.name_ja ? [songGroup.name_ja] : [],
     releases,
     credits: mapCredits(row.orbit_track_credits),
     formationRows: mapFormation(row.orbit_track_formations),
@@ -453,32 +465,18 @@ export function createSongRepository(
     return (data as unknown as SongRow[]).map(mapSong);
   }
 
-  async function findTrackIdsByGroupId(groupId: string): Promise<string[]> {
-    const { data, error } = await supabase
-      .from("orbit_release_tracks")
-      .select("track_id, orbit_releases!inner(group_id)")
-      .eq("orbit_releases.group_id", groupId);
-
-    if (error) {
-      throw new RepositoryError("楽曲一覧の取得に失敗しました", error);
-    }
-
-    return uniqueStrings(
-      ((data as GroupTrackIdRow[]) ?? []).map((row) => row.track_id)
-    );
-  }
-
   return {
     async findAll(filters) {
-      if (filters?.groupId) {
-        const trackIds = await findTrackIdsByGroupId(filters.groupId);
-        return findManyByIds(trackIds, SONG_LIST_SELECT);
-      }
-
-      const { data, error } = await supabase
+      let query = supabase
         .from("orbit_tracks")
         .select(SONG_LIST_SELECT)
         .order("title");
+
+      if (filters?.groupId) {
+        query = query.eq("group_id", filters.groupId);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw new RepositoryError("楽曲一覧の取得に失敗しました", error);
@@ -512,8 +510,9 @@ export function createSongRepository(
       const mv = parseMv(input.mv);
       const costumes = parseCostumes(input.costumes);
 
-      const { data: trackId, error: rpcError } = await supabase.rpc("create_track_with_relations", {
+      const { data: trackId, error: rpcError } = await supabase.rpc("create_track_with_relations_v2", {
         p_title: input.title.trim(),
+        p_group_id: input.groupId,
         p_duration_seconds: durationSeconds,
         p_release_links: releaseLinks,
         p_credits: credits,
@@ -550,9 +549,10 @@ export function createSongRepository(
       const mv = parseMv(input.mv);
       const costumes = parseCostumes(input.costumes);
 
-      const { error: rpcError } = await supabase.rpc("update_track_with_relations", {
+      const { error: rpcError } = await supabase.rpc("update_track_with_relations_v2", {
         p_track_id: id,
         p_title: input.title.trim(),
+        p_group_id: input.groupId,
         p_duration_seconds: durationSeconds,
         p_release_links: releaseLinks,
         p_credits: credits,
