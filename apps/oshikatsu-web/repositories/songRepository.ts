@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   Song,
+  SongOption,
   SongCredit,
   SongCreditRole,
   SongCostume,
@@ -350,8 +351,6 @@ function mapSong(row: SongRow): Song {
     groupColor: songGroup?.color ?? "#6B7280",
     durationSeconds: row.duration_seconds,
     releaseDate,
-    groupIds: [row.group_id],
-    groupNames: songGroup?.name_ja ? [songGroup.name_ja] : [],
     releases,
     credits: mapCredits(row.orbit_track_credits),
     formationRows: mapFormation(row.orbit_track_formations),
@@ -483,6 +482,22 @@ export function createSongRepository(
       }
 
       return (data as unknown as SongRow[]).map(mapSong);
+    },
+
+    async findOptions() {
+      const { data, error } = await supabase
+        .from("orbit_tracks")
+        .select("id, title")
+        .order("title");
+
+      if (error) {
+        throw new RepositoryError("楽曲候補の取得に失敗しました", error);
+      }
+
+      return ((data as Array<{ id: string; title: string }>) ?? []).map((row) => ({
+        id: row.id,
+        title: row.title,
+      })) satisfies SongOption[];
     },
 
     async findById(id) {

@@ -370,8 +370,8 @@ export function MemberProfile({
                 className="block rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground hover:bg-foreground/5"
               >
                 <p className="font-medium">{song.title}</p>
-                {song.groupNames.length > 0 && (
-                  <p className="mt-1 text-xs text-foreground/50">{song.groupNames.join(" / ")}</p>
+                {song.groupNameJa && (
+                  <p className="mt-1 text-xs text-foreground/50">{song.groupNameJa}</p>
                 )}
               </Link>
             ))}

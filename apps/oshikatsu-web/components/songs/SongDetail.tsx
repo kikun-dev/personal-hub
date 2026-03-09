@@ -19,7 +19,6 @@ function formatDuration(seconds: number): string {
 }
 
 export function SongDetail({ song }: { song: Song }) {
-  const groupLabel = song.groupNameJa || song.groupNames.join(" / ");
   const creditsByRole = new Map<string, string[]>();
   for (const credit of song.credits) {
     const list = creditsByRole.get(credit.role) ?? [];
@@ -31,8 +30,8 @@ export function SongDetail({ song }: { song: Song }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-foreground">{song.title}</h1>
-        {groupLabel && (
-          <p className="mt-1 text-sm text-foreground/50">{groupLabel}</p>
+        {song.groupNameJa && (
+          <p className="mt-1 text-sm text-foreground/50">{song.groupNameJa}</p>
         )}
       </div>
 

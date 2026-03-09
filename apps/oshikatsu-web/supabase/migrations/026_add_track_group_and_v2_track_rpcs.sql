@@ -2,35 +2,11 @@
 -- 026: 楽曲にグループを保持し、楽曲更新RPCを拡張
 -- - orbit_tracks.group_id 追加（NOT NULL）
 -- - group_id 付きRPC（*_v2）を追加
+-- 前提: 既存楽曲データ投入前に適用する
 -- ============================================================
 
 ALTER TABLE public.orbit_tracks
 ADD COLUMN IF NOT EXISTS group_id UUID REFERENCES public.orbit_groups(id) ON DELETE RESTRICT;
-
-UPDATE public.orbit_tracks track
-SET group_id = source.group_id
-FROM LATERAL (
-  SELECT release.group_id
-  FROM public.orbit_release_tracks release_track
-  JOIN public.orbit_releases release
-    ON release.id = release_track.release_id
-  WHERE release_track.track_id = track.id
-  ORDER BY release.release_date NULLS LAST, release_track.track_number
-  LIMIT 1
-) AS source
-WHERE track.group_id IS NULL;
-
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM public.orbit_tracks
-    WHERE group_id IS NULL
-  ) THEN
-    RAISE EXCEPTION 'orbit_tracks.group_id のバックフィルに失敗しました';
-  END IF;
-END
-$$;
 
 ALTER TABLE public.orbit_tracks
 ALTER COLUMN group_id SET NOT NULL;

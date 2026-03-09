@@ -8,7 +8,7 @@ import { createPersonRepository } from "@/repositories/personRepository";
 import { getRelease } from "@/usecases/getRelease";
 import { getGroups } from "@/usecases/getGroups";
 import { listMembers } from "@/usecases/listMembers";
-import { listSongs } from "@/usecases/listSongs";
+import { listSongOptions } from "@/usecases/listSongOptions";
 import { listPeople } from "@/usecases/listPeople";
 import { ReleaseForm } from "@/components/admin/ReleaseForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
@@ -26,11 +26,11 @@ export default async function EditReleasePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [release, groups, members, songs, people] = await Promise.all([
+  const [release, groups, members, songOptions, people] = await Promise.all([
     getRelease(createReleaseRepository(supabase), id),
     getGroups(createGroupRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
-    listSongs(createSongRepository(supabase)),
+    listSongOptions(createSongRepository(supabase)),
     listPeople(createPersonRepository(supabase)),
   ]);
 
@@ -93,7 +93,7 @@ export default async function EditReleasePage({
         initialValues={initialValues}
         groups={groups}
         members={members}
-        tracks={songs.map((song) => ({ id: song.id, title: song.title }))}
+        tracks={songOptions}
         people={people.map((person) => person.displayName)}
         onSubmit={handleSubmit}
       />

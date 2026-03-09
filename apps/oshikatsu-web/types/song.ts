@@ -55,13 +55,16 @@ export type Song = {
   groupColor: string;
   durationSeconds: number | null;
   releaseDate: string | null;
-  groupIds: string[];
-  groupNames: string[];
   releases: SongReleaseLink[];
   credits: SongCredit[];
   formationRows: SongFormationRow[];
   mv: SongMv | null;
   costumes: SongCostume[];
+};
+
+export type SongOption = {
+  id: string;
+  title: string;
 };
 
 export type CreateSongReleaseLinkInput = {

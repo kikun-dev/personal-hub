@@ -8,7 +8,13 @@ import type {
 } from "./member";
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
-import type { Song, CreateSongInput, UpdateSongInput, SongFilters } from "./song";
+import type {
+  Song,
+  SongOption,
+  CreateSongInput,
+  UpdateSongInput,
+  SongFilters,
+} from "./song";
 import type { Person } from "./person";
 import type {
   Release,
@@ -61,6 +67,7 @@ export type ReleaseRepository = {
 
 export type SongRepository = {
   findAll(filters?: SongFilters): Promise<Song[]>;
+  findOptions(): Promise<SongOption[]>;
   findById(id: string): Promise<Song | null>;
   create(input: CreateSongInput): Promise<Song>;
   update(id: string, input: UpdateSongInput): Promise<Song>;
