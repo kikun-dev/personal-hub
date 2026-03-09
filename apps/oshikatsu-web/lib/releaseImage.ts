@@ -2,6 +2,18 @@ export const RELEASE_IMAGE_BUCKET = "release-images";
 export const TRACK_COSTUME_IMAGE_BUCKET = "track-costume-images";
 export const RELEASE_IMAGE_PATH_PREFIX = "releases/";
 export const TRACK_COSTUME_IMAGE_PATH_PREFIX = "costumes/";
+export const RELEASE_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
+export const RELEASE_IMAGE_ALLOWED_MIME_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+] as const;
+
+const RELEASE_IMAGE_MIME_TO_EXTENSION: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 function encodeStoragePath(path: string): string {
   return path
@@ -34,4 +46,12 @@ export function resolveReleaseImageSrc(value: string | null): string | null {
   if (!supabaseUrl) return null;
 
   return `${supabaseUrl}/storage/v1/object/public/${RELEASE_IMAGE_BUCKET}/${encodeStoragePath(value)}`;
+}
+
+export function isAllowedReleaseImageMimeType(mimeType: string): boolean {
+  return (RELEASE_IMAGE_ALLOWED_MIME_TYPES as readonly string[]).includes(mimeType);
+}
+
+export function getReleaseImageExtensionFromMimeType(mimeType: string): string | null {
+  return RELEASE_IMAGE_MIME_TO_EXTENSION[mimeType] ?? null;
 }

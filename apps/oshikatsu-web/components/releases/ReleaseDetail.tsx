@@ -50,6 +50,11 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
             height={640}
             className="h-auto w-full rounded-lg border border-foreground/10 object-cover"
           />
+          {release.artworkPersonName && (
+            <p className="mt-2 text-xs text-foreground/60">
+              担当: {release.artworkPersonName}
+            </p>
+          )}
         </Card>
       )}
 

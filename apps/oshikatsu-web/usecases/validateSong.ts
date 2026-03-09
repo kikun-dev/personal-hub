@@ -23,6 +23,10 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
     errors.push({ field: "title", message: "タイトルは200文字以内で入力してください" });
   }
 
+  if (!input.groupId) {
+    errors.push({ field: "groupId", message: "楽曲グループを選択してください" });
+  }
+
   if (input.durationSeconds) {
     const seconds = Number(input.durationSeconds);
     if (!Number.isInteger(seconds) || seconds <= 0) {

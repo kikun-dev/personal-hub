@@ -17,6 +17,14 @@ type ReleaseGroupRow =
       color: string;
     }>;
 
+type ReleasePersonRow =
+  | {
+      display_name: string;
+    }
+  | Array<{
+      display_name: string;
+    }>;
+
 type ReleaseBonusVideoRow = {
   id: string;
   edition: string;
@@ -60,6 +68,7 @@ type ReleaseRow = {
   numbering: number | null;
   release_date: string | null;
   artwork_path: string | null;
+  orbit_people?: ReleasePersonRow | null;
   orbit_groups: ReleaseGroupRow;
   orbit_release_bonus_videos?: ReleaseBonusVideoRow[];
   orbit_release_members?: ReleaseMemberRow[];
@@ -74,6 +83,7 @@ const RELEASE_LIST_SELECT = `
   numbering,
   release_date,
   artwork_path,
+  orbit_people(display_name),
   orbit_groups(name_ja, color),
   orbit_release_members(member_id, orbit_members(name_ja)),
   orbit_release_tracks(track_number)
@@ -87,6 +97,7 @@ const RELEASE_DETAIL_SELECT = `
   numbering,
   release_date,
   artwork_path,
+  orbit_people(display_name),
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja)),
@@ -94,6 +105,11 @@ const RELEASE_DETAIL_SELECT = `
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
+  const artworkPerson = row.orbit_people
+    ? Array.isArray(row.orbit_people)
+      ? row.orbit_people[0]
+      : row.orbit_people
+    : null;
   const group = Array.isArray(row.orbit_groups)
     ? row.orbit_groups[0]
     : row.orbit_groups;
@@ -118,6 +134,7 @@ function mapToRelease(row: ReleaseRow): Release {
     numbering: row.numbering,
     releaseDate: row.release_date,
     artworkPath: row.artwork_path,
+    artworkPersonName: artworkPerson?.display_name ?? null,
     trackCount: row.orbit_release_tracks?.length ?? 0,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
@@ -149,6 +166,18 @@ function mapToRelease(row: ReleaseRow): Release {
       } => Boolean(item))
       .sort((a, b) => a.trackNumber - b.trackNumber),
   };
+}
+
+function toTrackLinkRpcInput(
+  trackLinks: CreateReleaseInput["trackLinks"]
+): Array<{
+  trackId: string;
+  trackNumber: number;
+}> {
+  return trackLinks.map((trackLink) => ({
+    trackId: trackLink.trackId,
+    trackNumber: Number(trackLink.trackNumber),
+  }));
 }
 
 function toNumbering(
@@ -229,8 +258,10 @@ export function createReleaseRepository(
         p_numbering: numbering,
         p_release_date: input.releaseDate || null,
         p_artwork_path: input.artworkPath || null,
+        p_artwork_person_name: input.artworkPersonName.trim() || null,
         p_bonus_videos: toBonusVideoRpcInput(input.bonusVideos),
         p_member_ids: input.participantMemberIds,
+        p_track_links: toTrackLinkRpcInput(input.trackLinks),
       });
 
       if (rpcError) {
@@ -264,8 +295,10 @@ export function createReleaseRepository(
         p_numbering: numbering,
         p_release_date: input.releaseDate || null,
         p_artwork_path: input.artworkPath || null,
+        p_artwork_person_name: input.artworkPersonName.trim() || null,
         p_bonus_videos: toBonusVideoRpcInput(input.bonusVideos),
         p_member_ids: input.participantMemberIds,
+        p_track_links: toTrackLinkRpcInput(input.trackLinks),
       });
 
       if (rpcError) {

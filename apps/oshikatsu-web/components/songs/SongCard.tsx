@@ -13,9 +13,9 @@ export function SongCard({ song }: SongCardProps) {
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
       <p className="text-sm font-medium text-foreground">{song.title}</p>
-      {song.groupNames.length > 0 && (
+      {song.groupNameJa && (
         <p className="mt-1 text-xs text-foreground/50">
-          {song.groupNames.join(" / ")}
+          {song.groupNameJa}
         </p>
       )}
       <p className="mt-1 text-xs text-foreground/50">

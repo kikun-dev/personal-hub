@@ -38,7 +38,7 @@ export default async function AdminSongsPage() {
                 <td className="py-2 pr-4 text-foreground">{song.title}</td>
                 <td className="py-2 pr-4">
                   <div className="flex flex-wrap gap-1">
-                    {song.groupNames.length > 0 ? song.groupNames.join(" / ") : "—"}
+                    {song.groupNameJa || "—"}
                   </div>
                 </td>
                 <td className="py-2 pr-4 text-foreground/70">

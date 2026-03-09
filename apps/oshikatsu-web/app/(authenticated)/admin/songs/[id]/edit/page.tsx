@@ -3,9 +3,13 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
+import { createPersonRepository } from "@/repositories/personRepository";
+import { createGroupRepository } from "@/repositories/groupRepository";
 import { getSong } from "@/usecases/getSong";
 import { listMembers } from "@/usecases/listMembers";
 import { listReleases } from "@/usecases/listReleases";
+import { listPeople } from "@/usecases/listPeople";
+import { getGroups } from "@/usecases/getGroups";
 import { SongForm } from "@/components/admin/SongForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateSongAction, deleteSongAction } from "./actions";
@@ -22,10 +26,12 @@ export default async function EditSongPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [song, releases, members] = await Promise.all([
+  const [song, releases, members, people, groups] = await Promise.all([
     getSong(createSongRepository(supabase), id),
     listReleases(createReleaseRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
+    listPeople(createPersonRepository(supabase)),
+    getGroups(createGroupRepository(supabase)),
   ]);
 
   if (!song) {
@@ -34,6 +40,7 @@ export default async function EditSongPage({
 
   const initialValues: CreateSongInput = {
     title: song.title,
+    groupId: song.groupId,
     durationSeconds: song.durationSeconds ? String(song.durationSeconds) : "",
     releaseLinks: song.releases.map((release) => ({
       releaseId: release.releaseId,
@@ -105,8 +112,10 @@ export default async function EditSongPage({
       <SongForm
         mode="edit"
         initialValues={initialValues}
+        groups={groups}
         releases={releases}
         members={members}
+        people={people.map((person) => person.displayName)}
         onSubmit={handleSubmit}
       />
     </div>

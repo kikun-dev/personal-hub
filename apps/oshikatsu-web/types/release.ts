@@ -38,6 +38,7 @@ export type Release = {
   numbering: number | null;
   releaseDate: string | null;
   artworkPath: string | null;
+  artworkPersonName: string | null;
   trackCount: number;
   participantMemberIds: string[];
   participantMemberNames: string[];
@@ -51,6 +52,11 @@ export type CreateReleaseBonusVideoInput = {
   description: string;
 };
 
+export type CreateReleaseTrackLinkInput = {
+  trackId: string;
+  trackNumber: string;
+};
+
 export type CreateReleaseInput = {
   title: string;
   groupId: string;
@@ -58,11 +64,20 @@ export type CreateReleaseInput = {
   numbering: string;
   releaseDate: string;
   artworkPath: string;
+  artworkPersonName: string;
   participantMemberIds: string[];
   bonusVideos: CreateReleaseBonusVideoInput[];
+  trackLinks: CreateReleaseTrackLinkInput[];
 };
 
 export type UpdateReleaseInput = CreateReleaseInput;
+
+export type ReleaseImageUploadInput = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+  base64Data: string;
+};
 
 export type ReleaseFilters = {
   groupId?: string;
