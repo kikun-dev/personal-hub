@@ -9,6 +9,7 @@ import type {
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
 import type { Song, CreateSongInput, UpdateSongInput, SongFilters } from "./song";
+import type { Person } from "./person";
 import type {
   Release,
   CreateReleaseInput,
@@ -46,6 +47,10 @@ export type EventTypeRepository = {
   findAll(): Promise<EventType[]>;
 };
 
+export type PersonRepository = {
+  findAll(): Promise<Person[]>;
+};
+
 export type ReleaseRepository = {
   findAll(filters?: ReleaseFilters): Promise<Release[]>;
   findById(id: string): Promise<Release | null>;
@@ -64,6 +69,17 @@ export type SongRepository = {
 };
 
 export type MemberImageRepository = {
+  upload(input: {
+    objectPath: string;
+    body: Uint8Array;
+    contentType: string;
+    cacheControl: string;
+    upsert: boolean;
+  }): Promise<void>;
+  remove(objectPaths: string[]): Promise<void>;
+};
+
+export type ReleaseImageRepository = {
   upload(input: {
     objectPath: string;
     body: Uint8Array;

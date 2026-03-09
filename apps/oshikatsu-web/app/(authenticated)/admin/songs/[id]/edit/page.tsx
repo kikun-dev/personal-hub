@@ -3,9 +3,11 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
+import { createPersonRepository } from "@/repositories/personRepository";
 import { getSong } from "@/usecases/getSong";
 import { listMembers } from "@/usecases/listMembers";
 import { listReleases } from "@/usecases/listReleases";
+import { listPeople } from "@/usecases/listPeople";
 import { SongForm } from "@/components/admin/SongForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateSongAction, deleteSongAction } from "./actions";
@@ -22,10 +24,11 @@ export default async function EditSongPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [song, releases, members] = await Promise.all([
+  const [song, releases, members, people] = await Promise.all([
     getSong(createSongRepository(supabase), id),
     listReleases(createReleaseRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
+    listPeople(createPersonRepository(supabase)),
   ]);
 
   if (!song) {
@@ -107,6 +110,7 @@ export default async function EditSongPage({
         initialValues={initialValues}
         releases={releases}
         members={members}
+        people={people.map((person) => person.displayName)}
         onSubmit={handleSubmit}
       />
     </div>

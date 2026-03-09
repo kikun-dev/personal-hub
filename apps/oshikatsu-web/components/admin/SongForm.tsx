@@ -30,10 +30,32 @@ type SongFormProps = {
   initialValues?: CreateSongInput;
   releases: Release[];
   members: MemberWithGroups[];
+  people: string[];
   onSubmit: (
     values: CreateSongInput
   ) => Promise<{ errors?: ValidationError[] }>;
 };
+
+const CREDIT_FIELDS = [
+  { key: "lyricsPeople", label: "作詞" },
+  { key: "musicPeople", label: "作曲" },
+  { key: "arrangementPeople", label: "編曲" },
+  { key: "choreographyPeople", label: "振付" },
+] as const;
+
+type CreditFieldKey = (typeof CREDIT_FIELDS)[number]["key"];
+
+function splitPeople(value: string): string[] {
+  return value
+    .split(",")
+    .flatMap((part) => part.split("、"))
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function joinPeople(people: string[]): string {
+  return people.join(", ");
+}
 
 function withReleaseKey(link: CreateSongReleaseLinkInput): FormReleaseLink {
   return { ...link, _key: crypto.randomUUID() };
@@ -110,18 +132,39 @@ function parseMemberCount(value: string): number {
   return parsed;
 }
 
+function hasMvValue(mv: CreateSongInput["mv"]): boolean {
+  return Boolean(
+    mv.url.trim() ||
+      mv.directorName.trim() ||
+      mv.location.trim() ||
+      mv.publishedOn.trim() ||
+      mv.memo.trim()
+  );
+}
+
 export function SongForm({
   mode,
   initialValues,
   releases,
   members,
+  people,
   onSubmit,
 }: SongFormProps) {
   const [values, setValues] = useState<FormValues>(
-    () => initialValues ? toFormValues(initialValues) : getDefaultValues()
+    () => (initialValues ? toFormValues(initialValues) : getDefaultValues())
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [releaseQueries, setReleaseQueries] = useState<Record<string, string>>({});
+  const [creditQueries, setCreditQueries] = useState<Record<CreditFieldKey, string>>({
+    lyricsPeople: "",
+    musicPeople: "",
+    arrangementPeople: "",
+    choreographyPeople: "",
+  });
+  const [isMvFormVisible, setIsMvFormVisible] = useState<boolean>(
+    () => Boolean(initialValues && hasMvValue(initialValues.mv))
+  );
 
   const releaseMap = useMemo(
     () => new Map<string, Release>(releases.map((release) => [release.id, release])),
@@ -178,12 +221,14 @@ export function SongForm({
   };
 
   const addReleaseLink = () => {
+    const nextReleaseLink = withReleaseKey({
+      releaseId: "",
+      trackNumber: String(values.releaseLinks.length + 1),
+    });
+
     setValues((prev) => ({
       ...prev,
-      releaseLinks: [
-        ...prev.releaseLinks,
-        withReleaseKey({ releaseId: "", trackNumber: "1" }),
-      ],
+      releaseLinks: [...prev.releaseLinks, nextReleaseLink],
     }));
   };
 
@@ -210,6 +255,38 @@ export function SongForm({
       ...prev,
       releaseLinks: prev.releaseLinks.filter((link) => link._key !== key),
     }));
+    setReleaseQueries((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+  };
+
+  const updateReleaseQuery = (key: string, query: string) => {
+    setReleaseQueries((prev) => ({
+      ...prev,
+      [key]: query,
+    }));
+  };
+
+  const addCreditPerson = (field: CreditFieldKey, rawName: string) => {
+    const nextName = rawName.trim();
+    if (!nextName) return;
+
+    const current = splitPeople(values[field]);
+    if (current.includes(nextName)) return;
+
+    update(field, joinPeople([...current, nextName]) as FormValues[CreditFieldKey]);
+    setCreditQueries((prev) => ({
+      ...prev,
+      [field]: "",
+    }));
+  };
+
+  const removeCreditPerson = (field: CreditFieldKey, index: number) => {
+    const current = splitPeople(values[field]);
+    const next = current.filter((_, i) => i !== index);
+    update(field, joinPeople(next) as FormValues[CreditFieldKey]);
   };
 
   const addFormationRow = () => {
@@ -303,6 +380,26 @@ export function SongForm({
     }));
   };
 
+  const clearMv = () => {
+    update("mv", {
+      url: "",
+      directorName: "",
+      location: "",
+      publishedOn: "",
+      memo: "",
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next["mv.url"];
+      delete next["mv.directorName"];
+      delete next["mv.location"];
+      delete next["mv.publishedOn"];
+      delete next["mv.memo"];
+      return next;
+    });
+    setIsMvFormVisible(false);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -359,18 +456,39 @@ export function SongForm({
         <div className="space-y-2">
           {values.releaseLinks.map((link, index) => {
             const selectedRelease = releaseMap.get(link.releaseId);
+            const query = (releaseQueries[link._key] ?? "").trim().toLowerCase();
+            const candidates = releases
+              .filter((release) => release.title.toLowerCase().includes(query))
+              .slice(0, 50);
+            const selectableReleases = selectedRelease && !candidates.some((release) => release.id === selectedRelease.id)
+              ? [selectedRelease, ...candidates]
+              : candidates;
+
             return (
               <div key={link._key} className="rounded-lg border border-foreground/10 p-3">
-                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_120px_auto] sm:items-end">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_120px_auto] sm:items-end">
+                  <Input
+                    id={`release-search-${link._key}`}
+                    label="タイトル検索"
+                    value={releaseQueries[link._key] ?? selectedRelease?.title ?? ""}
+                    onChange={(e) => updateReleaseQuery(link._key, e.target.value)}
+                  />
+
                   <div>
                     <label className="mb-1 block text-xs text-foreground/60">リリース</label>
                     <select
                       value={link.releaseId}
-                      onChange={(e) => updateReleaseLink(link._key, "releaseId", e.target.value)}
+                      onChange={(e) => {
+                        const nextReleaseId = e.target.value;
+                        updateReleaseLink(link._key, "releaseId", nextReleaseId);
+                        if (nextReleaseId) {
+                          updateReleaseQuery(link._key, releaseMap.get(nextReleaseId)?.title ?? "");
+                        }
+                      }}
                       className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
                     >
                       <option value="">選択してください</option>
-                      {releases.map((release) => (
+                      {selectableReleases.map((release) => (
                         <option key={release.id} value={release.id}>
                           {release.title} ({RELEASE_TYPE_LABELS[release.releaseType]})
                         </option>
@@ -380,17 +498,17 @@ export function SongForm({
                       <p className="mt-1 text-xs text-red-500">{errors[`releaseLinks.${index}.releaseId`]}</p>
                     )}
                   </div>
-                  <div>
-                    <Input
-                      id={`trackNumber-${link._key}`}
-                      label="曲順"
-                      type="number"
-                      min={1}
-                      value={link.trackNumber}
-                      onChange={(e) => updateReleaseLink(link._key, "trackNumber", e.target.value)}
-                      error={errors[`releaseLinks.${index}.trackNumber`]}
-                    />
-                  </div>
+
+                  <Input
+                    id={`trackNumber-${link._key}`}
+                    label="曲順"
+                    type="number"
+                    min={1}
+                    value={link.trackNumber}
+                    onChange={(e) => updateReleaseLink(link._key, "trackNumber", e.target.value)}
+                    error={errors[`releaseLinks.${index}.trackNumber`]}
+                  />
+
                   <button
                     type="button"
                     onClick={() => removeReleaseLink(link._key)}
@@ -410,35 +528,76 @@ export function SongForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Input
-          id="lyricsPeople"
-          label="作詞（複数はカンマ区切り）"
-          value={values.lyricsPeople}
-          onChange={(e) => update("lyricsPeople", e.target.value)}
-          error={errors.lyricsPeople}
-        />
-        <Input
-          id="musicPeople"
-          label="作曲（複数はカンマ区切り）"
-          value={values.musicPeople}
-          onChange={(e) => update("musicPeople", e.target.value)}
-          error={errors.musicPeople}
-        />
-        <Input
-          id="arrangementPeople"
-          label="編曲（複数はカンマ区切り）"
-          value={values.arrangementPeople}
-          onChange={(e) => update("arrangementPeople", e.target.value)}
-          error={errors.arrangementPeople}
-        />
-        <Input
-          id="choreographyPeople"
-          label="振付（複数はカンマ区切り）"
-          value={values.choreographyPeople}
-          onChange={(e) => update("choreographyPeople", e.target.value)}
-          error={errors.choreographyPeople}
-        />
+      <div className="space-y-3">
+        {CREDIT_FIELDS.map(({ key, label }) => {
+          const selectedPeople = splitPeople(values[key]);
+          const query = creditQueries[key];
+          const suggestions = people
+            .filter((personName) => personName.toLowerCase().includes(query.trim().toLowerCase()))
+            .slice(0, 20);
+
+          return (
+            <div key={key} className="rounded-lg border border-foreground/10 p-3">
+              <label className="block text-sm font-medium text-foreground/70">{label}</label>
+
+              <div className="mt-2 flex flex-wrap gap-2">
+                {selectedPeople.map((personName, index) => (
+                  <span
+                    key={`${key}-${personName}-${index}`}
+                    className="inline-flex items-center gap-1 rounded-full bg-foreground/10 px-2.5 py-1 text-xs text-foreground"
+                  >
+                    {personName}
+                    <button
+                      type="button"
+                      className="text-foreground/60 hover:text-foreground"
+                      onClick={() => removeCreditPerson(key, index)}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+                {selectedPeople.length === 0 && (
+                  <span className="text-xs text-foreground/40">未設定</span>
+                )}
+              </div>
+
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+                <Input
+                  id={`${key}-search`}
+                  label={`${label}を検索/入力`}
+                  list={`${key}-person-suggestions`}
+                  value={query}
+                  onChange={(e) =>
+                    setCreditQueries((prev) => ({
+                      ...prev,
+                      [key]: e.target.value,
+                    }))
+                  }
+                  error={errors[key]}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addCreditPerson(key, query);
+                    }
+                  }}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => addCreditPerson(key, query)}
+                >
+                  追加
+                </Button>
+              </div>
+
+              <datalist id={`${key}-person-suggestions`}>
+                {suggestions.map((personName) => (
+                  <option key={`${key}-${personName}`} value={personName} />
+                ))}
+              </datalist>
+            </div>
+          );
+        })}
       </div>
 
       <div>
@@ -521,46 +680,67 @@ export function SongForm({
         </div>
       </div>
 
-      <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
-        <p className="text-sm font-medium text-foreground">MV</p>
-        <Input
-          id="mv-url"
-          label="MVリンク"
-          value={values.mv.url}
-          onChange={(e) => update("mv", { ...values.mv, url: e.target.value })}
-          error={errors["mv.url"]}
-        />
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Input
-            id="mv-director"
-            label="監督"
-            value={values.mv.directorName}
-            onChange={(e) => update("mv", { ...values.mv, directorName: e.target.value })}
-            error={errors["mv.directorName"]}
-          />
-          <Input
-            id="mv-location"
-            label="ロケ地"
-            value={values.mv.location}
-            onChange={(e) => update("mv", { ...values.mv, location: e.target.value })}
-            error={errors["mv.location"]}
-          />
-          <Input
-            id="mv-published-on"
-            label="配信日"
-            type="date"
-            value={values.mv.publishedOn}
-            onChange={(e) => update("mv", { ...values.mv, publishedOn: e.target.value })}
-            error={errors["mv.publishedOn"]}
-          />
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground/70">MV</label>
+          {!isMvFormVisible ? (
+            <Button type="button" variant="ghost" onClick={() => setIsMvFormVisible(true)}>
+              + MVを追加
+            </Button>
+          ) : (
+            <Button type="button" variant="ghost" onClick={clearMv}>
+              MVを削除
+            </Button>
+          )}
         </div>
-        <Textarea
-          id="mv-memo"
-          label="MVメモ"
-          value={values.mv.memo}
-          onChange={(e) => update("mv", { ...values.mv, memo: e.target.value })}
-          error={errors["mv.memo"]}
-        />
+
+        {isMvFormVisible ? (
+          <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
+            <Input
+              id="mv-url"
+              label="MVリンク"
+              value={values.mv.url}
+              onChange={(e) => update("mv", { ...values.mv, url: e.target.value })}
+              error={errors["mv.url"]}
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <Input
+                id="mv-director"
+                label="監督"
+                list="song-person-suggestions"
+                value={values.mv.directorName}
+                onChange={(e) => update("mv", { ...values.mv, directorName: e.target.value })}
+                error={errors["mv.directorName"]}
+              />
+              <Input
+                id="mv-location"
+                label="ロケ地"
+                value={values.mv.location}
+                onChange={(e) => update("mv", { ...values.mv, location: e.target.value })}
+                error={errors["mv.location"]}
+              />
+              <Input
+                id="mv-published-on"
+                label="配信日"
+                type="date"
+                value={values.mv.publishedOn}
+                onChange={(e) => update("mv", { ...values.mv, publishedOn: e.target.value })}
+                error={errors["mv.publishedOn"]}
+              />
+            </div>
+            <Textarea
+              id="mv-memo"
+              label="MVメモ"
+              value={values.mv.memo}
+              onChange={(e) => update("mv", { ...values.mv, memo: e.target.value })}
+              error={errors["mv.memo"]}
+            />
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+            MVは未設定です
+          </p>
+        )}
       </div>
 
       <div>
@@ -587,6 +767,7 @@ export function SongForm({
                 <Input
                   id={`costume-stylist-${costume._key}`}
                   label="衣装担当*"
+                  list="song-person-suggestions"
                   value={costume.stylistName}
                   onChange={(e) => updateCostume(costume._key, "stylistName", e.target.value)}
                   error={errors[`costumes.${index}.stylistName`]}
@@ -615,6 +796,12 @@ export function SongForm({
           )}
         </div>
       </div>
+
+      <datalist id="song-person-suggestions">
+        {people.map((personName) => (
+          <option key={personName} value={personName} />
+        ))}
+      </datalist>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}

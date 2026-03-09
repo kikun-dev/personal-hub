@@ -3,13 +3,17 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
+import { createSongRepository } from "@/repositories/songRepository";
+import { createPersonRepository } from "@/repositories/personRepository";
 import { getRelease } from "@/usecases/getRelease";
 import { getGroups } from "@/usecases/getGroups";
 import { listMembers } from "@/usecases/listMembers";
+import { listSongs } from "@/usecases/listSongs";
+import { listPeople } from "@/usecases/listPeople";
 import { ReleaseForm } from "@/components/admin/ReleaseForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateReleaseAction, deleteReleaseAction } from "./actions";
-import type { CreateReleaseInput } from "@/types/release";
+import type { CreateReleaseInput, ReleaseImageUploadInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
 
 type EditReleasePageProps = {
@@ -22,10 +26,12 @@ export default async function EditReleasePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [release, groups, members] = await Promise.all([
+  const [release, groups, members, songs, people] = await Promise.all([
     getRelease(createReleaseRepository(supabase), id),
     getGroups(createGroupRepository(supabase)),
     listMembers(createMemberRepository(supabase)),
+    listSongs(createSongRepository(supabase)),
+    listPeople(createPersonRepository(supabase)),
   ]);
 
   if (!release) {
@@ -39,19 +45,25 @@ export default async function EditReleasePage({
     numbering: release.numbering ? String(release.numbering) : "",
     releaseDate: release.releaseDate ?? "",
     artworkPath: release.artworkPath ?? "",
+    artworkPersonName: release.artworkPersonName ?? "",
     participantMemberIds: release.participantMemberIds,
     bonusVideos: release.bonusVideos.map((bonus) => ({
       edition: bonus.edition,
       title: bonus.title,
       description: bonus.description ?? "",
     })),
+    trackLinks: release.tracks.map((track) => ({
+      trackId: track.trackId,
+      trackNumber: String(track.trackNumber),
+    })),
   };
 
   async function handleSubmit(
-    values: CreateReleaseInput
+    values: CreateReleaseInput,
+    imageFile?: ReleaseImageUploadInput
   ): Promise<{ errors?: ValidationError[] }> {
     "use server";
-    const result = await updateReleaseAction(id, values);
+    const result = await updateReleaseAction(id, values, imageFile);
     if (!result.errors) {
       redirect("/admin/releases");
     }
@@ -81,6 +93,8 @@ export default async function EditReleasePage({
         initialValues={initialValues}
         groups={groups}
         members={members}
+        tracks={songs.map((song) => ({ id: song.id, title: song.title }))}
+        people={people.map((person) => person.displayName)}
         onSubmit={handleSubmit}
       />
     </div>

@@ -64,6 +64,27 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
     errors.push({ field: "artworkPath", message: "アートワークは500文字以内で入力してください" });
   }
 
+  if (input.artworkPersonName.length > 100) {
+    errors.push({
+      field: "artworkPersonName",
+      message: "アートワーク担当者名は100文字以内で入力してください",
+    });
+  }
+
+  if (input.artworkPath && !input.artworkPersonName.trim()) {
+    errors.push({
+      field: "artworkPersonName",
+      message: "アートワーク画像を設定する場合は担当者を入力してください",
+    });
+  }
+
+  if (!input.artworkPath && input.artworkPersonName.trim()) {
+    errors.push({
+      field: "artworkPath",
+      message: "アートワーク担当者を設定する場合は画像を設定してください",
+    });
+  }
+
   for (let i = 0; i < input.bonusVideos.length; i++) {
     const bonus = input.bonusVideos[i];
     if (!bonus.edition.trim()) {
@@ -108,6 +129,40 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
       break;
     }
     seenMemberIds.add(memberId);
+  }
+
+  const seenTrackIds = new Set<string>();
+  const seenTrackNumbers = new Set<number>();
+
+  for (let i = 0; i < input.trackLinks.length; i++) {
+    const trackLink = input.trackLinks[i];
+
+    if (!trackLink.trackId) {
+      errors.push({
+        field: `trackLinks.${i}.trackId`,
+        message: "楽曲を選択してください",
+      });
+    } else if (seenTrackIds.has(trackLink.trackId)) {
+      errors.push({
+        field: "trackLinks",
+        message: "同じ楽曲を重複して設定することはできません",
+      });
+    }
+    seenTrackIds.add(trackLink.trackId);
+
+    const trackNumber = Number(trackLink.trackNumber);
+    if (!Number.isInteger(trackNumber) || trackNumber <= 0) {
+      errors.push({
+        field: `trackLinks.${i}.trackNumber`,
+        message: "曲順は1以上の整数で入力してください",
+      });
+    } else if (seenTrackNumbers.has(trackNumber)) {
+      errors.push({
+        field: "trackLinks",
+        message: "同じ曲順を重複して設定することはできません",
+      });
+    }
+    seenTrackNumbers.add(trackNumber);
   }
 
   return errors;
