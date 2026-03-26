@@ -37,6 +37,13 @@ export type MemberWithGroups = Member & {
   sns: MemberSns[];
 };
 
+export type MemberListItem = Pick<
+  Member,
+  "id" | "imageUrl" | "nameJa" | "nameKana"
+> & {
+  groups: MemberGroup[];
+};
+
 export type MemberSns = {
   id: string;
   snsType: SnsType;
@@ -51,6 +58,13 @@ export type MemberHistory = {
   date: string;
   event: string;
   note: string;
+};
+
+export type BirthdayMember = {
+  id: string;
+  nameJa: string;
+  dateOfBirth: string;
+  groupNames: string[];
 };
 
 export type CreateMemberInput = {

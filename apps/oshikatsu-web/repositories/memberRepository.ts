@@ -1,5 +1,10 @@
 import type { SupabaseClient } from "@personal-hub/supabase";
-import type { MemberWithGroups, MemberGroup } from "@/types/member";
+import type {
+  BirthdayMember,
+  MemberGroup,
+  MemberListItem,
+  MemberWithGroups,
+} from "@/types/member";
 import type { MemberRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 import type { SnsType } from "@/lib/constants";
@@ -52,6 +57,28 @@ type MemberRow = {
   talk_app_hashtag: string | null;
   orbit_member_groups: MemberGroupRow[];
   orbit_member_sns?: MemberSnsRow[];
+};
+
+type BirthdayMemberRow = {
+  id: string;
+  name_ja: string;
+  date_of_birth: string;
+  group_names: string[] | null;
+};
+
+type MemberFilterGroupRow = {
+  group_id: string;
+  generation: string | null;
+  graduated_at: string | null;
+};
+
+type MemberListRow = {
+  id: string;
+  name_ja: string;
+  name_kana: string;
+  image_url: string | null;
+  orbit_member_groups: MemberGroupRow[];
+  member_filter_groups?: MemberFilterGroupRow[];
 };
 
 type MemberGroupRpcInput = {
@@ -143,6 +170,63 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
   };
 }
 
+function filterDisplayGroups(
+  groups: MemberGroup[],
+  filters?: {
+    groupId?: string;
+  }
+): MemberGroup[] {
+  if (!filters?.groupId) {
+    return groups;
+  }
+
+  return groups.filter((group) => group.groupId === filters.groupId);
+}
+
+function matchesMemberStatus(
+  groups: MemberGroup[],
+  status: "active" | "graduated" | "all" | undefined
+): boolean {
+  if (status === "active") {
+    return groups.some((group) => group.graduatedAt === null);
+  }
+
+  if (status === "graduated") {
+    return groups.length > 0 && groups.every((group) => group.graduatedAt !== null);
+  }
+
+  return true;
+}
+
+function mapToMemberListItem(
+  row: MemberListRow,
+  filters?: {
+    groupId?: string;
+  }
+): MemberListItem {
+  const groups = filterDisplayGroups(
+    (row.orbit_member_groups ?? []).map(mapToMemberGroup),
+    filters
+  );
+
+  return {
+    id: row.id,
+    imageUrl: row.image_url,
+    nameJa: row.name_ja,
+    nameKana: row.name_kana,
+    groups,
+  };
+}
+
+function mapToBirthdayMember(row: BirthdayMemberRow): BirthdayMember {
+  return {
+    id: row.id,
+    nameJa: row.name_ja,
+    dateOfBirth: row.date_of_birth,
+    groupNames: row.group_names ?? [],
+  };
+}
+
 const MEMBER_BASE_SELECT = `
   id,
   name_ja,
@@ -196,6 +280,19 @@ const MEMBER_DETAIL_SELECT = `
   ${MEMBER_BASE_SELECT},
   ${MEMBER_GROUPS_SELECT},
   ${MEMBER_SNS_SELECT}
+`;
+
+const MEMBER_PUBLIC_LIST_SELECT = `
+  id,
+  name_ja,
+  name_kana,
+  image_url,
+  ${MEMBER_GROUPS_SELECT},
+  member_filter_groups:orbit_member_groups!inner(
+    group_id,
+    generation,
+    graduated_at
+  )
 `;
 
 export function createMemberRepository(
@@ -315,6 +412,49 @@ export function createMemberRepository(
       return members;
     },
 
+    async findPublicList(filters) {
+      let query = supabase
+        .from("orbit_members")
+        .select(MEMBER_PUBLIC_LIST_SELECT)
+        .order("name_kana");
+
+      if (filters?.groupId) {
+        query = query.eq("member_filter_groups.group_id", filters.groupId);
+      }
+
+      if (filters?.status === "active") {
+        query = query.is("member_filter_groups.graduated_at", null);
+      }
+
+      if (filters?.generation) {
+        query = query.eq("member_filter_groups.generation", filters.generation);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new RepositoryError("公開向けメンバー一覧の取得に失敗しました", error);
+      }
+
+      let members = (data as MemberListRow[]).map((row) =>
+        mapToMemberListItem(row, {
+          groupId: filters?.groupId,
+        })
+      );
+
+      if (filters?.groupId) {
+        members = members.filter((member) => member.groups.length > 0);
+      }
+
+      if (filters?.status) {
+        members = members.filter((member) =>
+          matchesMemberStatus(member.groups, filters.status)
+        );
+      }
+
+      return members;
+    },
+
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_members")
@@ -427,54 +567,28 @@ export function createMemberRepository(
     },
 
     async findBirthdaysByMonth(month) {
-      // RPC で ID のみ取得 → 詳細データは通常の select で取得（2往復）
-      // 理由: RPC に結合型を持たせるとメンテが困難。データ量は数百件程度のため問題なし
-      const { data: ids, error: rpcError } = await supabase
-        .rpc("find_birthday_member_ids_by_month", { target_month: month });
-
-      if (rpcError) {
-        throw new RepositoryError("誕生日メンバーの取得に失敗しました", rpcError);
-      }
-
-      if (!ids || ids.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from("orbit_members")
-        .select(MEMBER_LIST_SELECT)
-        .in("id", ids)
-        .order("date_of_birth");
+      const { data, error } = await supabase.rpc("find_orbit_birthdays_by_month", {
+        target_month: month,
+      });
 
       if (error) {
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return (data as MemberRow[]).map(mapToMemberWithGroups);
+      return ((data as BirthdayMemberRow[] | null) ?? []).map(mapToBirthdayMember);
     },
 
     async findBirthdaysByDate(month, day) {
-      const { data: ids, error: rpcError } = await supabase
-        .rpc("find_birthday_member_ids_by_date", {
+      const { data, error } = await supabase.rpc("find_orbit_birthdays_by_date", {
           target_month: month,
           target_day: day,
         });
 
-      if (rpcError) {
-        throw new RepositoryError("誕生日メンバーの取得に失敗しました", rpcError);
-      }
-
-      if (!ids || ids.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from("orbit_members")
-        .select(MEMBER_LIST_SELECT)
-        .in("id", ids)
-        .order("name_kana");
-
       if (error) {
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return (data as MemberRow[]).map(mapToMemberWithGroups);
+      return ((data as BirthdayMemberRow[] | null) ?? []).map(mapToBirthdayMember);
     },
   };
 }

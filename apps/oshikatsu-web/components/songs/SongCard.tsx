@@ -1,9 +1,9 @@
 import Link from "next/link";
-import type { Song } from "@/types/song";
+import type { SongListItem } from "@/types/song";
 import { formatDate } from "@/lib/formatters";
 
 type SongCardProps = {
-  song: Song;
+  song: SongListItem;
 };
 
 export function SongCard({ song }: SongCardProps) {
@@ -19,11 +19,11 @@ export function SongCard({ song }: SongCardProps) {
         </p>
       )}
       <p className="mt-1 text-xs text-foreground/50">
-        紐づけリリース: {song.releases.length}件
+        紐づけリリース: {song.releaseCount}件
       </p>
-      {song.releaseDate && (
+      {song.firstReleaseDate && (
         <p className="mt-1 text-xs text-foreground/50">
-          初回リリース: {formatDate(song.releaseDate)}
+          初回リリース: {formatDate(song.firstReleaseDate)}
         </p>
       )}
     </Link>

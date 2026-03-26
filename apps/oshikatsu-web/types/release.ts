@@ -46,6 +46,18 @@ export type Release = {
   tracks: ReleaseTrack[];
 };
 
+export type ReleaseListItem = {
+  id: string;
+  title: string;
+  groupId: string;
+  groupNameJa: string;
+  groupColor: string;
+  releaseType: ReleaseType;
+  numbering: number | null;
+  releaseDate: string | null;
+  trackCount: number;
+};
+
 export type CreateReleaseBonusVideoInput = {
   edition: string;
   title: string;

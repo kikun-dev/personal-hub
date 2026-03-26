@@ -108,7 +108,9 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 認証ガードは `proxy.ts` 側に集約する
 - 閲覧系は read model 経由で取得し、`SUPABASE_SERVICE_ROLE_KEY` がある環境では shared cache を有効化する
 - キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
-- 更新系は `updateTag` で `orbit:*` ドメインタグを即時失効する
+- Top は集約 usecase で取得し、誕生日 / OnThisDay は 1 往復 RPC を優先する
+- 公開一覧は `findAll` とは別に public list DTO を使い、一覧表示に不要な join を避ける
+- 更新系は `updateTag` で `orbit:*` の top / list / detail tag を即時失効する
 
 ### DB テーブル（`orbit_` プレフィクス）
 - `orbit_groups` — グループ（5件。successor_id で改名関係）

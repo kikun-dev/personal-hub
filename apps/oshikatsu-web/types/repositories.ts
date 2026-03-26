@@ -5,6 +5,8 @@ import type {
   CreateMemberInput,
   UpdateMemberInput,
   MemberFilters,
+  BirthdayMember,
+  MemberListItem,
 } from "./member";
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
@@ -14,6 +16,7 @@ import type {
   CreateSongInput,
   UpdateSongInput,
   SongFilters,
+  SongListItem,
 } from "./song";
 import type {
   Person,
@@ -25,6 +28,7 @@ import type {
   CreateReleaseInput,
   UpdateReleaseInput,
   ReleaseFilters,
+  ReleaseListItem,
 } from "./release";
 
 export type GroupRepository = {
@@ -34,12 +38,13 @@ export type GroupRepository = {
 
 export type MemberRepository = {
   findAll(filters?: MemberFilters): Promise<MemberWithGroups[]>;
+  findPublicList(filters?: MemberFilters): Promise<MemberListItem[]>;
   findById(id: string): Promise<MemberWithGroups | null>;
   create(input: CreateMemberInput): Promise<MemberWithGroups>;
   update(id: string, input: UpdateMemberInput): Promise<MemberWithGroups>;
   delete(id: string): Promise<void>;
-  findBirthdaysByMonth(month: number): Promise<MemberWithGroups[]>;
-  findBirthdaysByDate(month: number, day: number): Promise<MemberWithGroups[]>;
+  findBirthdaysByMonth(month: number): Promise<BirthdayMember[]>;
+  findBirthdaysByDate(month: number, day: number): Promise<BirthdayMember[]>;
 };
 
 export type EventRepository = {
@@ -67,6 +72,7 @@ export type PersonRepository = {
 
 export type ReleaseRepository = {
   findAll(filters?: ReleaseFilters): Promise<Release[]>;
+  findPublicList(filters?: ReleaseFilters): Promise<ReleaseListItem[]>;
   findById(id: string): Promise<Release | null>;
   create(input: CreateReleaseInput): Promise<Release>;
   update(id: string, input: UpdateReleaseInput): Promise<Release>;
@@ -75,6 +81,7 @@ export type ReleaseRepository = {
 
 export type SongRepository = {
   findAll(filters?: SongFilters): Promise<Song[]>;
+  findPublicList(filters?: SongFilters): Promise<SongListItem[]>;
   findOptions(): Promise<SongOption[]>;
   findById(id: string): Promise<Song | null>;
   create(input: CreateSongInput): Promise<Song>;

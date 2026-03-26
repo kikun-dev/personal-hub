@@ -3,6 +3,7 @@ import type {
   Release,
   CreateReleaseInput,
   ReleaseType,
+  ReleaseListItem,
 } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
@@ -75,6 +76,17 @@ type ReleaseRow = {
   orbit_release_tracks?: ReleaseTrackRow[];
 };
 
+type ReleaseListRow = {
+  id: string;
+  title: string;
+  group_id: string;
+  release_type: ReleaseType;
+  numbering: number | null;
+  release_date: string | null;
+  orbit_groups: ReleaseGroupRow;
+  orbit_release_tracks?: Array<{ track_number: number }>;
+};
+
 const RELEASE_LIST_SELECT = `
   id,
   title,
@@ -102,6 +114,17 @@ const RELEASE_DETAIL_SELECT = `
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja)),
   orbit_release_tracks(track_number, orbit_tracks(id, title))
+`;
+
+const RELEASE_PUBLIC_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  release_type,
+  numbering,
+  release_date,
+  orbit_groups(name_ja, color),
+  orbit_release_tracks(track_number)
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
@@ -168,6 +191,24 @@ function mapToRelease(row: ReleaseRow): Release {
   };
 }
 
+function mapToReleaseListItem(row: ReleaseListRow): ReleaseListItem {
+  const group = Array.isArray(row.orbit_groups)
+    ? row.orbit_groups[0]
+    : row.orbit_groups;
+
+  return {
+    id: row.id,
+    title: row.title,
+    groupId: row.group_id,
+    groupNameJa: group?.name_ja ?? "",
+    groupColor: group?.color ?? "#6B7280",
+    releaseType: row.release_type,
+    numbering: row.numbering,
+    releaseDate: row.release_date,
+    trackCount: row.orbit_release_tracks?.length ?? 0,
+  };
+}
+
 function toTrackLinkRpcInput(
   trackLinks: CreateReleaseInput["trackLinks"]
 ): Array<{
@@ -229,6 +270,28 @@ export function createReleaseRepository(
       }
 
       return (data as ReleaseRow[]).map(mapToRelease);
+    },
+
+    async findPublicList(filters) {
+      let query = supabase
+        .from("orbit_releases")
+        .select(RELEASE_PUBLIC_LIST_SELECT)
+        .order("release_date", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+
+      if (filters?.groupId) {
+        query = query.eq("group_id", filters.groupId);
+      }
+      if (filters?.releaseType) {
+        query = query.eq("release_type", filters.releaseType);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        throw new RepositoryError("公開向けリリース一覧の取得に失敗しました", error);
+      }
+
+      return (data as ReleaseListRow[]).map(mapToReleaseListItem);
     },
 
     async findById(id) {

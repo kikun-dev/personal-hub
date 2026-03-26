@@ -1,10 +1,10 @@
 import Link from "next/link";
-import type { Release } from "@/types/release";
+import type { ReleaseListItem } from "@/types/release";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
 
 type ReleaseCardProps = {
-  release: Release;
+  release: ReleaseListItem;
 };
 
 export function ReleaseCard({ release }: ReleaseCardProps) {

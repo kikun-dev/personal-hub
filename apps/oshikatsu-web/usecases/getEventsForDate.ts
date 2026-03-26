@@ -22,8 +22,6 @@ export async function getEventsForDate(
   }));
 
   for (const member of birthdayMembers) {
-    if (!member.dateOfBirth) continue;
-
     const dateStr = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 
     calendarEvents.push({
@@ -32,7 +30,7 @@ export async function getEventsForDate(
       memberName: member.nameJa,
       date: dateStr,
       age: calculateAge(member.dateOfBirth, targetDate),
-      groupNames: member.groups.map((g) => g.groupNameJa),
+      groupNames: member.groupNames,
     });
   }
 
