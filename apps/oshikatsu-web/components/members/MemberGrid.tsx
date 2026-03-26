@@ -1,8 +1,8 @@
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberListItem } from "@/types/member";
 import { MemberCard } from "./MemberCard";
 
 type MemberGridProps = {
-  members: MemberWithGroups[];
+  members: MemberListItem[];
 };
 
 export function MemberGrid({ members }: MemberGridProps) {

@@ -10,6 +10,7 @@ import type {
   SongMv,
   SongReleaseLink,
   CreateSongInput,
+  SongListItem,
 } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
@@ -135,6 +136,27 @@ type SongRow = {
   orbit_track_costumes?: CostumeRow[];
 };
 
+type SongListReleaseDateRel =
+  | {
+      release_date: string | null;
+    }
+  | Array<{
+      release_date: string | null;
+    }>
+  | null;
+
+type SongListReleaseRow = {
+  orbit_releases: SongListReleaseDateRel;
+};
+
+type SongListRow = {
+  id: string;
+  title: string;
+  group_id: string;
+  orbit_groups: SongGroupRel;
+  orbit_release_tracks?: SongListReleaseRow[];
+};
+
 const SONG_LIST_SELECT = `
   id,
   title,
@@ -205,6 +227,16 @@ const SONG_DETAIL_SELECT = `
     note,
     sort_order,
     orbit_people(display_name)
+  )
+`;
+
+const SONG_PUBLIC_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  orbit_groups(name_ja, color),
+  orbit_release_tracks(
+    orbit_releases(release_date)
   )
 `;
 
@@ -359,6 +391,24 @@ function mapSong(row: SongRow): Song {
   };
 }
 
+function mapToSongListItem(row: SongListRow): SongListItem {
+  const group = pickFirst(row.orbit_groups);
+  const releaseDates = (row.orbit_release_tracks ?? [])
+    .map((releaseTrack) => pickFirst(releaseTrack.orbit_releases)?.release_date ?? null)
+    .filter((releaseDate): releaseDate is string => Boolean(releaseDate))
+    .sort((a, b) => a.localeCompare(b));
+
+  return {
+    id: row.id,
+    title: row.title,
+    groupId: row.group_id,
+    groupNameJa: group?.name_ja ?? "",
+    groupColor: group?.color ?? "#6B7280",
+    releaseCount: row.orbit_release_tracks?.length ?? 0,
+    firstReleaseDate: releaseDates[0] ?? null,
+  };
+}
+
 function parseDurationSeconds(value: string): number | null {
   if (!value) return null;
   return Number(value);
@@ -482,6 +532,25 @@ export function createSongRepository(
       }
 
       return (data as unknown as SongRow[]).map(mapSong);
+    },
+
+    async findPublicList(filters) {
+      let query = supabase
+        .from("orbit_tracks")
+        .select(SONG_PUBLIC_LIST_SELECT)
+        .order("title");
+
+      if (filters?.groupId) {
+        query = query.eq("group_id", filters.groupId);
+      }
+
+      const { data, error } = await query;
+
+      if (error) {
+        throw new RepositoryError("公開向け楽曲一覧の取得に失敗しました", error);
+      }
+
+      return (data as unknown as SongListRow[]).map(mapToSongListItem);
     },
 
     async findOptions() {

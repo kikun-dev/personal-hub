@@ -11,16 +11,14 @@ import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
-import { getEventsForDate } from "@/usecases/getEventsForDate";
-import { getEventsForMonth } from "@/usecases/getEventsForMonth";
 import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
-import { getOnThisDay } from "@/usecases/getOnThisDay";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
-import { listMembers } from "@/usecases/listMembers";
-import { listReleases } from "@/usecases/listReleases";
-import { listSongs } from "@/usecases/listSongs";
+import { getTopPageContent } from "@/usecases/getTopPageContent";
+import { listPublicMembers } from "@/usecases/listPublicMembers";
+import { listPublicReleases } from "@/usecases/listPublicReleases";
+import { listPublicSongs } from "@/usecases/listPublicSongs";
 import type { MemberFilters as MemberFiltersType } from "@/types/member";
 import type { ReleaseFilters as ReleaseFiltersType } from "@/types/release";
 import type { SongFilters as SongFiltersType } from "@/types/song";
@@ -52,30 +50,26 @@ function createSharedReadLoader<TArgs extends unknown[], TResult>(
 
 const loadTopPageData = createSharedReadLoader(
   ["orbit", "top-page-data"],
-  [ORBIT_CACHE_TAGS.members, ORBIT_CACHE_TAGS.top],
+  [ORBIT_CACHE_TAGS.top],
   async (year: number, month: number, day: number) =>
     withOrbitReadClient(async (supabase) => {
-      const eventRepo = createEventRepository(supabase);
-      const memberRepo = createMemberRepository(supabase);
-      const selectedDate = new Date(year, month - 1, day);
-
-      const [monthEvents, selectedDateEvents, onThisDayEvents] = await Promise.all([
-        getEventsForMonth(eventRepo, memberRepo, year, month),
-        getEventsForDate(eventRepo, memberRepo, selectedDate),
-        getOnThisDay(eventRepo, selectedDate),
-      ]);
-
-      return {
-        monthEvents,
-        onThisDayEvents,
-        selectedDateEvents,
-      };
+      return getTopPageContent(
+        createEventRepository(supabase),
+        createMemberRepository(supabase),
+        year,
+        month,
+        day
+      );
     })
 );
 
 const loadMembersPageData = createSharedReadLoader(
   ["orbit", "members-page-data"],
-  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.members],
+  [
+    ORBIT_CACHE_TAGS.groups,
+    ORBIT_CACHE_TAGS.members,
+    ORBIT_CACHE_TAGS.membersList,
+  ],
   async (
     groupId?: string,
     status: MemberFiltersType["status"] = "active",
@@ -89,7 +83,7 @@ const loadMembersPageData = createSharedReadLoader(
       };
 
       const [members, groups] = await Promise.all([
-        listMembers(createMemberRepository(supabase), filters),
+        listPublicMembers(createMemberRepository(supabase), filters),
         getGroups(createGroupRepository(supabase)),
       ]);
 
@@ -102,7 +96,12 @@ const loadMembersPageData = createSharedReadLoader(
 
 const loadMemberDetailPageData = createSharedReadLoader(
   ["orbit", "member-detail-page-data"],
-  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.members, ORBIT_CACHE_TAGS.songs],
+  [
+    ORBIT_CACHE_TAGS.groups,
+    ORBIT_CACHE_TAGS.members,
+    ORBIT_CACHE_TAGS.membersDetail,
+    ORBIT_CACHE_TAGS.songs,
+  ],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {
       const memberRepo = createMemberRepository(supabase);
@@ -142,13 +141,17 @@ const loadMemberDetailPageData = createSharedReadLoader(
 
 const loadSongsPageData = createSharedReadLoader(
   ["orbit", "songs-page-data"],
-  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.songs],
+  [
+    ORBIT_CACHE_TAGS.groups,
+    ORBIT_CACHE_TAGS.songs,
+    ORBIT_CACHE_TAGS.songsList,
+  ],
   async (groupId?: string) =>
     withOrbitReadClient(async (supabase) => {
       const filters: SongFiltersType = { groupId };
 
       const [songs, groups] = await Promise.all([
-        listSongs(createSongRepository(supabase), filters),
+        listPublicSongs(createSongRepository(supabase), filters),
         getGroups(createGroupRepository(supabase)),
       ]);
 
@@ -161,7 +164,7 @@ const loadSongsPageData = createSharedReadLoader(
 
 const loadSongDetailPageData = createSharedReadLoader(
   ["orbit", "song-detail-page-data"],
-  [ORBIT_CACHE_TAGS.songs],
+  [ORBIT_CACHE_TAGS.songs, ORBIT_CACHE_TAGS.songsDetail],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {
       return getSong(createSongRepository(supabase), id);
@@ -170,7 +173,11 @@ const loadSongDetailPageData = createSharedReadLoader(
 
 const loadReleasesPageData = createSharedReadLoader(
   ["orbit", "releases-page-data"],
-  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.releases],
+  [
+    ORBIT_CACHE_TAGS.groups,
+    ORBIT_CACHE_TAGS.releases,
+    ORBIT_CACHE_TAGS.releasesList,
+  ],
   async (groupId?: string, releaseType?: ReleaseFiltersType["releaseType"]) =>
     withOrbitReadClient(async (supabase) => {
       const filters: ReleaseFiltersType = {};
@@ -184,7 +191,7 @@ const loadReleasesPageData = createSharedReadLoader(
       }
 
       const [releases, groups] = await Promise.all([
-        listReleases(createReleaseRepository(supabase), filters),
+        listPublicReleases(createReleaseRepository(supabase), filters),
         getGroups(createGroupRepository(supabase)),
       ]);
 
@@ -197,7 +204,7 @@ const loadReleasesPageData = createSharedReadLoader(
 
 const loadReleaseDetailPageData = createSharedReadLoader(
   ["orbit", "release-detail-page-data"],
-  [ORBIT_CACHE_TAGS.releases],
+  [ORBIT_CACHE_TAGS.releases, ORBIT_CACHE_TAGS.releasesDetail],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {
       return getRelease(createReleaseRepository(supabase), id);

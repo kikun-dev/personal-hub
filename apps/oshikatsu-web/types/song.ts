@@ -62,6 +62,16 @@ export type Song = {
   costumes: SongCostume[];
 };
 
+export type SongListItem = {
+  id: string;
+  title: string;
+  groupId: string;
+  groupNameJa: string;
+  groupColor: string;
+  releaseCount: number;
+  firstReleaseDate: string | null;
+};
+
 export type SongOption = {
   id: string;
   title: string;

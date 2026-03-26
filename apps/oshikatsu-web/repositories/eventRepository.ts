@@ -11,10 +11,15 @@ import {
 type EventRow = {
   id: string;
   event_type_id: string;
-  orbit_event_types: {
-    name: string;
-    color: string;
-  };
+  orbit_event_types:
+    | {
+        name: string;
+        color: string;
+      }
+    | Array<{
+        name: string;
+        color: string;
+      }>;
   is_member_history: boolean;
   title: string;
   description: string;
@@ -25,11 +30,54 @@ type EventRow = {
   url: string | null;
   orbit_event_groups: {
     group_id: string;
-    orbit_groups: { name_ja: string };
+    orbit_groups:
+      | { name_ja: string }
+      | Array<{ name_ja: string }>;
   }[];
   orbit_event_members: {
     member_id: string;
   }[];
+};
+
+type EventSummaryRow = {
+  id: string;
+  event_type_id: string;
+  orbit_event_types:
+    | {
+        name: string;
+        color: string;
+      }
+    | Array<{
+        name: string;
+        color: string;
+      }>;
+  is_member_history: boolean;
+  title: string;
+  date: string;
+  end_date: string | null;
+  start_time: string | null;
+  venue: string | null;
+  orbit_event_groups: {
+    group_id: string;
+    orbit_groups:
+      | { name_ja: string }
+      | Array<{ name_ja: string }>;
+  }[];
+};
+
+type OnThisDayEventRow = {
+  id: string;
+  event_type_id: string;
+  event_type_name: string;
+  event_type_color: string;
+  is_member_history: boolean;
+  title: string;
+  date: string;
+  end_date: string | null;
+  start_time: string | null;
+  venue: string | null;
+  group_ids: string[] | null;
+  group_names: string[] | null;
 };
 
 function normalizeUrlForCompare(value: string): string {
@@ -45,12 +93,22 @@ function normalizeUrlForCompare(value: string): string {
   }
 }
 
+function pickFirst<T>(value: T | T[]): T | null {
+  if (Array.isArray(value)) {
+    return value[0] ?? null;
+  }
+  return value;
+}
+
 function mapToEvent(row: EventRow): Event {
+  const eventType = pickFirst(row.orbit_event_types);
+  const eventGroups = row.orbit_event_groups ?? [];
+
   return {
     id: row.id,
     eventTypeId: row.event_type_id,
-    eventTypeName: row.orbit_event_types.name,
-    eventTypeColor: row.orbit_event_types.color,
+    eventTypeName: eventType?.name ?? "",
+    eventTypeColor: eventType?.color ?? "#6B7280",
     isMemberHistory: row.is_member_history,
     title: row.title,
     description: row.description,
@@ -59,9 +117,9 @@ function mapToEvent(row: EventRow): Event {
     startTime: row.start_time,
     venue: row.venue,
     url: row.url,
-    groupIds: (row.orbit_event_groups ?? []).map((g) => g.group_id),
-    groupNames: (row.orbit_event_groups ?? []).map(
-      (g) => g.orbit_groups.name_ja
+    groupIds: eventGroups.map((group) => group.group_id),
+    groupNames: eventGroups.map(
+      (group) => pickFirst(group.orbit_groups)?.name_ja ?? ""
     ),
     memberIds: (row.orbit_event_members ?? []).map((m) => m.member_id),
   };
@@ -97,6 +155,64 @@ const EVENT_SELECT = `
   orbit_event_members(member_id)
 `;
 
+const EVENT_SUMMARY_SELECT = `
+  id,
+  event_type_id,
+  is_member_history,
+  title,
+  date,
+  end_date,
+  start_time,
+  venue,
+  orbit_event_types(name, color),
+  orbit_event_groups(group_id, orbit_groups(name_ja))
+`;
+
+function mapToEventSummary(row: EventSummaryRow): Event {
+  const eventType = pickFirst(row.orbit_event_types);
+  const eventGroups = row.orbit_event_groups ?? [];
+
+  return {
+    id: row.id,
+    eventTypeId: row.event_type_id,
+    eventTypeName: eventType?.name ?? "",
+    eventTypeColor: eventType?.color ?? "#6B7280",
+    isMemberHistory: row.is_member_history,
+    title: row.title,
+    description: "",
+    date: row.date,
+    endDate: row.end_date,
+    startTime: row.start_time,
+    venue: row.venue,
+    url: null,
+    groupIds: eventGroups.map((group) => group.group_id),
+    groupNames: eventGroups.map(
+      (group) => pickFirst(group.orbit_groups)?.name_ja ?? ""
+    ),
+    memberIds: [],
+  };
+}
+
+function mapToOnThisDayEvent(row: OnThisDayEventRow): Event {
+  return {
+    id: row.id,
+    eventTypeId: row.event_type_id,
+    eventTypeName: row.event_type_name,
+    eventTypeColor: row.event_type_color,
+    isMemberHistory: row.is_member_history,
+    title: row.title,
+    description: "",
+    date: row.date,
+    endDate: row.end_date,
+    startTime: row.start_time,
+    venue: row.venue,
+    url: null,
+    groupIds: row.group_ids ?? [],
+    groupNames: row.group_names ?? [],
+    memberIds: [],
+  };
+}
+
 function getMonthRange(year: number, month: number) {
   const startDate = `${year}-${String(month).padStart(2, "0")}-01`;
   const lastDay = new Date(year, month, 0).getDate();
@@ -113,7 +229,7 @@ export function createEventRepository(
 
       const { data, error } = await supabase
         .from("orbit_events")
-        .select(EVENT_SELECT)
+        .select(EVENT_SUMMARY_SELECT)
         .gte("date", startDate)
         .lte("date", endDate)
         .order("date")
@@ -122,7 +238,7 @@ export function createEventRepository(
       if (error) {
         throw new RepositoryError("イベントの取得に失敗しました", error);
       }
-      return (data as EventRow[]).map(mapToEvent);
+      return (data as EventSummaryRow[]).map(mapToEventSummary);
     },
 
     async findByDate(year, month, day) {
@@ -130,14 +246,14 @@ export function createEventRepository(
 
       const { data, error } = await supabase
         .from("orbit_events")
-        .select(EVENT_SELECT)
+        .select(EVENT_SUMMARY_SELECT)
         .eq("date", dateStr)
         .order("start_time", { nullsFirst: false });
 
       if (error) {
         throw new RepositoryError("イベントの取得に失敗しました", error);
       }
-      return (data as EventRow[]).map(mapToEvent);
+      return (data as EventSummaryRow[]).map(mapToEventSummary);
     },
 
     async findById(id) {
@@ -279,31 +395,16 @@ export function createEventRepository(
     },
 
     async findOnThisDay(month, day) {
-      // RPC で ID のみ取得 → 詳細データは通常の select で取得（2往復）
-      // 理由: RPC に結合型を持たせるとメンテが困難。データ量は数百件程度のため問題なし
-      const { data: ids, error: rpcError } = await supabase
-        .rpc("find_event_ids_on_this_day", {
+      const { data, error } = await supabase.rpc("find_orbit_events_on_this_day", {
           target_month: month,
           target_day: day,
         });
-
-      if (rpcError) {
-        throw new RepositoryError("過去のイベントの取得に失敗しました", rpcError);
-      }
-
-      if (!ids || ids.length === 0) return [];
-
-      const { data, error } = await supabase
-        .from("orbit_events")
-        .select(EVENT_SELECT)
-        .in("id", ids)
-        .order("date");
 
       if (error) {
         throw new RepositoryError("過去のイベントの取得に失敗しました", error);
       }
 
-      return (data as EventRow[]).map(mapToEvent);
+      return ((data as OnThisDayEventRow[] | null) ?? []).map(mapToOnThisDayEvent);
     },
   };
 }

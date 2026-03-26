@@ -150,7 +150,13 @@
   - [x] Header のユーザー表示を削除し、共通レイアウトの固定コストを削減
   - [x] 閲覧系 read model に shared cache 基盤（optional `SUPABASE_SERVICE_ROLE_KEY`）を追加
   - [x] 更新系 Server Action から `updateTag` でドメイン単位 invalidation を実施
-  - [ ] 一覧/トップのクエリ軽量化は Issue #68 で継続
+  - [x] 一覧/トップのクエリ軽量化は Issue #68 で継続
+- [x] 公開閲覧導線のクエリ軽量化（Issue #68）
+  - [x] Top を集約 usecase 化し、誕生日 / OnThisDay の hot path を 1 往復 RPC に置換
+  - [x] メンバー一覧を public list DTO + 軽量 query に分離
+  - [x] 楽曲一覧を public list DTO + 軽量 query に分離
+  - [x] リリース一覧を public list DTO + 軽量 query に分離
+  - [x] 閲覧系 cache tag を top / list / detail 粒度へ整理
 - [x] Top画面2カラム化と右ナビ導入（Issue #60）
   - [x] 左2/3にカレンダー/イベント、右1/3に完全版ナビを配置
   - [x] スマホでは右ナビを非表示（ハンバーガー導線へ一任）

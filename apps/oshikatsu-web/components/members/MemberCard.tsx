@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberListItem } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
 
 type MemberCardProps = {
-  member: MemberWithGroups;
+  member: MemberListItem;
 };
 
 export function MemberCard({ member }: MemberCardProps) {
