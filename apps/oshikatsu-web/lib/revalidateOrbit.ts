@@ -53,3 +53,13 @@ export function revalidateOrbitReleaseData(): void {
     ORBIT_CACHE_TAGS.songsDetail,
   ]);
 }
+
+export function revalidateOrbitPersonData(): void {
+  revalidateOrbitTags([
+    ORBIT_CACHE_TAGS.people,
+    ORBIT_CACHE_TAGS.releases,
+    ORBIT_CACHE_TAGS.releasesDetail,
+    ORBIT_CACHE_TAGS.songs,
+    ORBIT_CACHE_TAGS.songsDetail,
+  ]);
+}

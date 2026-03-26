@@ -3,6 +3,7 @@ import type {
   BirthdayMember,
   MemberGroup,
   MemberListItem,
+  MemberOption,
   MemberWithGroups,
 } from "@/types/member";
 import type { MemberRepository } from "@/types/repositories";
@@ -64,6 +65,24 @@ type BirthdayMemberRow = {
   name_ja: string;
   date_of_birth: string;
   group_names: string[] | null;
+};
+
+type MemberOptionGroupRow = {
+  group_id: string;
+  graduated_at: string | null;
+  orbit_groups:
+    | {
+        name_ja: string;
+      }
+    | Array<{
+        name_ja: string;
+      }>;
+};
+
+type MemberOptionRow = {
+  id: string;
+  name_ja: string;
+  orbit_member_groups: MemberOptionGroupRow[];
 };
 
 type MemberFilterGroupRow = {
@@ -227,6 +246,31 @@ function mapToBirthdayMember(row: BirthdayMemberRow): BirthdayMember {
   };
 }
 
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
+
+function mapToMemberOption(row: MemberOptionRow): MemberOption {
+  const groups = row.orbit_member_groups ?? [];
+  const groupIds = uniqueStrings(groups.map((group) => group.group_id));
+  const groupNames = uniqueStrings(
+    groups.map((group) => {
+      const orbitGroup = Array.isArray(group.orbit_groups)
+        ? group.orbit_groups[0]
+        : group.orbit_groups;
+      return orbitGroup?.name_ja ?? "";
+    }).filter(Boolean)
+  );
+
+  return {
+    id: row.id,
+    nameJa: row.name_ja,
+    groupIds,
+    groupNames,
+    isActive: groups.some((group) => group.graduated_at === null),
+  };
+}
+
 const MEMBER_BASE_SELECT = `
   id,
   name_ja,
@@ -292,6 +336,16 @@ const MEMBER_PUBLIC_LIST_SELECT = `
     group_id,
     generation,
     graduated_at
+  )
+`;
+
+const MEMBER_OPTION_SELECT = `
+  id,
+  name_ja,
+  orbit_member_groups(
+    group_id,
+    graduated_at,
+    orbit_groups(name_ja)
   )
 `;
 
@@ -453,6 +507,19 @@ export function createMemberRepository(
       }
 
       return members;
+    },
+
+    async findOptions() {
+      const { data, error } = await supabase
+        .from("orbit_members")
+        .select(MEMBER_OPTION_SELECT)
+        .order("name_kana");
+
+      if (error) {
+        throw new RepositoryError("メンバー候補の取得に失敗しました", error);
+      }
+
+      return ((data as MemberOptionRow[] | null) ?? []).map(mapToMemberOption);
     },
 
     async findById(id) {

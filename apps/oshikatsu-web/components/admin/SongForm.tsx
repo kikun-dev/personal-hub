@@ -2,8 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import type { Group } from "@/types/group";
-import type { Release } from "@/types/release";
-import type { MemberWithGroups } from "@/types/member";
+import type { ReleaseOption } from "@/types/release";
+import type { MemberOption } from "@/types/member";
 import type {
   CreateSongInput,
   CreateSongCostumeInput,
@@ -30,8 +30,8 @@ type SongFormProps = {
   mode: "create" | "edit";
   initialValues?: CreateSongInput;
   groups: Group[];
-  releases: Release[];
-  members: MemberWithGroups[];
+  releases: ReleaseOption[];
+  members: MemberOption[];
   people: string[];
   onSubmit: (
     values: CreateSongInput
@@ -173,7 +173,7 @@ export function SongForm({
   const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
 
   const releaseMap = useMemo(
-    () => new Map<string, Release>(releases.map((release) => [release.id, release])),
+    () => new Map<string, ReleaseOption>(releases.map((release) => [release.id, release])),
     [releases]
   );
 
@@ -187,7 +187,7 @@ export function SongForm({
       new Map<string, Set<string>>(
         members.map((member) => [
           member.id,
-          new Set(member.groups.map((memberGroup) => memberGroup.groupId)),
+          new Set(member.groupIds),
         ])
       ),
     [members]

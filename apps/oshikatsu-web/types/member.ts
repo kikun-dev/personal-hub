@@ -44,6 +44,14 @@ export type MemberListItem = Pick<
   groups: MemberGroup[];
 };
 
+export type MemberOption = {
+  id: string;
+  nameJa: string;
+  groupIds: string[];
+  groupNames: string[];
+  isActive: boolean;
+};
+
 export type MemberSns = {
   id: string;
   snsType: SnsType;

@@ -112,6 +112,12 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 公開一覧は `findAll` とは別に public list DTO を使い、一覧表示に不要な join を避ける
 - 更新系は `updateTag` で `orbit:*` の top / list / detail tag を即時失効する
 
+### 管理導線の運用メモ
+- 編集対象本体はページ側の `createClient()` で取得し、即時性を優先する
+- 候補マスタは `readOrbitAdminData.ts` 経由で取得し、共有可能なものだけ shared cache に載せる
+- 管理フォームでは `findAll` / `findById` の重い payload を流用せず、option DTO を使う
+- 制作陣更新は `people` だけでなく、関連する楽曲/リリース詳細キャッシュも失効する
+
 ### DB テーブル（`orbit_` プレフィクス）
 - `orbit_groups` — グループ（5件。successor_id で改名関係）
 - `orbit_members` — メンバープロフィール
