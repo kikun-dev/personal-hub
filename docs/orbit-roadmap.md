@@ -149,7 +149,7 @@
   - [x] `proxy.ts` 側に認証ガードを集約し、`(authenticated)` layout の重複 `getUser()` を廃止
   - [x] Header のユーザー表示を削除し、共通レイアウトの固定コストを削減
   - [x] 閲覧系 read model に shared cache 基盤（optional `SUPABASE_SERVICE_ROLE_KEY`）を追加
-  - [x] 更新系 Server Action から `revalidateTag` でドメイン単位 invalidation を実施
+  - [x] 更新系 Server Action から `updateTag` でドメイン単位 invalidation を実施
   - [ ] 一覧/トップのクエリ軽量化は Issue #68 で継続
 - [x] Top画面2カラム化と右ナビ導入（Issue #60）
   - [x] 左2/3にカレンダー/イベント、右1/3に完全版ナビを配置

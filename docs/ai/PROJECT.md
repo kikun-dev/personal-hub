@@ -108,7 +108,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 認証ガードは `proxy.ts` 側に集約する
 - 閲覧系は read model 経由で取得し、`SUPABASE_SERVICE_ROLE_KEY` がある環境では shared cache を有効化する
 - キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
-- 更新系は `revalidateTag` で `orbit:*` ドメインタグを再検証する
+- 更新系は `updateTag` で `orbit:*` ドメインタグを即時失効する
 
 ### DB テーブル（`orbit_` プレフィクス）
 - `orbit_groups` — グループ（5件。successor_id で改名関係）

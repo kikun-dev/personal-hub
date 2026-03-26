@@ -1,9 +1,9 @@
-import { revalidateTag } from "next/cache";
+import { updateTag } from "next/cache";
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
 
 function revalidateOrbitTags(tags: readonly string[]): void {
   for (const tag of tags) {
-    revalidateTag(tag, "max");
+    updateTag(tag);
   }
 }
 
