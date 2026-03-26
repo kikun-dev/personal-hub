@@ -7,6 +7,7 @@ import type {
   MemberFilters,
   BirthdayMember,
   MemberListItem,
+  MemberOption,
 } from "./member";
 import type { Event, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
@@ -20,6 +21,7 @@ import type {
 } from "./song";
 import type {
   Person,
+  PersonOption,
   CreatePersonInput,
   UpdatePersonInput,
 } from "./person";
@@ -29,6 +31,7 @@ import type {
   UpdateReleaseInput,
   ReleaseFilters,
   ReleaseListItem,
+  ReleaseOption,
 } from "./release";
 
 export type GroupRepository = {
@@ -39,6 +42,7 @@ export type GroupRepository = {
 export type MemberRepository = {
   findAll(filters?: MemberFilters): Promise<MemberWithGroups[]>;
   findPublicList(filters?: MemberFilters): Promise<MemberListItem[]>;
+  findOptions(): Promise<MemberOption[]>;
   findById(id: string): Promise<MemberWithGroups | null>;
   create(input: CreateMemberInput): Promise<MemberWithGroups>;
   update(id: string, input: UpdateMemberInput): Promise<MemberWithGroups>;
@@ -64,6 +68,7 @@ export type EventTypeRepository = {
 
 export type PersonRepository = {
   findAll(): Promise<Person[]>;
+  findOptions(): Promise<PersonOption[]>;
   findById(id: string): Promise<Person | null>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
@@ -73,6 +78,7 @@ export type PersonRepository = {
 export type ReleaseRepository = {
   findAll(filters?: ReleaseFilters): Promise<Release[]>;
   findPublicList(filters?: ReleaseFilters): Promise<ReleaseListItem[]>;
+  findOptions(): Promise<ReleaseOption[]>;
   findById(id: string): Promise<Release | null>;
   create(input: CreateReleaseInput): Promise<Release>;
   update(id: string, input: UpdateReleaseInput): Promise<Release>;

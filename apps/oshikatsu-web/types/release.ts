@@ -58,6 +58,14 @@ export type ReleaseListItem = {
   trackCount: number;
 };
 
+export type ReleaseOption = {
+  id: string;
+  title: string;
+  releaseType: ReleaseType;
+  participantMemberIds: string[];
+  participantMemberNames: string[];
+};
+
 export type CreateReleaseBonusVideoInput = {
   edition: string;
   title: string;

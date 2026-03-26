@@ -1,14 +1,9 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { createEventTypeRepository } from "@/repositories/eventTypeRepository";
-import { createMemberRepository } from "@/repositories/memberRepository";
-import { getGroups } from "@/usecases/getGroups";
-import { getEventTypes } from "@/usecases/getEventTypes";
-import { listMembers } from "@/usecases/listMembers";
 import { EventForm } from "@/components/admin/EventForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { getEventFormMasterData } from "@/usecases/readOrbitAdminData";
 import { updateEventAction, deleteEventAction } from "./actions";
 import type { UpdateEventInput } from "@/types/event";
 import type { ValidationError } from "@/types/errors";
@@ -23,11 +18,9 @@ export default async function EditEventPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [event, eventTypes, groups, members] = await Promise.all([
+  const [event, { eventTypes, groups, members }] = await Promise.all([
     createEventRepository(supabase).findById(id),
-    getEventTypes(createEventTypeRepository(supabase)),
-    getGroups(createGroupRepository(supabase)),
-    listMembers(createMemberRepository(supabase)),
+    getEventFormMasterData(),
   ]);
 
   if (!event) {

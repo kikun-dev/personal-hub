@@ -1,17 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { createMemberRepository } from "@/repositories/memberRepository";
-import { createSongRepository } from "@/repositories/songRepository";
-import { createPersonRepository } from "@/repositories/personRepository";
 import { getRelease } from "@/usecases/getRelease";
-import { getGroups } from "@/usecases/getGroups";
-import { listMembers } from "@/usecases/listMembers";
-import { listSongOptions } from "@/usecases/listSongOptions";
-import { listPeople } from "@/usecases/listPeople";
 import { ReleaseForm } from "@/components/admin/ReleaseForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { getReleaseFormMasterData } from "@/usecases/readOrbitAdminData";
 import { updateReleaseAction, deleteReleaseAction } from "./actions";
 import type { CreateReleaseInput, ReleaseImageUploadInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
@@ -26,12 +19,9 @@ export default async function EditReleasePage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [release, groups, members, songOptions, people] = await Promise.all([
+  const [release, { groups, members, songOptions, people }] = await Promise.all([
     getRelease(createReleaseRepository(supabase), id),
-    getGroups(createGroupRepository(supabase)),
-    listMembers(createMemberRepository(supabase)),
-    listSongOptions(createSongRepository(supabase)),
-    listPeople(createPersonRepository(supabase)),
+    getReleaseFormMasterData(),
   ]);
 
   if (!release) {

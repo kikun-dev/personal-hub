@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Group } from "@/types/group";
 import type { EventType } from "@/types/eventType";
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberOption } from "@/types/member";
 import type { CreateEventInput } from "@/types/event";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
@@ -16,7 +16,7 @@ type EventFormProps = {
   initialValues?: CreateEventInput;
   eventTypes: EventType[];
   groups: Group[];
-  members: MemberWithGroups[];
+  members: MemberOption[];
   onSubmit: (
     values: CreateEventInput
   ) => Promise<{ errors?: ValidationError[] }>;
@@ -252,7 +252,7 @@ export function EventForm({
                 />
                 <span className="text-foreground">{member.nameJa}</span>
                 <span className="text-xs text-foreground/40">
-                  {member.groups.map((g) => g.groupNameJa).join(", ")}
+                  {member.groupNames.join(", ")}
                 </span>
               </label>
             ))}

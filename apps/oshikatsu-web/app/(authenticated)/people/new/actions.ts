@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createPersonRepository } from "@/repositories/personRepository";
+import { revalidateOrbitPersonData } from "@/lib/revalidateOrbit";
 import { createPerson } from "@/usecases/createPerson";
 import type { CreatePersonInput } from "@/types/person";
 import type { ValidationError } from "@/types/errors";
@@ -28,6 +29,7 @@ export async function createPersonAction(
       return { errors: result.errors };
     }
 
+    revalidateOrbitPersonData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

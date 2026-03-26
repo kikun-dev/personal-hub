@@ -1,11 +1,10 @@
 import { redirect, notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createMemberRepository } from "@/repositories/memberRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
 import { getMember } from "@/usecases/getMember";
-import { getGroups } from "@/usecases/getGroups";
 import { MemberForm } from "@/components/admin/MemberForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
+import { getMemberFormMasterData } from "@/usecases/readOrbitAdminData";
 import { updateMemberAction, deleteMemberAction } from "./actions";
 import type { UpdateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
@@ -20,9 +19,9 @@ export default async function EditMemberPage({
   const { id } = await params;
   const supabase = await createClient();
 
-  const [member, groups] = await Promise.all([
+  const [member, { groups }] = await Promise.all([
     getMember(createMemberRepository(supabase), id),
-    getGroups(createGroupRepository(supabase)),
+    getMemberFormMasterData(),
   ]);
 
   if (!member) {

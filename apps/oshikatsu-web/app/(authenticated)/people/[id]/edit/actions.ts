@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createPersonRepository } from "@/repositories/personRepository";
+import { revalidateOrbitPersonData } from "@/lib/revalidateOrbit";
 import { updatePerson } from "@/usecases/updatePerson";
 import { deletePerson } from "@/usecases/deletePerson";
 import type { UpdatePersonInput } from "@/types/person";
@@ -30,6 +31,7 @@ export async function updatePersonAction(
       return { errors: result.errors };
     }
 
+    revalidateOrbitPersonData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
@@ -57,6 +59,7 @@ export async function deletePersonAction(
 
   try {
     await deletePerson(repo, id);
+    revalidateOrbitPersonData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

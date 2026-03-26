@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { Group } from "@/types/group";
-import type { MemberWithGroups } from "@/types/member";
+import type { MemberOption } from "@/types/member";
 import {
   RELEASE_TYPES,
   RELEASE_TYPE_LABELS,
@@ -41,7 +41,7 @@ type ReleaseFormProps = {
   mode: "create" | "edit";
   initialValues?: CreateReleaseInput;
   groups: Group[];
-  members: MemberWithGroups[];
+  members: MemberOption[];
   tracks: ReleaseTrackOption[];
   people: string[];
   onSubmit: (
@@ -166,7 +166,7 @@ export function ReleaseForm({
         nameJa: member.nameJa,
         isInReleaseGroup:
           values.groupId.length > 0
-            ? member.groups.some((group) => group.groupId === values.groupId)
+            ? member.groupIds.includes(values.groupId)
             : true,
       }))
       .sort((a, b) => a.nameJa.localeCompare(b.nameJa));

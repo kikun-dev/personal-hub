@@ -1,27 +1,12 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
-import { createMemberRepository } from "@/repositories/memberRepository";
-import { createReleaseRepository } from "@/repositories/releaseRepository";
-import { createPersonRepository } from "@/repositories/personRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { listMembers } from "@/usecases/listMembers";
-import { listReleases } from "@/usecases/listReleases";
-import { listPeople } from "@/usecases/listPeople";
-import { getGroups } from "@/usecases/getGroups";
 import { SongForm } from "@/components/admin/SongForm";
+import { getSongFormMasterData } from "@/usecases/readOrbitAdminData";
 import { createSongAction } from "./actions";
 import type { CreateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewSongPage() {
-  const supabase = await createClient();
-
-  const [releases, members, people, groups] = await Promise.all([
-    listReleases(createReleaseRepository(supabase)),
-    listMembers(createMemberRepository(supabase)),
-    listPeople(createPersonRepository(supabase)),
-    getGroups(createGroupRepository(supabase)),
-  ]);
+  const { releases, members, people, groups } = await getSongFormMasterData();
 
   async function handleSubmit(
     values: CreateSongInput

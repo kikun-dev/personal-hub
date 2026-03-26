@@ -1,16 +1,12 @@
 import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { getGroups } from "@/usecases/getGroups";
 import { MemberForm } from "@/components/admin/MemberForm";
+import { getMemberFormMasterData } from "@/usecases/readOrbitAdminData";
 import { createMemberAction } from "./actions";
 import type { CreateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewMemberPage() {
-  const supabase = await createClient();
-  const groupRepo = createGroupRepository(supabase);
-  const groups = await getGroups(groupRepo);
+  const { groups } = await getMemberFormMasterData();
 
   async function handleSubmit(
     values: CreateMemberInput,

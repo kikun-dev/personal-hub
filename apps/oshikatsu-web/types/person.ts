@@ -30,6 +30,11 @@ export type Person = {
   biography: string | null;
 };
 
+export type PersonOption = {
+  id: string;
+  displayName: string;
+};
+
 export type CreatePersonInput = {
   displayName: string;
   dateOfBirth: string;

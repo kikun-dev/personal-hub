@@ -4,6 +4,7 @@ import type {
   CreateReleaseInput,
   ReleaseType,
   ReleaseListItem,
+  ReleaseOption,
 } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
@@ -87,6 +88,13 @@ type ReleaseListRow = {
   orbit_release_tracks?: Array<{ track_number: number }>;
 };
 
+type ReleaseOptionRow = {
+  id: string;
+  title: string;
+  release_type: ReleaseType;
+  orbit_release_members?: ReleaseMemberRow[];
+};
+
 const RELEASE_LIST_SELECT = `
   id,
   title,
@@ -125,6 +133,13 @@ const RELEASE_PUBLIC_LIST_SELECT = `
   release_date,
   orbit_groups(name_ja, color),
   orbit_release_tracks(track_number)
+`;
+
+const RELEASE_OPTION_SELECT = `
+  id,
+  title,
+  release_type,
+  orbit_release_members(member_id, orbit_members(name_ja))
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
@@ -206,6 +221,27 @@ function mapToReleaseListItem(row: ReleaseListRow): ReleaseListItem {
     numbering: row.numbering,
     releaseDate: row.release_date,
     trackCount: row.orbit_release_tracks?.length ?? 0,
+  };
+}
+
+function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
+  const participants = (row.orbit_release_members ?? []).map((member) => {
+    const orbitMember = Array.isArray(member.orbit_members)
+      ? member.orbit_members[0]
+      : member.orbit_members;
+
+    return {
+      memberId: member.member_id,
+      memberNameJa: orbitMember?.name_ja ?? "",
+    };
+  });
+
+  return {
+    id: row.id,
+    title: row.title,
+    releaseType: row.release_type,
+    participantMemberIds: participants.map((member) => member.memberId),
+    participantMemberNames: participants.map((member) => member.memberNameJa),
   };
 }
 
@@ -292,6 +328,20 @@ export function createReleaseRepository(
       }
 
       return (data as ReleaseListRow[]).map(mapToReleaseListItem);
+    },
+
+    async findOptions() {
+      const { data, error } = await supabase
+        .from("orbit_releases")
+        .select(RELEASE_OPTION_SELECT)
+        .order("release_date", { ascending: false, nullsFirst: false })
+        .order("created_at", { ascending: false });
+
+      if (error) {
+        throw new RepositoryError("リリース候補の取得に失敗しました", error);
+      }
+
+      return ((data as ReleaseOptionRow[] | null) ?? []).map(mapToReleaseOption);
     },
 
     async findById(id) {
