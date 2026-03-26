@@ -1,12 +1,8 @@
 import { Suspense } from "react";
-import { createClient } from "@personal-hub/supabase/server";
-import { createReleaseRepository } from "@/repositories/releaseRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { listReleases } from "@/usecases/listReleases";
-import { getGroups } from "@/usecases/getGroups";
 import { ReleaseFilters } from "@/components/releases/ReleaseFilters";
 import { ReleaseCard } from "@/components/releases/ReleaseCard";
 import { isReleaseType, type ReleaseFilters as ReleaseFiltersType } from "@/types/release";
+import { getReleasesPageData } from "@/usecases/readOrbitData";
 
 type ReleasesPageProps = {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -14,9 +10,6 @@ type ReleasesPageProps = {
 
 export default async function ReleasesPage({ searchParams }: ReleasesPageProps) {
   const params = await searchParams;
-  const supabase = await createClient();
-  const releaseRepo = createReleaseRepository(supabase);
-  const groupRepo = createGroupRepository(supabase);
 
   const filters: ReleaseFiltersType = {};
 
@@ -28,10 +21,7 @@ export default async function ReleasesPage({ searchParams }: ReleasesPageProps) 
     filters.releaseType = params.releaseType;
   }
 
-  const [releases, groups] = await Promise.all([
-    listReleases(releaseRepo, filters),
-    getGroups(groupRepo),
-  ]);
+  const { releases, groups } = await getReleasesPageData(filters);
 
   return (
     <div className="space-y-4">

@@ -8,6 +8,7 @@ import { updateRelease } from "@/usecases/updateRelease";
 import { deleteRelease } from "@/usecases/deleteRelease";
 import { uploadReleaseImage } from "@/usecases/uploadReleaseImage";
 import { removeReleaseImages } from "@/usecases/removeReleaseImages";
+import { revalidateOrbitReleaseData } from "@/lib/revalidateOrbit";
 import type { UpdateReleaseInput, ReleaseImageUploadInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -66,6 +67,8 @@ export async function updateReleaseAction(
     if (existing?.artworkPath && existing.artworkPath !== nextInput.artworkPath) {
       await cleanupReleaseImages(releaseImageRepo, [existing.artworkPath]);
     }
+
+    revalidateOrbitReleaseData();
     return {};
   } catch (e) {
     await cleanupReleaseImages(releaseImageRepo, [uploadedImagePath]);
@@ -97,6 +100,7 @@ export async function deleteReleaseAction(
     const existing = await repo.findById(id);
     await deleteRelease(repo, id);
     await cleanupReleaseImages(releaseImageRepo, [existing?.artworkPath]);
+    revalidateOrbitReleaseData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

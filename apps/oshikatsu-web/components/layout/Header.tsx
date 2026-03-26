@@ -6,11 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/client";
 import { APP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
 
-type HeaderProps = {
-  userEmail: string;
-};
-
-export function Header({ userEmail }: HeaderProps) {
+export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -48,9 +44,7 @@ export function Header({ userEmail }: HeaderProps) {
           </nav>
         </div>
 
-        {/* デスクトップ: メール + ログアウト */}
         <div className="hidden items-center gap-4 md:flex">
-          <span className="text-xs text-foreground/50">{userEmail}</span>
           <button
             onClick={handleLogout}
             className="text-sm text-foreground/60 transition-colors hover:text-foreground"
@@ -97,7 +91,6 @@ export function Header({ userEmail }: HeaderProps) {
             ))}
           </nav>
           <div className="mt-3 border-t border-foreground/10 pt-3">
-            <p className="px-3 text-xs text-foreground/50">{userEmail}</p>
             <button
               onClick={handleLogout}
               className="mt-2 w-full rounded-md px-3 py-2 text-left text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"

@@ -7,6 +7,7 @@ import { createReleaseImageRepository } from "@/repositories/releaseImageReposit
 import { createRelease } from "@/usecases/createRelease";
 import { uploadReleaseImage } from "@/usecases/uploadReleaseImage";
 import { removeReleaseImages } from "@/usecases/removeReleaseImages";
+import { revalidateOrbitReleaseData } from "@/lib/revalidateOrbit";
 import type { CreateReleaseInput, ReleaseImageUploadInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -61,6 +62,7 @@ export async function createReleaseAction(
       return { errors: result.errors };
     }
 
+    revalidateOrbitReleaseData();
     return {};
   } catch (e) {
     await cleanupUploadedReleaseImage(uploadedImagePath, releaseImageRepo);

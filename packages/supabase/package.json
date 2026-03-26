@@ -16,6 +16,10 @@
       "types": "./src/server.ts",
       "default": "./src/server.ts"
     },
+    "./read-only-server": {
+      "types": "./src/read-only-server.ts",
+      "default": "./src/read-only-server.ts"
+    },
     "./middleware": {
       "types": "./src/middleware.ts",
       "default": "./src/middleware.ts"

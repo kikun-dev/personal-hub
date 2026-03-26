@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { createEvent } from "@/usecases/createEvent";
+import { revalidateOrbitEventData } from "@/lib/revalidateOrbit";
 import type { CreateEventInput } from "@/types/event";
 import type { ValidationError } from "@/types/errors";
 
@@ -26,5 +27,6 @@ export async function createEventAction(
     return { errors: result.errors };
   }
 
+  revalidateOrbitEventData();
   return {};
 }

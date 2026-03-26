@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
 import { createSong } from "@/usecases/createSong";
+import { revalidateOrbitSongData } from "@/lib/revalidateOrbit";
 import type { CreateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -28,6 +29,7 @@ export async function createSongAction(
       return { errors: result.errors };
     }
 
+    revalidateOrbitSongData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

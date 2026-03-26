@@ -1,10 +1,4 @@
 import { Suspense } from "react";
-import { createClient } from "@personal-hub/supabase/server";
-import { createEventRepository } from "@/repositories/eventRepository";
-import { createMemberRepository } from "@/repositories/memberRepository";
-import { getEventsForMonth } from "@/usecases/getEventsForMonth";
-import { getEventsForDate } from "@/usecases/getEventsForDate";
-import { getOnThisDay } from "@/usecases/getOnThisDay";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
 import { OnThisDay } from "@/components/events/OnThisDay";
@@ -14,6 +8,7 @@ import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
 } from "@/lib/dateParams";
+import { getTopPageData } from "@/usecases/readOrbitData";
 
 type TopPageProps = {
   searchParams: Promise<{ year?: string; month?: string; day?: string }>;
@@ -39,15 +34,8 @@ export default async function TopPage({ searchParams }: TopPageProps) {
     ? "今日はなんの日"
     : `${month}/${day}はなんの日`;
 
-  const supabase = await createClient();
-  const eventRepo = createEventRepository(supabase);
-  const memberRepo = createMemberRepository(supabase);
-
-  const [monthEvents, selectedDateEvents, onThisDayEvents] = await Promise.all([
-    getEventsForMonth(eventRepo, memberRepo, year, month),
-    getEventsForDate(eventRepo, memberRepo, selectedDate),
-    getOnThisDay(eventRepo, selectedDate),
-  ]);
+  const { monthEvents, selectedDateEvents, onThisDayEvents } =
+    await getTopPageData(year, month, day);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
