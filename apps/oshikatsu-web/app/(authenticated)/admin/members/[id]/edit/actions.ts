@@ -8,6 +8,7 @@ import { updateMember } from "@/usecases/updateMember";
 import { deleteMember } from "@/usecases/deleteMember";
 import { uploadMemberImage } from "@/usecases/uploadMemberImage";
 import { removeMemberImages } from "@/usecases/removeMemberImages";
+import { revalidateOrbitMemberData } from "@/lib/revalidateOrbit";
 import type { UpdateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -66,6 +67,8 @@ export async function updateMemberAction(
     if (existing?.imageUrl && existing.imageUrl !== nextInput.imageUrl) {
       await cleanupMemberImages(memberImageRepo, [existing.imageUrl]);
     }
+
+    revalidateOrbitMemberData();
     return {};
   } catch (e) {
     await cleanupMemberImages(memberImageRepo, [uploadedImagePath]);
@@ -99,6 +102,7 @@ export async function deleteMemberAction(
     await deleteMember(memberRepo, id);
 
     await cleanupMemberImages(memberImageRepo, [existing?.imageUrl]);
+    revalidateOrbitMemberData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

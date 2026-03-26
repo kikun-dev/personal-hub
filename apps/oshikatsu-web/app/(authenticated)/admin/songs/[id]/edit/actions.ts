@@ -5,6 +5,7 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
 import { updateSong } from "@/usecases/updateSong";
 import { deleteSong } from "@/usecases/deleteSong";
+import { revalidateOrbitSongData } from "@/lib/revalidateOrbit";
 import type { UpdateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -29,6 +30,8 @@ export async function updateSongAction(
     if (!result.ok) {
       return { errors: result.errors };
     }
+
+    revalidateOrbitSongData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
@@ -56,6 +59,7 @@ export async function deleteSongAction(
 
   try {
     await deleteSong(repo, id);
+    revalidateOrbitSongData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

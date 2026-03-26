@@ -104,6 +104,12 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 ### アーキテクチャ（3層）
 household-web と同パターン。Repository に `userId` パラメータなし（グローバルデータ）。
 
+### 閲覧導線の運用メモ
+- 認証ガードは `proxy.ts` 側に集約する
+- 閲覧系は read model 経由で取得し、`SUPABASE_SERVICE_ROLE_KEY` がある環境では shared cache を有効化する
+- キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
+- 更新系は `updateTag` で `orbit:*` ドメインタグを即時失効する
+
 ### DB テーブル（`orbit_` プレフィクス）
 - `orbit_groups` — グループ（5件。successor_id で改名関係）
 - `orbit_members` — メンバープロフィール
@@ -141,12 +147,13 @@ household-web と同パターン。Repository に `userId` パラメータなし
 | 0003 | 状態管理方針 | Accepted |
 | 0004 | チャートライブラリ（recharts）採用 | Accepted |
 | 0005 | Orbit Phase 1 設計 | Accepted |
+| 0006 | Orbit 閲覧導線の read cache 戦略 | Accepted |
 
 ---
 
 ## 9. 非目標（現時点ではやらないこと）
 
 - Docker 導入
-- パフォーマンス最適化
+- パフォーマンス最適化の先回り実装
 
 これらは設計完了後に検討する。

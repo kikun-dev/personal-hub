@@ -1,12 +1,8 @@
 import { Suspense } from "react";
-import { createClient } from "@personal-hub/supabase/server";
-import { createMemberRepository } from "@/repositories/memberRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { listMembers } from "@/usecases/listMembers";
-import { getGroups } from "@/usecases/getGroups";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberFilters } from "@/components/members/MemberFilters";
 import type { MemberFilters as MemberFiltersType } from "@/types/member";
+import { getMembersPageData } from "@/usecases/readOrbitData";
 
 type MembersPageProps = {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -14,9 +10,6 @@ type MembersPageProps = {
 
 export default async function MembersPage({ searchParams }: MembersPageProps) {
   const params = await searchParams;
-  const supabase = await createClient();
-  const memberRepo = createMemberRepository(supabase);
-  const groupRepo = createGroupRepository(supabase);
 
   const filters: MemberFiltersType = {
     groupId: params.groupId,
@@ -24,10 +17,7 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
     generation: params.generation,
   };
 
-  const [members, groups] = await Promise.all([
-    listMembers(memberRepo, filters),
-    getGroups(groupRepo),
-  ]);
+  const { members, groups } = await getMembersPageData(filters);
 
   return (
     <div className="space-y-4">

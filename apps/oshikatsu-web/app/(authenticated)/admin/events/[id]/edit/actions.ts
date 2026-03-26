@@ -5,6 +5,7 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { updateEvent } from "@/usecases/updateEvent";
 import { deleteEvent } from "@/usecases/deleteEvent";
+import { revalidateOrbitEventData } from "@/lib/revalidateOrbit";
 import type { UpdateEventInput } from "@/types/event";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -29,6 +30,8 @@ export async function updateEventAction(
     if (!result.ok) {
       return { errors: result.errors };
     }
+
+    revalidateOrbitEventData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
@@ -56,6 +59,7 @@ export async function deleteEventAction(
 
   try {
     await deleteEvent(repo, id);
+    revalidateOrbitEventData();
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {

@@ -1,10 +1,8 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { createClient } from "@personal-hub/supabase/server";
-import { createSongRepository } from "@/repositories/songRepository";
-import { getSong } from "@/usecases/getSong";
 import { SongDetail } from "@/components/songs/SongDetail";
 import { Button } from "@/components/ui/Button";
+import { getSongDetailPageData } from "@/usecases/readOrbitData";
 
 type SongDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -12,9 +10,7 @@ type SongDetailPageProps = {
 
 export default async function SongDetailPage({ params }: SongDetailPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const repo = createSongRepository(supabase);
-  const song = await getSong(repo, id);
+  const song = await getSongDetailPageData(id);
 
   if (!song) {
     notFound();

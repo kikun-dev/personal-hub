@@ -1,12 +1,8 @@
 import { Suspense } from "react";
-import { createClient } from "@personal-hub/supabase/server";
-import { createSongRepository } from "@/repositories/songRepository";
-import { createGroupRepository } from "@/repositories/groupRepository";
-import { listSongs } from "@/usecases/listSongs";
-import { getGroups } from "@/usecases/getGroups";
 import { SongFilters } from "@/components/songs/SongFilters";
 import { SongCard } from "@/components/songs/SongCard";
 import type { SongFilters as SongFiltersType } from "@/types/song";
+import { getSongsPageData } from "@/usecases/readOrbitData";
 
 type SongsPageProps = {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -14,18 +10,12 @@ type SongsPageProps = {
 
 export default async function SongsPage({ searchParams }: SongsPageProps) {
   const params = await searchParams;
-  const supabase = await createClient();
-  const songRepo = createSongRepository(supabase);
-  const groupRepo = createGroupRepository(supabase);
 
   const filters: SongFiltersType = {
     groupId: params.groupId,
   };
 
-  const [songs, groups] = await Promise.all([
-    listSongs(songRepo, filters),
-    getGroups(groupRepo),
-  ]);
+  const { songs, groups } = await getSongsPageData(filters);
 
   return (
     <div className="space-y-4">

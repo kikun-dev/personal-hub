@@ -1,7 +1,11 @@
 import { type NextRequest } from "next/server";
 import { createAuthProxy } from "@personal-hub/supabase/proxy";
 
-const updateSession = createAuthProxy();
+const updateSession = createAuthProxy({
+  publicExactPaths: [],
+  publicRoutes: ["/login", "/auth"],
+  routeMergeMode: "replace",
+});
 
 export async function proxy(request: NextRequest) {
   return await updateSession(request);
