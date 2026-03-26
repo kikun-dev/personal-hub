@@ -170,13 +170,51 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
   };
 }
 
-function mapToMemberListItem(row: MemberListRow): MemberListItem {
+function filterDisplayGroups(
+  groups: MemberGroup[],
+  filters?: {
+    groupId?: string;
+  }
+): MemberGroup[] {
+  if (!filters?.groupId) {
+    return groups;
+  }
+
+  return groups.filter((group) => group.groupId === filters.groupId);
+}
+
+function matchesMemberStatus(
+  groups: MemberGroup[],
+  status: "active" | "graduated" | "all" | undefined
+): boolean {
+  if (status === "active") {
+    return groups.some((group) => group.graduatedAt === null);
+  }
+
+  if (status === "graduated") {
+    return groups.length > 0 && groups.every((group) => group.graduatedAt !== null);
+  }
+
+  return true;
+}
+
+function mapToMemberListItem(
+  row: MemberListRow,
+  filters?: {
+    groupId?: string;
+  }
+): MemberListItem {
+  const groups = filterDisplayGroups(
+    (row.orbit_member_groups ?? []).map(mapToMemberGroup),
+    filters
+  );
+
   return {
     id: row.id,
     imageUrl: row.image_url,
     nameJa: row.name_ja,
     nameKana: row.name_kana,
-    groups: (row.orbit_member_groups ?? []).map(mapToMemberGroup),
+    groups,
   };
 }
 
@@ -398,11 +436,19 @@ export function createMemberRepository(
         throw new RepositoryError("公開向けメンバー一覧の取得に失敗しました", error);
       }
 
-      let members = (data as MemberListRow[]).map(mapToMemberListItem);
+      let members = (data as MemberListRow[]).map((row) =>
+        mapToMemberListItem(row, {
+          groupId: filters?.groupId,
+        })
+      );
 
-      if (filters?.status === "graduated") {
+      if (filters?.groupId) {
+        members = members.filter((member) => member.groups.length > 0);
+      }
+
+      if (filters?.status) {
         members = members.filter((member) =>
-          member.groups.every((group) => group.graduatedAt !== null)
+          matchesMemberStatus(member.groups, filters.status)
         );
       }
 
