@@ -5,6 +5,7 @@ import {
   type AnchorHTMLAttributes,
   type MouseEvent,
   type ReactNode,
+  useEffect,
   useState,
 } from "react";
 
@@ -16,6 +17,15 @@ type PendingLinkProps = LinkProps &
 
 function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
+}
+
+function isCurrentLocation(href: LinkProps["href"]): boolean {
+  if (typeof href !== "string" || typeof window === "undefined") {
+    return false;
+  }
+
+  const targetUrl = new URL(href, window.location.href);
+  return targetUrl.href === window.location.href;
 }
 
 function PendingLinkContent({
@@ -54,6 +64,18 @@ export function PendingLink({
 }: PendingLinkProps) {
   const [isNavigating, setIsNavigating] = useState(false);
 
+  useEffect(() => {
+    if (!isNavigating) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setIsNavigating(false);
+    }, 10000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isNavigating]);
+
   const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
     onClick?.(event);
 
@@ -62,6 +84,10 @@ export function PendingLink({
       isModifiedClick(event) ||
       target === "_blank"
     ) {
+      return;
+    }
+
+    if (isCurrentLocation(props.href)) {
       return;
     }
 
