@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PendingLink } from "@/components/ui/PendingLink";
 import type { ReleaseListItem } from "@/types/release";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
@@ -9,7 +9,7 @@ type ReleaseCardProps = {
 
 export function ReleaseCard({ release }: ReleaseCardProps) {
   return (
-    <Link
+    <PendingLink
       href={`/releases/${release.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
@@ -22,6 +22,6 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
       {release.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">{formatDate(release.releaseDate)}</p>
       )}
-    </Link>
+    </PendingLink>
   );
 }

@@ -1,7 +1,7 @@
-import Link from "next/link";
 import Image from "next/image";
 import type { MemberListItem } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
 
 type MemberCardProps = {
@@ -13,7 +13,7 @@ export function MemberCard({ member }: MemberCardProps) {
   const imageSrc = resolveMemberImageSrc(member.imageUrl);
 
   return (
-    <Link
+    <PendingLink
       href={`/members/${member.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
@@ -53,6 +53,6 @@ export function MemberCard({ member }: MemberCardProps) {
           </div>
         </div>
       </div>
-    </Link>
+    </PendingLink>
   );
 }
