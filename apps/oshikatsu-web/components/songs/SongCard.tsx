@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { PendingLink } from "@/components/ui/PendingLink";
 import type { SongListItem } from "@/types/song";
 import { formatDate } from "@/lib/formatters";
 
@@ -8,7 +8,7 @@ type SongCardProps = {
 
 export function SongCard({ song }: SongCardProps) {
   return (
-    <Link
+    <PendingLink
       href={`/songs/${song.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
     >
@@ -26,6 +26,6 @@ export function SongCard({ song }: SongCardProps) {
           初回リリース: {formatDate(song.firstReleaseDate)}
         </p>
       )}
-    </Link>
+    </PendingLink>
   );
 }
