@@ -23,27 +23,32 @@ function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
 }
 
-function shouldSkipFeedback(href: LinkProps["href"]): boolean {
+function getFeedbackTargetUrl(href: LinkProps["href"]): string | null {
   if (typeof href !== "string" || typeof window === "undefined") {
-    return false;
+    return null;
   }
 
   const currentUrl = new URL(window.location.href);
   const targetUrl = new URL(href, window.location.href);
 
   if (targetUrl.origin !== currentUrl.origin) {
-    return true;
+    return null;
   }
 
   if (targetUrl.href === currentUrl.href) {
-    return true;
+    return null;
   }
 
-  return (
+  const isHashOnlyNavigation =
     targetUrl.pathname === currentUrl.pathname &&
     targetUrl.search === currentUrl.search &&
-    targetUrl.hash.length > 0
-  );
+    targetUrl.hash.length > 0;
+
+  if (isHashOnlyNavigation) {
+    return null;
+  }
+
+  return targetUrl.href;
 }
 
 function PendingLinkContent({
@@ -107,12 +112,14 @@ export function PendingLink({
       return;
     }
 
-    if (shouldSkipFeedback(props.href)) {
+    const targetUrl = getFeedbackTargetUrl(props.href);
+
+    if (!targetUrl) {
       return;
     }
 
     if (feedback === "global") {
-      startProgress();
+      startProgress(targetUrl);
       return;
     }
 

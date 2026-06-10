@@ -9,16 +9,14 @@ import {
   useMemo,
   useState,
 } from "react";
-import { usePathname } from "next/navigation";
-
 type NavigationProgressContextValue = {
   isProgressActive: boolean;
-  startProgress: () => void;
+  startProgress: (targetUrl: string) => void;
   stopProgress: () => void;
 };
 
 type ProgressState = {
-  pathname: string;
+  targetUrl: string;
 };
 
 const NavigationProgressContext =
@@ -29,17 +27,16 @@ export function NavigationProgressProvider({
 }: {
   children: ReactNode;
 }) {
-  const pathname = usePathname();
   const [progressState, setProgressState] = useState<ProgressState | null>(
     null
   );
-  const isProgressActive = progressState?.pathname === pathname;
+  const isProgressActive = progressState !== null;
 
-  const startProgress = useCallback(() => {
+  const startProgress = useCallback((targetUrl: string) => {
     setProgressState({
-      pathname,
+      targetUrl,
     });
-  }, [pathname]);
+  }, []);
 
   const stopProgress = useCallback(() => {
     setProgressState(null);
@@ -50,11 +47,25 @@ export function NavigationProgressProvider({
       return;
     }
 
+    const stopIfReachedTarget = () => {
+      if (window.location.href === progressState.targetUrl) {
+        setProgressState(null);
+      }
+    };
+
     const timeoutId = window.setTimeout(() => {
       setProgressState(null);
     }, 10000);
+    const intervalId = window.setInterval(stopIfReachedTarget, 100);
 
-    return () => window.clearTimeout(timeoutId);
+    stopIfReachedTarget();
+    window.addEventListener("popstate", stopIfReachedTarget);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.clearInterval(intervalId);
+      window.removeEventListener("popstate", stopIfReachedTarget);
+    };
   }, [progressState]);
 
   const value = useMemo(
