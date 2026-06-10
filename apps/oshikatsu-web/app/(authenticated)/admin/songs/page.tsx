@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createSongRepository } from "@/repositories/songRepository";
 import { listSongs } from "@/usecases/listSongs";
 import { Button } from "@/components/ui/Button";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { formatDate } from "@/lib/formatters";
 
 export default async function AdminSongsPage() {
@@ -14,9 +14,9 @@ export default async function AdminSongsPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">楽曲管理</h1>
-        <Link href="/admin/songs/new">
+        <PendingLink href="/admin/songs/new" feedback="global">
           <Button>新規追加</Button>
-        </Link>
+        </PendingLink>
       </div>
 
       <div className="overflow-x-auto">
@@ -45,12 +45,13 @@ export default async function AdminSongsPage() {
                   {song.releaseDate ? formatDate(song.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
-                  <Link
+                  <PendingLink
                     href={`/admin/songs/${song.id}/edit`}
+                    feedback="global"
                     className="text-sm text-blue-500 hover:underline"
                   >
                     編集
-                  </Link>
+                  </PendingLink>
                 </td>
               </tr>
             ))}

@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { listReleases } from "@/usecases/listReleases";
 import { Button } from "@/components/ui/Button";
 import { GroupBadge } from "@/components/ui/GroupBadge";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { formatDate } from "@/lib/formatters";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 
@@ -15,9 +15,9 @@ export default async function AdminReleasesPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">リリース管理</h1>
-        <Link href="/admin/releases/new">
+        <PendingLink href="/admin/releases/new" feedback="global">
           <Button>新規追加</Button>
-        </Link>
+        </PendingLink>
       </div>
 
       <div className="overflow-x-auto">
@@ -52,12 +52,13 @@ export default async function AdminReleasesPage() {
                   {release.releaseDate ? formatDate(release.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
-                  <Link
+                  <PendingLink
                     href={`/admin/releases/${release.id}/edit`}
+                    feedback="global"
                     className="text-sm text-blue-500 hover:underline"
                   >
                     編集
-                  </Link>
+                  </PendingLink>
                 </td>
               </tr>
             ))}
