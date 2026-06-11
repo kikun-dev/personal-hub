@@ -1,9 +1,9 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { parseMonthParams } from "@/lib/dateParams";
 import { formatDate } from "@/lib/formatters";
@@ -26,9 +26,9 @@ export default async function AdminEventsPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">イベント管理</h1>
-        <Link href="/admin/events/new">
+        <PendingLink href="/admin/events/new" feedback="global">
           <Button>新規追加</Button>
-        </Link>
+        </PendingLink>
       </div>
 
       <div className="flex justify-center">
@@ -73,12 +73,13 @@ export default async function AdminEventsPage({
                   </span>
                 </td>
                 <td className="py-2">
-                  <Link
+                  <PendingLink
                     href={`/admin/events/${event.id}/edit`}
+                    feedback="global"
                     className="text-sm text-blue-500 hover:underline"
                   >
                     編集
-                  </Link>
+                  </PendingLink>
                 </td>
               </tr>
             ))}

@@ -8,10 +8,14 @@ import {
   useEffect,
   useState,
 } from "react";
+import { useNavigationProgress } from "@/components/ui/NavigationProgress";
+
+type PendingLinkFeedback = "inline" | "global" | "none";
 
 type PendingLinkProps = LinkProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps> & {
     children: ReactNode;
+    feedback?: PendingLinkFeedback;
     pendingLabel?: string;
   };
 
@@ -19,13 +23,32 @@ function isModifiedClick(event: MouseEvent<HTMLAnchorElement>): boolean {
   return event.metaKey || event.ctrlKey || event.shiftKey || event.altKey;
 }
 
-function isCurrentLocation(href: LinkProps["href"]): boolean {
+function getFeedbackTargetUrl(href: LinkProps["href"]): string | null {
   if (typeof href !== "string" || typeof window === "undefined") {
-    return false;
+    return null;
   }
 
+  const currentUrl = new URL(window.location.href);
   const targetUrl = new URL(href, window.location.href);
-  return targetUrl.href === window.location.href;
+
+  if (targetUrl.origin !== currentUrl.origin) {
+    return null;
+  }
+
+  if (targetUrl.href === currentUrl.href) {
+    return null;
+  }
+
+  const isHashOnlyNavigation =
+    targetUrl.pathname === currentUrl.pathname &&
+    targetUrl.search === currentUrl.search &&
+    targetUrl.hash.length > 0;
+
+  if (isHashOnlyNavigation) {
+    return null;
+  }
+
+  return targetUrl.href;
 }
 
 function PendingLinkContent({
@@ -57,12 +80,14 @@ function PendingLinkContent({
 export function PendingLink({
   children,
   className = "",
+  feedback = "inline",
   onClick,
   pendingLabel = "読み込み中",
   target,
   ...props
 }: PendingLinkProps) {
   const [isNavigating, setIsNavigating] = useState(false);
+  const { startProgress } = useNavigationProgress();
 
   useEffect(() => {
     if (!isNavigating) {
@@ -87,7 +112,18 @@ export function PendingLink({
       return;
     }
 
-    if (isCurrentLocation(props.href)) {
+    const targetUrl = getFeedbackTargetUrl(props.href);
+
+    if (!targetUrl) {
+      return;
+    }
+
+    if (feedback === "global") {
+      startProgress(targetUrl);
+      return;
+    }
+
+    if (feedback === "none") {
       return;
     }
 
@@ -99,25 +135,30 @@ export function PendingLink({
     setIsNavigating(true);
   };
 
-  const navigatingClassName = isNavigating
+  const isInlineNavigating = feedback === "inline" && isNavigating;
+  const navigatingClassName = isInlineNavigating
     ? "pointer-events-none opacity-70"
     : "";
 
   return (
     <Link
       {...props}
-      aria-busy={isNavigating}
-      aria-disabled={isNavigating}
+      aria-busy={isInlineNavigating}
+      aria-disabled={isInlineNavigating}
       className={`${className} relative ${navigatingClassName}`.trim()}
       onClick={handleClick}
       target={target}
     >
-      <PendingLinkContent
-        isNavigating={isNavigating}
-        pendingLabel={pendingLabel}
-      >
-        {children}
-      </PendingLinkContent>
+      {feedback === "inline" ? (
+        <PendingLinkContent
+          isNavigating={isNavigating}
+          pendingLabel={pendingLabel}
+        >
+          {children}
+        </PendingLinkContent>
+      ) : (
+        children
+      )}
     </Link>
   );
 }

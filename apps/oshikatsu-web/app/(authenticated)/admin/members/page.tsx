@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { listMembers } from "@/usecases/listMembers";
 import { Button } from "@/components/ui/Button";
 import { GroupBadge } from "@/components/ui/GroupBadge";
+import { PendingLink } from "@/components/ui/PendingLink";
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -14,9 +14,9 @@ export default async function AdminMembersPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">メンバー管理</h1>
-        <Link href="/admin/members/new">
+        <PendingLink href="/admin/members/new" feedback="global">
           <Button>新規追加</Button>
-        </Link>
+        </PendingLink>
       </div>
 
       <div className="overflow-x-auto">
@@ -55,12 +55,13 @@ export default async function AdminMembersPage() {
                   </div>
                 </td>
                 <td className="py-2">
-                  <Link
+                  <PendingLink
                     href={`/admin/members/${member.id}/edit`}
+                    feedback="global"
                     className="text-sm text-blue-500 hover:underline"
                   >
                     編集
-                  </Link>
+                  </PendingLink>
                 </td>
               </tr>
             ))}

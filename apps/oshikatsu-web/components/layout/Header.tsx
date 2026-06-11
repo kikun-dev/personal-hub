@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/client";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { HEADER_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
 
 export function Header() {
@@ -23,15 +23,20 @@ export function Header() {
     <header className="border-b border-foreground/10 bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <Link href="/" className="text-lg font-bold text-foreground">
+          <PendingLink
+            href="/"
+            feedback="global"
+            className="text-lg font-bold text-foreground"
+          >
             Orbit
-          </Link>
+          </PendingLink>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">
             {HEADER_NAV_ITEMS.map((item) => (
-              <Link
+              <PendingLink
                 key={item.href}
                 href={item.href}
+                feedback="global"
                 className={`text-sm transition-colors ${
                   isNavigationItemActive(pathname, item.href)
                     ? "font-medium text-foreground"
@@ -39,7 +44,7 @@ export function Header() {
                 }`}
               >
                 {item.label}
-              </Link>
+              </PendingLink>
             ))}
           </nav>
         </div>
@@ -76,9 +81,10 @@ export function Header() {
         <div className="border-t border-foreground/10 px-4 py-3 md:hidden">
           <nav className="flex flex-col gap-2">
             {HEADER_NAV_ITEMS.map((item) => (
-              <Link
+              <PendingLink
                 key={item.href}
                 href={item.href}
+                feedback="global"
                 onClick={closeMenu}
                 className={`rounded-md px-3 py-2 text-sm transition-colors ${
                   isNavigationItemActive(pathname, item.href)
@@ -87,7 +93,7 @@ export function Header() {
                 }`}
               >
                 {item.label}
-              </Link>
+              </PendingLink>
             ))}
           </nav>
           <div className="mt-3 border-t border-foreground/10 pt-3">

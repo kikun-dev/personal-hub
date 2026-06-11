@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
 import { ReleaseDetail } from "@/components/releases/ReleaseDetail";
 import { Button } from "@/components/ui/Button";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { getReleaseDetailPageData } from "@/usecases/readOrbitData";
 
 type ReleaseDetailPageProps = {
@@ -19,12 +19,19 @@ export default async function ReleaseDetailPage({ params }: ReleaseDetailPagePro
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Link href="/releases" className="text-sm text-foreground/60 hover:text-foreground">
+        <PendingLink
+          href="/releases"
+          feedback="global"
+          className="text-sm text-foreground/60 hover:text-foreground"
+        >
           ← リリース一覧
-        </Link>
-        <Link href={`/admin/releases/${release.id}/edit`}>
+        </PendingLink>
+        <PendingLink
+          href={`/admin/releases/${release.id}/edit`}
+          feedback="global"
+        >
           <Button variant="secondary">編集</Button>
-        </Link>
+        </PendingLink>
       </div>
       <ReleaseDetail release={release} />
     </div>
