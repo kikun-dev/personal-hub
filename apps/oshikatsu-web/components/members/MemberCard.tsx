@@ -3,6 +3,7 @@ import type { MemberListItem } from "@/types/member";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
+import { APP_ROUTES } from "@/lib/routes";
 
 type MemberCardProps = {
   member: MemberListItem;
@@ -16,6 +17,7 @@ export function MemberCard({ member }: MemberCardProps) {
     <PendingLink
       href={`/members/${member.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      listBackFallbackHref={APP_ROUTES.members}
     >
       <div className="flex items-start gap-3">
         {imageSrc ? (

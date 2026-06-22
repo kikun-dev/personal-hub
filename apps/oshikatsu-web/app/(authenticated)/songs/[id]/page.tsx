@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { SongDetail } from "@/components/songs/SongDetail";
 import { Button } from "@/components/ui/Button";
+import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { APP_ROUTES } from "@/lib/routes";
 import { getSongDetailPageData } from "@/usecases/readOrbitData";
 
 type SongDetailPageProps = {
@@ -19,13 +21,12 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <PendingLink
-          href="/songs"
-          feedback="global"
+        <ListBackButton
+          fallbackHref={APP_ROUTES.songs}
           className="text-sm text-foreground/60 hover:text-foreground"
         >
           ← 楽曲一覧
-        </PendingLink>
+        </ListBackButton>
         <PendingLink href={`/admin/songs/${song.id}/edit`} feedback="global">
           <Button variant="secondary">編集</Button>
         </PendingLink>
