@@ -12,6 +12,7 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
     <PendingLink
       href={`/releases/${release.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      listBackFallbackHref="/releases"
     >
       <p className="text-sm font-medium text-foreground">{release.title}</p>
       <p className="mt-1 text-xs text-foreground/50">

@@ -5,8 +5,11 @@ import {
   type ButtonHTMLAttributes,
   type MouseEvent,
   type ReactNode,
+  useEffect,
+  useRef,
 } from "react";
 import { useNavigationProgress } from "@/components/ui/NavigationProgress";
+import { consumeListBackNavigation } from "@/components/ui/listBackNavigation";
 
 type ListBackButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -17,20 +20,6 @@ type ListBackButtonProps = Omit<
   onClick?: ButtonHTMLAttributes<HTMLButtonElement>["onClick"];
 };
 
-type NextHistoryState = {
-  idx?: unknown;
-};
-
-function hasBackHistory(): boolean {
-  const state = window.history.state as NextHistoryState | null;
-
-  if (typeof state?.idx === "number") {
-    return state.idx > 0;
-  }
-
-  return window.history.length > 1;
-}
-
 export function ListBackButton({
   children,
   className = "",
@@ -39,7 +28,15 @@ export function ListBackButton({
   ...props
 }: ListBackButtonProps) {
   const router = useRouter();
+  const canReturnToListRef = useRef(false);
   const { startProgress } = useNavigationProgress();
+
+  useEffect(() => {
+    canReturnToListRef.current = consumeListBackNavigation({
+      currentHref: window.location.href,
+      fallbackHref,
+    });
+  }, [fallbackHref]);
 
   const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
     onClick?.(event);
@@ -48,7 +45,7 @@ export function ListBackButton({
       return;
     }
 
-    if (hasBackHistory()) {
+    if (canReturnToListRef.current) {
       router.back();
       return;
     }

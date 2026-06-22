@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { useNavigationProgress } from "@/components/ui/NavigationProgress";
+import { registerListBackNavigation } from "@/components/ui/listBackNavigation";
 
 type PendingLinkFeedback = "inline" | "global" | "none";
 
@@ -16,6 +17,7 @@ type PendingLinkProps = LinkProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps> & {
     children: ReactNode;
     feedback?: PendingLinkFeedback;
+    listBackFallbackHref?: string;
     pendingLabel?: string;
   };
 
@@ -81,6 +83,7 @@ export function PendingLink({
   children,
   className = "",
   feedback = "inline",
+  listBackFallbackHref,
   onClick,
   pendingLabel = "読み込み中",
   target,
@@ -116,6 +119,13 @@ export function PendingLink({
 
     if (!targetUrl) {
       return;
+    }
+
+    if (listBackFallbackHref) {
+      registerListBackNavigation({
+        fallbackHref: listBackFallbackHref,
+        targetHref: targetUrl,
+      });
     }
 
     if (feedback === "global") {

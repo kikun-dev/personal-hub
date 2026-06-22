@@ -16,6 +16,7 @@ export function MemberCard({ member }: MemberCardProps) {
     <PendingLink
       href={`/members/${member.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      listBackFallbackHref="/members"
     >
       <div className="flex items-start gap-3">
         {imageSrc ? (
