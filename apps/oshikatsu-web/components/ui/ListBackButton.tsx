@@ -29,9 +29,15 @@ export function ListBackButton({
 }: ListBackButtonProps) {
   const router = useRouter();
   const canReturnToListRef = useRef(false);
+  const hasConsumedRef = useRef(false);
   const { startProgress } = useNavigationProgress();
 
   useEffect(() => {
+    if (hasConsumedRef.current) {
+      return;
+    }
+
+    hasConsumedRef.current = true;
     canReturnToListRef.current = consumeListBackNavigation({
       currentHref: window.location.href,
       fallbackHref,

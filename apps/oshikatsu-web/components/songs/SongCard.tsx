@@ -1,6 +1,7 @@
 import { PendingLink } from "@/components/ui/PendingLink";
 import type { SongListItem } from "@/types/song";
 import { formatDate } from "@/lib/formatters";
+import { APP_ROUTES } from "@/lib/routes";
 
 type SongCardProps = {
   song: SongListItem;
@@ -11,7 +12,7 @@ export function SongCard({ song }: SongCardProps) {
     <PendingLink
       href={`/songs/${song.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
-      listBackFallbackHref="/songs"
+      listBackFallbackHref={APP_ROUTES.songs}
     >
       <p className="text-sm font-medium text-foreground">{song.title}</p>
       {song.groupNameJa && (

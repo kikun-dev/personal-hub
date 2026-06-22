@@ -2,6 +2,7 @@ import { PendingLink } from "@/components/ui/PendingLink";
 import type { ReleaseListItem } from "@/types/release";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
+import { APP_ROUTES } from "@/lib/routes";
 
 type ReleaseCardProps = {
   release: ReleaseListItem;
@@ -12,7 +13,7 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
     <PendingLink
       href={`/releases/${release.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
-      listBackFallbackHref="/releases"
+      listBackFallbackHref={APP_ROUTES.releases}
     >
       <p className="text-sm font-medium text-foreground">{release.title}</p>
       <p className="mt-1 text-xs text-foreground/50">

@@ -3,6 +3,7 @@ import { MemberProfile } from "@/components/members/MemberProfile";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { APP_ROUTES } from "@/lib/routes";
 import { getMemberDetailPageData } from "@/usecases/readOrbitData";
 
 type MemberDetailPageProps = {
@@ -24,7 +25,7 @@ export default async function MemberDetailPage({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <ListBackButton
-          fallbackHref="/members"
+          fallbackHref={APP_ROUTES.members}
           className="text-sm text-foreground/60 hover:text-foreground"
         >
           ← メンバー一覧

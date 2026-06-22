@@ -3,6 +3,7 @@ import { ReleaseDetail } from "@/components/releases/ReleaseDetail";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { APP_ROUTES } from "@/lib/routes";
 import { getReleaseDetailPageData } from "@/usecases/readOrbitData";
 
 type ReleaseDetailPageProps = {
@@ -21,7 +22,7 @@ export default async function ReleaseDetailPage({ params }: ReleaseDetailPagePro
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <ListBackButton
-          fallbackHref="/releases"
+          fallbackHref={APP_ROUTES.releases}
           className="text-sm text-foreground/60 hover:text-foreground"
         >
           ← リリース一覧
