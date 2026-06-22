@@ -1,4 +1,5 @@
 import type { SnsType } from "@/lib/constants";
+import type { Group } from "@/types/group";
 
 export type Member = {
   id: string;
@@ -42,6 +43,11 @@ export type MemberListItem = Pick<
   "id" | "imageUrl" | "nameJa" | "nameKana"
 > & {
   groups: MemberGroup[];
+};
+
+export type MemberSection = {
+  group: Group | null;
+  members: MemberListItem[];
 };
 
 export type MemberOption = {

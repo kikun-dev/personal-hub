@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberFilters } from "@/components/members/MemberFilters";
+import { MemberSectionList } from "@/components/members/MemberSectionList";
 import type { MemberFilters as MemberFiltersType } from "@/types/member";
 import { getMembersPageData } from "@/usecases/readOrbitData";
 
@@ -17,7 +18,8 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
     generation: params.generation,
   };
 
-  const { members, groups } = await getMembersPageData(filters);
+  const { members, groups, memberSections } = await getMembersPageData(filters);
+  const isGroupFiltered = Boolean(filters.groupId);
 
   return (
     <div className="space-y-4">
@@ -28,7 +30,11 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
       <Suspense fallback={<div className="h-10" />}>
         <MemberFilters groups={groups} />
       </Suspense>
-      <MemberGrid members={members} />
+      {isGroupFiltered ? (
+        <MemberGrid members={members} />
+      ) : (
+        <MemberSectionList sections={memberSections} />
+      )}
     </div>
   );
 }

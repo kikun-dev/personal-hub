@@ -16,6 +16,10 @@ import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
+import {
+  createMemberSections,
+  createSongSections,
+} from "@/usecases/groupListSections";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
 import { listPublicSongs } from "@/usecases/listPublicSongs";
@@ -89,6 +93,7 @@ const loadMembersPageData = createSharedReadLoader(
 
       return {
         groups,
+        memberSections: createMemberSections(members, groups),
         members,
       };
     })
@@ -157,6 +162,7 @@ const loadSongsPageData = createSharedReadLoader(
 
       return {
         groups,
+        songSections: createSongSections(songs, groups),
         songs,
       };
     })

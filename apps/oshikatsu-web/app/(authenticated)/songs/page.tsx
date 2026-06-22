@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { SongFilters } from "@/components/songs/SongFilters";
-import { SongCard } from "@/components/songs/SongCard";
+import { SongGrid } from "@/components/songs/SongGrid";
+import { SongSectionList } from "@/components/songs/SongSectionList";
 import type { SongFilters as SongFiltersType } from "@/types/song";
 import { getSongsPageData } from "@/usecases/readOrbitData";
 
@@ -15,7 +16,8 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
     groupId: params.groupId,
   };
 
-  const { songs, groups } = await getSongsPageData(filters);
+  const { songs, groups, songSections } = await getSongsPageData(filters);
+  const isGroupFiltered = Boolean(filters.groupId);
 
   return (
     <div className="space-y-4">
@@ -26,16 +28,10 @@ export default async function SongsPage({ searchParams }: SongsPageProps) {
       <Suspense fallback={<div className="h-10" />}>
         <SongFilters groups={groups} />
       </Suspense>
-      {songs.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
-          楽曲が見つかりません
-        </p>
+      {isGroupFiltered ? (
+        <SongGrid songs={songs} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {songs.map((song) => (
-            <SongCard key={song.id} song={song} />
-          ))}
-        </div>
+        <SongSectionList sections={songSections} />
       )}
     </div>
   );

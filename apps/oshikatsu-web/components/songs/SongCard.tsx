@@ -4,10 +4,11 @@ import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
 
 type SongCardProps = {
+  showGroupName?: boolean;
   song: SongListItem;
 };
 
-export function SongCard({ song }: SongCardProps) {
+export function SongCard({ showGroupName = true, song }: SongCardProps) {
   return (
     <PendingLink
       href={`/songs/${song.id}`}
@@ -15,7 +16,7 @@ export function SongCard({ song }: SongCardProps) {
       listBackFallbackHref={APP_ROUTES.songs}
     >
       <p className="text-sm font-medium text-foreground">{song.title}</p>
-      {song.groupNameJa && (
+      {showGroupName && song.groupNameJa && (
         <p className="mt-1 text-xs text-foreground/50">
           {song.groupNameJa}
         </p>

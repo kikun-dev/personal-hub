@@ -1,4 +1,5 @@
 import type { ReleaseType } from "@/types/release";
+import type { Group } from "@/types/group";
 
 export type SongCreditRole = "lyrics" | "music" | "arrangement" | "choreography";
 
@@ -70,6 +71,11 @@ export type SongListItem = {
   groupColor: string;
   releaseCount: number;
   firstReleaseDate: string | null;
+};
+
+export type SongSection = {
+  group: Group | null;
+  songs: SongListItem[];
 };
 
 export type SongOption = {
