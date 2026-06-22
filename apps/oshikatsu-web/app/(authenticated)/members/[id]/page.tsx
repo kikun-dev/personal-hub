@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { MemberProfile } from "@/components/members/MemberProfile";
 import { Button } from "@/components/ui/Button";
+import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { getMemberDetailPageData } from "@/usecases/readOrbitData";
 
@@ -22,13 +23,12 @@ export default async function MemberDetailPage({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <PendingLink
-          href="/members"
-          feedback="global"
+        <ListBackButton
+          fallbackHref="/members"
           className="text-sm text-foreground/60 hover:text-foreground"
         >
           ← メンバー一覧
-        </PendingLink>
+        </ListBackButton>
         <PendingLink
           href={`/admin/members/${member.id}/edit`}
           feedback="global"
