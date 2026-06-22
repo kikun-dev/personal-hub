@@ -76,6 +76,18 @@ function getOrCreateUngroupedBucket<TItem>(
   return bucket;
 }
 
+function getSectionSortOrder<TItem>(bucket: SectionBucket<TItem>): number {
+  return bucket.group?.sortOrder ?? UNKNOWN_GROUP_SORT_ORDER;
+}
+
+function toSortedSectionBuckets<TItem>(
+  buckets: Map<string, SectionBucket<TItem>>
+): SectionBucket<TItem>[] {
+  return [...buckets.values()]
+    .filter((bucket) => bucket.items.length > 0)
+    .sort((a, b) => getSectionSortOrder(a) - getSectionSortOrder(b));
+}
+
 export function createMemberSections(
   members: MemberListItem[],
   groups: Group[]
@@ -92,7 +104,7 @@ export function createMemberSections(
     bucket.items.push(member);
   });
 
-  return [...buckets.values()]
+  return toSortedSectionBuckets(buckets)
     .map((bucket) => ({
       group: bucket.group,
       members: bucket.items
@@ -108,8 +120,7 @@ export function createMemberSections(
           return a.index - b.index;
         })
         .map(({ member }) => member),
-    }))
-    .filter((section) => section.members.length > 0);
+    }));
 }
 
 export function createSongSections(
@@ -124,10 +135,9 @@ export function createSongSections(
     bucket.items.push(song);
   });
 
-  return [...buckets.values()]
+  return toSortedSectionBuckets(buckets)
     .map((bucket) => ({
       group: bucket.group,
       songs: bucket.items,
-    }))
-    .filter((section) => section.songs.length > 0);
+    }));
 }

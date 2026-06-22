@@ -1,7 +1,9 @@
 type GroupSectionHeadingProps = {
-  color: string;
+  color?: string;
   name: string;
 };
+
+const DEFAULT_GROUP_SECTION_COLOR = "#9ca3af";
 
 export function GroupSectionHeading({ color, name }: GroupSectionHeadingProps) {
   return (
@@ -9,7 +11,7 @@ export function GroupSectionHeading({ color, name }: GroupSectionHeadingProps) {
       <span
         aria-hidden="true"
         className="h-5 w-1 rounded-full"
-        style={{ backgroundColor: color }}
+        style={{ backgroundColor: color ?? DEFAULT_GROUP_SECTION_COLOR }}
       />
       <span>{name}</span>
     </h2>

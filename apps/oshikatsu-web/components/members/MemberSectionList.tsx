@@ -19,7 +19,7 @@ export function MemberSectionList({ sections }: MemberSectionListProps) {
           className="space-y-3"
         >
           <GroupSectionHeading
-            color={section.group?.color ?? "#9ca3af"}
+            color={section.group?.color}
             name={section.group?.nameJa ?? "未所属"}
           />
           <MemberGrid members={section.members} />

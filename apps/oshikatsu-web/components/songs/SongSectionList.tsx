@@ -19,10 +19,10 @@ export function SongSectionList({ sections }: SongSectionListProps) {
           className="space-y-3"
         >
           <GroupSectionHeading
-            color={section.group?.color ?? "#9ca3af"}
-            name={section.group?.nameJa ?? "未所属"}
+            color={section.group?.color}
+            name={section.group?.nameJa ?? "その他"}
           />
-          <SongGrid songs={section.songs} />
+          <SongGrid showGroupName={false} songs={section.songs} />
         </section>
       ))}
     </div>
