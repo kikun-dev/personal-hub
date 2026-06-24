@@ -3,40 +3,66 @@
 import { useMemo, useState } from "react";
 import { SongGrid } from "@/components/songs/SongGrid";
 import { SongSectionList } from "@/components/songs/SongSectionList";
+import { replaceListFilterParams } from "@/lib/listFilterUrl";
+import type { Group } from "@/types/group";
 import type { SongListItem, SongSection } from "@/types/song";
 import {
   filterSongSectionsByTitle,
+  filterSongsByGroup,
   filterSongsByTitle,
 } from "@/usecases/songSearch";
 
 type SongBrowserProps = {
-  isGroupFiltered: boolean;
+  groups: Group[];
+  initialGroupId: string;
   songs: SongListItem[];
   songSections: SongSection[];
 };
 
 export function SongBrowser({
-  isGroupFiltered,
+  groups,
+  initialGroupId,
   songs,
   songSections,
 }: SongBrowserProps) {
+  const [groupId, setGroupId] = useState(initialGroupId);
   const [query, setQuery] = useState("");
 
-  // 件数表示は常にフラットなフィルタ結果から算出する
+  const isGroupFiltered = groupId !== "";
+
+  // 件数表示・フラット表示用（グループ＋タイトルで絞り込む）
   const filteredSongs = useMemo(
-    () => filterSongsByTitle(songs, query),
-    [songs, query]
+    () => filterSongsByTitle(filterSongsByGroup(songs, groupId), query),
+    [songs, groupId, query]
   );
-  // セクション表示はグループ未絞り込み時のみ使うため、その場合だけ計算する
+  // セクション表示はグループ未選択時のみ使う
   const filteredSections = useMemo(
     () =>
       isGroupFiltered ? [] : filterSongSectionsByTitle(songSections, query),
     [isGroupFiltered, songSections, query]
   );
 
+  const handleGroupChange = (nextGroupId: string) => {
+    setGroupId(nextGroupId);
+    replaceListFilterParams({ groupId: nextGroupId });
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={groupId}
+          onChange={(event) => handleGroupChange(event.target.value)}
+          aria-label="グループで絞り込み"
+          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+        >
+          <option value="">全グループ</option>
+          {groups.map((group) => (
+            <option key={group.id} value={group.id}>
+              {group.nameJa}
+            </option>
+          ))}
+        </select>
         <input
           type="search"
           value={query}
@@ -45,7 +71,7 @@ export function SongBrowser({
           aria-label="楽曲タイトルで検索"
           className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
         />
-        <span className="shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground/50">
           {filteredSongs.length}曲
         </span>
       </div>

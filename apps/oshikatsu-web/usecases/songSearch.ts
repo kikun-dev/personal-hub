@@ -1,5 +1,15 @@
 import type { SongListItem, SongSection } from "@/types/song";
 
+export function filterSongsByGroup(
+  songs: SongListItem[],
+  groupId: string
+): SongListItem[] {
+  if (groupId === "") {
+    return songs;
+  }
+  return songs.filter((song) => song.groupId === groupId);
+}
+
 function normalizeQuery(query: string): string {
   return query.trim().toLowerCase();
 }
