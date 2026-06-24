@@ -24,8 +24,13 @@
 --   I want tomorrow to come, Unhappy birthday構文, Love yourself!, クリフハンガー.
 -- ============================================================
 
-BEGIN;
+DO $seed$
+BEGIN
 SET CONSTRAINTS ALL DEFERRED;
+
+DROP TABLE IF EXISTS orbit_seed_resolved_single_tracks;
+DROP TABLE IF EXISTS orbit_seed_single_tracks;
+DROP TABLE IF EXISTS orbit_seed_single_track_groups;
 
 CREATE TEMP TABLE orbit_seed_single_track_groups (
   release_group_name TEXT NOT NULL,
@@ -34,7 +39,7 @@ CREATE TEMP TABLE orbit_seed_single_track_groups (
   release_numbering INT,
   track_group_name TEXT NOT NULL,
   track_titles TEXT[] NOT NULL
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 INSERT INTO orbit_seed_single_track_groups (
   release_group_name,
@@ -142,7 +147,7 @@ VALUES
   ('日向坂46', 'クリフハンガー', 'single', 16, '日向坂46', ARRAY['クリフハンガー', '涙目の太陽', 'Surf''s Up Girl', '好きになるクレッシェンド']),
   ('日向坂46', 'Kind of love', 'single', 17, '日向坂46', ARRAY['Kind of love']);
 
-CREATE TEMP TABLE orbit_seed_single_tracks ON COMMIT DROP AS
+CREATE TEMP TABLE orbit_seed_single_tracks ON COMMIT PRESERVE ROWS AS
 SELECT
   groups.release_group_name,
   groups.release_title,
@@ -154,7 +159,7 @@ SELECT
 FROM orbit_seed_single_track_groups groups
 CROSS JOIN LATERAL unnest(groups.track_titles) WITH ORDINALITY AS tracks(track_title, track_order);
 
-CREATE TEMP TABLE orbit_seed_resolved_single_tracks ON COMMIT DROP AS
+CREATE TEMP TABLE orbit_seed_resolved_single_tracks ON COMMIT PRESERVE ROWS AS
 SELECT
   seed.*,
   release.id AS release_id,
@@ -234,4 +239,9 @@ SELECT
 FROM numbered_links
 ON CONFLICT (release_id, track_id) DO NOTHING;
 
-COMMIT;
+DROP TABLE IF EXISTS orbit_seed_resolved_single_tracks;
+DROP TABLE IF EXISTS orbit_seed_single_tracks;
+DROP TABLE IF EXISTS orbit_seed_single_track_groups;
+
+END;
+$seed$;

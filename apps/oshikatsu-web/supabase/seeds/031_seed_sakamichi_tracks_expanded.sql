@@ -16,8 +16,12 @@
 --   NULL means "not curated yet", not "does not exist".
 -- ============================================================
 
-BEGIN;
+DO $seed$
+BEGIN
 SET CONSTRAINTS ALL DEFERRED;
+
+DROP TABLE IF EXISTS orbit_seed_resolved_track_items;
+DROP TABLE IF EXISTS orbit_seed_track_items;
 
 CREATE TEMP TABLE orbit_seed_track_items (
   release_group_name TEXT NOT NULL,
@@ -32,7 +36,7 @@ CREATE TEMP TABLE orbit_seed_track_items (
   music_by TEXT,
   arrangement_by TEXT,
   mv_url TEXT
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 INSERT INTO orbit_seed_track_items (
   release_group_name,
@@ -181,7 +185,7 @@ VALUES
   ('日向坂46', 'ひなたざか', 'album', 1, '日向坂46', 'アザトカワイイ', 1, NULL, '秋元康', NULL, NULL, NULL),
   ('日向坂46', '脈打つ感情', 'album', 2, '日向坂46', '君は0から1になれ', 1, NULL, '秋元康', NULL, NULL, NULL);
 
-CREATE TEMP TABLE orbit_seed_resolved_track_items ON COMMIT DROP AS
+CREATE TEMP TABLE orbit_seed_resolved_track_items ON COMMIT PRESERVE ROWS AS
 SELECT
   seed.*,
   release.id AS release_id,
@@ -319,4 +323,8 @@ WHERE seed.mv_url IS NOT NULL
 ON CONFLICT (track_id) DO UPDATE
 SET mv_url = EXCLUDED.mv_url;
 
-COMMIT;
+DROP TABLE IF EXISTS orbit_seed_resolved_track_items;
+DROP TABLE IF EXISTS orbit_seed_track_items;
+
+END;
+$seed$;

@@ -5,14 +5,21 @@
 -- Safe to run even if 032 has not been executed.
 -- ============================================================
 
-BEGIN;
+DO $seed$
+BEGIN
 SET CONSTRAINTS ALL DEFERRED;
+
+DROP TABLE IF EXISTS orbit_seed_resolved_correct_hinata_tracks;
+DROP TABLE IF EXISTS orbit_seed_correct_hinata_tracks;
+DROP TABLE IF EXISTS orbit_seed_correct_hinata_track_groups;
+DROP TABLE IF EXISTS orbit_seed_deleted_track_ids;
+DROP TABLE IF EXISTS orbit_seed_wrong_hinata_tracks;
 
 CREATE TEMP TABLE orbit_seed_wrong_hinata_tracks (
   release_title TEXT NOT NULL,
   release_numbering INT NOT NULL,
   track_title TEXT NOT NULL
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 INSERT INTO orbit_seed_wrong_hinata_tracks (
   release_title,
@@ -29,7 +36,7 @@ VALUES
 
 CREATE TEMP TABLE orbit_seed_deleted_track_ids (
   track_id UUID PRIMARY KEY
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 WITH targets AS (
   SELECT
@@ -74,7 +81,7 @@ CREATE TEMP TABLE orbit_seed_correct_hinata_track_groups (
   release_title TEXT NOT NULL,
   release_numbering INT NOT NULL,
   track_titles TEXT[] NOT NULL
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 INSERT INTO orbit_seed_correct_hinata_track_groups (
   release_title,
@@ -110,7 +117,7 @@ VALUES
     'Second Jump'
   ]);
 
-CREATE TEMP TABLE orbit_seed_correct_hinata_tracks ON COMMIT DROP AS
+CREATE TEMP TABLE orbit_seed_correct_hinata_tracks ON COMMIT PRESERVE ROWS AS
 SELECT
   groups.release_title,
   groups.release_numbering,
@@ -119,7 +126,7 @@ SELECT
 FROM orbit_seed_correct_hinata_track_groups groups
 CROSS JOIN LATERAL unnest(groups.track_titles) WITH ORDINALITY AS tracks(track_title, track_order);
 
-CREATE TEMP TABLE orbit_seed_resolved_correct_hinata_tracks ON COMMIT DROP AS
+CREATE TEMP TABLE orbit_seed_resolved_correct_hinata_tracks ON COMMIT PRESERVE ROWS AS
 SELECT
   seed.*,
   release.id AS release_id,
@@ -199,4 +206,11 @@ SELECT
 FROM numbered_links
 ON CONFLICT (release_id, track_id) DO NOTHING;
 
-COMMIT;
+DROP TABLE IF EXISTS orbit_seed_resolved_correct_hinata_tracks;
+DROP TABLE IF EXISTS orbit_seed_correct_hinata_tracks;
+DROP TABLE IF EXISTS orbit_seed_correct_hinata_track_groups;
+DROP TABLE IF EXISTS orbit_seed_deleted_track_ids;
+DROP TABLE IF EXISTS orbit_seed_wrong_hinata_tracks;
+
+END;
+$seed$;

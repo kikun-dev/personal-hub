@@ -19,8 +19,11 @@
 --   Cliffhanger, The growing up train, and 2026 release list pages.
 -- ============================================================
 
-BEGIN;
+DO $seed$
+BEGIN
 SET CONSTRAINTS ALL DEFERRED;
+
+DROP TABLE IF EXISTS orbit_seed_music_items;
 
 CREATE TEMP TABLE orbit_seed_music_items (
   release_group_name TEXT NOT NULL,
@@ -36,7 +39,7 @@ CREATE TEMP TABLE orbit_seed_music_items (
   music_by TEXT,
   arrangement_by TEXT,
   mv_url TEXT
-) ON COMMIT DROP;
+) ON COMMIT PRESERVE ROWS;
 
 INSERT INTO orbit_seed_music_items (
   release_group_name,
@@ -342,4 +345,7 @@ WHERE seed.release_date IS NOT NULL
   AND (member_group.graduated_at IS NULL OR member_group.graduated_at >= seed.release_date)
 ON CONFLICT (release_id, member_id) DO NOTHING;
 
-COMMIT;
+DROP TABLE IF EXISTS orbit_seed_music_items;
+
+END;
+$seed$;
