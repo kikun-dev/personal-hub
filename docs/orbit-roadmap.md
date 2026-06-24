@@ -204,7 +204,8 @@
 - [x] 楽曲一覧のグループ絞り込みをクライアント側フィルタ化（Issue #87）
   - [x] `SongBrowser` にグループ選択を統合、`filterSongsByGroup` 追加、`SongFilters` を撤去
 - [ ] メンバー一覧の絞り込みをクライアント側フィルタ化（完全クライアント・全件取得）（Issue #89）
-- [ ] リリース一覧の絞り込みをクライアント側フィルタ化（Issue #90）
+- [x] リリース一覧の絞り込みをクライアント側フィルタ化（Issue #90）
+  - [x] 全件取得し、グループ/リリースタイプを in-memory フィルタ。`ReleaseBrowser` に統合、`usecases/releaseFilters.ts` を追加、`ReleaseFilters` を撤去
 
 ### ライブ情報 + セットリスト
 

@@ -1,8 +1,5 @@
-import { Suspense } from "react";
-import { ReleaseFilters } from "@/components/releases/ReleaseFilters";
-import { ReleaseGrid } from "@/components/releases/ReleaseGrid";
-import { ReleaseSectionList } from "@/components/releases/ReleaseSectionList";
-import { isReleaseType, type ReleaseFilters as ReleaseFiltersType } from "@/types/release";
+import { ReleaseBrowser } from "@/components/releases/ReleaseBrowser";
+import { isReleaseType, type ReleaseType } from "@/types/release";
 import { getReleasesPageData } from "@/usecases/readOrbitData";
 
 type ReleasesPageProps = {
@@ -11,36 +8,24 @@ type ReleasesPageProps = {
 
 export default async function ReleasesPage({ searchParams }: ReleasesPageProps) {
   const params = await searchParams;
+  const initialGroupId = params.groupId ?? "";
+  const initialReleaseType: ReleaseType | "" =
+    params.releaseType && isReleaseType(params.releaseType)
+      ? params.releaseType
+      : "";
 
-  const filters: ReleaseFiltersType = {};
-
-  if (params.groupId) {
-    filters.groupId = params.groupId;
-  }
-
-  if (params.releaseType && isReleaseType(params.releaseType)) {
-    filters.releaseType = params.releaseType;
-  }
-
-  const { releases, groups, releaseSections } = await getReleasesPageData(filters);
-  const isGroupFiltered = Boolean(filters.groupId);
+  // 絞り込みはクライアント側で行うため、常に全件取得する
+  const { releases, groups } = await getReleasesPageData({});
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">リリース</h1>
-        <span className="text-sm text-foreground/50">{releases.length}件</span>
-      </div>
-
-      <Suspense fallback={<div className="h-10" />}>
-        <ReleaseFilters groups={groups} />
-      </Suspense>
-
-      {isGroupFiltered ? (
-        <ReleaseGrid releases={releases} />
-      ) : (
-        <ReleaseSectionList sections={releaseSections} />
-      )}
+      <h1 className="text-xl font-bold text-foreground">リリース</h1>
+      <ReleaseBrowser
+        groups={groups}
+        initialGroupId={initialGroupId}
+        initialReleaseType={initialReleaseType}
+        releases={releases}
+      />
     </div>
   );
 }
