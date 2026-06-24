@@ -18,7 +18,6 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
   const params = await searchParams;
   const initialGroupId = params.groupId ?? "";
   const initialStatus = toMemberStatus(params.status);
-  const initialGeneration = params.generation ?? "";
 
   // 絞り込みはクライアント側で行うため、卒業含む全件を取得する
   const { members, groups } = await getMembersPageData({ status: "all" });
@@ -28,7 +27,6 @@ export default async function MembersPage({ searchParams }: MembersPageProps) {
       <h1 className="text-xl font-bold text-foreground">メンバー</h1>
       <MemberBrowser
         groups={groups}
-        initialGeneration={initialGeneration}
         initialGroupId={initialGroupId}
         initialStatus={initialStatus}
         members={members}

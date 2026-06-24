@@ -33,15 +33,3 @@ export function filterMembersByStatus(
       member.groups.every((group) => group.graduatedAt !== null)
   );
 }
-
-export function filterMembersByGeneration(
-  members: MemberListItem[],
-  generation: string
-): MemberListItem[] {
-  if (generation === "") {
-    return members;
-  }
-  return members.filter((member) =>
-    member.groups.some((group) => group.generation === generation)
-  );
-}

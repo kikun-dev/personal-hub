@@ -7,7 +7,6 @@ import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { MemberListItem } from "@/types/member";
 import {
-  filterMembersByGeneration,
   filterMembersByGroup,
   filterMembersByStatus,
   type MemberStatus,
@@ -16,7 +15,6 @@ import { createMemberSections } from "@/usecases/groupListSections";
 
 type MemberBrowserProps = {
   groups: Group[];
-  initialGeneration: string;
   initialGroupId: string;
   initialStatus: MemberStatus;
   members: MemberListItem[];
@@ -30,7 +28,6 @@ const STATUS_OPTIONS: { label: string; value: MemberStatus }[] = [
 
 export function MemberBrowser({
   groups,
-  initialGeneration,
   initialGroupId,
   initialStatus,
   members,
@@ -40,14 +37,10 @@ export function MemberBrowser({
 
   const isGroupFiltered = groupId !== "";
 
-  // ステータス・期生で先に絞り込んだ母集合
+  // ステータスで先に絞り込んだ母集合
   const baseMembers = useMemo(
-    () =>
-      filterMembersByGeneration(
-        filterMembersByStatus(members, status),
-        initialGeneration
-      ),
-    [members, status, initialGeneration]
+    () => filterMembersByStatus(members, status),
+    [members, status]
   );
 
   // 件数表示・フラット表示用（グループも適用）
