@@ -23,9 +23,8 @@ export function replaceListFilterParams(updates: Record<string, string>): void {
   }
 
   const query = search.toString();
-  const url = query
-    ? `${window.location.pathname}?${query}`
-    : window.location.pathname;
+  const { pathname, hash } = window.location;
+  const url = `${pathname}${query ? `?${query}` : ""}${hash}`;
 
   window.history.replaceState(window.history.state, "", url);
 }
