@@ -162,12 +162,12 @@ const loadSongsPageData = createSharedReadLoader(
         getGroups(createGroupRepository(supabase)),
       ]);
 
-      const sortedSongs = sortSongsForListOrder(songs);
-
       return {
         groups,
-        songSections: createSongSections(sortedSongs, groups),
-        songs: sortedSongs,
+        // セクション表示はグループ分け＋セクション内整列を createSongSections に集約
+        songSections: createSongSections(songs, groups),
+        // グループ絞り込み時のフラット表示用は同じ整列ロジックを適用
+        songs: sortSongsForListOrder(songs),
       };
     })
 );

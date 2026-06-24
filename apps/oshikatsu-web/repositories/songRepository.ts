@@ -238,6 +238,8 @@ const SONG_PUBLIC_LIST_SELECT = `
   group_id,
   orbit_groups(name_ja, color),
   orbit_release_tracks(
+    release_id,
+    track_number,
     orbit_releases(release_date)
   )
 `;
