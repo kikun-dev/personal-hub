@@ -22,13 +22,16 @@ export function SongBrowser({
 }: SongBrowserProps) {
   const [query, setQuery] = useState("");
 
+  // 件数表示は常にフラットなフィルタ結果から算出する
   const filteredSongs = useMemo(
     () => filterSongsByTitle(songs, query),
     [songs, query]
   );
+  // セクション表示はグループ未絞り込み時のみ使うため、その場合だけ計算する
   const filteredSections = useMemo(
-    () => filterSongSectionsByTitle(songSections, query),
-    [songSections, query]
+    () =>
+      isGroupFiltered ? [] : filterSongSectionsByTitle(songSections, query),
+    [isGroupFiltered, songSections, query]
   );
 
   return (
