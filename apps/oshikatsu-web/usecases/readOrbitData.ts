@@ -20,6 +20,7 @@ import {
   createMemberSections,
   createReleaseSections,
   createSongSections,
+  sortSongsForListOrder,
 } from "@/usecases/groupListSections";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
@@ -163,8 +164,10 @@ const loadSongsPageData = createSharedReadLoader(
 
       return {
         groups,
+        // セクション表示はグループ分け＋セクション内整列を createSongSections に集約
         songSections: createSongSections(songs, groups),
-        songs,
+        // グループ絞り込み時のフラット表示用は同じ整列ロジックを適用
+        songs: sortSongsForListOrder(songs),
       };
     })
 );

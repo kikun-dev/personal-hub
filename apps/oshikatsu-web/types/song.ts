@@ -71,6 +71,9 @@ export type SongListItem = {
   groupColor: string;
   releaseCount: number;
   firstReleaseDate: string | null;
+  // 一覧の並び替え用：初出（最古）リリースの識別子とトラック番号
+  representativeReleaseId: string | null;
+  representativeTrackNumber: number | null;
 };
 
 export type SongSection = {

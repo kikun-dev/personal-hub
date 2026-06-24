@@ -124,6 +124,44 @@ export function createMemberSections(
     }));
 }
 
+function compareSongsForListOrder(a: SongListItem, b: SongListItem): number {
+  // リリース未紐付け（リリース日なし）はグループ内の末尾へ
+  const aHasDate = a.firstReleaseDate !== null;
+  const bHasDate = b.firstReleaseDate !== null;
+  if (aHasDate !== bHasDate) {
+    return aHasDate ? -1 : 1;
+  }
+
+  if (a.firstReleaseDate && b.firstReleaseDate) {
+    // 代表（初出）リリース日の降順
+    const dateCompare = b.firstReleaseDate.localeCompare(a.firstReleaseDate);
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+
+    // 同一リリース日内は代表リリースごとにまとめる（決定的順序）
+    const aReleaseId = a.representativeReleaseId ?? "";
+    const bReleaseId = b.representativeReleaseId ?? "";
+    if (aReleaseId !== bReleaseId) {
+      return aReleaseId.localeCompare(bReleaseId);
+    }
+
+    // 同一リリース内はトラック順（昇順）
+    const aTrack = a.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
+    const bTrack = b.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
+    if (aTrack !== bTrack) {
+      return aTrack - bTrack;
+    }
+  }
+
+  // 最終タイブレーク（決定的にするためタイトル順）
+  return a.title.localeCompare(b.title);
+}
+
+export function sortSongsForListOrder(songs: SongListItem[]): SongListItem[] {
+  return [...songs].sort(compareSongsForListOrder);
+}
+
 export function createSongSections(
   songs: SongListItem[],
   groups: Group[]
@@ -139,7 +177,7 @@ export function createSongSections(
   return toSortedSectionBuckets(buckets)
     .map((bucket) => ({
       group: bucket.group,
-      songs: bucket.items,
+      songs: [...bucket.items].sort(compareSongsForListOrder),
     }));
 }
 
