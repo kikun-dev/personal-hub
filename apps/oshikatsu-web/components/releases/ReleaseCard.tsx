@@ -6,9 +6,16 @@ import { APP_ROUTES } from "@/lib/routes";
 
 type ReleaseCardProps = {
   release: ReleaseListItem;
+  showGroupName?: boolean;
 };
 
-export function ReleaseCard({ release }: ReleaseCardProps) {
+export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps) {
+  const metaParts = [
+    ...(showGroupName && release.groupNameJa ? [release.groupNameJa] : []),
+    RELEASE_TYPE_LABELS[release.releaseType],
+    ...(release.numbering ? [String(release.numbering)] : []),
+  ];
+
   return (
     <PendingLink
       href={`/releases/${release.id}`}
@@ -16,10 +23,7 @@ export function ReleaseCard({ release }: ReleaseCardProps) {
       listBackFallbackHref={APP_ROUTES.releases}
     >
       <p className="text-sm font-medium text-foreground">{release.title}</p>
-      <p className="mt-1 text-xs text-foreground/50">
-        {release.groupNameJa} / {RELEASE_TYPE_LABELS[release.releaseType]}
-        {release.numbering ? ` / ${release.numbering}` : ""}
-      </p>
+      <p className="mt-1 text-xs text-foreground/50">{metaParts.join(" / ")}</p>
       <p className="mt-1 text-xs text-foreground/50">曲目: {release.trackCount}曲</p>
       {release.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">{formatDate(release.releaseDate)}</p>

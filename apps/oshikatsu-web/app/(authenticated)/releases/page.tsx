@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { ReleaseFilters } from "@/components/releases/ReleaseFilters";
-import { ReleaseCard } from "@/components/releases/ReleaseCard";
+import { ReleaseGrid } from "@/components/releases/ReleaseGrid";
+import { ReleaseSectionList } from "@/components/releases/ReleaseSectionList";
 import { isReleaseType, type ReleaseFilters as ReleaseFiltersType } from "@/types/release";
 import { getReleasesPageData } from "@/usecases/readOrbitData";
 
@@ -21,7 +22,8 @@ export default async function ReleasesPage({ searchParams }: ReleasesPageProps) 
     filters.releaseType = params.releaseType;
   }
 
-  const { releases, groups } = await getReleasesPageData(filters);
+  const { releases, groups, releaseSections } = await getReleasesPageData(filters);
+  const isGroupFiltered = Boolean(filters.groupId);
 
   return (
     <div className="space-y-4">
@@ -34,14 +36,10 @@ export default async function ReleasesPage({ searchParams }: ReleasesPageProps) 
         <ReleaseFilters groups={groups} />
       </Suspense>
 
-      {releases.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">リリースが見つかりません</p>
+      {isGroupFiltered ? (
+        <ReleaseGrid releases={releases} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {releases.map((release) => (
-            <ReleaseCard key={release.id} release={release} />
-          ))}
-        </div>
+        <ReleaseSectionList sections={releaseSections} />
       )}
     </div>
   );

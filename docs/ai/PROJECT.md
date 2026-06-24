@@ -110,6 +110,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
 - Top は集約 usecase で取得し、誕生日 / OnThisDay は 1 往復 RPC を優先する
 - 公開一覧は `findAll` とは別に public list DTO を使い、一覧表示に不要な join を避ける
+- メンバー/楽曲/リリースの一覧は、グループ絞り込みなしのとき `usecases/groupListSections.ts`（`createMemberSections` / `createSongSections` / `createReleaseSections`）でグループ別セクションに整形し、`GroupSectionHeading` + `*SectionList` / `*Grid` で表示する。グループ絞り込み時はフラットな `*Grid` にフォールバックする
 - 更新系は `updateTag` で `orbit:*` の top / list / detail tag を即時失効する
 
 ### 管理導線の運用メモ

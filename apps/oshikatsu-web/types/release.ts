@@ -1,3 +1,5 @@
+import type { Group } from "@/types/group";
+
 export const RELEASE_TYPES = [
   "single",
   "album",
@@ -56,6 +58,11 @@ export type ReleaseListItem = {
   numbering: number | null;
   releaseDate: string | null;
   trackCount: number;
+};
+
+export type ReleaseSection = {
+  group: Group | null;
+  releases: ReleaseListItem[];
 };
 
 export type ReleaseOption = {
