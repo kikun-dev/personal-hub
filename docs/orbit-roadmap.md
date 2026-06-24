@@ -203,7 +203,9 @@
 
 - [x] 楽曲一覧のグループ絞り込みをクライアント側フィルタ化（Issue #87）
   - [x] `SongBrowser` にグループ選択を統合、`filterSongsByGroup` 追加、`SongFilters` を撤去
-- [ ] メンバー一覧の絞り込みをクライアント側フィルタ化（完全クライアント・全件取得）（Issue #89）
+- [x] メンバー一覧の絞り込みをクライアント側フィルタ化（完全クライアント・全件取得）（Issue #89）
+  - [x] 卒業含む全件取得に変更し、グループ/ステータスを in-memory フィルタ。初期表示は現役を維持（期生はUI未提供のため本対応の対象外）
+  - [x] `MemberBrowser` に統合、`usecases/memberFilters.ts` を追加、`MemberFilters` を撤去
 - [x] リリース一覧の絞り込みをクライアント側フィルタ化（Issue #90）
   - [x] 全件取得し、グループ/リリースタイプを in-memory フィルタ。`ReleaseBrowser` に統合、`usecases/releaseFilters.ts` を追加、`ReleaseFilters` を撤去
 
