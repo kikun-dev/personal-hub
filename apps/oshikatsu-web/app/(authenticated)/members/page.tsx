@@ -1,40 +1,38 @@
-import { Suspense } from "react";
-import { MemberGrid } from "@/components/members/MemberGrid";
-import { MemberFilters } from "@/components/members/MemberFilters";
-import { MemberSectionList } from "@/components/members/MemberSectionList";
-import type { MemberFilters as MemberFiltersType } from "@/types/member";
+import { MemberBrowser } from "@/components/members/MemberBrowser";
 import { getMembersPageData } from "@/usecases/readOrbitData";
+import type { MemberStatus } from "@/usecases/memberFilters";
 
 type MembersPageProps = {
   searchParams: Promise<Record<string, string | undefined>>;
 };
 
+const MEMBER_STATUSES: MemberStatus[] = ["all", "active", "graduated"];
+
+function toMemberStatus(value: string | undefined): MemberStatus {
+  return MEMBER_STATUSES.includes(value as MemberStatus)
+    ? (value as MemberStatus)
+    : "active";
+}
+
 export default async function MembersPage({ searchParams }: MembersPageProps) {
   const params = await searchParams;
+  const initialGroupId = params.groupId ?? "";
+  const initialStatus = toMemberStatus(params.status);
+  const initialGeneration = params.generation ?? "";
 
-  const filters: MemberFiltersType = {
-    groupId: params.groupId,
-    status: (params.status as MemberFiltersType["status"]) ?? "active",
-    generation: params.generation,
-  };
-
-  const { members, groups, memberSections } = await getMembersPageData(filters);
-  const isGroupFiltered = Boolean(filters.groupId);
+  // 絞り込みはクライアント側で行うため、卒業含む全件を取得する
+  const { members, groups } = await getMembersPageData({ status: "all" });
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">メンバー</h1>
-        <span className="text-sm text-foreground/50">{members.length}人</span>
-      </div>
-      <Suspense fallback={<div className="h-10" />}>
-        <MemberFilters groups={groups} />
-      </Suspense>
-      {isGroupFiltered ? (
-        <MemberGrid members={members} />
-      ) : (
-        <MemberSectionList sections={memberSections} />
-      )}
+      <h1 className="text-xl font-bold text-foreground">メンバー</h1>
+      <MemberBrowser
+        groups={groups}
+        initialGeneration={initialGeneration}
+        initialGroupId={initialGroupId}
+        initialStatus={initialStatus}
+        members={members}
+      />
     </div>
   );
 }
