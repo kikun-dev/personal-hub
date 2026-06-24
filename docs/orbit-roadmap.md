@@ -190,7 +190,9 @@
 - [x] 坂道グループの楽曲/リリース seed データを追加（PR #80、`supabase/seeds/030〜033`）
 - [x] リリース一覧をグループ別セクション表示に統一（Issue #81 / PR #84）
   - [x] `createReleaseSections` + `ReleaseGrid` / `ReleaseSectionList` を追加し、楽曲/メンバーと同パターンに揃える
-- [ ] 楽曲一覧の並び順をグループ内リリース日降順×トラック順にする（Issue #82）
+- [x] 楽曲一覧の並び順をグループ内リリース日降順×トラック順にする（Issue #82）
+  - [x] 代表リリース日＝初出（最古）。同一リリース内は `track_number` 昇順、未紐付け曲はグループ末尾
+  - [x] `SongListItem` に代表リリースID/トラック番号を追加し、`sortSongsForListOrder` で整列
 - [ ] 楽曲一覧にタイトルのインクリメンタル検索を追加（Issue #83）
 
 ### ライブ情報 + セットリスト

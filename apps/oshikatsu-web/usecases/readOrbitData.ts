@@ -20,6 +20,7 @@ import {
   createMemberSections,
   createReleaseSections,
   createSongSections,
+  sortSongsForListOrder,
 } from "@/usecases/groupListSections";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
@@ -161,10 +162,12 @@ const loadSongsPageData = createSharedReadLoader(
         getGroups(createGroupRepository(supabase)),
       ]);
 
+      const sortedSongs = sortSongsForListOrder(songs);
+
       return {
         groups,
-        songSections: createSongSections(songs, groups),
-        songs,
+        songSections: createSongSections(sortedSongs, groups),
+        songs: sortedSongs,
       };
     })
 );
