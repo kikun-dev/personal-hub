@@ -18,6 +18,7 @@ import { getSong } from "@/usecases/getSong";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
 import {
   createMemberSections,
+  createReleaseSections,
   createSongSections,
 } from "@/usecases/groupListSections";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
@@ -203,6 +204,7 @@ const loadReleasesPageData = createSharedReadLoader(
 
       return {
         groups,
+        releaseSections: createReleaseSections(releases, groups),
         releases,
       };
     })

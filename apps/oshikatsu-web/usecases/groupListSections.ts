@@ -1,5 +1,6 @@
 import type { Group } from "@/types/group";
 import type { MemberListItem, MemberSection } from "@/types/member";
+import type { ReleaseListItem, ReleaseSection } from "@/types/release";
 import type { SongListItem, SongSection } from "@/types/song";
 
 type SectionBucket<TItem> = {
@@ -139,5 +140,24 @@ export function createSongSections(
     .map((bucket) => ({
       group: bucket.group,
       songs: bucket.items,
+    }));
+}
+
+export function createReleaseSections(
+  releases: ReleaseListItem[],
+  groups: Group[]
+): ReleaseSection[] {
+  const buckets = createSectionBuckets<ReleaseListItem>(groups);
+
+  releases.forEach((release) => {
+    const bucket =
+      buckets.get(release.groupId) ?? getOrCreateUngroupedBucket(buckets);
+    bucket.items.push(release);
+  });
+
+  return toSortedSectionBuckets(buckets)
+    .map((bucket) => ({
+      group: bucket.group,
+      releases: bucket.items,
     }));
 }
