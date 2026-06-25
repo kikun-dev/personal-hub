@@ -232,7 +232,10 @@
   - [x] `orbit_setlist_items`（公演ごと・順序つき・種別）を追加し、RPC `upsert_orbit_live` を拡張
   - [x] 楽曲は登録曲（`orbit_tracks`）参照 or 未登録曲テキスト。MC/影アナ/VTR/その他に対応
   - [x] LiveForm にセットリスト編集（行追加・並べ替え・削除）、公開公演詳細に表示
-- [ ] D: セトリ楽曲の拡張（センター/披露メンバー/披露タイプ）（Issue #102）
+- [x] D: セトリ楽曲の拡張（センター/披露メンバー/披露タイプ）（Issue #102）
+  - [x] `orbit_setlist_item_members`（is_center）＋ `orbit_setlist_items.performance_style` を追加、RPC 拡張
+  - [x] 披露タイプ（フル/ワンハーフ/間奏ロング/その他）＝ enum＋その他
+  - [x] LiveForm に披露タイプ・披露メンバー（センター）編集、LiveDetail に表示
 - [ ] E（将来/バックログ）: 参加記録＋現地カウント/ランキング（Issue #103）
 
 ---

@@ -1,6 +1,10 @@
 import Link from "next/link";
 import type { Live, SetlistItem } from "@/types/live";
-import { LIVE_TYPE_LABELS, SETLIST_ITEM_TYPE_LABELS } from "@/types/live";
+import {
+  LIVE_TYPE_LABELS,
+  PERFORMANCE_STYLE_LABELS,
+  SETLIST_ITEM_TYPE_LABELS,
+} from "@/types/live";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { formatDate } from "@/lib/formatters";
 
@@ -142,21 +146,36 @@ export function LiveDetail({ live }: LiveDetailProps) {
                             <span className="w-5 shrink-0 text-right text-foreground/40">
                               {item.itemType === "song" ? index + 1 : "-"}
                             </span>
-                            <span>
-                              {item.itemType === "song" ? (
-                                <>
-                                  {setlistItemLabel(item)}
-                                  {item.note ? `（${item.note}）` : ""}
-                                </>
-                              ) : (
-                                <>
-                                  <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
-                                    {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
+                            {item.itemType === "song" ? (
+                              <span>
+                                {setlistItemLabel(item)}
+                                {item.performanceStyle && (
+                                  <span className="ml-1 rounded bg-foreground/10 px-1 text-[10px] text-foreground/60">
+                                    {PERFORMANCE_STYLE_LABELS[item.performanceStyle]}
                                   </span>
-                                  {item.note}
-                                </>
-                              )}
-                            </span>
+                                )}
+                                {item.note ? `（${item.note}）` : ""}
+                                {item.members.length > 0 && (
+                                  <span className="ml-1 text-foreground/50">
+                                    {" / "}
+                                    {item.members
+                                      .map((member) =>
+                                        member.isCenter
+                                          ? `${member.memberNameJa}（C）`
+                                          : member.memberNameJa
+                                      )
+                                      .join("、")}
+                                  </span>
+                                )}
+                              </span>
+                            ) : (
+                              <span>
+                                <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
+                                  {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
+                                </span>
+                                {item.note}
+                              </span>
+                            )}
                           </li>
                         ))}
                       </ol>

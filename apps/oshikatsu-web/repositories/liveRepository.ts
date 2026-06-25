@@ -10,7 +10,7 @@ import type {
   SetlistItem,
   VenuePerformanceSummary,
 } from "@/types/live";
-import { isSetlistItemType } from "@/types/live";
+import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
@@ -35,13 +35,22 @@ type AbsenceRow = {
 
 type TrackRel = { title: string } | { title: string }[] | null;
 
+type SetlistItemMemberRow = {
+  member_id: string;
+  is_center: boolean;
+  sort_order: number;
+  orbit_members: MemberRel;
+};
+
 type SetlistItemRow = {
   position: number;
   item_type: string;
   track_id: string | null;
   song_title: string | null;
   note: string | null;
+  performance_style: string | null;
   orbit_tracks: TrackRel;
+  orbit_setlist_item_members: SetlistItemMemberRow[] | null;
 };
 
 type PerformanceRow = {
@@ -98,7 +107,16 @@ const DETAIL_SELECT = `
     sort_order,
     orbit_venues(name),
     orbit_live_performance_absences(member_id, note, orbit_members(name_ja)),
-    orbit_setlist_items(position, item_type, track_id, song_title, note, orbit_tracks(title))
+    orbit_setlist_items(
+      position,
+      item_type,
+      track_id,
+      song_title,
+      note,
+      performance_style,
+      orbit_tracks(title),
+      orbit_setlist_item_members(member_id, is_center, sort_order, orbit_members(name_ja))
+    )
   )
 `;
 
@@ -129,6 +147,18 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
         trackTitle: pickFirst(item.orbit_tracks)?.title ?? null,
         songTitle: item.song_title,
         note: item.note,
+        performanceStyle:
+          item.performance_style && isPerformanceStyle(item.performance_style)
+            ? item.performance_style
+            : null,
+        members: (item.orbit_setlist_item_members ?? [])
+          .slice()
+          .sort((a, b) => a.sort_order - b.sort_order)
+          .map((member) => ({
+            memberId: member.member_id,
+            memberNameJa: pickFirst(member.orbit_members)?.name_ja ?? "",
+            isCenter: member.is_center,
+          })),
         position: item.position,
       }))
       .sort((a, b) => a.position - b.position),
@@ -185,12 +215,24 @@ function toLivePayload(input: CreateLiveInput) {
           member_id: absence.memberId,
           note: absence.note.trim(),
         })),
-      setlist_items: performance.setlistItems.map((item) => ({
-        item_type: item.itemType,
-        track_id: item.itemType === "song" ? item.trackId : "",
-        song_title: item.itemType === "song" ? item.songTitle.trim() : "",
-        note: item.note.trim(),
-      })),
+      setlist_items: performance.setlistItems.map((item) => {
+        const isSong = item.itemType === "song";
+        return {
+          item_type: item.itemType,
+          track_id: isSong ? item.trackId : "",
+          song_title: isSong ? item.songTitle.trim() : "",
+          note: item.note.trim(),
+          performance_style: isSong ? item.performanceStyle : "",
+          members: isSong
+            ? item.members
+                .filter((member) => member.memberId)
+                .map((member) => ({
+                  member_id: member.memberId,
+                  is_center: member.isCenter,
+                }))
+            : [],
+        };
+      }),
     })),
   };
 }
