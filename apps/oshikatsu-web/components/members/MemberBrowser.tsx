@@ -8,6 +8,7 @@ import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { MemberListItem } from "@/types/member";
 import {
+  filterMembersByGeneration,
   filterMembersByGroup,
   filterMembersByStatus,
   type MemberStatus,
@@ -35,8 +36,10 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
   const searchParams = useSearchParams();
   const urlGroupId = searchParams.get("groupId") ?? "";
   const urlStatus = toMemberStatus(searchParams.get("status"));
+  const urlGeneration = searchParams.get("generation") ?? "";
   const [groupId, setGroupId] = useState(urlGroupId);
   const [status, setStatus] = useState<MemberStatus>(urlStatus);
+  const [generation, setGeneration] = useState(urlGeneration);
 
   useEffect(() => {
     setGroupId(urlGroupId);
@@ -44,8 +47,38 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
   useEffect(() => {
     setStatus(urlStatus);
   }, [urlStatus]);
+  useEffect(() => {
+    setGeneration(urlGeneration);
+  }, [urlGeneration]);
 
   const isGroupFiltered = groupId !== "";
+
+  // 期の選択肢：選択グループの maxGeneration（無ければ所属メンバーの実在世代から導出）
+  const generationOptions = useMemo(() => {
+    if (!isGroupFiltered) {
+      return [];
+    }
+    const selectedGroup = groups.find((group) => group.id === groupId) ?? null;
+    const maxGeneration = selectedGroup?.maxGeneration ?? null;
+    if (maxGeneration && maxGeneration > 0) {
+      return Array.from({ length: maxGeneration }, (_, index) =>
+        String(index + 1)
+      );
+    }
+    const present = new Set<string>();
+    members.forEach((member) =>
+      member.groups.forEach((group) => {
+        if (group.groupId === groupId && group.generation) {
+          present.add(group.generation);
+        }
+      })
+    );
+    return [...present].sort((a, b) => Number(a) - Number(b));
+  }, [isGroupFiltered, groups, groupId, members]);
+
+  // 期はグループ選択中かつ選択肢に含まれる値のみ有効（グループ未選択や範囲外URLは無効化）
+  const effectiveGeneration =
+    isGroupFiltered && generationOptions.includes(generation) ? generation : "";
 
   // ステータスで先に絞り込んだ母集合
   const baseMembers = useMemo(
@@ -53,10 +86,15 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
     [members, status]
   );
 
-  // 件数表示・フラット表示用（グループも適用）
+  // 件数表示・フラット表示用（グループ＋期も適用）
   const flatMembers = useMemo(
-    () => filterMembersByGroup(baseMembers, groupId),
-    [baseMembers, groupId]
+    () =>
+      filterMembersByGeneration(
+        filterMembersByGroup(baseMembers, groupId),
+        groupId,
+        effectiveGeneration
+      ),
+    [baseMembers, groupId, effectiveGeneration]
   );
   // セクション表示はグループ未選択時のみ使う
   const memberSections = useMemo(
@@ -66,7 +104,14 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
 
   const handleGroupChange = (nextGroupId: string) => {
     setGroupId(nextGroupId);
-    replaceListFilterParams({ groupId: nextGroupId });
+    // 期はグループ依存のため、グループ変更時はリセット
+    setGeneration("");
+    replaceListFilterParams({ groupId: nextGroupId, generation: "" });
+  };
+
+  const handleGenerationChange = (nextGeneration: string) => {
+    setGeneration(nextGeneration);
+    replaceListFilterParams({ generation: nextGeneration });
   };
 
   const handleStatusChange = (nextStatus: MemberStatus) => {
@@ -93,6 +138,21 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             </option>
           ))}
         </select>
+        {isGroupFiltered && generationOptions.length > 0 && (
+          <select
+            value={effectiveGeneration}
+            onChange={(event) => handleGenerationChange(event.target.value)}
+            aria-label="期で絞り込み"
+            className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          >
+            <option value="">全期</option>
+            {generationOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}期生
+              </option>
+            ))}
+          </select>
+        )}
         <select
           value={status}
           onChange={(event) =>

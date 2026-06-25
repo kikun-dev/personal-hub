@@ -210,6 +210,9 @@
   - [x] 全件取得し、グループ/リリースタイプを in-memory フィルタ。`ReleaseBrowser` に統合、`usecases/releaseFilters.ts` を追加、`ReleaseFilters` を撤去
 - [x] 不具合修正: 詳細→一覧へ戻った際に URL の絞り込みが画面へ反映されない（3一覧共通）
   - [x] フィルタ state の初期化元をサーバー prop から `useSearchParams`（URL）へ変更し、URL を真実源化。Router Cache の古い RSC で再マウントされても URL から復元されるようにした
+  - [x] 不具合修正: 上記後にプルダウン即時反映が壊れた回帰を、即時=local state / 復元=useSearchParams のハイブリッドで解消（PR #95）
+- [x] メンバー一覧に期（世代）絞り込みを追加（Issue #96）
+  - [x] グループ選択時のみ表示。選択肢は `Group.maxGeneration`（無ければ実在世代から導出）。グループスコープで絞り込み、グループ変更時はリセット。URL `generation` を同期
 
 ### ライブ情報 + セットリスト
 
