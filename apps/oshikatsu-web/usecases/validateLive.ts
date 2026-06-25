@@ -55,6 +55,21 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
       });
     }
 
+    performance.setlistItems.forEach((item, itemIndex) => {
+      if (item.itemType === "song" && !item.trackId && !item.songTitle.trim()) {
+        errors.push({
+          field: `performances.${index}.setlistItems.${itemIndex}`,
+          message: "楽曲は登録曲の選択か曲名の入力が必要です",
+        });
+      }
+      if (item.note.length > 500) {
+        errors.push({
+          field: `performances.${index}.setlistItems.${itemIndex}`,
+          message: "メモは500文字以内で入力してください",
+        });
+      }
+    });
+
     const rosterIds = new Set(input.performerMemberIds);
     const seenAbsentMembers = new Set<string>();
     for (const absence of performance.absences) {

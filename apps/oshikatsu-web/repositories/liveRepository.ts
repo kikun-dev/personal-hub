@@ -7,8 +7,10 @@ import type {
   LiveOption,
   LivePerformance,
   LiveType,
+  SetlistItem,
   VenuePerformanceSummary,
 } from "@/types/live";
+import { isSetlistItemType } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
@@ -31,6 +33,17 @@ type AbsenceRow = {
   orbit_members: MemberRel;
 };
 
+type TrackRel = { title: string } | { title: string }[] | null;
+
+type SetlistItemRow = {
+  position: number;
+  item_type: string;
+  track_id: string | null;
+  song_title: string | null;
+  note: string | null;
+  orbit_tracks: TrackRel;
+};
+
 type PerformanceRow = {
   id: string;
   venue_id: string | null;
@@ -45,6 +58,7 @@ type PerformanceRow = {
   sort_order: number;
   orbit_venues: VenueRel;
   orbit_live_performance_absences: AbsenceRow[] | null;
+  orbit_setlist_items: SetlistItemRow[] | null;
 };
 
 type LiveRow = {
@@ -83,7 +97,8 @@ const DETAIL_SELECT = `
     seat_info,
     sort_order,
     orbit_venues(name),
-    orbit_live_performance_absences(member_id, note, orbit_members(name_ja))
+    orbit_live_performance_absences(member_id, note, orbit_members(name_ja)),
+    orbit_setlist_items(position, item_type, track_id, song_title, note, orbit_tracks(title))
   )
 `;
 
@@ -107,6 +122,16 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
       memberNameJa: pickFirst(absence.orbit_members)?.name_ja ?? "",
       note: absence.note,
     })),
+    setlistItems: (row.orbit_setlist_items ?? [])
+      .map((item): SetlistItem => ({
+        itemType: isSetlistItemType(item.item_type) ? item.item_type : "other",
+        trackId: item.track_id,
+        trackTitle: pickFirst(item.orbit_tracks)?.title ?? null,
+        songTitle: item.song_title,
+        note: item.note,
+        position: item.position,
+      }))
+      .sort((a, b) => a.position - b.position),
   };
 }
 
@@ -160,6 +185,12 @@ function toLivePayload(input: CreateLiveInput) {
           member_id: absence.memberId,
           note: absence.note.trim(),
         })),
+      setlist_items: performance.setlistItems.map((item) => ({
+        item_type: item.itemType,
+        track_id: item.itemType === "song" ? item.trackId : "",
+        song_title: item.itemType === "song" ? item.songTitle.trim() : "",
+        note: item.note.trim(),
+      })),
     })),
   };
 }

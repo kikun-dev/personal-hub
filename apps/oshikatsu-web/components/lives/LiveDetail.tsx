@@ -1,6 +1,6 @@
 import Link from "next/link";
-import type { Live } from "@/types/live";
-import { LIVE_TYPE_LABELS } from "@/types/live";
+import type { Live, SetlistItem } from "@/types/live";
+import { LIVE_TYPE_LABELS, SETLIST_ITEM_TYPE_LABELS } from "@/types/live";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { formatDate } from "@/lib/formatters";
 
@@ -16,6 +16,13 @@ function formatTimeRange(
   if (startsAt) return `開演 ${startsAt}`;
   if (doorsOpenAt) return `開場 ${doorsOpenAt}`;
   return null;
+}
+
+function setlistItemLabel(item: SetlistItem): string {
+  if (item.itemType === "song") {
+    return item.trackTitle ?? item.songTitle ?? "（曲名未設定）";
+  }
+  return SETLIST_ITEM_TYPE_LABELS[item.itemType];
 }
 
 export function LiveDetail({ live }: LiveDetailProps) {
@@ -119,6 +126,35 @@ export function LiveDetail({ live }: LiveDetailProps) {
                         )
                         .join("、")}
                     </p>
+                  )}
+
+                  {performance.setlistItems.length > 0 && (
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-foreground/70">
+                        セットリスト
+                      </p>
+                      <ol className="space-y-0.5">
+                        {performance.setlistItems.map((item, index) => (
+                          <li
+                            key={`${performance.id}-${index}`}
+                            className="flex gap-2 text-xs text-foreground/80"
+                          >
+                            <span className="w-5 shrink-0 text-right text-foreground/40">
+                              {item.itemType === "song" ? index + 1 : "-"}
+                            </span>
+                            <span>
+                              {item.itemType !== "song" && (
+                                <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
+                                  {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
+                                </span>
+                              )}
+                              {setlistItemLabel(item)}
+                              {item.note ? `（${item.note}）` : ""}
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
                   )}
                 </div>
               );

@@ -6,7 +6,7 @@ import type { CreateLiveInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewLivePage() {
-  const { groups, members, venues } = await getLiveFormMasterData();
+  const { groups, members, venues, songOptions } = await getLiveFormMasterData();
 
   async function handleSubmit(
     values: CreateLiveInput
@@ -27,6 +27,7 @@ export default async function NewLivePage() {
         groups={groups}
         members={members}
         venues={venues}
+        tracks={songOptions}
         onSubmit={handleSubmit}
       />
     </div>
