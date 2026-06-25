@@ -16,6 +16,9 @@ export function revalidateOrbitMemberData(): void {
     ORBIT_CACHE_TAGS.releasesList,
     ORBIT_CACHE_TAGS.songs,
     ORBIT_CACHE_TAGS.songsList,
+    // ライブ詳細は出演グループ名・休演メンバー名を表示するため失効する
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.livesDetail,
     ORBIT_CACHE_TAGS.top,
   ]);
 }
@@ -65,5 +68,19 @@ export function revalidateOrbitPersonData(): void {
 }
 
 export function revalidateOrbitVenueData(): void {
-  revalidateOrbitTags([ORBIT_CACHE_TAGS.venues]);
+  // ライブ詳細・公演に会場名を表示するため失効する
+  revalidateOrbitTags([
+    ORBIT_CACHE_TAGS.venues,
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.livesDetail,
+  ]);
+}
+
+export function revalidateOrbitLiveData(): void {
+  // ライブ更新は会場詳細の公演逆引きにも影響する
+  revalidateOrbitTags([
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.livesDetail,
+    ORBIT_CACHE_TAGS.venues,
+  ]);
 }

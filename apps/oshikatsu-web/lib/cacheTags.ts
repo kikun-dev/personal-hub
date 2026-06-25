@@ -1,6 +1,8 @@
 export const ORBIT_CACHE_TAGS = {
   eventTypes: "orbit:event-types",
   groups: "orbit:groups",
+  lives: "orbit:lives",
+  livesDetail: "orbit:lives:detail",
   members: "orbit:members",
   membersDetail: "orbit:members:detail",
   membersList: "orbit:members:list",

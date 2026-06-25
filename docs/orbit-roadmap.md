@@ -221,7 +221,13 @@
 - [x] A: 会場マスタ `orbit_venues`（Issue #99）
   - [x] CRUD（`/venues`, `/venues/new`, `/venues/[id]/edit`）＋公開詳細（`/venues/[id]`）。名称/都道府県/住所/キャパ/交通情報/メモ
   - [x] Top 右ナビに「会場」を追加
-- [ ] B: ライブ＋公演 基盤（`orbit_lives` / `orbit_live_performances` / performers）（Issue #100）
+- [x] B: ライブ＋公演 基盤（`orbit_lives` / `orbit_live_performances` / performers）（Issue #100）
+  - [x] ライブ（名称/種別/説明）＋出演グループ＋出演メンバー基準ロスター
+  - [x] 公演（会場/日付/開場・開演/昼夜/配信/LV/チケット・座席）を複数管理
+  - [x] 公演ごとの休演メンバー記録（任意メモ）＝グループ基準＋例外で休演
+  - [x] Admin CRUD（`/admin/lives`）／公開一覧・詳細（`/lives`, `/lives/[id]`）
+  - [x] 会場詳細にその会場の公演を逆引き表示
+  - [x] ネスト更新を RPC `upsert_orbit_live` でトランザクション化（migration 031）
 - [ ] C: セットリスト基盤（楽曲/MC/影アナ/VTR）（Issue #101）
 - [ ] D: セトリ楽曲の拡張（センター/披露メンバー/披露タイプ）（Issue #102）
 - [ ] E（将来/バックログ）: 参加記録＋現地カウント/ランキング（Issue #103）

@@ -9,11 +9,13 @@ type VenueDetailPageProps = {
 
 export default async function VenueDetailPage({ params }: VenueDetailPageProps) {
   const { id } = await params;
-  const venue = await getVenueDetailPageData(id);
+  const data = await getVenueDetailPageData(id);
 
-  if (!venue) {
+  if (!data) {
     notFound();
   }
+
+  const { venue, performances } = data;
 
   const rows: { label: string; value: string | null }[] = [
     { label: "都道府県", value: venue.prefecture },
@@ -59,6 +61,29 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
           </p>
         </section>
       )}
+
+      <section className="space-y-2">
+        <h2 className="text-sm font-semibold text-foreground">この会場の公演</h2>
+        {performances.length === 0 ? (
+          <p className="text-sm text-foreground/50">公演の登録はありません</p>
+        ) : (
+          <ul className="space-y-1">
+            {performances.map((performance) => (
+              <li key={performance.performanceId} className="text-sm">
+                <Link
+                  href={`/lives/${performance.liveId}`}
+                  className="text-foreground hover:underline"
+                >
+                  {performance.performanceDate ?? "日付未定"}
+                  {performance.sessionLabel ? `（${performance.sessionLabel}）` : ""}
+                  {" "}
+                  {performance.liveName}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

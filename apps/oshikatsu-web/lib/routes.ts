@@ -1,5 +1,6 @@
 export const APP_ROUTES = {
   admin: "/admin",
+  lives: "/lives",
   members: "/members",
   people: "/people",
   releases: "/releases",

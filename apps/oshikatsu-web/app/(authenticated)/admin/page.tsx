@@ -22,6 +22,11 @@ const sections = [
     title: "リリース管理",
     description: "リリース作品の追加・編集・削除を行います",
   },
+  {
+    href: "/admin/lives",
+    title: "ライブ管理",
+    description: "ライブ・公演の追加・編集・削除を行います",
+  },
 ];
 
 export default function AdminPage() {

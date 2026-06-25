@@ -12,6 +12,7 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
+import { createVenueRepository } from "@/repositories/venueRepository";
 import { getEventTypes } from "@/usecases/getEventTypes";
 import { getGroups } from "@/usecases/getGroups";
 import { listMemberOptions } from "@/usecases/listMemberOptions";
@@ -144,4 +145,27 @@ export async function getSongFormMasterData() {
 
 export async function getReleaseFormMasterData() {
   return loadReleaseFormMasterData();
+}
+
+const loadLiveFormMasterData = createSharedReadLoader(
+  ["orbit", "admin", "live-form-masters"],
+  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.members, ORBIT_CACHE_TAGS.venues],
+  async () =>
+    withOrbitReadClient(async (supabase) => {
+      const [groups, members, venues] = await Promise.all([
+        getGroups(createGroupRepository(supabase)),
+        listMemberOptions(createMemberRepository(supabase)),
+        createVenueRepository(supabase).findOptions(),
+      ]);
+
+      return {
+        groups,
+        members,
+        venues,
+      };
+    })
+);
+
+export async function getLiveFormMasterData() {
+  return loadLiveFormMasterData();
 }

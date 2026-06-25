@@ -9,6 +9,7 @@ export const HEADER_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.members, label: "メンバー" },
   { href: APP_ROUTES.songs, label: "楽曲" },
   { href: APP_ROUTES.releases, label: "リリース" },
+  { href: APP_ROUTES.lives, label: "ライブ" },
   { href: APP_ROUTES.admin, label: "管理" },
 ];
 

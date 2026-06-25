@@ -12,12 +12,15 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
 import { createVenueRepository } from "@/repositories/venueRepository";
+import { createLiveRepository } from "@/repositories/liveRepository";
 import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
 import { getVenue } from "@/usecases/getVenue";
 import { listVenues } from "@/usecases/listVenues";
+import { getLive } from "@/usecases/getLive";
+import { listPublicLives } from "@/usecases/listPublicLives";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
 import {
   createMemberSections,
@@ -236,10 +239,35 @@ const loadVenuesPageData = createSharedReadLoader(
 
 const loadVenueDetailPageData = createSharedReadLoader(
   ["orbit", "venue-detail-page-data"],
-  [ORBIT_CACHE_TAGS.venues],
+  [ORBIT_CACHE_TAGS.venues, ORBIT_CACHE_TAGS.lives],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {
-      return getVenue(createVenueRepository(supabase), id);
+      const venue = await getVenue(createVenueRepository(supabase), id);
+      if (!venue) {
+        return null;
+      }
+      const performances = await createLiveRepository(
+        supabase
+      ).findPerformancesByVenue(id);
+      return { venue, performances };
+    })
+);
+
+const loadLivesPageData = createSharedReadLoader(
+  ["orbit", "lives-page-data"],
+  [ORBIT_CACHE_TAGS.lives],
+  async () =>
+    withOrbitReadClient(async (supabase) => {
+      return listPublicLives(createLiveRepository(supabase));
+    })
+);
+
+const loadLiveDetailPageData = createSharedReadLoader(
+  ["orbit", "live-detail-page-data"],
+  [ORBIT_CACHE_TAGS.lives, ORBIT_CACHE_TAGS.livesDetail],
+  async (id: string) =>
+    withOrbitReadClient(async (supabase) => {
+      return getLive(createLiveRepository(supabase), id);
     })
 );
 
@@ -281,4 +309,12 @@ export async function getVenuesPageData() {
 
 export async function getVenueDetailPageData(id: string) {
   return loadVenueDetailPageData(id);
+}
+
+export async function getLivesPageData() {
+  return loadLivesPageData();
+}
+
+export async function getLiveDetailPageData(id: string) {
+  return loadLiveDetailPageData(id);
 }
