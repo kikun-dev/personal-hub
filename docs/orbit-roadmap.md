@@ -208,6 +208,8 @@
   - [x] `MemberBrowser` に統合、`usecases/memberFilters.ts` を追加、`MemberFilters` を撤去
 - [x] リリース一覧の絞り込みをクライアント側フィルタ化（Issue #90）
   - [x] 全件取得し、グループ/リリースタイプを in-memory フィルタ。`ReleaseBrowser` に統合、`usecases/releaseFilters.ts` を追加、`ReleaseFilters` を撤去
+- [x] 不具合修正: 詳細→一覧へ戻った際に URL の絞り込みが画面へ反映されない（3一覧共通）
+  - [x] フィルタ state の初期化元をサーバー prop から `useSearchParams`（URL）へ変更し、URL を真実源化。Router Cache の古い RSC で再マウントされても URL から復元されるようにした
 
 ### ライブ情報 + セットリスト
 

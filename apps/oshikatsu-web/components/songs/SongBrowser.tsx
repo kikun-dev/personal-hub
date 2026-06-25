@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { SongGrid } from "@/components/songs/SongGrid";
 import { SongSectionList } from "@/components/songs/SongSectionList";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
@@ -14,18 +15,15 @@ import {
 
 type SongBrowserProps = {
   groups: Group[];
-  initialGroupId: string;
   songs: SongListItem[];
   songSections: SongSection[];
 };
 
-export function SongBrowser({
-  groups,
-  initialGroupId,
-  songs,
-  songSections,
-}: SongBrowserProps) {
-  const [groupId, setGroupId] = useState(initialGroupId);
+export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
+  // グループ絞り込みは URL を真実源にする（詳細→戻りでも URL から復元される）
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get("groupId") ?? "";
+  // タイトル検索は URL 非同期の一時状態
   const [query, setQuery] = useState("");
 
   const isGroupFiltered = groupId !== "";
@@ -43,7 +41,6 @@ export function SongBrowser({
   );
 
   const handleGroupChange = (nextGroupId: string) => {
-    setGroupId(nextGroupId);
     replaceListFilterParams({ groupId: nextGroupId });
   };
 
