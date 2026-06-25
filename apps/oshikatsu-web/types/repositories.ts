@@ -32,6 +32,14 @@ import type {
   UpdateVenueInput,
 } from "./venue";
 import type {
+  Live,
+  LiveListItem,
+  LiveOption,
+  VenuePerformanceSummary,
+  CreateLiveInput,
+  UpdateLiveInput,
+} from "./live";
+import type {
   Release,
   CreateReleaseInput,
   UpdateReleaseInput,
@@ -87,6 +95,16 @@ export type VenueRepository = {
   findById(id: string): Promise<Venue | null>;
   create(input: CreateVenueInput): Promise<Venue>;
   update(id: string, input: UpdateVenueInput): Promise<Venue>;
+  delete(id: string): Promise<void>;
+};
+
+export type LiveRepository = {
+  findPublicList(): Promise<LiveListItem[]>;
+  findOptions(): Promise<LiveOption[]>;
+  findById(id: string): Promise<Live | null>;
+  findPerformancesByVenue(venueId: string): Promise<VenuePerformanceSummary[]>;
+  create(input: CreateLiveInput): Promise<Live>;
+  update(id: string, input: UpdateLiveInput): Promise<Live>;
   delete(id: string): Promise<void>;
 };
 

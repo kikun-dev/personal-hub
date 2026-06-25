@@ -67,3 +67,12 @@ export function revalidateOrbitPersonData(): void {
 export function revalidateOrbitVenueData(): void {
   revalidateOrbitTags([ORBIT_CACHE_TAGS.venues]);
 }
+
+export function revalidateOrbitLiveData(): void {
+  // ライブ更新は会場詳細の公演逆引きにも影響する
+  revalidateOrbitTags([
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.livesDetail,
+    ORBIT_CACHE_TAGS.venues,
+  ]);
+}

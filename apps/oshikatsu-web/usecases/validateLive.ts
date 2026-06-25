@@ -1,0 +1,69 @@
+import type { CreateLiveInput } from "@/types/live";
+import type { ValidationError } from "@/types/errors";
+import { isLiveType } from "@/types/live";
+import { isValidDateString } from "@/lib/validation";
+
+function isValidTimeString(value: string): boolean {
+  return /^\d{1,2}:\d{2}$/.test(value);
+}
+
+export function validateLive(input: CreateLiveInput): ValidationError[] {
+  const errors: ValidationError[] = [];
+
+  if (!input.name.trim()) {
+    errors.push({ field: "name", message: "ライブ名を入力してください" });
+  } else if (input.name.length > 200) {
+    errors.push({ field: "name", message: "ライブ名は200文字以内で入力してください" });
+  }
+
+  if (!input.liveType || !isLiveType(input.liveType)) {
+    errors.push({ field: "liveType", message: "種別を選択してください" });
+  }
+
+  if (input.description.length > 2000) {
+    errors.push({ field: "description", message: "説明は2000文字以内で入力してください" });
+  }
+
+  input.performances.forEach((performance, index) => {
+    if (!performance.performanceDate) {
+      errors.push({
+        field: `performances.${index}.performanceDate`,
+        message: "公演日を入力してください",
+      });
+    } else if (!isValidDateString(performance.performanceDate)) {
+      errors.push({
+        field: `performances.${index}.performanceDate`,
+        message: "公演日はYYYY-MM-DD形式で入力してください",
+      });
+    }
+
+    if (performance.doorsOpenAt.trim() && !isValidTimeString(performance.doorsOpenAt.trim())) {
+      errors.push({
+        field: `performances.${index}.doorsOpenAt`,
+        message: "開場時刻はHH:MM形式で入力してください",
+      });
+    }
+
+    if (performance.startsAt.trim() && !isValidTimeString(performance.startsAt.trim())) {
+      errors.push({
+        field: `performances.${index}.startsAt`,
+        message: "開演時刻はHH:MM形式で入力してください",
+      });
+    }
+
+    const seenAbsentMembers = new Set<string>();
+    for (const absence of performance.absences) {
+      if (!absence.memberId) continue;
+      if (seenAbsentMembers.has(absence.memberId)) {
+        errors.push({
+          field: `performances.${index}.absences`,
+          message: "同じ休演メンバーが重複しています",
+        });
+        break;
+      }
+      seenAbsentMembers.add(absence.memberId);
+    }
+  });
+
+  return errors;
+}
