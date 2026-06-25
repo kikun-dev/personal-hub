@@ -49,6 +49,11 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
         trackId: item.trackId ?? "",
         songTitle: item.songTitle ?? "",
         note: item.note ?? "",
+        performanceStyle: item.performanceStyle ?? "",
+        members: item.members.map((member) => ({
+          memberId: member.memberId,
+          isCenter: member.isCenter,
+        })),
       })),
     })),
   };

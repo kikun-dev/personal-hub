@@ -46,12 +46,40 @@ export function isSetlistItemType(value: string): value is SetlistItemType {
   return (SETLIST_ITEM_TYPE_VALUES as readonly string[]).includes(value);
 }
 
+export const PERFORMANCE_STYLE_VALUES = [
+  "full",
+  "one_half",
+  "interlude_long",
+  "other",
+] as const;
+
+export type PerformanceStyle = (typeof PERFORMANCE_STYLE_VALUES)[number];
+
+export const PERFORMANCE_STYLE_LABELS: Record<PerformanceStyle, string> = {
+  full: "フル",
+  one_half: "ワンハーフ",
+  interlude_long: "間奏ロング",
+  other: "その他",
+};
+
+export function isPerformanceStyle(value: string): value is PerformanceStyle {
+  return (PERFORMANCE_STYLE_VALUES as readonly string[]).includes(value);
+}
+
+export type SetlistMember = {
+  memberId: string;
+  memberNameJa: string;
+  isCenter: boolean;
+};
+
 export type SetlistItem = {
   itemType: SetlistItemType;
   trackId: string | null;
   trackTitle: string | null;
   songTitle: string | null;
   note: string | null;
+  performanceStyle: PerformanceStyle | null;
+  members: SetlistMember[];
   position: number;
 };
 
@@ -116,11 +144,18 @@ export type CreateLivePerformanceAbsenceInput = {
   note: string;
 };
 
+export type CreateSetlistMemberInput = {
+  memberId: string;
+  isCenter: boolean;
+};
+
 export type CreateSetlistItemInput = {
   itemType: SetlistItemType;
   trackId: string;
   songTitle: string;
   note: string;
+  performanceStyle: PerformanceStyle | "";
+  members: CreateSetlistMemberInput[];
 };
 
 export type CreateLivePerformanceInput = {
