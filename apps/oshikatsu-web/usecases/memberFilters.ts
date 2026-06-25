@@ -14,6 +14,24 @@ export function filterMembersByGroup(
   );
 }
 
+export function filterMembersByGeneration(
+  members: MemberListItem[],
+  groupId: string,
+  generation: string
+): MemberListItem[] {
+  if (generation === "") {
+    return members;
+  }
+  // 期はグループ依存のため、グループ選択時は当該グループ内の世代で絞る
+  return members.filter((member) =>
+    member.groups.some(
+      (group) =>
+        group.generation === generation &&
+        (groupId === "" || group.groupId === groupId)
+    )
+  );
+}
+
 export function filterMembersByStatus(
   members: MemberListItem[],
   status: MemberStatus
