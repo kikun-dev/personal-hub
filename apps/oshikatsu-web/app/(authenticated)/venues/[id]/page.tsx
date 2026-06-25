@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
-import { createVenueRepository } from "@/repositories/venueRepository";
-import { getVenue } from "@/usecases/getVenue";
+import { getVenueDetailPageData } from "@/usecases/readOrbitData";
 import { Button } from "@/components/ui/Button";
 
 type VenueDetailPageProps = {
@@ -11,8 +9,7 @@ type VenueDetailPageProps = {
 
 export default async function VenueDetailPage({ params }: VenueDetailPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
-  const venue = await getVenue(createVenueRepository(supabase), id);
+  const venue = await getVenueDetailPageData(id);
 
   if (!venue) {
     notFound();

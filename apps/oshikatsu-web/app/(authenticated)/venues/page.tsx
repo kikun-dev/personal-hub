@@ -1,13 +1,9 @@
 import Link from "next/link";
-import { createClient } from "@personal-hub/supabase/server";
-import { createVenueRepository } from "@/repositories/venueRepository";
-import { listVenues } from "@/usecases/listVenues";
+import { getVenuesPageData } from "@/usecases/readOrbitData";
 import { Button } from "@/components/ui/Button";
 
 export default async function VenuesPage() {
-  const supabase = await createClient();
-  const repo = createVenueRepository(supabase);
-  const venues = await listVenues(repo);
+  const venues = await getVenuesPageData();
 
   return (
     <div className="space-y-4">
