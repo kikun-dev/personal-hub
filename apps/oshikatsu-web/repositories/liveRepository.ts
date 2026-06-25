@@ -137,78 +137,34 @@ function mapLive(row: LiveRow): Live {
   };
 }
 
+function toLivePayload(input: CreateLiveInput) {
+  return {
+    name: input.name.trim(),
+    live_type: input.liveType,
+    description: input.description.trim(),
+    performer_group_ids: input.performerGroupIds,
+    performer_member_ids: input.performerMemberIds,
+    performances: input.performances.map((performance) => ({
+      venue_id: performance.venueId || null,
+      performance_date: performance.performanceDate || null,
+      doors_open_at: performance.doorsOpenAt.trim(),
+      starts_at: performance.startsAt.trim(),
+      session_label: performance.sessionLabel.trim(),
+      has_streaming: performance.hasStreaming,
+      has_live_viewing: performance.hasLiveViewing,
+      ticket_info: performance.ticketInfo.trim(),
+      seat_info: performance.seatInfo.trim(),
+      absences: performance.absences
+        .filter((absence) => absence.memberId)
+        .map((absence) => ({
+          member_id: absence.memberId,
+          note: absence.note.trim(),
+        })),
+    })),
+  };
+}
+
 export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
-  async function replaceChildren(liveId: string, input: CreateLiveInput): Promise<void> {
-    // 出演グループ
-    if (input.performerGroupIds.length > 0) {
-      const { error } = await supabase.from("orbit_live_performer_groups").insert(
-        input.performerGroupIds.map((groupId) => ({ live_id: liveId, group_id: groupId }))
-      );
-      if (error) throw new RepositoryError("出演グループの登録に失敗しました", error);
-    }
-
-    // 出演メンバー
-    if (input.performerMemberIds.length > 0) {
-      const { error } = await supabase.from("orbit_live_performer_members").insert(
-        input.performerMemberIds.map((memberId) => ({ live_id: liveId, member_id: memberId }))
-      );
-      if (error) throw new RepositoryError("出演メンバーの登録に失敗しました", error);
-    }
-
-    // 公演（＋休演）
-    for (const [index, performance] of input.performances.entries()) {
-      const { data, error } = await supabase
-        .from("orbit_live_performances")
-        .insert({
-          live_id: liveId,
-          venue_id: performance.venueId || null,
-          performance_date: performance.performanceDate || null,
-          doors_open_at: performance.doorsOpenAt.trim() || null,
-          starts_at: performance.startsAt.trim() || null,
-          session_label: performance.sessionLabel.trim() || null,
-          has_streaming: performance.hasStreaming,
-          has_live_viewing: performance.hasLiveViewing,
-          ticket_info: performance.ticketInfo.trim() || null,
-          seat_info: performance.seatInfo.trim() || null,
-          sort_order: index,
-        })
-        .select("id")
-        .single();
-
-      if (error) throw new RepositoryError("公演の登録に失敗しました", error);
-
-      const performanceId = (data as { id: string }).id;
-      const absences = performance.absences.filter((absence) => absence.memberId);
-      if (absences.length > 0) {
-        const { error: absenceError } = await supabase
-          .from("orbit_live_performance_absences")
-          .insert(
-            absences.map((absence) => ({
-              performance_id: performanceId,
-              member_id: absence.memberId,
-              note: absence.note.trim() || null,
-            }))
-          );
-        if (absenceError) {
-          throw new RepositoryError("休演メンバーの登録に失敗しました", absenceError);
-        }
-      }
-    }
-  }
-
-  async function clearChildren(liveId: string): Promise<void> {
-    // 公演削除（休演は ON DELETE CASCADE）
-    const tables = [
-      "orbit_live_performances",
-      "orbit_live_performer_groups",
-      "orbit_live_performer_members",
-    ] as const;
-    for (const table of tables) {
-      const { error } = await supabase.from(table).delete().eq("live_id", liveId);
-      if (error) throw new RepositoryError("ライブ関連データの更新に失敗しました", error);
-    }
-  }
-
   return {
     async findPublicList() {
       const { data, error } = await supabase
@@ -322,24 +278,16 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
     },
 
     async create(input) {
-      const { data, error } = await supabase
-        .from("orbit_lives")
-        .insert({
-          name: input.name.trim(),
-          live_type: input.liveType,
-          description: input.description.trim() || null,
-        })
-        .select("id")
-        .single();
+      const { data, error } = await supabase.rpc("upsert_orbit_live", {
+        p_id: null,
+        p_payload: toLivePayload(input),
+      });
 
       if (error) {
         throw new RepositoryError("ライブの作成に失敗しました", error);
       }
 
-      const liveId = (data as { id: string }).id;
-      await replaceChildren(liveId, input);
-
-      const created = await this.findById(liveId);
+      const created = await this.findById(data as string);
       if (!created) {
         throw new RepositoryError("作成したライブの取得に失敗しました", null);
       }
@@ -347,28 +295,16 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
     },
 
     async update(id, input) {
-      const existing = await this.findById(id);
-      if (!existing) {
-        throw new RepositoryError("更新対象のライブが見つかりません", null);
-      }
-
-      const { error } = await supabase
-        .from("orbit_lives")
-        .update({
-          name: input.name.trim(),
-          live_type: input.liveType,
-          description: input.description.trim() || null,
-        })
-        .eq("id", id);
+      const { data, error } = await supabase.rpc("upsert_orbit_live", {
+        p_id: id,
+        p_payload: toLivePayload(input),
+      });
 
       if (error) {
         throw new RepositoryError("ライブの更新に失敗しました", error);
       }
 
-      await clearChildren(id);
-      await replaceChildren(id, input);
-
-      const updated = await this.findById(id);
+      const updated = await this.findById(data as string);
       if (!updated) {
         throw new RepositoryError("更新したライブの取得に失敗しました", null);
       }

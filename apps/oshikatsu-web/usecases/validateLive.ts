@@ -4,7 +4,11 @@ import { isLiveType } from "@/types/live";
 import { isValidDateString } from "@/lib/validation";
 
 function isValidTimeString(value: string): boolean {
-  return /^\d{1,2}:\d{2}$/.test(value);
+  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
+  if (!match) return false;
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  return hours >= 0 && hours <= 23 && minutes >= 0 && minutes <= 59;
 }
 
 export function validateLive(input: CreateLiveInput): ValidationError[] {
@@ -51,6 +55,7 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
       });
     }
 
+    const rosterIds = new Set(input.performerMemberIds);
     const seenAbsentMembers = new Set<string>();
     for (const absence of performance.absences) {
       if (!absence.memberId) continue;
@@ -58,6 +63,14 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
         errors.push({
           field: `performances.${index}.absences`,
           message: "同じ休演メンバーが重複しています",
+        });
+        break;
+      }
+      // 休演は出演メンバー（基準ロスター）の範囲内のみ
+      if (rosterIds.size > 0 && !rosterIds.has(absence.memberId)) {
+        errors.push({
+          field: `performances.${index}.absences`,
+          message: "休演は出演メンバーから選択してください",
         });
         break;
       }
