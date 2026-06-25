@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberSectionList } from "@/components/members/MemberSectionList";
@@ -31,10 +31,19 @@ function toMemberStatus(value: string | null): MemberStatus {
 }
 
 export function MemberBrowser({ groups, members }: MemberBrowserProps) {
-  // 絞り込みは URL を真実源にする（詳細→戻りでも URL から復元される）
+  // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
   const searchParams = useSearchParams();
-  const groupId = searchParams.get("groupId") ?? "";
-  const status = toMemberStatus(searchParams.get("status"));
+  const urlGroupId = searchParams.get("groupId") ?? "";
+  const urlStatus = toMemberStatus(searchParams.get("status"));
+  const [groupId, setGroupId] = useState(urlGroupId);
+  const [status, setStatus] = useState<MemberStatus>(urlStatus);
+
+  useEffect(() => {
+    setGroupId(urlGroupId);
+  }, [urlGroupId]);
+  useEffect(() => {
+    setStatus(urlStatus);
+  }, [urlStatus]);
 
   const isGroupFiltered = groupId !== "";
 
@@ -56,10 +65,12 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
   );
 
   const handleGroupChange = (nextGroupId: string) => {
+    setGroupId(nextGroupId);
     replaceListFilterParams({ groupId: nextGroupId });
   };
 
   const handleStatusChange = (nextStatus: MemberStatus) => {
+    setStatus(nextStatus);
     // 既定（現役）に戻す場合は URL から status を外す
     replaceListFilterParams({
       status: nextStatus === "active" ? "" : nextStatus,
