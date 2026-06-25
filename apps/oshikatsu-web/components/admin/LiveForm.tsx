@@ -677,6 +677,11 @@ export function LiveForm({
                     }
                     className="w-full rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
                   />
+                  {errors[`performances.${index}.setlistItems.${itemIndex}`] && (
+                    <p className="text-xs text-red-500">
+                      {errors[`performances.${index}.setlistItems.${itemIndex}`]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>

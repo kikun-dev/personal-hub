@@ -143,13 +143,19 @@ export function LiveDetail({ live }: LiveDetailProps) {
                               {item.itemType === "song" ? index + 1 : "-"}
                             </span>
                             <span>
-                              {item.itemType !== "song" && (
-                                <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
-                                  {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
-                                </span>
+                              {item.itemType === "song" ? (
+                                <>
+                                  {setlistItemLabel(item)}
+                                  {item.note ? `（${item.note}）` : ""}
+                                </>
+                              ) : (
+                                <>
+                                  <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
+                                    {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
+                                  </span>
+                                  {item.note}
+                                </>
                               )}
-                              {setlistItemLabel(item)}
-                              {item.note ? `（${item.note}）` : ""}
                             </span>
                           </li>
                         ))}
