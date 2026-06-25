@@ -76,6 +76,10 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
     return [...present].sort((a, b) => Number(a) - Number(b));
   }, [isGroupFiltered, groups, groupId, members]);
 
+  // 期はグループ選択中かつ選択肢に含まれる値のみ有効（グループ未選択や範囲外URLは無効化）
+  const effectiveGeneration =
+    isGroupFiltered && generationOptions.includes(generation) ? generation : "";
+
   // ステータスで先に絞り込んだ母集合
   const baseMembers = useMemo(
     () => filterMembersByStatus(members, status),
@@ -88,9 +92,9 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
       filterMembersByGeneration(
         filterMembersByGroup(baseMembers, groupId),
         groupId,
-        generation
+        effectiveGeneration
       ),
-    [baseMembers, groupId, generation]
+    [baseMembers, groupId, effectiveGeneration]
   );
   // セクション表示はグループ未選択時のみ使う
   const memberSections = useMemo(
@@ -136,7 +140,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
         </select>
         {isGroupFiltered && generationOptions.length > 0 && (
           <select
-            value={generation}
+            value={effectiveGeneration}
             onChange={(event) => handleGenerationChange(event.target.value)}
             aria-label="期で絞り込み"
             className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
