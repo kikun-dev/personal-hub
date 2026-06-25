@@ -13,4 +13,5 @@ export const ORBIT_CACHE_TAGS = {
   songsDetail: "orbit:songs:detail",
   songsList: "orbit:songs:list",
   top: "orbit:top",
+  venues: "orbit:venues",
 } as const;

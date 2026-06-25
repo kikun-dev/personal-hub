@@ -15,6 +15,7 @@ export const HEADER_NAV_ITEMS: AppNavigationItem[] = [
 export const TOP_NAV_ITEMS: AppNavigationItem[] = [
   ...HEADER_NAV_ITEMS,
   { href: APP_ROUTES.people, label: "制作陣" },
+  { href: APP_ROUTES.venues, label: "会場" },
 ];
 
 export function isNavigationItemActive(pathname: string, href: string): boolean {

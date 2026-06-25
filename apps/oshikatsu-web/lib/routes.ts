@@ -4,4 +4,5 @@ export const APP_ROUTES = {
   people: "/people",
   releases: "/releases",
   songs: "/songs",
+  venues: "/venues",
 } as const;
