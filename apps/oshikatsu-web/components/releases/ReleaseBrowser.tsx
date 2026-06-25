@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { ReleaseGrid } from "@/components/releases/ReleaseGrid";
 import { ReleaseSectionList } from "@/components/releases/ReleaseSectionList";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
@@ -8,6 +9,7 @@ import type { Group } from "@/types/group";
 import {
   RELEASE_TYPES,
   RELEASE_TYPE_LABELS,
+  isReleaseType,
   type ReleaseListItem,
   type ReleaseType,
 } from "@/types/release";
@@ -19,21 +21,18 @@ import { createReleaseSections } from "@/usecases/groupListSections";
 
 type ReleaseBrowserProps = {
   groups: Group[];
-  initialGroupId: string;
-  initialReleaseType: ReleaseType | "";
   releases: ReleaseListItem[];
 };
 
-export function ReleaseBrowser({
-  groups,
-  initialGroupId,
-  initialReleaseType,
-  releases,
-}: ReleaseBrowserProps) {
-  const [groupId, setGroupId] = useState(initialGroupId);
-  const [releaseType, setReleaseType] = useState<ReleaseType | "">(
-    initialReleaseType
-  );
+function toReleaseType(value: string | null): ReleaseType | "" {
+  return value && isReleaseType(value) ? value : "";
+}
+
+export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
+  // 絞り込みは URL を真実源にする（詳細→戻りでも URL から復元される）
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get("groupId") ?? "";
+  const releaseType = toReleaseType(searchParams.get("releaseType"));
 
   const isGroupFiltered = groupId !== "";
 
@@ -55,12 +54,10 @@ export function ReleaseBrowser({
   );
 
   const handleGroupChange = (nextGroupId: string) => {
-    setGroupId(nextGroupId);
     replaceListFilterParams({ groupId: nextGroupId });
   };
 
   const handleReleaseTypeChange = (nextReleaseType: ReleaseType | "") => {
-    setReleaseType(nextReleaseType);
     replaceListFilterParams({ releaseType: nextReleaseType });
   };
 

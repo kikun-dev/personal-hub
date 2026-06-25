@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
+import { useSearchParams } from "next/navigation";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberSectionList } from "@/components/members/MemberSectionList";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
@@ -15,8 +16,6 @@ import { createMemberSections } from "@/usecases/groupListSections";
 
 type MemberBrowserProps = {
   groups: Group[];
-  initialGroupId: string;
-  initialStatus: MemberStatus;
   members: MemberListItem[];
 };
 
@@ -26,14 +25,16 @@ const STATUS_OPTIONS: { label: string; value: MemberStatus }[] = [
   { label: "卒業", value: "graduated" },
 ];
 
-export function MemberBrowser({
-  groups,
-  initialGroupId,
-  initialStatus,
-  members,
-}: MemberBrowserProps) {
-  const [groupId, setGroupId] = useState(initialGroupId);
-  const [status, setStatus] = useState<MemberStatus>(initialStatus);
+function toMemberStatus(value: string | null): MemberStatus {
+  // 既定は現役（URL に status が無い場合）
+  return value === "all" || value === "graduated" ? value : "active";
+}
+
+export function MemberBrowser({ groups, members }: MemberBrowserProps) {
+  // 絞り込みは URL を真実源にする（詳細→戻りでも URL から復元される）
+  const searchParams = useSearchParams();
+  const groupId = searchParams.get("groupId") ?? "";
+  const status = toMemberStatus(searchParams.get("status"));
 
   const isGroupFiltered = groupId !== "";
 
@@ -55,14 +56,14 @@ export function MemberBrowser({
   );
 
   const handleGroupChange = (nextGroupId: string) => {
-    setGroupId(nextGroupId);
     replaceListFilterParams({ groupId: nextGroupId });
   };
 
   const handleStatusChange = (nextStatus: MemberStatus) => {
-    setStatus(nextStatus);
     // 既定（現役）に戻す場合は URL から status を外す
-    replaceListFilterParams({ status: nextStatus === "active" ? "" : nextStatus });
+    replaceListFilterParams({
+      status: nextStatus === "active" ? "" : nextStatus,
+    });
   };
 
   return (
