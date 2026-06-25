@@ -26,6 +26,12 @@ import type {
   UpdatePersonInput,
 } from "./person";
 import type {
+  Venue,
+  VenueOption,
+  CreateVenueInput,
+  UpdateVenueInput,
+} from "./venue";
+import type {
   Release,
   CreateReleaseInput,
   UpdateReleaseInput,
@@ -72,6 +78,15 @@ export type PersonRepository = {
   findById(id: string): Promise<Person | null>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
+  delete(id: string): Promise<void>;
+};
+
+export type VenueRepository = {
+  findAll(): Promise<Venue[]>;
+  findOptions(): Promise<VenueOption[]>;
+  findById(id: string): Promise<Venue | null>;
+  create(input: CreateVenueInput): Promise<Venue>;
+  update(id: string, input: UpdateVenueInput): Promise<Venue>;
   delete(id: string): Promise<void>;
 };
 

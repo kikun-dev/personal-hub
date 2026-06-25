@@ -63,3 +63,7 @@ export function revalidateOrbitPersonData(): void {
     ORBIT_CACHE_TAGS.songsDetail,
   ]);
 }
+
+export function revalidateOrbitVenueData(): void {
+  revalidateOrbitTags([ORBIT_CACHE_TAGS.venues]);
+}

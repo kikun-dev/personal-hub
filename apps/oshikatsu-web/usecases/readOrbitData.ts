@@ -11,10 +11,13 @@ import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
+import { createVenueRepository } from "@/repositories/venueRepository";
 import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
+import { getVenue } from "@/usecases/getVenue";
+import { listVenues } from "@/usecases/listVenues";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
 import {
   createMemberSections,
@@ -222,6 +225,24 @@ const loadReleaseDetailPageData = createSharedReadLoader(
     })
 );
 
+const loadVenuesPageData = createSharedReadLoader(
+  ["orbit", "venues-page-data"],
+  [ORBIT_CACHE_TAGS.venues],
+  async () =>
+    withOrbitReadClient(async (supabase) => {
+      return listVenues(createVenueRepository(supabase));
+    })
+);
+
+const loadVenueDetailPageData = createSharedReadLoader(
+  ["orbit", "venue-detail-page-data"],
+  [ORBIT_CACHE_TAGS.venues],
+  async (id: string) =>
+    withOrbitReadClient(async (supabase) => {
+      return getVenue(createVenueRepository(supabase), id);
+    })
+);
+
 export async function getTopPageData(
   year: number,
   month: number,
@@ -252,4 +273,12 @@ export async function getReleasesPageData(filters: ReleaseFiltersType) {
 
 export async function getReleaseDetailPageData(id: string) {
   return loadReleaseDetailPageData(id);
+}
+
+export async function getVenuesPageData() {
+  return loadVenuesPageData();
+}
+
+export async function getVenueDetailPageData(id: string) {
+  return loadVenueDetailPageData(id);
 }
