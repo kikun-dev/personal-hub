@@ -1,6 +1,6 @@
 import type { CreateLiveInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
-import { isLiveType } from "@/types/live";
+import { isLiveType, isSetlistItemType } from "@/types/live";
 import { isValidDateString } from "@/lib/validation";
 
 function isValidTimeString(value: string): boolean {
@@ -54,6 +54,23 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
         message: "開演時刻はHH:MM形式で入力してください",
       });
     }
+
+    performance.setlistItems.forEach((item, itemIndex) => {
+      const field = `performances.${index}.setlistItems.${itemIndex}`;
+      if (!isSetlistItemType(item.itemType)) {
+        errors.push({ field, message: "無効な項目種別です" });
+        return;
+      }
+      if (item.itemType === "song" && !item.trackId && !item.songTitle.trim()) {
+        errors.push({
+          field,
+          message: "楽曲は登録曲の選択か曲名の入力が必要です",
+        });
+      }
+      if (item.note.length > 500) {
+        errors.push({ field, message: "メモは500文字以内で入力してください" });
+      }
+    });
 
     const rosterIds = new Set(input.performerMemberIds);
     const seenAbsentMembers = new Set<string>();

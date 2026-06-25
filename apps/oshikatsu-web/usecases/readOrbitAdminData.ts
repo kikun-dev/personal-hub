@@ -149,19 +149,26 @@ export async function getReleaseFormMasterData() {
 
 const loadLiveFormMasterData = createSharedReadLoader(
   ["orbit", "admin", "live-form-masters"],
-  [ORBIT_CACHE_TAGS.groups, ORBIT_CACHE_TAGS.members, ORBIT_CACHE_TAGS.venues],
+  [
+    ORBIT_CACHE_TAGS.groups,
+    ORBIT_CACHE_TAGS.members,
+    ORBIT_CACHE_TAGS.venues,
+    ORBIT_CACHE_TAGS.songOptions,
+  ],
   async () =>
     withOrbitReadClient(async (supabase) => {
-      const [groups, members, venues] = await Promise.all([
+      const [groups, members, venues, songOptions] = await Promise.all([
         getGroups(createGroupRepository(supabase)),
         listMemberOptions(createMemberRepository(supabase)),
         createVenueRepository(supabase).findOptions(),
+        listSongOptions(createSongRepository(supabase)),
       ]);
 
       return {
         groups,
         members,
         venues,
+        songOptions,
       };
     })
 );

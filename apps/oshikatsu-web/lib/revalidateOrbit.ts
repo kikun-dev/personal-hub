@@ -41,6 +41,9 @@ export function revalidateOrbitSongData(): void {
     ORBIT_CACHE_TAGS.songs,
     ORBIT_CACHE_TAGS.songsDetail,
     ORBIT_CACHE_TAGS.songsList,
+    // セットリストが楽曲タイトルを参照表示するため失効する
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.livesDetail,
   ]);
 }
 

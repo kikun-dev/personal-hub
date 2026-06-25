@@ -228,7 +228,10 @@
   - [x] Admin CRUD（`/admin/lives`）／公開一覧・詳細（`/lives`, `/lives/[id]`）
   - [x] 会場詳細にその会場の公演を逆引き表示
   - [x] ネスト更新を RPC `upsert_orbit_live` でトランザクション化（migration 031）
-- [ ] C: セットリスト基盤（楽曲/MC/影アナ/VTR）（Issue #101）
+- [x] C: セットリスト基盤（楽曲/MC/影アナ/VTR）（Issue #101）
+  - [x] `orbit_setlist_items`（公演ごと・順序つき・種別）を追加し、RPC `upsert_orbit_live` を拡張
+  - [x] 楽曲は登録曲（`orbit_tracks`）参照 or 未登録曲テキスト。MC/影アナ/VTR/その他に対応
+  - [x] LiveForm にセットリスト編集（行追加・並べ替え・削除）、公開公演詳細に表示
 - [ ] D: セトリ楽曲の拡張（センター/披露メンバー/披露タイプ）（Issue #102）
 - [ ] E（将来/バックログ）: 参加記録＋現地カウント/ランキング（Issue #103）
 

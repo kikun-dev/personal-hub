@@ -24,6 +24,37 @@ export type LivePerformerMember = {
   memberNameJa: string;
 };
 
+export const SETLIST_ITEM_TYPE_VALUES = [
+  "song",
+  "mc",
+  "shadow_announcement",
+  "vtr",
+  "other",
+] as const;
+
+export type SetlistItemType = (typeof SETLIST_ITEM_TYPE_VALUES)[number];
+
+export const SETLIST_ITEM_TYPE_LABELS: Record<SetlistItemType, string> = {
+  song: "楽曲",
+  mc: "MC",
+  shadow_announcement: "影アナ",
+  vtr: "VTR",
+  other: "その他",
+};
+
+export function isSetlistItemType(value: string): value is SetlistItemType {
+  return (SETLIST_ITEM_TYPE_VALUES as readonly string[]).includes(value);
+}
+
+export type SetlistItem = {
+  itemType: SetlistItemType;
+  trackId: string | null;
+  trackTitle: string | null;
+  songTitle: string | null;
+  note: string | null;
+  position: number;
+};
+
 export type LivePerformanceAbsence = {
   memberId: string;
   memberNameJa: string;
@@ -44,6 +75,7 @@ export type LivePerformance = {
   seatInfo: string | null;
   sortOrder: number;
   absences: LivePerformanceAbsence[];
+  setlistItems: SetlistItem[];
 };
 
 export type Live = {
@@ -84,6 +116,13 @@ export type CreateLivePerformanceAbsenceInput = {
   note: string;
 };
 
+export type CreateSetlistItemInput = {
+  itemType: SetlistItemType;
+  trackId: string;
+  songTitle: string;
+  note: string;
+};
+
 export type CreateLivePerformanceInput = {
   venueId: string;
   performanceDate: string;
@@ -95,6 +134,7 @@ export type CreateLivePerformanceInput = {
   ticketInfo: string;
   seatInfo: string;
   absences: CreateLivePerformanceAbsenceInput[];
+  setlistItems: CreateSetlistItemInput[];
 };
 
 export type CreateLiveInput = {

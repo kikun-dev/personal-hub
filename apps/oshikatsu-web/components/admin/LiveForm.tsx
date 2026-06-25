@@ -5,11 +5,15 @@ import type { ValidationError } from "@/types/errors";
 import type { Group } from "@/types/group";
 import type { MemberOption } from "@/types/member";
 import type { VenueOption } from "@/types/venue";
+import type { SongOption } from "@/types/song";
 import {
   LIVE_TYPE_LABELS,
   LIVE_TYPE_VALUES,
+  SETLIST_ITEM_TYPE_LABELS,
+  SETLIST_ITEM_TYPE_VALUES,
   type CreateLiveInput,
   type LiveType,
+  type SetlistItemType,
 } from "@/types/live";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -20,6 +24,7 @@ type LiveFormProps = {
   groups: Group[];
   members: MemberOption[];
   venues: VenueOption[];
+  tracks: SongOption[];
   initialValues?: CreateLiveInput;
   onSubmit: (
     values: CreateLiveInput
@@ -27,6 +32,13 @@ type LiveFormProps = {
 };
 
 type AbsenceField = { key: number; memberId: string; note: string };
+type SetlistItemField = {
+  key: number;
+  itemType: SetlistItemType;
+  trackId: string;
+  songTitle: string;
+  note: string;
+};
 type PerformanceField = {
   key: number;
   venueId: string;
@@ -39,6 +51,7 @@ type PerformanceField = {
   ticketInfo: string;
   seatInfo: string;
   absences: AbsenceField[];
+  setlistItems: SetlistItemField[];
 };
 
 const inputClass =
@@ -49,6 +62,7 @@ export function LiveForm({
   groups,
   members,
   venues,
+  tracks,
   initialValues,
   onSubmit,
 }: LiveFormProps) {
@@ -86,6 +100,13 @@ export function LiveForm({
         memberId: absence.memberId,
         note: absence.note,
       })),
+      setlistItems: performance.setlistItems.map((item) => ({
+        key: nextKey(),
+        itemType: item.itemType,
+        trackId: item.trackId,
+        songTitle: item.songTitle,
+        note: item.note,
+      })),
     }))
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,6 +135,7 @@ export function LiveForm({
         ticketInfo: "",
         seatInfo: "",
         absences: [],
+        setlistItems: [],
       },
     ]);
   };
@@ -173,6 +195,69 @@ export function LiveForm({
     );
   };
 
+  const addSetlistItem = (performanceKey: number) => {
+    setPerformances((prev) =>
+      prev.map((p) =>
+        p.key === performanceKey
+          ? {
+              ...p,
+              setlistItems: [
+                ...p.setlistItems,
+                { key: nextKey(), itemType: "song", trackId: "", songTitle: "", note: "" },
+              ],
+            }
+          : p
+      )
+    );
+  };
+
+  const updateSetlistItem = (
+    performanceKey: number,
+    itemKey: number,
+    patch: Partial<SetlistItemField>
+  ) => {
+    setPerformances((prev) =>
+      prev.map((p) =>
+        p.key === performanceKey
+          ? {
+              ...p,
+              setlistItems: p.setlistItems.map((item) =>
+                item.key === itemKey ? { ...item, ...patch } : item
+              ),
+            }
+          : p
+      )
+    );
+  };
+
+  const moveSetlistItem = (
+    performanceKey: number,
+    itemKey: number,
+    direction: -1 | 1
+  ) => {
+    setPerformances((prev) =>
+      prev.map((p) => {
+        if (p.key !== performanceKey) return p;
+        const index = p.setlistItems.findIndex((item) => item.key === itemKey);
+        const target = index + direction;
+        if (index < 0 || target < 0 || target >= p.setlistItems.length) return p;
+        const next = [...p.setlistItems];
+        [next[index], next[target]] = [next[target], next[index]];
+        return { ...p, setlistItems: next };
+      })
+    );
+  };
+
+  const removeSetlistItem = (performanceKey: number, itemKey: number) => {
+    setPerformances((prev) =>
+      prev.map((p) =>
+        p.key === performanceKey
+          ? { ...p, setlistItems: p.setlistItems.filter((item) => item.key !== itemKey) }
+          : p
+      )
+    );
+  };
+
   const rosterMembers = members.filter((member) =>
     performerMemberIds.includes(member.id)
   );
@@ -202,6 +287,12 @@ export function LiveForm({
         absences: performance.absences
           .filter((absence) => absence.memberId)
           .map((absence) => ({ memberId: absence.memberId, note: absence.note })),
+        setlistItems: performance.setlistItems.map((item) => ({
+          itemType: item.itemType,
+          trackId: item.trackId,
+          songTitle: item.songTitle,
+          note: item.note,
+        })),
       })),
     };
 
@@ -479,6 +570,118 @@ export function LiveForm({
                   >
                     削除
                   </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-foreground/60">セットリスト</span>
+                <button
+                  type="button"
+                  onClick={() => addSetlistItem(performance.key)}
+                  className="text-xs text-blue-500 hover:underline"
+                >
+                  項目を追加
+                </button>
+              </div>
+              {performance.setlistItems.map((item, itemIndex) => (
+                <div
+                  key={item.key}
+                  className="space-y-2 rounded-lg border border-foreground/10 p-2"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs text-foreground/50">{itemIndex + 1}</span>
+                    <select
+                      value={item.itemType}
+                      onChange={(e) =>
+                        updateSetlistItem(performance.key, item.key, {
+                          itemType: e.target.value as SetlistItemType,
+                        })
+                      }
+                      className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
+                    >
+                      {SETLIST_ITEM_TYPE_VALUES.map((type) => (
+                        <option key={type} value={type}>
+                          {SETLIST_ITEM_TYPE_LABELS[type]}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="ml-auto flex items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={() => moveSetlistItem(performance.key, item.key, -1)}
+                        className="px-1 text-xs text-foreground/60 hover:text-foreground"
+                        aria-label="上へ"
+                      >
+                        ↑
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSetlistItem(performance.key, item.key, 1)}
+                        className="px-1 text-xs text-foreground/60 hover:text-foreground"
+                        aria-label="下へ"
+                      >
+                        ↓
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeSetlistItem(performance.key, item.key)}
+                        className="px-1 text-xs text-red-500 hover:underline"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+
+                  {item.itemType === "song" ? (
+                    <div className="flex flex-wrap gap-2">
+                      <select
+                        value={item.trackId}
+                        onChange={(e) =>
+                          updateSetlistItem(performance.key, item.key, {
+                            trackId: e.target.value,
+                          })
+                        }
+                        className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
+                      >
+                        <option value="">登録曲から選択</option>
+                        {tracks.map((track) => (
+                          <option key={track.id} value={track.id}>
+                            {track.title}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={item.songTitle}
+                        onChange={(e) =>
+                          updateSetlistItem(performance.key, item.key, {
+                            songTitle: e.target.value,
+                          })
+                        }
+                        placeholder="未登録曲は曲名を入力"
+                        className="flex-1 rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+                      />
+                    </div>
+                  ) : null}
+
+                  <input
+                    value={item.note}
+                    onChange={(e) =>
+                      updateSetlistItem(performance.key, item.key, {
+                        note: e.target.value,
+                      })
+                    }
+                    placeholder={
+                      item.itemType === "song" ? "メモ（任意）" : "内容・メモ"
+                    }
+                    className="w-full rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+                  />
+                  {errors[`performances.${index}.setlistItems.${itemIndex}`] && (
+                    <p className="text-xs text-red-500">
+                      {errors[`performances.${index}.setlistItems.${itemIndex}`]}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
