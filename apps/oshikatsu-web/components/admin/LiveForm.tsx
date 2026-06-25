@@ -327,6 +327,17 @@ export function LiveForm({
     performerMemberIds.includes(member.id)
   );
   const absenceCandidates = rosterMembers.length > 0 ? rosterMembers : members;
+  const membersById = new Map(members.map((member) => [member.id, member]));
+
+  // 披露メンバー候補 = ロスター候補 ∪ 選択済み（ロスター外でも解除できるよう表示）
+  const setlistMemberCandidates = (item: SetlistItemField): MemberOption[] => {
+    const candidateIds = new Set(absenceCandidates.map((member) => member.id));
+    const extras = item.members
+      .filter((member) => member.memberId && !candidateIds.has(member.memberId))
+      .map((member) => membersById.get(member.memberId))
+      .filter((member): member is MemberOption => Boolean(member));
+    return [...absenceCandidates, ...extras];
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -754,7 +765,7 @@ export function LiveForm({
                           披露メンバー（C=センター）
                         </p>
                         <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
-                          {absenceCandidates.map((candidate) => {
+                          {setlistMemberCandidates(item).map((candidate) => {
                             const selected = item.members.find(
                               (m) => m.memberId === candidate.id
                             );

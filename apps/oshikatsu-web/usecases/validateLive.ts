@@ -72,6 +72,12 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
       if (item.note.length > 500) {
         errors.push({ field, message: "メモは500文字以内で入力してください" });
       }
+
+      // 披露タイプ・披露メンバーは楽曲項目のみ対象（非楽曲は保存時に破棄される）
+      if (item.itemType !== "song") {
+        return;
+      }
+
       if (item.performanceStyle && !isPerformanceStyle(item.performanceStyle)) {
         errors.push({ field, message: "無効な披露タイプです" });
       }
