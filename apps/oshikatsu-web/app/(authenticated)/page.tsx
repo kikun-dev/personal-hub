@@ -38,7 +38,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
     await getTopPageData(year, month, day);
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_13rem]">
       <div className="space-y-6">
         <div className="flex items-center">
           <Suspense fallback={<div className="h-10" />}>
