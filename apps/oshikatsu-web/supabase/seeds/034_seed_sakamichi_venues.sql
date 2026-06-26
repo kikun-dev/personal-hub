@@ -311,6 +311,96 @@ VALUES
     'https://www.t-i-forum.co.jp/',
     NULL,
     NULL
+  ),
+  (
+    '神戸ワールド記念ホール',
+    '兵庫県',
+    8000,
+    'https://www.google.com/maps/search/?api=1&query=神戸ワールド記念ホール',
+    'https://kobe-cc.jp/',
+    NULL,
+    '参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '広島グリーンアリーナ',
+    '広島県',
+    10000,
+    'https://www.google.com/maps/search/?api=1&query=広島グリーンアリーナ',
+    NULL,
+    NULL,
+    '広島県立総合体育館。公式URL要確認 / 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '豊洲PIT',
+    '東京都',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=豊洲PIT',
+    NULL,
+    NULL,
+    'スタンディング 約3,000。公式URL要確認 / 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    'Zepp DiverCity(TOKYO)',
+    '東京都',
+    2473,
+    'https://www.google.com/maps/search/?api=1&query=Zepp DiverCity TOKYO',
+    'https://www.zepp.co.jp/hall/divercity/',
+    NULL,
+    '参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '丸善インテックアリーナ大阪',
+    '大阪府',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=丸善インテックアリーナ大阪',
+    NULL,
+    NULL,
+    '大阪府立体育会館。公式URL要確認 / 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '西日本総合展示場 新館',
+    '福岡県',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=西日本総合展示場 新館',
+    NULL,
+    NULL,
+    '北九州。公式URL要確認 / 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    'Aichi Sky Expo ホールA',
+    '愛知県',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=Aichi Sky Expo',
+    'https://www.aichiskyexpo.com/',
+    NULL,
+    '愛知県国際展示場（常滑）/ 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '舞浜アンフィシアター',
+    '千葉県',
+    2170,
+    'https://www.google.com/maps/search/?api=1&query=舞浜アンフィシアター',
+    'https://www.maihama-amphitheater.jp/',
+    NULL,
+    '参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '富士急ハイランドコニファーフォレスト',
+    '山梨県',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=富士急ハイランドコニファーフォレスト',
+    NULL,
+    NULL,
+    '野外ライブ会場。公式URL要確認 / 参考: 櫻坂46 公式ライブ一覧'
+  ),
+  (
+    '東京ガーデンシアター',
+    '東京都',
+    8000,
+    'https://www.google.com/maps/search/?api=1&query=東京ガーデンシアター',
+    'https://www.tokyo-gardentheater.com/',
+    NULL,
+    '有明 / 参考: 櫻坂46 公式ライブ一覧'
   );
 
 UPDATE public.orbit_venues AS venue
