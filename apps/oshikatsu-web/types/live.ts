@@ -100,6 +100,7 @@ export type LivePerformance = {
   id: string;
   venueId: string | null;
   venueName: string | null;
+  venuePrefecture: string | null;
   performanceDate: string | null;
   doorsOpenAt: string | null;
   startsAt: string | null;
