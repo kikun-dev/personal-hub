@@ -3,6 +3,8 @@ import type { Group } from "@/types/group";
 export const RELEASE_TYPES = [
   "single",
   "album",
+  "best",
+  "compilation",
   "digital_single",
   "other",
 ] as const;
@@ -12,6 +14,8 @@ export type ReleaseType = (typeof RELEASE_TYPES)[number];
 export const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
   single: "シングル",
   album: "アルバム",
+  best: "ベストアルバム",
+  compilation: "コンピレーション",
   digital_single: "配信シングル",
   other: "その他",
 };
@@ -19,9 +23,26 @@ export const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
 export const RELEASE_TYPE_LABELS_EN: Record<ReleaseType, string> = {
   single: "Single",
   album: "Album",
+  best: "BEST Album",
+  compilation: "Compilation Album",
   digital_single: "Digital Single",
   other: "Other",
 };
+
+// アルバム系（一覧フィルタ「アルバム」でまとめる）
+export const ALBUM_FAMILY_TYPES: readonly ReleaseType[] = [
+  "album",
+  "best",
+  "compilation",
+];
+
+// 一覧フィルタの選択肢（アルバム系は「アルバム」に集約して表示する）
+export const RELEASE_FILTER_TYPES: readonly ReleaseType[] = [
+  "single",
+  "album",
+  "digital_single",
+  "other",
+];
 
 // 21 -> "21st", 5 -> "5th"
 export function ordinalNumber(value: number): string {

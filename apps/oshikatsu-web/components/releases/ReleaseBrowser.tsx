@@ -6,7 +6,7 @@ import { ReleaseGrid } from "@/components/releases/ReleaseGrid";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import {
-  RELEASE_TYPES,
+  RELEASE_FILTER_TYPES,
   RELEASE_TYPE_LABELS,
   isReleaseType,
   type ReleaseListItem,
@@ -92,7 +92,7 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
           className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全タイプ</option>
-          {RELEASE_TYPES.map((type) => (
+          {RELEASE_FILTER_TYPES.map((type) => (
             <option key={type} value={type}>
               {RELEASE_TYPE_LABELS[type]}
             </option>
