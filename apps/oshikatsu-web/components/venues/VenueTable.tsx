@@ -61,31 +61,59 @@ export function VenueTable({ venues }: VenueTableProps) {
     }
   };
 
-  const indicator = (key: SortKey) => {
-    if (key !== sortKey) return "";
-    return sortDir === "asc" ? " ▲" : " ▼";
+  const ariaSort = (key: SortKey): "ascending" | "descending" | "none" => {
+    if (key !== sortKey) return "none";
+    return sortDir === "asc" ? "ascending" : "descending";
   };
 
-  const headerButton = (key: SortKey, label: string) => (
-    <button
-      type="button"
-      onClick={() => handleSort(key)}
-      className="flex items-center font-medium text-foreground/70 hover:text-foreground"
-    >
-      {label}
-      <span className="text-xs">{indicator(key)}</span>
-    </button>
-  );
+  const sortableHeader = (key: SortKey, label: string) => {
+    const active = key === sortKey;
+    const nextDir = active ? (sortDir === "asc" ? "desc" : "asc") : "desc";
+    return (
+      <th scope="col" aria-sort={ariaSort(key)} className="pb-2 pr-4">
+        <button
+          type="button"
+          onClick={() => handleSort(key)}
+          aria-label={`${label}を${nextDir === "asc" ? "昇順" : "降順"}で並び替え`}
+          className={`group flex items-center gap-0.5 hover:text-foreground ${
+            active ? "font-semibold text-foreground" : "font-medium text-foreground/70"
+          }`}
+        >
+          {label}
+          <svg
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className={`h-3 w-3 transition-all ${
+              active
+                ? sortDir === "asc"
+                  ? "rotate-180 opacity-100"
+                  : "opacity-100"
+                : "opacity-0 group-hover:opacity-40"
+            }`}
+          >
+            <path d="M5 7.5 10 12.5 15 7.5" />
+          </svg>
+        </button>
+      </th>
+    );
+  };
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-foreground/10 text-left">
-            <th className="pb-2 pr-4">{headerButton("name", "会場名")}</th>
-            <th className="pb-2 pr-4">{headerButton("prefecture", "都道府県")}</th>
-            <th className="pb-2 pr-4">{headerButton("capacity", "キャパ")}</th>
-            <th className="pb-2 font-medium text-foreground/70">操作</th>
+            {sortableHeader("name", "会場名")}
+            {sortableHeader("prefecture", "都道府県")}
+            {sortableHeader("capacity", "キャパ")}
+            <th scope="col" className="pb-2 font-medium text-foreground/70">
+              操作
+            </th>
           </tr>
         </thead>
         <tbody>
