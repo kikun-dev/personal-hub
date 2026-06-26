@@ -5,7 +5,7 @@ import { formatDate } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
 
 export default async function AdminLivesPage() {
-  const lives = await getLivesPageData();
+  const { lives } = await getLivesPageData();
 
   return (
     <div className="space-y-4">

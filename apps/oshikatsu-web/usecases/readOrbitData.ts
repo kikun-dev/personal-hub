@@ -24,7 +24,6 @@ import { listPublicLives } from "@/usecases/listPublicLives";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
 import {
   createMemberSections,
-  createReleaseSections,
   createSongSections,
   sortSongsForListOrder,
 } from "@/usecases/groupListSections";
@@ -213,7 +212,6 @@ const loadReleasesPageData = createSharedReadLoader(
 
       return {
         groups,
-        releaseSections: createReleaseSections(releases, groups),
         releases,
       };
     })
@@ -255,10 +253,14 @@ const loadVenueDetailPageData = createSharedReadLoader(
 
 const loadLivesPageData = createSharedReadLoader(
   ["orbit", "lives-page-data"],
-  [ORBIT_CACHE_TAGS.lives],
+  [ORBIT_CACHE_TAGS.lives, ORBIT_CACHE_TAGS.groups],
   async () =>
     withOrbitReadClient(async (supabase) => {
-      return listPublicLives(createLiveRepository(supabase));
+      const [lives, groups] = await Promise.all([
+        listPublicLives(createLiveRepository(supabase)),
+        getGroups(createGroupRepository(supabase)),
+      ]);
+      return { lives, groups };
     })
 );
 

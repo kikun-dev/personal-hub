@@ -127,7 +127,7 @@ export type LiveListItem = {
   id: string;
   name: string;
   liveType: LiveType;
-  performerGroupNames: string[];
+  performerGroups: LivePerformerGroup[];
   firstDate: string | null;
   lastDate: string | null;
   performanceCount: number;

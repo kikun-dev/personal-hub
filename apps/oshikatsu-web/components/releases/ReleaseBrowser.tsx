@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { ReleaseGrid } from "@/components/releases/ReleaseGrid";
-import { ReleaseSectionList } from "@/components/releases/ReleaseSectionList";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import {
@@ -17,7 +16,6 @@ import {
   filterReleasesByGroup,
   filterReleasesByType,
 } from "@/usecases/releaseFilters";
-import { createReleaseSections } from "@/usecases/groupListSections";
 
 type ReleaseBrowserProps = {
   groups: Group[];
@@ -45,24 +43,19 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
     setReleaseType(urlReleaseType);
   }, [urlReleaseType]);
 
-  const isGroupFiltered = groupId !== "";
-
-  // リリースタイプで先に絞り込んだ母集合
-  const baseReleases = useMemo(
-    () => filterReleasesByType(releases, releaseType),
-    [releases, releaseType]
-  );
-
-  // 件数表示・フラット表示用（グループも適用）
-  const flatReleases = useMemo(
-    () => filterReleasesByGroup(baseReleases, groupId),
-    [baseReleases, groupId]
-  );
-  // セクション表示はグループ未選択時のみ使う
-  const releaseSections = useMemo(
-    () => (isGroupFiltered ? [] : createReleaseSections(baseReleases, groups)),
-    [isGroupFiltered, baseReleases, groups]
-  );
+  // グループ＋リリースタイプで絞り込み、リリース日の降順（未定は末尾）で表示
+  const flatReleases = useMemo(() => {
+    const filtered = filterReleasesByGroup(
+      filterReleasesByType(releases, releaseType),
+      groupId
+    );
+    return [...filtered].sort((a, b) => {
+      if (!a.releaseDate && !b.releaseDate) return 0;
+      if (!a.releaseDate) return 1;
+      if (!b.releaseDate) return -1;
+      return b.releaseDate.localeCompare(a.releaseDate);
+    });
+  }, [releases, releaseType, groupId]);
 
   const handleGroupChange = (nextGroupId: string) => {
     setGroupId(nextGroupId);
@@ -109,11 +102,7 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
           {flatReleases.length}件
         </span>
       </div>
-      {isGroupFiltered ? (
-        <ReleaseGrid releases={flatReleases} />
-      ) : (
-        <ReleaseSectionList sections={releaseSections} />
-      )}
+      <ReleaseGrid releases={flatReleases} />
     </div>
   );
 }
