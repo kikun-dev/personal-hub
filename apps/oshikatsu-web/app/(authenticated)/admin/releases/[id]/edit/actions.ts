@@ -13,6 +13,17 @@ import type { UpdateReleaseInput, ReleaseImageUploadInput } from "@/types/releas
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
 
+// 「楽曲は必ず1リリースに紐づく」制約違反（紐づけ解除で孤立する楽曲が出る更新）かを判定する
+function isOrphanTrackError(error: RepositoryError): boolean {
+  const cause = error.cause as { code?: string; message?: string } | null;
+  const message = cause?.message ?? "";
+  return (
+    cause?.code === "23514" &&
+    (message.includes("track must be linked to at least one release") ||
+      message.includes("track must have at least one release link"))
+  );
+}
+
 async function cleanupReleaseImages(
   releaseImageRepo: ReturnType<typeof createReleaseImageRepository>,
   imagePaths: Array<string | null | undefined>
@@ -73,6 +84,17 @@ export async function updateReleaseAction(
   } catch (e) {
     await cleanupReleaseImages(releaseImageRepo, [uploadedImagePath]);
     if (e instanceof RepositoryError) {
+      if (isOrphanTrackError(e)) {
+        return {
+          errors: [
+            {
+              field: "_form",
+              message:
+                "この変更では、どのリリースにも紐づかなくなる楽曲があります。対象の楽曲は紐づけを残すか、先に別のリリースへ移してから更新してください。",
+            },
+          ],
+        };
+      }
       return {
         errors: [{ field: "_form", message: "リリースが見つからないか、更新に失敗しました" }],
       };
