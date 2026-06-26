@@ -49,6 +49,13 @@ export async function getTopPageContent(
     releaseRepo.findCalendarItems(),
   ]);
 
+  // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する
+  const uniqueLivePerformances = Array.from(
+    new Map(
+      livePerformances.map((p) => [`${p.liveId}:${p.date}`, p])
+    ).values()
+  );
+
   const monthPrefix = `${year}-${pad(month)}`;
   const dateStr = `${year}-${pad(month)}-${pad(day)}`;
   const monthDaySuffix = `-${pad(month)}-${pad(day)}`;
@@ -78,7 +85,7 @@ export async function getTopPageContent(
   });
 
   // 月のカレンダー
-  for (const p of livePerformances) {
+  for (const p of uniqueLivePerformances) {
     if (p.date.startsWith(monthPrefix)) monthEvents.push(toLiveEvent(p));
   }
   for (const r of releaseItems) {
@@ -87,7 +94,7 @@ export async function getTopPageContent(
   monthEvents.sort((a, b) => a.date.localeCompare(b.date));
 
   // 選択日
-  for (const p of livePerformances) {
+  for (const p of uniqueLivePerformances) {
     if (p.date === dateStr) selectedDateEvents.push(toLiveEvent(p));
   }
   for (const r of releaseItems) {
@@ -99,7 +106,7 @@ export async function getTopPageContent(
     ...e,
     type: "event" as const,
   }));
-  for (const p of livePerformances) {
+  for (const p of uniqueLivePerformances) {
     if (p.date.endsWith(monthDaySuffix) && p.date < dateStr) {
       onThisDayEvents.push(toLiveEvent(p));
     }
