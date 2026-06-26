@@ -246,7 +246,7 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id,
           name,
           live_type,
-          orbit_live_performer_groups(orbit_groups(name_ja)),
+          orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
           orbit_live_performances(performance_date)
         `)
         .order("name");
@@ -259,7 +259,7 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
         id: string;
         name: string;
         live_type: LiveType;
-        orbit_live_performer_groups: { orbit_groups: MemberRel | GroupRel }[] | null;
+        orbit_live_performer_groups: PerformerGroupRow[] | null;
         orbit_live_performances: { performance_date: string | null }[] | null;
       };
 
@@ -272,9 +272,14 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id: row.id,
           name: row.name,
           liveType: row.live_type,
-          performerGroupNames: (row.orbit_live_performer_groups ?? [])
-            .map((pg) => pickFirst(pg.orbit_groups as GroupRel)?.name_ja ?? "")
-            .filter(Boolean),
+          performerGroups: (row.orbit_live_performer_groups ?? []).map((pg) => {
+            const group = pickFirst(pg.orbit_groups);
+            return {
+              groupId: pg.group_id,
+              groupNameJa: group?.name_ja ?? "",
+              groupColor: group?.color ?? "#6B7280",
+            };
+          }),
           firstDate: dates[0] ?? null,
           lastDate: dates.length > 0 ? dates[dates.length - 1] : null,
           performanceCount: row.orbit_live_performances?.length ?? 0,

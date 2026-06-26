@@ -1,4 +1,5 @@
 import { PendingLink } from "@/components/ui/PendingLink";
+import { GroupBadge } from "@/components/ui/GroupBadge";
 import type { ReleaseListItem } from "@/types/release";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
@@ -11,7 +12,6 @@ type ReleaseCardProps = {
 
 export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps) {
   const metaParts = [
-    ...(showGroupName && release.groupNameJa ? [release.groupNameJa] : []),
     RELEASE_TYPE_LABELS[release.releaseType],
     ...(release.numbering ? [String(release.numbering)] : []),
   ];
@@ -23,7 +23,15 @@ export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps)
       listBackFallbackHref={APP_ROUTES.releases}
     >
       <p className="text-sm font-medium text-foreground">{release.title}</p>
-      <p className="mt-1 text-xs text-foreground/50">{metaParts.join(" / ")}</p>
+      <div className="mt-1 flex flex-wrap items-center gap-2">
+        {showGroupName && release.groupNameJa && (
+          <GroupBadge
+            groupName={release.groupNameJa}
+            groupColor={release.groupColor}
+          />
+        )}
+        <span className="text-xs text-foreground/50">{metaParts.join(" / ")}</span>
+      </div>
       <p className="mt-1 text-xs text-foreground/50">曲目: {release.trackCount}曲</p>
       {release.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">{formatDate(release.releaseDate)}</p>
