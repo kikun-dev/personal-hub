@@ -96,11 +96,16 @@ type ReleaseListRow = {
   orbit_release_tracks?: Array<{ track_number: number }>;
 };
 
+type ReleaseOptionMemberRow = {
+  member_id: string;
+  orbit_members: { name_ja: string } | { name_ja: string }[] | null;
+};
+
 type ReleaseOptionRow = {
   id: string;
   title: string;
   release_type: ReleaseType;
-  orbit_release_members?: ReleaseMemberRow[];
+  orbit_release_members?: ReleaseOptionMemberRow[];
 };
 
 const RELEASE_LIST_SELECT = `
@@ -147,7 +152,7 @@ const RELEASE_OPTION_SELECT = `
   id,
   title,
   release_type,
-  orbit_release_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation)))
+  orbit_release_members(member_id, orbit_members(name_ja))
 `;
 
 function mapToRelease(row: ReleaseRow): Release {

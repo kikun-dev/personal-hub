@@ -12,7 +12,10 @@ import type {
 } from "@/types/live";
 import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
-import { compareByGenerationThenName } from "@/lib/memberOrder";
+import {
+  compareByGenerationThenName,
+  pickMembershipGeneration,
+} from "@/lib/memberOrder";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
 type MemberRel = { name_ja: string } | { name_ja: string }[] | null;
@@ -198,15 +201,11 @@ function mapLive(row: LiveRow): Live {
       .map((pm) => {
         const member = pickFirst(pm.orbit_members);
         const memberships = member?.orbit_member_groups ?? [];
-        // 出演グループでの期を優先（無ければ任意の所属の期）
-        const membership =
-          memberships.find((mg) => performerGroupIds.has(mg.group_id)) ??
-          memberships[0] ??
-          null;
+        // 出演グループでの期を優先しつつ、DB返却順に依存せず決定的に選ぶ
         return {
           memberId: pm.member_id,
           memberNameJa: member?.name_ja ?? "",
-          generation: membership?.generation ?? null,
+          generation: pickMembershipGeneration(memberships, performerGroupIds),
         };
       })
       .sort((a, b) =>
