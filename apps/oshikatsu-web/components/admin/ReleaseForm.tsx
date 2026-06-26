@@ -23,6 +23,7 @@ import {
   isAllowedReleaseImageMimeType,
   resolveReleaseImageSrc,
 } from "@/lib/releaseImage";
+import { computeLiveRosterAction } from "@/app/(authenticated)/admin/lives/rosterAction";
 
 type FormBonusVideo = CreateReleaseBonusVideoInput & { _key: string };
 type FormTrackLink = CreateReleaseTrackLinkInput & { _key: string };
@@ -153,6 +154,7 @@ export function ReleaseForm({
   const [pendingArtworkPreviewUrl, setPendingArtworkPreviewUrl] = useState<string | null>(null);
   const [trackQueries, setTrackQueries] = useState<Record<string, string>>({});
   const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
+  const [isComputingRoster, setIsComputingRoster] = useState(false);
 
   const trackTitleById = useMemo(
     () => new Map<string, string>(tracks.map((track) => [track.id, track.title])),
@@ -230,6 +232,33 @@ export function ReleaseForm({
       delete next.numbering;
       return next;
     });
+  };
+
+  // リリース日×グループから在籍メンバーを自動入力する
+  const canAutoRoster = values.groupId !== "" && values.releaseDate !== "";
+  const handleAutoRoster = async () => {
+    if (!canAutoRoster) return;
+    setIsComputingRoster(true);
+    try {
+      const { memberIds } = await computeLiveRosterAction(
+        [values.groupId],
+        values.releaseDate
+      );
+      // 既存の選択は残しつつ、算出メンバーを追加（その後手動調整）
+      setValues((prev) => ({
+        ...prev,
+        participantMemberIds: [
+          ...new Set([...prev.participantMemberIds, ...memberIds]),
+        ],
+      }));
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next.participantMemberIds;
+        return next;
+      });
+    } finally {
+      setIsComputingRoster(false);
+    }
   };
 
   const toggleParticipant = (memberId: string) => {
@@ -695,18 +724,33 @@ export function ReleaseForm({
       </div>
 
       <div>
-        <div className="mb-1 flex items-center justify-between">
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
           <label className="block text-sm font-medium text-foreground/70">
             参加メンバー
           </label>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={() => setShowAllParticipantMembers((prev) => !prev)}
-          >
-            {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleAutoRoster}
+              disabled={!canAutoRoster || isComputingRoster}
+              className="rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground hover:bg-foreground/5 disabled:opacity-40"
+            >
+              {isComputingRoster ? "計算中..." : "リリース日・グループから自動入力"}
+            </button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAllParticipantMembers((prev) => !prev)}
+            >
+              {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
+            </Button>
+          </div>
         </div>
+        {!canAutoRoster && (
+          <p className="mb-1 text-xs text-foreground/40">
+            ※自動入力にはグループの選択とリリース日の入力が必要です
+          </p>
+        )}
         {errors.participantMemberIds && (
           <p className="mb-1 text-xs text-red-500">{errors.participantMemberIds}</p>
         )}
