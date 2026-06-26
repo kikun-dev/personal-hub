@@ -79,10 +79,10 @@ VALUES
     '参考公演: 乃木坂46 真夏の全国ツアー2025 / 日向坂46 ARENA TOUR 2025'
   ),
   (
-    'マリンメッセ福岡A館',
+    'マリンメッセ福岡Ａ館',
     '福岡県',
     15000,
-    'https://www.google.com/maps/search/?api=1&query=マリンメッセ福岡A館',
+    'https://www.google.com/maps/search/?api=1&query=マリンメッセ福岡Ａ館',
     'https://www.marinemesse.or.jp/messe/',
     NULL,
     '参考公演: 乃木坂46 真夏の全国ツアー2025 / 櫻坂46 4th ARENA TOUR 2024 / 日向坂46 ARENA TOUR 2025'
@@ -241,16 +241,16 @@ VALUES
     '2025年開業（お台場・青海）。公式URL要確認'
   ),
   (
-    'Theater MILANO-Za',
+    'THEATER MILANO-Za',
     '東京都',
     NULL,
-    'https://www.google.com/maps/search/?api=1&query=Theater MILANO-Za',
+    'https://www.google.com/maps/search/?api=1&query=THEATER MILANO-Za',
     'https://tokyu-kabukicho-tower.jp/',
     NULL,
     '東急歌舞伎町タワー内の劇場（約900席）'
   ),
   (
-    '京セラドーム',
+    '京セラドーム大阪',
     '大阪府',
     36000,
     'https://www.google.com/maps/search/?api=1&query=京セラドーム大阪',
