@@ -1,7 +1,7 @@
 import { PendingLink } from "@/components/ui/PendingLink";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import type { ReleaseListItem } from "@/types/release";
-import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { formatReleaseTypeLabel } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -11,10 +11,7 @@ type ReleaseCardProps = {
 };
 
 export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps) {
-  const metaParts = [
-    RELEASE_TYPE_LABELS[release.releaseType],
-    ...(release.numbering ? [String(release.numbering)] : []),
-  ];
+  const typeLabel = formatReleaseTypeLabel(release.releaseType, release.numbering);
 
   return (
     <PendingLink
@@ -30,7 +27,7 @@ export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps)
             groupColor={release.groupColor}
           />
         )}
-        <span className="text-xs text-foreground/50">{metaParts.join(" / ")}</span>
+        <span className="text-xs text-foreground/50">{typeLabel}</span>
       </div>
       <p className="mt-1 text-xs text-foreground/50">曲目: {release.trackCount}曲</p>
       {release.releaseDate && (

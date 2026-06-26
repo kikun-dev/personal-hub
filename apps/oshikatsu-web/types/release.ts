@@ -16,6 +16,38 @@ export const RELEASE_TYPE_LABELS: Record<ReleaseType, string> = {
   other: "その他",
 };
 
+export const RELEASE_TYPE_LABELS_EN: Record<ReleaseType, string> = {
+  single: "Single",
+  album: "Album",
+  digital_single: "Digital Single",
+  other: "Other",
+};
+
+// 21 -> "21st", 5 -> "5th"
+export function ordinalNumber(value: number): string {
+  const mod100 = value % 100;
+  if (mod100 >= 11 && mod100 <= 13) return `${value}th`;
+  switch (value % 10) {
+    case 1:
+      return `${value}st`;
+    case 2:
+      return `${value}nd`;
+    case 3:
+      return `${value}rd`;
+    default:
+      return `${value}th`;
+  }
+}
+
+// 一覧用のリリース表記（例: "21st Single" / "5th Album" / "Digital Single"）
+export function formatReleaseTypeLabel(
+  releaseType: ReleaseType,
+  numbering: number | null
+): string {
+  const typeLabel = RELEASE_TYPE_LABELS_EN[releaseType];
+  return numbering ? `${ordinalNumber(numbering)} ${typeLabel}` : typeLabel;
+}
+
 export type ReleaseBonusVideo = {
   id: string;
   edition: string;
