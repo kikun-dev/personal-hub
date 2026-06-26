@@ -212,6 +212,105 @@ VALUES
     'https://www.nipponbudokan.or.jp/',
     NULL,
     '参考公演: 日向坂46 四期生ライブ'
+  ),
+  (
+    '幕張イベントホール',
+    '千葉県',
+    9000,
+    'https://www.google.com/maps/search/?api=1&query=幕張イベントホール',
+    'https://www.m-messe.co.jp/',
+    NULL,
+    '幕張メッセ内のイベントホール'
+  ),
+  (
+    '有明アリーナ',
+    '東京都',
+    15000,
+    'https://www.google.com/maps/search/?api=1&query=有明アリーナ',
+    'https://www.ariake-arena.tokyo/',
+    NULL,
+    NULL
+  ),
+  (
+    'TOYOTA ARENA TOKYO',
+    '東京都',
+    10000,
+    'https://www.google.com/maps/search/?api=1&query=TOYOTA ARENA TOKYO',
+    NULL,
+    NULL,
+    '2025年開業（お台場・青海）。公式URL要確認'
+  ),
+  (
+    'Theater MILANO-Za',
+    '東京都',
+    NULL,
+    'https://www.google.com/maps/search/?api=1&query=Theater MILANO-Za',
+    'https://tokyu-kabukicho-tower.jp/',
+    NULL,
+    '東急歌舞伎町タワー内の劇場（約900席）'
+  ),
+  (
+    '京セラドーム',
+    '大阪府',
+    36000,
+    'https://www.google.com/maps/search/?api=1&query=京セラドーム大阪',
+    'https://www.kyoceradome-osaka.jp/',
+    NULL,
+    'コンサート時 約3.6万人'
+  ),
+  (
+    'ZOZOマリンスタジアム',
+    '千葉県',
+    30000,
+    'https://www.google.com/maps/search/?api=1&query=ZOZOマリンスタジアム',
+    'https://www.marines.co.jp/stadium/',
+    NULL,
+    'コンサート時 約3万人'
+  ),
+  (
+    'Kアリーナ横浜',
+    '神奈川県',
+    20000,
+    'https://www.google.com/maps/search/?api=1&query=Kアリーナ横浜',
+    'https://k-arena.com/',
+    NULL,
+    '音楽特化型アリーナ'
+  ),
+  (
+    'LaLa arena TOKYO-BAY',
+    '千葉県',
+    10000,
+    'https://www.google.com/maps/search/?api=1&query=LaLa arena TOKYO-BAY',
+    NULL,
+    NULL,
+    '船橋（ららアリーナ 東京ベイ）。公式URL要確認'
+  ),
+  (
+    '武蔵野の森総合スポーツプラザ',
+    '東京都',
+    10000,
+    'https://www.google.com/maps/search/?api=1&query=武蔵野の森総合スポーツプラザ',
+    'https://www.musashinonomori-sportsplaza.jp/',
+    NULL,
+    'メインアリーナ 約1万人'
+  ),
+  (
+    'さいたまスーパーアリーナ',
+    '埼玉県',
+    37000,
+    'https://www.google.com/maps/search/?api=1&query=さいたまスーパーアリーナ',
+    'https://www.saitama-arena.co.jp/',
+    NULL,
+    '最大約3.7万人（モードにより変動）'
+  ),
+  (
+    '東京国際フォーラムホールA',
+    '東京都',
+    5012,
+    'https://www.google.com/maps/search/?api=1&query=東京国際フォーラム ホールA',
+    'https://www.t-i-forum.co.jp/',
+    NULL,
+    NULL
   );
 
 UPDATE public.orbit_venues AS venue
