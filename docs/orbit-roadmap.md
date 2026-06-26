@@ -221,6 +221,7 @@
 - [x] A: 会場マスタ `orbit_venues`（Issue #99）
   - [x] CRUD（`/venues`, `/venues/new`, `/venues/[id]/edit`）＋公開詳細（`/venues/[id]`）。名称/都道府県/住所/キャパ/交通情報/メモ
   - [x] Top 右ナビに「会場」を追加
+  - [x] 入力改善（Issue #115）: 住所を廃止し Googleマップ/公式サイトのリンク追加。都道府県を選択式（47＋海外は地域手入力）に
 - [x] B: ライブ＋公演 基盤（`orbit_lives` / `orbit_live_performances` / performers）（Issue #100）
   - [x] ライブ（名称/種別/説明）＋出演グループ＋出演メンバー基準ロスター
   - [x] 公演（会場/日付/開場・開演/昼夜/配信/LV/チケット・座席）を複数管理

@@ -2,8 +2,9 @@ export type Venue = {
   id: string;
   name: string;
   prefecture: string | null;
-  address: string | null;
   capacity: number | null;
+  mapUrl: string | null;
+  officialUrl: string | null;
   access: string | null;
   notes: string | null;
 };
@@ -16,8 +17,9 @@ export type VenueOption = {
 export type CreateVenueInput = {
   name: string;
   prefecture: string;
-  address: string;
   capacity: string;
+  mapUrl: string;
+  officialUrl: string;
   access: string;
   notes: string;
 };

@@ -7,8 +7,9 @@ type VenueRow = {
   id: string;
   name: string;
   prefecture: string | null;
-  address: string | null;
   capacity: number | null;
+  map_url: string | null;
+  official_url: string | null;
   access: string | null;
   notes: string | null;
 };
@@ -28,14 +29,16 @@ function parseCapacity(value: string): number | null {
 }
 
 export function createVenueRepository(supabase: SupabaseClient): VenueRepository {
-  const selectFields = "id, name, prefecture, address, capacity, access, notes";
+  const selectFields =
+    "id, name, prefecture, capacity, map_url, official_url, access, notes";
 
   const mapVenue = (row: VenueRow): Venue => ({
     id: row.id,
     name: row.name,
     prefecture: row.prefecture,
-    address: row.address,
     capacity: row.capacity,
+    mapUrl: row.map_url,
+    officialUrl: row.official_url,
     access: row.access,
     notes: row.notes,
   });
@@ -48,15 +51,17 @@ export function createVenueRepository(supabase: SupabaseClient): VenueRepository
   const toRow = (input: {
     name: string;
     prefecture: string;
-    address: string;
     capacity: string;
+    mapUrl: string;
+    officialUrl: string;
     access: string;
     notes: string;
   }) => ({
     name: input.name.trim(),
     prefecture: input.prefecture.trim() || null,
-    address: input.address.trim() || null,
     capacity: parseCapacity(input.capacity),
+    map_url: input.mapUrl.trim() || null,
+    official_url: input.officialUrl.trim() || null,
     access: input.access.trim() || null,
     notes: input.notes.trim() || null,
   });
