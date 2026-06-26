@@ -19,6 +19,8 @@ import {
   type PerformanceStyle,
   type SetlistItemType,
 } from "@/types/live";
+import { Combobox } from "@/components/ui/Combobox";
+import { computeLiveRosterAction } from "@/app/(authenticated)/admin/lives/rosterAction";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
@@ -336,6 +338,31 @@ export function LiveForm({
     return [...absenceCandidates, ...extras];
   };
 
+  const [isComputingRoster, setIsComputingRoster] = useState(false);
+  // 自動計算の基準日 = 最初の公演日
+  const earliestPerformanceDate =
+    performances
+      .map((performance) => performance.performanceDate)
+      .filter((date) => date !== "")
+      .sort((a, b) => a.localeCompare(b))[0] ?? "";
+  const canAutoRoster =
+    performerGroupIds.length > 0 && earliestPerformanceDate !== "";
+
+  const handleAutoRoster = async () => {
+    if (!canAutoRoster) return;
+    setIsComputingRoster(true);
+    try {
+      const { memberIds } = await computeLiveRosterAction(
+        performerGroupIds,
+        earliestPerformanceDate
+      );
+      // 既存の選択は残しつつ、算出メンバーを追加（その後手動調整）
+      setPerformerMemberIds((prev) => [...new Set([...prev, ...memberIds])]);
+    } finally {
+      setIsComputingRoster(false);
+    }
+  };
+
   // 種別ごとの時間ラベル（フェス=出演時刻 / 配信=配信時刻、いずれも開場は出さない）
   const hideDoorsOpen = liveType === "festival" || liveType === "online";
   const startsLabel =
@@ -461,9 +488,24 @@ export function LiveForm({
       </div>
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
-          出演メンバー（基準ロスター）
-        </label>
+        <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+          <label className="block text-sm font-medium text-foreground/70">
+            出演メンバー（基準ロスター）
+          </label>
+          <button
+            type="button"
+            onClick={handleAutoRoster}
+            disabled={!canAutoRoster || isComputingRoster}
+            className="rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground hover:bg-foreground/5 disabled:opacity-40"
+          >
+            {isComputingRoster ? "計算中..." : "出演グループ・最初の公演日から自動入力"}
+          </button>
+        </div>
+        {!canAutoRoster && (
+          <p className="mb-1 text-xs text-foreground/40">
+            ※自動入力には出演グループの選択と公演日の入力が必要です
+          </p>
+        )}
         <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-foreground/10 p-3 sm:grid-cols-3">
           {members.map((member) => (
             <label key={member.id} className="flex cursor-pointer items-center gap-2 text-sm">
@@ -509,20 +551,19 @@ export function LiveForm({
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs text-foreground/60">会場</label>
-                <select
+                <Combobox
                   value={performance.venueId}
-                  onChange={(e) =>
-                    updatePerformance(performance.key, { venueId: e.target.value })
+                  onChange={(venueId) =>
+                    updatePerformance(performance.key, { venueId })
                   }
-                  className={inputClass}
-                >
-                  <option value="">未設定</option>
-                  {venues.map((venue) => (
-                    <option key={venue.id} value={venue.id}>
-                      {venue.name}
-                    </option>
-                  ))}
-                </select>
+                  options={venues.map((venue) => ({
+                    value: venue.id,
+                    label: venue.name,
+                  }))}
+                  ariaLabel="会場を検索"
+                  placeholder="会場を検索"
+                  emptyLabel="未設定"
+                />
               </div>
               <Input
                 id={`performance-${performance.key}-date`}
@@ -738,22 +779,22 @@ export function LiveForm({
                   {item.itemType === "song" ? (
                     <>
                       <div className="flex flex-wrap gap-2">
-                        <select
+                        <Combobox
                           value={item.trackId}
-                          onChange={(e) =>
+                          onChange={(trackId) =>
                             updateSetlistItem(performance.key, item.key, {
-                              trackId: e.target.value,
+                              trackId,
                             })
                           }
-                          className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
-                        >
-                          <option value="">登録曲から選択</option>
-                          {tracks.map((track) => (
-                            <option key={track.id} value={track.id}>
-                              {track.title}
-                            </option>
-                          ))}
-                        </select>
+                          options={tracks.map((track) => ({
+                            value: track.id,
+                            label: track.title,
+                          }))}
+                          ariaLabel="登録曲を検索"
+                          placeholder="登録曲を検索"
+                          emptyLabel="未選択"
+                          className="w-44"
+                        />
                         <input
                           value={item.songTitle}
                           onChange={(e) =>

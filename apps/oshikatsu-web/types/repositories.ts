@@ -63,6 +63,7 @@ export type MemberRepository = {
   delete(id: string): Promise<void>;
   findBirthdaysByMonth(month: number): Promise<BirthdayMember[]>;
   findBirthdaysByDate(month: number, day: number): Promise<BirthdayMember[]>;
+  findActiveMemberIdsByGroups(groupIds: string[], date: string): Promise<string[]>;
 };
 
 export type EventRepository = {
