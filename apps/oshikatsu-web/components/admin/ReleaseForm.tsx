@@ -487,7 +487,7 @@ export function ReleaseForm({
       </div>
 
       <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
-        <p className="text-sm font-medium text-foreground">曲目アートワーク</p>
+        <p className="text-sm font-medium text-foreground">収録曲アートワーク</p>
 
         <Input
           id="artworkPersonName"
@@ -611,7 +611,7 @@ export function ReleaseForm({
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">曲目（楽曲）</label>
+          <label className="text-sm font-medium text-foreground/70">収録曲（楽曲）</label>
           <Button type="button" variant="ghost" onClick={addTrackLink}>
             + 楽曲を追加
           </Button>

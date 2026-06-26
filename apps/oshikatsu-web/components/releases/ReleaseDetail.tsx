@@ -42,7 +42,7 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
 
       {artworkSrc && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">曲目アートワーク</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録曲アートワーク</h2>
           <Image
             src={artworkSrc}
             alt={`${release.title} artwork`}
@@ -74,7 +74,7 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
 
       {release.tracks.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">曲目</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録曲</h2>
           <ol className="space-y-2">
             {release.tracks.map((track) => (
               <li key={track.trackId} className="rounded-lg border border-foreground/10 p-3">
