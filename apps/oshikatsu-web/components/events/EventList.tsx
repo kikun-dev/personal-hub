@@ -2,7 +2,19 @@ import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
 import { formatTime } from "@/lib/formatters";
-import { BIRTHDAY_COLOR } from "@/lib/constants";
+import { BIRTHDAY_COLOR, LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
+
+function eventKey(event: CalendarEvent): string {
+  switch (event.type) {
+    case "birthday":
+      return `birthday-${event.memberId}-${event.date}`;
+    case "live":
+    case "release":
+      return `${event.type}-${event.id}`;
+    default:
+      return `event-${event.id}`;
+  }
+}
 
 type EventListProps = {
   events: CalendarEvent[];
@@ -24,8 +36,28 @@ export function EventList({
       ) : (
         <div className="space-y-2">
           {events.map((event) => (
-            <div key={event.type === "birthday" ? `birthday-${event.memberId}-${event.date}` : `event-${event.id}`} className="flex items-start gap-2 text-sm">
-              {event.type === "birthday" ? (
+            <div key={eventKey(event)} className="flex items-start gap-2 text-sm">
+              {event.type === "live" ? (
+                <>
+                  <Badge label="ライブ" color={LIVE_COLOR} />
+                  <Link
+                    href={`/lives/${event.liveId}`}
+                    className="text-foreground hover:underline"
+                  >
+                    {event.name}
+                  </Link>
+                </>
+              ) : event.type === "release" ? (
+                <>
+                  <Badge label="リリース" color={RELEASE_COLOR} />
+                  <Link
+                    href={`/releases/${event.releaseId}`}
+                    className="text-foreground hover:underline"
+                  >
+                    {event.title}
+                  </Link>
+                </>
+              ) : event.type === "birthday" ? (
                 <>
                   <Badge label="誕生日" color={BIRTHDAY_COLOR} />
                   <div>

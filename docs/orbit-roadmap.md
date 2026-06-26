@@ -214,6 +214,12 @@
 - [x] メンバー一覧に期（世代）絞り込みを追加（Issue #96）
   - [x] グループ選択時のみ表示。選択肢は `Group.maxGeneration`（無ければ実在世代から導出）。グループスコープで絞り込み、グループ変更時はリセット。URL `generation` を同期
 
+### カレンダーにライブ公演・リリース日を統合
+
+- [x] トップのカレンダー/当日イベント/今日はなんの日に、ライブ公演日とリリース日を表示（読み取り側で集約、データ二重化なし）
+  - [x] `liveRepository.findCalendarPerformances` / `releaseRepository.findCalendarItems` を追加し `getTopPageContent` で月/当日/OnThisDay にマージ
+  - [x] 種別ごとに色ドット（ライブ/リリース）＋一覧・OnThisDay にバッジとリンク表示。top キャッシュを lives/releases タグに連動
+
 ### リリース/ライブ一覧の表示見直し
 
 - [x] リリース一覧: グループ別セクションを廃止し、リリース日降順のフラット表示＋グループ色バッジに変更（グループ＋リリースタイプ絞り込みは維持、日付未定は末尾）

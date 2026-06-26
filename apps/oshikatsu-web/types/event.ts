@@ -41,6 +41,30 @@ export type BirthdayEvent = {
   groupNames: string[];
 };
 
+export type LiveCalendarEvent = {
+  type: "live";
+  id: string;
+  liveId: string;
+  name: string;
+  date: string;
+};
+
+export type ReleaseCalendarEvent = {
+  type: "release";
+  id: string;
+  releaseId: string;
+  title: string;
+  date: string;
+};
+
 export type CalendarEvent =
   | (Event & { type: "event" })
-  | BirthdayEvent;
+  | BirthdayEvent
+  | LiveCalendarEvent
+  | ReleaseCalendarEvent;
+
+// 「今日はなんの日」用（過去の出来事。誕生日は含めない）
+export type OnThisDayItem =
+  | (Event & { type: "event" })
+  | LiveCalendarEvent
+  | ReleaseCalendarEvent;

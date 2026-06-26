@@ -1,8 +1,21 @@
 import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
-import { BIRTHDAY_COLOR } from "@/lib/constants";
+import { BIRTHDAY_COLOR, LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
 import { getTodayInAppTimeZone } from "@/lib/dateParams";
+
+function calendarEventColor(event: CalendarEvent): string {
+  switch (event.type) {
+    case "birthday":
+      return BIRTHDAY_COLOR;
+    case "live":
+      return LIVE_COLOR;
+    case "release":
+      return RELEASE_COLOR;
+    default:
+      return event.eventTypeColor;
+  }
+}
 
 type EventCalendarProps = {
   events: CalendarEvent[];
@@ -84,12 +97,7 @@ export function EventCalendar({
                     <span
                       key={i}
                       className="h-1 w-1 rounded-full"
-                      style={{
-                        backgroundColor:
-                          e.type === "birthday"
-                            ? BIRTHDAY_COLOR
-                            : e.eventTypeColor,
-                      }}
+                      style={{ backgroundColor: calendarEventColor(e) }}
                     />
                   ))}
                 </div>
