@@ -9,6 +9,10 @@ import { revalidateOrbitSongData } from "@/lib/revalidateOrbit";
 import type { UpdateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
+import {
+  isDuplicateTrackNumberError,
+  DUPLICATE_TRACK_NUMBER_MESSAGE,
+} from "@/lib/releaseTrackErrors";
 
 export async function updateSongAction(
   id: string,
@@ -35,6 +39,11 @@ export async function updateSongAction(
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
+      if (isDuplicateTrackNumberError(e)) {
+        return {
+          errors: [{ field: "_form", message: DUPLICATE_TRACK_NUMBER_MESSAGE }],
+        };
+      }
       return {
         errors: [{ field: "_form", message: "楽曲が見つからないか、更新に失敗しました" }],
       };
