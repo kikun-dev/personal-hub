@@ -7,6 +7,15 @@ export function formatMonthLabel(year: number, month: number): string {
   return `${year}年${month}月`;
 }
 
+const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
+
+// 6/13(土) のように月/日(曜日)で表示する
+export function formatMonthDayWithWeekday(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  return `${date.getMonth() + 1}/${date.getDate()}(${weekday})`;
+}
+
 export function formatBirthday(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;

@@ -6,7 +6,7 @@ import {
   SETLIST_ITEM_TYPE_LABELS,
 } from "@/types/live";
 import { GroupBadge } from "@/components/ui/GroupBadge";
-import { formatDate } from "@/lib/formatters";
+import { formatMonthDayWithWeekday } from "@/lib/formatters";
 
 type LiveDetailProps = {
   live: Live;
@@ -35,7 +35,7 @@ function formatScheduleLine(
   performance: LivePerformance
 ): string {
   const date = performance.performanceDate
-    ? formatDate(performance.performanceDate)
+    ? formatMonthDayWithWeekday(performance.performanceDate)
     : "日付未定";
   const time = formatScheduleTime(
     liveType,
@@ -207,7 +207,7 @@ export function LiveDetail({ live }: LiveDetailProps) {
                 <div className="flex flex-wrap items-center gap-2 text-sm">
                   <span className="font-medium text-foreground">
                     {performance.performanceDate
-                      ? formatDate(performance.performanceDate)
+                      ? formatMonthDayWithWeekday(performance.performanceDate)
                       : "日付未定"}
                   </span>
                   <VenueLink performance={performance} />
