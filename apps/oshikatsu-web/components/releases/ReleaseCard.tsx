@@ -29,7 +29,7 @@ export function ReleaseCard({ release, showGroupName = true }: ReleaseCardProps)
         )}
         <span className="text-xs text-foreground/50">{typeLabel}</span>
       </div>
-      <p className="mt-1 text-xs text-foreground/50">曲目: {release.trackCount}曲</p>
+      <p className="mt-1 text-xs text-foreground/50">収録曲: {release.trackCount}曲</p>
       {release.releaseDate && (
         <p className="mt-1 text-xs text-foreground/50">{formatDate(release.releaseDate)}</p>
       )}
