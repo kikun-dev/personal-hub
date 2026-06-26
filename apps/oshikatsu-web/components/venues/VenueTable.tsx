@@ -12,9 +12,9 @@ type VenueTableProps = {
   venues: Venue[];
 };
 
-// 北→南の順序（PREFECTURES の並び）。海外・未設定は末尾。
-function prefectureRank(prefecture: string | null): number {
-  if (!prefecture) return PREFECTURES.length + 1;
+// 北→南の順序（PREFECTURES の並び）。海外は48番目（47都道府県の次）。
+// 未設定(null)は別途「常に末尾」で扱うため、ここでは非nullのみ受ける。
+function prefectureRank(prefecture: string): number {
   const index = (PREFECTURES as readonly string[]).indexOf(prefecture);
   return index === -1 ? PREFECTURES.length : index;
 }
@@ -38,10 +38,14 @@ export function VenueTable({ venues }: VenueTableProps) {
         return cmp !== 0 ? cmp * factor : a.name.localeCompare(b.name, "ja");
       }
       if (sortKey === "prefecture") {
+        // 未設定（null）は方向に関わらず末尾
+        if (!a.prefecture && !b.prefecture) {
+          return a.name.localeCompare(b.name, "ja");
+        }
+        if (!a.prefecture) return 1;
+        if (!b.prefecture) return -1;
         const cmp = prefectureRank(a.prefecture) - prefectureRank(b.prefecture);
-        return cmp !== 0
-          ? cmp * factor
-          : a.name.localeCompare(b.name, "ja");
+        return cmp !== 0 ? cmp * factor : a.name.localeCompare(b.name, "ja");
       }
       return a.name.localeCompare(b.name, "ja") * factor;
     });
