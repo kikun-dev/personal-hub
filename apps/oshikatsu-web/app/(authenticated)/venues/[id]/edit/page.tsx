@@ -24,8 +24,9 @@ export default async function EditVenuePage({ params }: EditVenuePageProps) {
   const initialValues: UpdateVenueInput = {
     name: venue.name,
     prefecture: venue.prefecture ?? "",
-    address: venue.address ?? "",
     capacity: venue.capacity != null ? String(venue.capacity) : "",
+    mapUrl: venue.mapUrl ?? "",
+    officialUrl: venue.officialUrl ?? "",
     access: venue.access ?? "",
     notes: venue.notes ?? "",
   };

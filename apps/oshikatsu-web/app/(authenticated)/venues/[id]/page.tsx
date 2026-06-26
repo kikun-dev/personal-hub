@@ -19,11 +19,15 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
 
   const rows: { label: string; value: string | null }[] = [
     { label: "都道府県", value: venue.prefecture },
-    { label: "住所", value: venue.address },
     {
       label: "キャパシティ",
       value: venue.capacity != null ? `${venue.capacity.toLocaleString()}人` : null,
     },
+  ];
+
+  const links: { label: string; url: string | null }[] = [
+    { label: "Googleマップ", url: venue.mapUrl },
+    { label: "公式サイト", url: venue.officialUrl },
   ];
 
   return (
@@ -43,6 +47,24 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
           </div>
         ))}
       </dl>
+
+      {links.some((link) => link.url) && (
+        <div className="flex flex-wrap gap-3 text-sm">
+          {links
+            .filter((link) => link.url)
+            .map((link) => (
+              <a
+                key={link.label}
+                href={link.url ?? undefined}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-500 hover:underline"
+              >
+                {link.label}
+              </a>
+            ))}
+        </div>
+      )}
 
       {venue.access && (
         <section className="space-y-1">
