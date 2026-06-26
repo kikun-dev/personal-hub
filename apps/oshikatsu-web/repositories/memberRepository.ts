@@ -657,5 +657,36 @@ export function createMemberRepository(
 
       return ((data as BirthdayMemberRow[] | null) ?? []).map(mapToBirthdayMember);
     },
+
+    async findActiveMemberIdsByGroups(groupIds, date) {
+      if (groupIds.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from("orbit_member_groups")
+        .select("member_id, joined_at, graduated_at")
+        .in("group_id", groupIds);
+
+      if (error) {
+        throw new RepositoryError("在籍メンバーの取得に失敗しました", error);
+      }
+
+      type Row = {
+        member_id: string;
+        joined_at: string | null;
+        graduated_at: string | null;
+      };
+
+      const activeIds = new Set<string>();
+      for (const row of (data as Row[] | null) ?? []) {
+        const joinedOk = !row.joined_at || row.joined_at <= date;
+        const notGraduated = !row.graduated_at || row.graduated_at >= date;
+        if (joinedOk && notGraduated) {
+          activeIds.add(row.member_id);
+        }
+      }
+      return [...activeIds];
+    },
   };
 }
