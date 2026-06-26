@@ -51,7 +51,6 @@ type PerformanceField = {
   performanceDate: string;
   doorsOpenAt: string;
   startsAt: string;
-  sessionLabel: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string;
@@ -96,7 +95,6 @@ export function LiveForm({
       performanceDate: performance.performanceDate,
       doorsOpenAt: performance.doorsOpenAt,
       startsAt: performance.startsAt,
-      sessionLabel: performance.sessionLabel,
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
       ticketInfo: performance.ticketInfo,
@@ -137,7 +135,6 @@ export function LiveForm({
         performanceDate: "",
         doorsOpenAt: "",
         startsAt: "",
-        sessionLabel: "",
         hasStreaming: false,
         hasLiveViewing: false,
         ticketInfo: "",
@@ -355,7 +352,6 @@ export function LiveForm({
         performanceDate: performance.performanceDate,
         doorsOpenAt: performance.doorsOpenAt,
         startsAt: performance.startsAt,
-        sessionLabel: performance.sessionLabel,
         hasStreaming: performance.hasStreaming,
         hasLiveViewing: performance.hasLiveViewing,
         ticketInfo: performance.ticketInfo,
@@ -423,6 +419,9 @@ export function LiveForm({
             </option>
           ))}
         </select>
+        <p className="mt-1 text-xs text-foreground/50">
+          単発ライブ＝1会場（複数日可）／ツアー＝複数会場／配信は複数日程可
+        </p>
       </div>
 
       <Textarea
@@ -542,14 +541,6 @@ export function LiveForm({
                   updatePerformance(performance.key, { startsAt: e.target.value })
                 }
                 error={errors[`performances.${index}.startsAt`]}
-              />
-              <Input
-                id={`performance-${performance.key}-session`}
-                label="昼夜ラベル"
-                value={performance.sessionLabel}
-                onChange={(e) =>
-                  updatePerformance(performance.key, { sessionLabel: e.target.value })
-                }
               />
             </div>
 

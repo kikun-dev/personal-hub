@@ -59,7 +59,6 @@ type PerformanceRow = {
   performance_date: string | null;
   doors_open_at: string | null;
   starts_at: string | null;
-  session_label: string | null;
   has_streaming: boolean;
   has_live_viewing: boolean;
   ticket_info: string | null;
@@ -99,7 +98,6 @@ const DETAIL_SELECT = `
     performance_date,
     doors_open_at,
     starts_at,
-    session_label,
     has_streaming,
     has_live_viewing,
     ticket_info,
@@ -129,7 +127,6 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
     performanceDate: row.performance_date,
     doorsOpenAt: row.doors_open_at,
     startsAt: row.starts_at,
-    sessionLabel: row.session_label,
     hasStreaming: row.has_streaming,
     hasLiveViewing: row.has_live_viewing,
     ticketInfo: row.ticket_info,
@@ -204,7 +201,6 @@ function toLivePayload(input: CreateLiveInput) {
       performance_date: performance.performanceDate || null,
       doors_open_at: performance.doorsOpenAt.trim(),
       starts_at: performance.startsAt.trim(),
-      session_label: performance.sessionLabel.trim(),
       has_streaming: performance.hasStreaming,
       has_live_viewing: performance.hasLiveViewing,
       ticket_info: performance.ticketInfo.trim(),
@@ -320,7 +316,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
         .select(`
           id,
           performance_date,
-          session_label,
           live_id,
           orbit_lives(name)
         `)
@@ -334,7 +329,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
       type Row = {
         id: string;
         performance_date: string | null;
-        session_label: string | null;
         live_id: string;
         orbit_lives: { name: string } | { name: string }[] | null;
       };
@@ -345,7 +339,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           liveId: row.live_id,
           liveName: pickFirst(row.orbit_lives)?.name ?? "",
           performanceDate: row.performance_date,
-          sessionLabel: row.session_label,
         })
       );
     },

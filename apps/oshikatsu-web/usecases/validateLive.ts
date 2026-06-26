@@ -1,6 +1,10 @@
 import type { CreateLiveInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
-import { isLiveType, isSetlistItemType, isPerformanceStyle } from "@/types/live";
+import {
+  isLiveType,
+  isSetlistItemType,
+  isPerformanceStyle,
+} from "@/types/live";
 import { isValidDateString } from "@/lib/validation";
 
 function isValidTimeString(value: string): boolean {
@@ -22,6 +26,20 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
 
   if (!input.liveType || !isLiveType(input.liveType)) {
     errors.push({ field: "liveType", message: "種別を選択してください" });
+  }
+
+  // 単発ライブは1会場のみ（複数日は可）。ツアー/フェス/配信/その他は会場数を制約しない
+  // （配信ライブは複数日程・会場任意を許容）
+  if (input.liveType === "single") {
+    const venueIds = new Set(
+      input.performances.map((performance) => performance.venueId).filter(Boolean)
+    );
+    if (venueIds.size > 1) {
+      errors.push({
+        field: "liveType",
+        message: "単発ライブは1会場のみです（複数会場はツアーを選択してください）",
+      });
+    }
   }
 
   if (input.description.length > 2000) {

@@ -35,7 +35,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
       performanceDate: performance.performanceDate ?? "",
       doorsOpenAt: performance.doorsOpenAt ?? "",
       startsAt: performance.startsAt ?? "",
-      sessionLabel: performance.sessionLabel ?? "",
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
       ticketInfo: performance.ticketInfo ?? "",

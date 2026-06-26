@@ -1,9 +1,16 @@
-export const LIVE_TYPE_VALUES = ["live", "festival", "online", "other"] as const;
+export const LIVE_TYPE_VALUES = [
+  "single",
+  "tour",
+  "festival",
+  "online",
+  "other",
+] as const;
 
 export type LiveType = (typeof LIVE_TYPE_VALUES)[number];
 
 export const LIVE_TYPE_LABELS: Record<LiveType, string> = {
-  live: "ライブ",
+  single: "単発ライブ",
+  tour: "ツアー",
   festival: "フェス",
   online: "配信ライブ",
   other: "その他",
@@ -96,7 +103,6 @@ export type LivePerformance = {
   performanceDate: string | null;
   doorsOpenAt: string | null;
   startsAt: string | null;
-  sessionLabel: string | null;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string | null;
@@ -136,7 +142,6 @@ export type VenuePerformanceSummary = {
   liveId: string;
   liveName: string;
   performanceDate: string | null;
-  sessionLabel: string | null;
 };
 
 export type CreateLivePerformanceAbsenceInput = {
@@ -163,7 +168,6 @@ export type CreateLivePerformanceInput = {
   performanceDate: string;
   doorsOpenAt: string;
   startsAt: string;
-  sessionLabel: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string;

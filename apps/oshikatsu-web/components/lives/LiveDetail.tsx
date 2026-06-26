@@ -76,11 +76,6 @@ export function LiveDetail({ live }: LiveDetailProps) {
                         ? formatDate(performance.performanceDate)
                         : "日付未定"}
                     </span>
-                    {performance.sessionLabel && (
-                      <span className="text-foreground/60">
-                        {performance.sessionLabel}
-                      </span>
-                    )}
                     {performance.venueId && performance.venueName && (
                       <Link
                         href={`/venues/${performance.venueId}`}
