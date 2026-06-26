@@ -15,7 +15,10 @@ import { RepositoryError } from "@/types/errors";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
 type MemberRel = { name_ja: string } | { name_ja: string }[] | null;
-type VenueRel = { name: string } | { name: string }[] | null;
+type VenueRel =
+  | { name: string; prefecture: string | null }
+  | { name: string; prefecture: string | null }[]
+  | null;
 
 type PerformerGroupRow = {
   group_id: string;
@@ -103,7 +106,7 @@ const DETAIL_SELECT = `
     ticket_info,
     seat_info,
     sort_order,
-    orbit_venues(name),
+    orbit_venues(name, prefecture),
     orbit_live_performance_absences(member_id, note, orbit_members(name_ja)),
     orbit_setlist_items(
       position,
@@ -124,6 +127,7 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
     id: row.id,
     venueId: row.venue_id,
     venueName: venue?.name ?? null,
+    venuePrefecture: venue?.prefecture ?? null,
     performanceDate: row.performance_date,
     doorsOpenAt: row.doors_open_at,
     startsAt: row.starts_at,

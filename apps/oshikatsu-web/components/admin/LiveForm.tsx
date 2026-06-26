@@ -336,6 +336,15 @@ export function LiveForm({
     return [...absenceCandidates, ...extras];
   };
 
+  // 種別ごとの時間ラベル（フェス=出演時刻 / 配信=配信時刻、いずれも開場は出さない）
+  const hideDoorsOpen = liveType === "festival" || liveType === "online";
+  const startsLabel =
+    liveType === "online"
+      ? "配信時刻 (HH:MM)"
+      : liveType === "festival"
+        ? "出演時刻 (HH:MM)"
+        : "開演 (HH:MM)";
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -494,6 +503,7 @@ export function LiveForm({
               </button>
             </div>
 
+            <p className="text-xs font-medium text-foreground/50">日程・会場</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs text-foreground/60">会場</label>
@@ -524,18 +534,20 @@ export function LiveForm({
                 }
                 error={errors[`performances.${index}.performanceDate`]}
               />
-              <Input
-                id={`performance-${performance.key}-doors`}
-                label="開場 (HH:MM)"
-                value={performance.doorsOpenAt}
-                onChange={(e) =>
-                  updatePerformance(performance.key, { doorsOpenAt: e.target.value })
-                }
-                error={errors[`performances.${index}.doorsOpenAt`]}
-              />
+              {!hideDoorsOpen && (
+                <Input
+                  id={`performance-${performance.key}-doors`}
+                  label="開場 (HH:MM)"
+                  value={performance.doorsOpenAt}
+                  onChange={(e) =>
+                    updatePerformance(performance.key, { doorsOpenAt: e.target.value })
+                  }
+                  error={errors[`performances.${index}.doorsOpenAt`]}
+                />
+              )}
               <Input
                 id={`performance-${performance.key}-starts`}
-                label="開演 (HH:MM)"
+                label={startsLabel}
                 value={performance.startsAt}
                 onChange={(e) =>
                   updatePerformance(performance.key, { startsAt: e.target.value })
@@ -544,6 +556,7 @@ export function LiveForm({
               />
             </div>
 
+            <p className="text-xs font-medium text-foreground/50">当日情報</p>
             <div className="flex flex-wrap gap-4">
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
