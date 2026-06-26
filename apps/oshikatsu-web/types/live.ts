@@ -1,9 +1,16 @@
-export const LIVE_TYPE_VALUES = ["live", "festival", "online", "other"] as const;
+export const LIVE_TYPE_VALUES = [
+  "single",
+  "tour",
+  "festival",
+  "online",
+  "other",
+] as const;
 
 export type LiveType = (typeof LIVE_TYPE_VALUES)[number];
 
 export const LIVE_TYPE_LABELS: Record<LiveType, string> = {
-  live: "ライブ",
+  single: "単発ライブ",
+  tour: "ツアー",
   festival: "フェス",
   online: "配信ライブ",
   other: "その他",
@@ -11,19 +18,6 @@ export const LIVE_TYPE_LABELS: Record<LiveType, string> = {
 
 export function isLiveType(value: string): value is LiveType {
   return (LIVE_TYPE_VALUES as readonly string[]).includes(value);
-}
-
-export const LIVE_FORMAT_VALUES = ["single", "tour"] as const;
-
-export type LiveFormat = (typeof LIVE_FORMAT_VALUES)[number];
-
-export const LIVE_FORMAT_LABELS: Record<LiveFormat, string> = {
-  single: "単発",
-  tour: "ツアー",
-};
-
-export function isLiveFormat(value: string): value is LiveFormat {
-  return (LIVE_FORMAT_VALUES as readonly string[]).includes(value);
 }
 
 export type LivePerformerGroup = {
@@ -122,7 +116,6 @@ export type Live = {
   id: string;
   name: string;
   liveType: LiveType;
-  format: LiveFormat;
   description: string | null;
   performerGroups: LivePerformerGroup[];
   performerMembers: LivePerformerMember[];
@@ -133,7 +126,6 @@ export type LiveListItem = {
   id: string;
   name: string;
   liveType: LiveType;
-  format: LiveFormat;
   performerGroupNames: string[];
   firstDate: string | null;
   lastDate: string | null;
@@ -187,7 +179,6 @@ export type CreateLivePerformanceInput = {
 export type CreateLiveInput = {
   name: string;
   liveType: LiveType | "";
-  format: LiveFormat;
   description: string;
   performerGroupIds: string[];
   performerMemberIds: string[];

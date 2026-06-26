@@ -27,7 +27,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
   const initialValues: CreateLiveInput = {
     name: live.name,
     liveType: live.liveType,
-    format: live.format,
     description: live.description ?? "",
     performerGroupIds: live.performerGroups.map((group) => group.groupId),
     performerMemberIds: live.performerMembers.map((member) => member.memberId),

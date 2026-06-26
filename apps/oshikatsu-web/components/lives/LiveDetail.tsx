@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Live, SetlistItem } from "@/types/live";
 import {
-  LIVE_FORMAT_LABELS,
   LIVE_TYPE_LABELS,
   PERFORMANCE_STYLE_LABELS,
   SETLIST_ITEM_TYPE_LABELS,
@@ -34,9 +33,7 @@ export function LiveDetail({ live }: LiveDetailProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <p className="text-xs text-foreground/50">
-          {LIVE_FORMAT_LABELS[live.format]} / {LIVE_TYPE_LABELS[live.liveType]}
-        </p>
+        <p className="text-xs text-foreground/50">{LIVE_TYPE_LABELS[live.liveType]}</p>
         <h1 className="text-xl font-bold text-foreground">{live.name}</h1>
         {live.performerGroups.length > 0 && (
           <div className="flex flex-wrap gap-2">

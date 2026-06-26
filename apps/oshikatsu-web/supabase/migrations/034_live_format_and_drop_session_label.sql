@@ -1,14 +1,20 @@
 -- ============================================================
 -- 034: ライブ入力UX(A)（#109）
--- - orbit_lives.format（単発/ツアー）を追加
+-- - ライブ種別を単一軸へ統合：live_type を single/tour/festival/online/other に拡張
+--   （旧 'live' は 'single' に移行。format は導入しない）
 -- - orbit_live_performances.session_label（昼夜ラベル）を削除（開演時間で区別）
--- - upsert_orbit_live RPC を format 対応 / session_label 除去で再定義
+-- - upsert_orbit_live RPC を session_label 除去で再定義
 -- ============================================================
 
-ALTER TABLE orbit_lives
-  ADD COLUMN format TEXT NOT NULL DEFAULT 'single'
-  CHECK (format IN ('single', 'tour'));
+-- 種別の統合（live -> single、CHECK を拡張）
+UPDATE orbit_lives SET live_type = 'single' WHERE live_type = 'live';
 
+ALTER TABLE orbit_lives DROP CONSTRAINT IF EXISTS orbit_lives_live_type_check;
+ALTER TABLE orbit_lives
+  ADD CONSTRAINT orbit_lives_live_type_check
+  CHECK (live_type IN ('single', 'tour', 'festival', 'online', 'other'));
+
+-- 昼夜ラベル削除
 ALTER TABLE orbit_live_performances
   DROP COLUMN session_label;
 
@@ -33,12 +39,11 @@ DECLARE
   v_member_sort    INT;
 BEGIN
   IF p_id IS NULL THEN
-    INSERT INTO public.orbit_lives (name, live_type, description, format)
+    INSERT INTO public.orbit_lives (name, live_type, description)
     VALUES (
       p_payload->>'name',
       p_payload->>'live_type',
-      NULLIF(p_payload->>'description', ''),
-      COALESCE(NULLIF(p_payload->>'format', ''), 'single')
+      NULLIF(p_payload->>'description', '')
     )
     RETURNING id INTO v_live_id;
   ELSE
@@ -46,8 +51,7 @@ BEGIN
     UPDATE public.orbit_lives
     SET name = p_payload->>'name',
         live_type = p_payload->>'live_type',
-        description = NULLIF(p_payload->>'description', ''),
-        format = COALESCE(NULLIF(p_payload->>'format', ''), 'single')
+        description = NULLIF(p_payload->>'description', '')
     WHERE id = v_live_id;
 
     IF NOT FOUND THEN

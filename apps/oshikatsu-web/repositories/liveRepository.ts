@@ -4,14 +4,13 @@ import type {
   CreateLiveInput,
   Live,
   LiveListItem,
-  LiveFormat,
   LiveOption,
   LivePerformance,
   LiveType,
   SetlistItem,
   VenuePerformanceSummary,
 } from "@/types/live";
-import { isSetlistItemType, isPerformanceStyle, isLiveFormat } from "@/types/live";
+import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
@@ -74,7 +73,6 @@ type LiveRow = {
   id: string;
   name: string;
   live_type: LiveType;
-  format: LiveFormat;
   description: string | null;
   orbit_live_performer_groups: PerformerGroupRow[] | null;
   orbit_live_performer_members: PerformerMemberRow[] | null;
@@ -91,7 +89,6 @@ const DETAIL_SELECT = `
   id,
   name,
   live_type,
-  format,
   description,
   orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
   orbit_live_performer_members(member_id, orbit_members(name_ja)),
@@ -170,7 +167,6 @@ function mapLive(row: LiveRow): Live {
     id: row.id,
     name: row.name,
     liveType: row.live_type,
-    format: isLiveFormat(row.format) ? row.format : "single",
     description: row.description,
     performerGroups: (row.orbit_live_performer_groups ?? []).map((pg) => {
       const group = pickFirst(pg.orbit_groups);
@@ -197,7 +193,6 @@ function toLivePayload(input: CreateLiveInput) {
   return {
     name: input.name.trim(),
     live_type: input.liveType,
-    format: input.format,
     description: input.description.trim(),
     performer_group_ids: input.performerGroupIds,
     performer_member_ids: input.performerMemberIds,
@@ -247,7 +242,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id,
           name,
           live_type,
-          format,
           orbit_live_performer_groups(orbit_groups(name_ja)),
           orbit_live_performances(performance_date)
         `)
@@ -261,7 +255,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
         id: string;
         name: string;
         live_type: LiveType;
-        format: LiveFormat;
         orbit_live_performer_groups: { orbit_groups: MemberRel | GroupRel }[] | null;
         orbit_live_performances: { performance_date: string | null }[] | null;
       };
@@ -275,7 +268,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id: row.id,
           name: row.name,
           liveType: row.live_type,
-          format: isLiveFormat(row.format) ? row.format : "single",
           performerGroupNames: (row.orbit_live_performer_groups ?? [])
             .map((pg) => pickFirst(pg.orbit_groups as GroupRel)?.name_ja ?? "")
             .filter(Boolean),
