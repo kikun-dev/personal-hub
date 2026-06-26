@@ -74,6 +74,11 @@ function groupByVenue(performances: LivePerformance[]): VenueGroup[] {
   return groups;
 }
 
+// ツアー見出し用に都/府/県を除いた表記にする（北海道はそのまま、海外名はそのまま）
+function performanceAreaLabel(prefecture: string): string {
+  return `${prefecture.replace(/[都府県]$/, "")}公演`;
+}
+
 function setlistItemLabel(item: SetlistItem): string {
   if (item.itemType === "song") {
     return item.trackTitle ?? item.songTitle ?? "（曲名未設定）";
@@ -140,7 +145,7 @@ export function LiveDetail({ live }: LiveDetailProps) {
                   >
                     <p className="font-medium text-foreground">
                       {group.venuePrefecture
-                        ? `${group.venuePrefecture}公演`
+                        ? performanceAreaLabel(group.venuePrefecture)
                         : "公演"}
                     </p>
                     {group.venueId && group.venueName ? (
