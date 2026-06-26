@@ -56,10 +56,16 @@ export function Combobox({
         );
 
   type Row = { value: string; label: string; isEmpty?: boolean };
+  // 検索中（入力あり）は「未設定」行を出さず、最初の候補を選べるようにする
   const rows: Row[] = [
-    ...(emptyLabel ? [{ value: "", label: emptyLabel, isEmpty: true }] : []),
+    ...(emptyLabel && normalizedQuery === ""
+      ? [{ value: "", label: emptyLabel, isEmpty: true }]
+      : []),
     ...filtered,
   ];
+
+  const safeHighlight =
+    rows.length === 0 ? -1 : Math.min(Math.max(highlight, 0), rows.length - 1);
 
   const commit = (rowValue: string) => {
     onChange(rowValue);
@@ -76,9 +82,9 @@ export function Combobox({
       event.preventDefault();
       setHighlight((h) => Math.max(h - 1, 0));
     } else if (event.key === "Enter") {
-      if (open && rows[highlight]) {
+      if (open && safeHighlight >= 0) {
         event.preventDefault();
-        commit(rows[highlight].value);
+        commit(rows[safeHighlight].value);
       }
     } else if (event.key === "Escape") {
       setOpen(false);
@@ -130,7 +136,7 @@ export function Combobox({
                   }}
                   onMouseEnter={() => setHighlight(index)}
                   className={`flex w-full items-center px-3 py-1.5 text-left text-sm ${
-                    index === highlight ? "bg-foreground/10" : ""
+                    index === safeHighlight ? "bg-foreground/10" : ""
                   } ${row.isEmpty ? "text-foreground/50" : "text-foreground"} ${
                     row.value === value ? "font-medium" : ""
                   }`}
