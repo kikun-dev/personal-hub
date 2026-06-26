@@ -1,5 +1,6 @@
 import { PendingLink } from "@/components/ui/PendingLink";
 import type { SongListItem } from "@/types/song";
+import { formatReleaseTypeLabel } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -21,9 +22,14 @@ export function SongCard({ showGroupName = true, song }: SongCardProps) {
           {song.groupNameJa}
         </p>
       )}
-      <p className="mt-1 text-xs text-foreground/50">
-        紐づけリリース: {song.releaseCount}件
-      </p>
+      {song.representativeReleaseType && (
+        <p className="mt-1 text-xs text-foreground/50">
+          {formatReleaseTypeLabel(
+            song.representativeReleaseType,
+            song.representativeNumbering
+          )}
+        </p>
+      )}
       {song.firstReleaseDate && (
         <p className="mt-1 text-xs text-foreground/50">
           初回リリース: {formatDate(song.firstReleaseDate)}

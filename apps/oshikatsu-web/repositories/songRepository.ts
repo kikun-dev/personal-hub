@@ -13,6 +13,7 @@ import type {
   SongListItem,
 } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
+import type { ReleaseType } from "@/types/release";
 import { RepositoryError } from "@/types/errors";
 import { splitCreditNames } from "@/lib/songCredits";
 
@@ -139,9 +140,13 @@ type SongRow = {
 type SongListReleaseDateRel =
   | {
       release_date: string | null;
+      release_type: ReleaseType;
+      numbering: number | null;
     }
   | Array<{
       release_date: string | null;
+      release_type: ReleaseType;
+      numbering: number | null;
     }>
   | null;
 
@@ -240,7 +245,7 @@ const SONG_PUBLIC_LIST_SELECT = `
   orbit_release_tracks(
     release_id,
     track_number,
-    orbit_releases(release_date)
+    orbit_releases(release_date, release_type, numbering)
   )
 `;
 
@@ -399,23 +404,29 @@ function mapToSongListItem(row: SongListRow): SongListItem {
   const group = pickFirst(row.orbit_groups);
   const releaseTracks = row.orbit_release_tracks ?? [];
 
-  // 代表リリース = 初出（最古の非nullリリース日）。日付が並んだら release_id で決定的に。
-  const datedLinks = releaseTracks
-    .map((releaseTrack) => ({
+  // 全紐づけ（種別・ナンバリング含む）。
+  const allLinks = releaseTracks.map((releaseTrack) => {
+    const release = pickFirst(releaseTrack.orbit_releases);
+    return {
       releaseId: releaseTrack.release_id,
       trackNumber: releaseTrack.track_number,
-      releaseDate: pickFirst(releaseTrack.orbit_releases)?.release_date ?? null,
-    }))
-    .filter(
-      (link): link is { releaseId: string; trackNumber: number; releaseDate: string } =>
-        Boolean(link.releaseDate)
-    )
+      releaseDate: release?.release_date ?? null,
+      releaseType: release?.release_type ?? null,
+      numbering: release?.numbering ?? null,
+    };
+  });
+
+  // 代表リリース = 初出（最古の非nullリリース日）。日付が並んだら release_id で決定的に。
+  const datedLinks = allLinks
+    .filter((link) => Boolean(link.releaseDate))
     .sort((a, b) => {
-      const dateCompare = a.releaseDate.localeCompare(b.releaseDate);
+      const dateCompare = (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
       return dateCompare !== 0 ? dateCompare : a.releaseId.localeCompare(b.releaseId);
     });
 
   const representative = datedLinks[0] ?? null;
+  // 表示用代表 = 初出リリース（無ければ任意の紐づけ）。一覧の種別表記に使う。
+  const labelRepresentative = representative ?? allLinks[0] ?? null;
 
   return {
     id: row.id,
@@ -427,6 +438,8 @@ function mapToSongListItem(row: SongListRow): SongListItem {
     firstReleaseDate: representative?.releaseDate ?? null,
     representativeReleaseId: representative?.releaseId ?? null,
     representativeTrackNumber: representative?.trackNumber ?? null,
+    representativeReleaseType: labelRepresentative?.releaseType ?? null,
+    representativeNumbering: labelRepresentative?.numbering ?? null,
   };
 }
 

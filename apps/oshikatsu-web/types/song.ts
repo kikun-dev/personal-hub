@@ -74,6 +74,9 @@ export type SongListItem = {
   // 一覧の並び替え用：初出（最古）リリースの識別子とトラック番号
   representativeReleaseId: string | null;
   representativeTrackNumber: number | null;
+  // 一覧表示用：初出リリースの種別とナンバリング（例: 31st Single / 3rd Album）
+  representativeReleaseType: ReleaseType | null;
+  representativeNumbering: number | null;
 };
 
 export type SongSection = {
