@@ -68,6 +68,7 @@ sql_paths = [
   "./seeds/032_seed_sakamichi_single_tracks_expanded.sql",
   "./seeds/033_fix_hinata_recent_single_tracks.sql",
   "./seeds/034_seed_sakamichi_venues.sql",
+  "./seeds/035_seed_sakamichi_lives_2026.sql",
 ]
 
 [db.network_restrictions]
