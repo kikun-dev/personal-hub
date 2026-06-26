@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { Release } from "@/types/release";
-import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { RELEASE_TYPE_LABELS, ordinalNumber } from "@/types/release";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/formatters";
@@ -34,7 +34,7 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
           </span>
           {release.numbering && (
             <span className="rounded-full border border-foreground/10 px-2 py-0.5 text-xs text-foreground/70">
-              No.{release.numbering}
+              {ordinalNumber(release.numbering)}
             </span>
           )}
         </div>
