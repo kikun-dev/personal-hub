@@ -27,6 +27,7 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
   const initialValues: CreateLiveInput = {
     name: live.name,
     liveType: live.liveType,
+    format: live.format,
     description: live.description ?? "",
     performerGroupIds: live.performerGroups.map((group) => group.groupId),
     performerMemberIds: live.performerMembers.map((member) => member.memberId),
@@ -35,7 +36,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
       performanceDate: performance.performanceDate ?? "",
       doorsOpenAt: performance.doorsOpenAt ?? "",
       startsAt: performance.startsAt ?? "",
-      sessionLabel: performance.sessionLabel ?? "",
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
       ticketInfo: performance.ticketInfo ?? "",

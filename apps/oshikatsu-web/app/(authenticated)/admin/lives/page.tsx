@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getLivesPageData } from "@/usecases/readOrbitData";
-import { LIVE_TYPE_LABELS } from "@/types/live";
+import { LIVE_FORMAT_LABELS, LIVE_TYPE_LABELS } from "@/types/live";
 import { formatDate } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
 
@@ -21,6 +21,7 @@ export default async function AdminLivesPage() {
           <thead>
             <tr className="border-b border-foreground/10 text-left">
               <th className="pb-2 pr-4 font-medium text-foreground/70">ライブ名</th>
+              <th className="pb-2 pr-4 font-medium text-foreground/70">形態</th>
               <th className="pb-2 pr-4 font-medium text-foreground/70">種別</th>
               <th className="pb-2 pr-4 font-medium text-foreground/70">公演数</th>
               <th className="pb-2 pr-4 font-medium text-foreground/70">初回日</th>
@@ -31,6 +32,9 @@ export default async function AdminLivesPage() {
             {lives.map((live) => (
               <tr key={live.id} className="border-b border-foreground/5">
                 <td className="py-2 pr-4 text-foreground">{live.name}</td>
+                <td className="py-2 pr-4 text-foreground/70">
+                  {LIVE_FORMAT_LABELS[live.format]}
+                </td>
                 <td className="py-2 pr-4 text-foreground/70">
                   {LIVE_TYPE_LABELS[live.liveType]}
                 </td>

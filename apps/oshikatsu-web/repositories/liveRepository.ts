@@ -4,13 +4,14 @@ import type {
   CreateLiveInput,
   Live,
   LiveListItem,
+  LiveFormat,
   LiveOption,
   LivePerformance,
   LiveType,
   SetlistItem,
   VenuePerformanceSummary,
 } from "@/types/live";
-import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
+import { isSetlistItemType, isPerformanceStyle, isLiveFormat } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
@@ -59,7 +60,6 @@ type PerformanceRow = {
   performance_date: string | null;
   doors_open_at: string | null;
   starts_at: string | null;
-  session_label: string | null;
   has_streaming: boolean;
   has_live_viewing: boolean;
   ticket_info: string | null;
@@ -74,6 +74,7 @@ type LiveRow = {
   id: string;
   name: string;
   live_type: LiveType;
+  format: LiveFormat;
   description: string | null;
   orbit_live_performer_groups: PerformerGroupRow[] | null;
   orbit_live_performer_members: PerformerMemberRow[] | null;
@@ -90,6 +91,7 @@ const DETAIL_SELECT = `
   id,
   name,
   live_type,
+  format,
   description,
   orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
   orbit_live_performer_members(member_id, orbit_members(name_ja)),
@@ -99,7 +101,6 @@ const DETAIL_SELECT = `
     performance_date,
     doors_open_at,
     starts_at,
-    session_label,
     has_streaming,
     has_live_viewing,
     ticket_info,
@@ -129,7 +130,6 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
     performanceDate: row.performance_date,
     doorsOpenAt: row.doors_open_at,
     startsAt: row.starts_at,
-    sessionLabel: row.session_label,
     hasStreaming: row.has_streaming,
     hasLiveViewing: row.has_live_viewing,
     ticketInfo: row.ticket_info,
@@ -170,6 +170,7 @@ function mapLive(row: LiveRow): Live {
     id: row.id,
     name: row.name,
     liveType: row.live_type,
+    format: isLiveFormat(row.format) ? row.format : "single",
     description: row.description,
     performerGroups: (row.orbit_live_performer_groups ?? []).map((pg) => {
       const group = pickFirst(pg.orbit_groups);
@@ -196,6 +197,7 @@ function toLivePayload(input: CreateLiveInput) {
   return {
     name: input.name.trim(),
     live_type: input.liveType,
+    format: input.format,
     description: input.description.trim(),
     performer_group_ids: input.performerGroupIds,
     performer_member_ids: input.performerMemberIds,
@@ -204,7 +206,6 @@ function toLivePayload(input: CreateLiveInput) {
       performance_date: performance.performanceDate || null,
       doors_open_at: performance.doorsOpenAt.trim(),
       starts_at: performance.startsAt.trim(),
-      session_label: performance.sessionLabel.trim(),
       has_streaming: performance.hasStreaming,
       has_live_viewing: performance.hasLiveViewing,
       ticket_info: performance.ticketInfo.trim(),
@@ -246,6 +247,7 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id,
           name,
           live_type,
+          format,
           orbit_live_performer_groups(orbit_groups(name_ja)),
           orbit_live_performances(performance_date)
         `)
@@ -259,6 +261,7 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
         id: string;
         name: string;
         live_type: LiveType;
+        format: LiveFormat;
         orbit_live_performer_groups: { orbit_groups: MemberRel | GroupRel }[] | null;
         orbit_live_performances: { performance_date: string | null }[] | null;
       };
@@ -272,6 +275,7 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           id: row.id,
           name: row.name,
           liveType: row.live_type,
+          format: isLiveFormat(row.format) ? row.format : "single",
           performerGroupNames: (row.orbit_live_performer_groups ?? [])
             .map((pg) => pickFirst(pg.orbit_groups as GroupRel)?.name_ja ?? "")
             .filter(Boolean),
@@ -320,7 +324,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
         .select(`
           id,
           performance_date,
-          session_label,
           live_id,
           orbit_lives(name)
         `)
@@ -334,7 +337,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
       type Row = {
         id: string;
         performance_date: string | null;
-        session_label: string | null;
         live_id: string;
         orbit_lives: { name: string } | { name: string }[] | null;
       };
@@ -345,7 +347,6 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
           liveId: row.live_id,
           liveName: pickFirst(row.orbit_lives)?.name ?? "",
           performanceDate: row.performance_date,
-          sessionLabel: row.session_label,
         })
       );
     },

@@ -13,6 +13,19 @@ export function isLiveType(value: string): value is LiveType {
   return (LIVE_TYPE_VALUES as readonly string[]).includes(value);
 }
 
+export const LIVE_FORMAT_VALUES = ["single", "tour"] as const;
+
+export type LiveFormat = (typeof LIVE_FORMAT_VALUES)[number];
+
+export const LIVE_FORMAT_LABELS: Record<LiveFormat, string> = {
+  single: "単発",
+  tour: "ツアー",
+};
+
+export function isLiveFormat(value: string): value is LiveFormat {
+  return (LIVE_FORMAT_VALUES as readonly string[]).includes(value);
+}
+
 export type LivePerformerGroup = {
   groupId: string;
   groupNameJa: string;
@@ -96,7 +109,6 @@ export type LivePerformance = {
   performanceDate: string | null;
   doorsOpenAt: string | null;
   startsAt: string | null;
-  sessionLabel: string | null;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string | null;
@@ -110,6 +122,7 @@ export type Live = {
   id: string;
   name: string;
   liveType: LiveType;
+  format: LiveFormat;
   description: string | null;
   performerGroups: LivePerformerGroup[];
   performerMembers: LivePerformerMember[];
@@ -120,6 +133,7 @@ export type LiveListItem = {
   id: string;
   name: string;
   liveType: LiveType;
+  format: LiveFormat;
   performerGroupNames: string[];
   firstDate: string | null;
   lastDate: string | null;
@@ -136,7 +150,6 @@ export type VenuePerformanceSummary = {
   liveId: string;
   liveName: string;
   performanceDate: string | null;
-  sessionLabel: string | null;
 };
 
 export type CreateLivePerformanceAbsenceInput = {
@@ -163,7 +176,6 @@ export type CreateLivePerformanceInput = {
   performanceDate: string;
   doorsOpenAt: string;
   startsAt: string;
-  sessionLabel: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string;
@@ -175,6 +187,7 @@ export type CreateLivePerformanceInput = {
 export type CreateLiveInput = {
   name: string;
   liveType: LiveType | "";
+  format: LiveFormat;
   description: string;
   performerGroupIds: string[];
   performerMemberIds: string[];

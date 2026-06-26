@@ -1,6 +1,11 @@
 import type { CreateLiveInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
-import { isLiveType, isSetlistItemType, isPerformanceStyle } from "@/types/live";
+import {
+  isLiveType,
+  isSetlistItemType,
+  isPerformanceStyle,
+  isLiveFormat,
+} from "@/types/live";
 import { isValidDateString } from "@/lib/validation";
 
 function isValidTimeString(value: string): boolean {
@@ -22,6 +27,23 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
 
   if (!input.liveType || !isLiveType(input.liveType)) {
     errors.push({ field: "liveType", message: "種別を選択してください" });
+  }
+
+  if (!isLiveFormat(input.format)) {
+    errors.push({ field: "format", message: "形態を選択してください" });
+  }
+
+  // 単発（single）は1会場まで（複数日は可）
+  if (input.format === "single") {
+    const venueIds = new Set(
+      input.performances.map((performance) => performance.venueId).filter(Boolean)
+    );
+    if (venueIds.size > 1) {
+      errors.push({
+        field: "format",
+        message: "単発は1会場のみです（複数会場はツアーを選択してください）",
+      });
+    }
   }
 
   if (input.description.length > 2000) {

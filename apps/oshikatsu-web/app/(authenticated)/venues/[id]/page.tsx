@@ -75,7 +75,6 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
                   className="text-foreground hover:underline"
                 >
                   {performance.performanceDate ?? "日付未定"}
-                  {performance.sessionLabel ? `（${performance.sessionLabel}）` : ""}
                   {" "}
                   {performance.liveName}
                 </Link>

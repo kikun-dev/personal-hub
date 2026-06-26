@@ -9,12 +9,15 @@ import type { SongOption } from "@/types/song";
 import {
   LIVE_TYPE_LABELS,
   LIVE_TYPE_VALUES,
+  LIVE_FORMAT_LABELS,
+  LIVE_FORMAT_VALUES,
   PERFORMANCE_STYLE_LABELS,
   PERFORMANCE_STYLE_VALUES,
   SETLIST_ITEM_TYPE_LABELS,
   SETLIST_ITEM_TYPE_VALUES,
   type CreateLiveInput,
   type CreateSetlistMemberInput,
+  type LiveFormat,
   type LiveType,
   type PerformanceStyle,
   type SetlistItemType,
@@ -51,7 +54,6 @@ type PerformanceField = {
   performanceDate: string;
   doorsOpenAt: string;
   startsAt: string;
-  sessionLabel: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
   ticketInfo: string;
@@ -82,6 +84,9 @@ export function LiveForm({
   const [liveType, setLiveType] = useState<LiveType | "">(
     initialValues?.liveType ?? ""
   );
+  const [format, setFormat] = useState<LiveFormat>(
+    initialValues?.format ?? "single"
+  );
   const [description, setDescription] = useState(initialValues?.description ?? "");
   const [performerGroupIds, setPerformerGroupIds] = useState<string[]>(
     initialValues?.performerGroupIds ?? []
@@ -96,7 +101,6 @@ export function LiveForm({
       performanceDate: performance.performanceDate,
       doorsOpenAt: performance.doorsOpenAt,
       startsAt: performance.startsAt,
-      sessionLabel: performance.sessionLabel,
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
       ticketInfo: performance.ticketInfo,
@@ -137,7 +141,6 @@ export function LiveForm({
         performanceDate: "",
         doorsOpenAt: "",
         startsAt: "",
-        sessionLabel: "",
         hasStreaming: false,
         hasLiveViewing: false,
         ticketInfo: "",
@@ -347,6 +350,7 @@ export function LiveForm({
     const values: CreateLiveInput = {
       name,
       liveType,
+      format,
       description,
       performerGroupIds,
       performerMemberIds,
@@ -355,7 +359,6 @@ export function LiveForm({
         performanceDate: performance.performanceDate,
         doorsOpenAt: performance.doorsOpenAt,
         startsAt: performance.startsAt,
-        sessionLabel: performance.sessionLabel,
         hasStreaming: performance.hasStreaming,
         hasLiveViewing: performance.hasLiveViewing,
         ticketInfo: performance.ticketInfo,
@@ -423,6 +426,29 @@ export function LiveForm({
             </option>
           ))}
         </select>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium text-foreground/70">
+          形態*
+        </label>
+        {errors.format && (
+          <p className="mb-1 text-xs text-red-500">{errors.format}</p>
+        )}
+        <select
+          value={format}
+          onChange={(e) => setFormat(e.target.value as LiveFormat)}
+          className={inputClass}
+        >
+          {LIVE_FORMAT_VALUES.map((value) => (
+            <option key={value} value={value}>
+              {LIVE_FORMAT_LABELS[value]}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-xs text-foreground/50">
+          単発＝1会場（複数日可）／ツアー＝複数会場
+        </p>
       </div>
 
       <Textarea
@@ -542,14 +568,6 @@ export function LiveForm({
                   updatePerformance(performance.key, { startsAt: e.target.value })
                 }
                 error={errors[`performances.${index}.startsAt`]}
-              />
-              <Input
-                id={`performance-${performance.key}-session`}
-                label="昼夜ラベル"
-                value={performance.sessionLabel}
-                onChange={(e) =>
-                  updatePerformance(performance.key, { sessionLabel: e.target.value })
-                }
               />
             </div>
 

@@ -1,6 +1,6 @@
 import { PendingLink } from "@/components/ui/PendingLink";
 import { getLivesPageData } from "@/usecases/readOrbitData";
-import { LIVE_TYPE_LABELS } from "@/types/live";
+import { LIVE_FORMAT_LABELS, LIVE_TYPE_LABELS } from "@/types/live";
 import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -38,7 +38,7 @@ export default async function LivesPage() {
             >
               <p className="text-sm font-medium text-foreground">{live.name}</p>
               <p className="mt-1 text-xs text-foreground/50">
-                {LIVE_TYPE_LABELS[live.liveType]}
+                {LIVE_FORMAT_LABELS[live.format]} / {LIVE_TYPE_LABELS[live.liveType]}
                 {live.performerGroupNames.length > 0
                   ? ` / ${live.performerGroupNames.join("、")}`
                   : ""}
