@@ -76,7 +76,7 @@ function getDefaultValues(): FormValues {
     title: "",
     groupId: "",
     durationSeconds: "",
-    releaseLinks: [withReleaseKey({ releaseId: "", trackNumber: "1" })],
+    releaseLinks: [withReleaseKey({ releaseId: "", trackNumber: "" })],
     lyricsPeople: "",
     musicPeople: "",
     arrangementPeople: "",
@@ -275,7 +275,8 @@ export function SongForm({
   const addReleaseLink = () => {
     const nextReleaseLink = withReleaseKey({
       releaseId: "",
-      trackNumber: String(values.releaseLinks.length + 1),
+      // 既定は空欄（保存時にそのリリースの末尾へ自動採番）
+      trackNumber: "",
     });
 
     setValues((prev) => ({
@@ -578,6 +579,7 @@ export function SongForm({
                     label="曲順"
                     type="number"
                     min={1}
+                    placeholder="空欄で末尾"
                     value={link.trackNumber}
                     onChange={(e) => updateReleaseLink(link._key, "trackNumber", e.target.value)}
                     error={errors[`releaseLinks.${index}.trackNumber`]}

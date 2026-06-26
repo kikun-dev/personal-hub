@@ -450,12 +450,48 @@ function parseDurationSeconds(value: string): number | null {
 
 function parseReleaseLinks(input: CreateSongInput["releaseLinks"]): Array<{
   releaseId: string;
-  trackNumber: number;
+  trackNumber: number | null;
 }> {
-  return input.map((link) => ({
-    releaseId: link.releaseId,
-    trackNumber: Number(link.trackNumber),
-  }));
+  return input.map((link) => {
+    const raw = link.trackNumber.trim();
+    return {
+      releaseId: link.releaseId,
+      // 空欄は末尾自動採番のため null（保存時に解決する）
+      trackNumber: raw === "" ? null : Number(raw),
+    };
+  });
+}
+
+// 曲順が空欄(null)の紐づけを、そのリリース内の末尾（max + 1）に解決する
+async function resolveReleaseLinkTrackNumbers(
+  supabase: SupabaseClient,
+  links: Array<{ releaseId: string; trackNumber: number | null }>,
+  excludeTrackId?: string
+): Promise<Array<{ releaseId: string; trackNumber: number }>> {
+  const resolved: Array<{ releaseId: string; trackNumber: number }> = [];
+  for (const link of links) {
+    if (link.trackNumber != null) {
+      resolved.push({ releaseId: link.releaseId, trackNumber: link.trackNumber });
+      continue;
+    }
+    let query = supabase
+      .from("orbit_release_tracks")
+      .select("track_number")
+      .eq("release_id", link.releaseId)
+      .order("track_number", { ascending: false })
+      .limit(1);
+    if (excludeTrackId) {
+      query = query.neq("track_id", excludeTrackId);
+    }
+    const { data, error } = await query;
+    if (error) {
+      throw new RepositoryError("曲順の自動採番に失敗しました", error);
+    }
+    const maxNumber =
+      data && data.length > 0 ? (data[0] as { track_number: number }).track_number : 0;
+    resolved.push({ releaseId: link.releaseId, trackNumber: maxNumber + 1 });
+  }
+  return resolved;
 }
 
 function parseCredits(input: CreateSongInput): Array<{
@@ -622,7 +658,10 @@ export function createSongRepository(
 
     async create(input) {
       const durationSeconds = parseDurationSeconds(input.durationSeconds);
-      const releaseLinks = parseReleaseLinks(input.releaseLinks);
+      const releaseLinks = await resolveReleaseLinkTrackNumbers(
+        supabase,
+        parseReleaseLinks(input.releaseLinks)
+      );
       const credits = parseCredits(input);
       const formationRows = parseFormationRows(input.formationRows);
       const mv = parseMv(input.mv);
@@ -661,7 +700,11 @@ export function createSongRepository(
       }
 
       const durationSeconds = parseDurationSeconds(input.durationSeconds);
-      const releaseLinks = parseReleaseLinks(input.releaseLinks);
+      const releaseLinks = await resolveReleaseLinkTrackNumbers(
+        supabase,
+        parseReleaseLinks(input.releaseLinks),
+        id
+      );
       const credits = parseCredits(input);
       const formationRows = parseFormationRows(input.formationRows);
       const mv = parseMv(input.mv);

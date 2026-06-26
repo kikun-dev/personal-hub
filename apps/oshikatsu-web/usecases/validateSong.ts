@@ -58,12 +58,16 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
     }
     releaseIdSet.add(link.releaseId);
 
-    const trackNumber = Number(link.trackNumber);
-    if (!Number.isInteger(trackNumber) || trackNumber <= 0) {
-      errors.push({
-        field: `releaseLinks.${i}.trackNumber`,
-        message: "曲順は1以上の整数で入力してください",
-      });
+    // 曲順は任意。空欄なら末尾に自動採番される。入力時のみ検証する。
+    const trackNumberRaw = link.trackNumber.trim();
+    if (trackNumberRaw !== "") {
+      const trackNumber = Number(trackNumberRaw);
+      if (!Number.isInteger(trackNumber) || trackNumber <= 0) {
+        errors.push({
+          field: `releaseLinks.${i}.trackNumber`,
+          message: "曲順は1以上の整数で入力してください",
+        });
+      }
     }
   }
 
