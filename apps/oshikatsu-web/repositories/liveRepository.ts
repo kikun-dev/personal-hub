@@ -12,6 +12,10 @@ import type {
 } from "@/types/live";
 import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
+import {
+  compareByGenerationThenName,
+  pickMembershipGeneration,
+} from "@/lib/memberOrder";
 
 type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
 type MemberRel = { name_ja: string } | { name_ja: string }[] | null;
@@ -25,9 +29,19 @@ type PerformerGroupRow = {
   orbit_groups: GroupRel;
 };
 
+type PerformerMemberGroupRow = {
+  group_id: string;
+  generation: string | null;
+};
+
+type PerformerMemberRel =
+  | { name_ja: string; orbit_member_groups: PerformerMemberGroupRow[] | null }
+  | { name_ja: string; orbit_member_groups: PerformerMemberGroupRow[] | null }[]
+  | null;
+
 type PerformerMemberRow = {
   member_id: string;
-  orbit_members: MemberRel;
+  orbit_members: PerformerMemberRel;
 };
 
 type AbsenceRow = {
@@ -94,7 +108,7 @@ const DETAIL_SELECT = `
   live_type,
   description,
   orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
-  orbit_live_performer_members(member_id, orbit_members(name_ja)),
+  orbit_live_performer_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
   orbit_live_performances(
     id,
     venue_id,
@@ -167,6 +181,9 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
 }
 
 function mapLive(row: LiveRow): Live {
+  const performerGroupIds = new Set(
+    (row.orbit_live_performer_groups ?? []).map((pg) => pg.group_id)
+  );
   return {
     id: row.id,
     name: row.name,
@@ -180,10 +197,24 @@ function mapLive(row: LiveRow): Live {
         groupColor: group?.color ?? "#6B7280",
       };
     }),
-    performerMembers: (row.orbit_live_performer_members ?? []).map((pm) => ({
-      memberId: pm.member_id,
-      memberNameJa: pickFirst(pm.orbit_members)?.name_ja ?? "",
-    })),
+    performerMembers: (row.orbit_live_performer_members ?? [])
+      .map((pm) => {
+        const member = pickFirst(pm.orbit_members);
+        const memberships = member?.orbit_member_groups ?? [];
+        // 出演グループでの期を優先しつつ、DB返却順に依存せず決定的に選ぶ
+        return {
+          memberId: pm.member_id,
+          memberNameJa: member?.name_ja ?? "",
+          generation: pickMembershipGeneration(memberships, performerGroupIds),
+        };
+      })
+      .sort((a, b) =>
+        compareByGenerationThenName(
+          { generation: a.generation, name: a.memberNameJa },
+          { generation: b.generation, name: b.memberNameJa }
+        )
+      )
+      .map(({ memberId, memberNameJa }) => ({ memberId, memberNameJa })),
     performances: (row.orbit_live_performances ?? [])
       .map(mapPerformance)
       .sort((a, b) => {

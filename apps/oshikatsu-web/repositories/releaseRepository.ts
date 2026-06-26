@@ -8,6 +8,7 @@ import type {
 } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
+import { compareByGenerationThenName } from "@/lib/memberOrder";
 
 type ReleaseGroupRow =
   | {
@@ -35,12 +36,19 @@ type ReleaseBonusVideoRow = {
   sort_order: number;
 };
 
+type ReleaseMemberGroupRow = {
+  group_id: string;
+  generation: string | null;
+};
+
 type ReleaseMemberNameRow =
   | {
       name_ja: string;
+      orbit_member_groups: ReleaseMemberGroupRow[] | null;
     }
   | Array<{
       name_ja: string;
+      orbit_member_groups: ReleaseMemberGroupRow[] | null;
     }>;
 
 type ReleaseMemberRow = {
@@ -88,11 +96,16 @@ type ReleaseListRow = {
   orbit_release_tracks?: Array<{ track_number: number }>;
 };
 
+type ReleaseOptionMemberRow = {
+  member_id: string;
+  orbit_members: { name_ja: string } | { name_ja: string }[] | null;
+};
+
 type ReleaseOptionRow = {
   id: string;
   title: string;
   release_type: ReleaseType;
-  orbit_release_members?: ReleaseMemberRow[];
+  orbit_release_members?: ReleaseOptionMemberRow[];
 };
 
 const RELEASE_LIST_SELECT = `
@@ -105,7 +118,7 @@ const RELEASE_LIST_SELECT = `
   artwork_path,
   orbit_people(display_name),
   orbit_groups(name_ja, color),
-  orbit_release_members(member_id, orbit_members(name_ja)),
+  orbit_release_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
   orbit_release_tracks(track_number)
 `;
 
@@ -120,7 +133,7 @@ const RELEASE_DETAIL_SELECT = `
   orbit_people(display_name),
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
-  orbit_release_members(member_id, orbit_members(name_ja)),
+  orbit_release_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
   orbit_release_tracks(track_number, orbit_tracks(id, title))
 `;
 
@@ -152,15 +165,27 @@ function mapToRelease(row: ReleaseRow): Release {
     ? row.orbit_groups[0]
     : row.orbit_groups;
 
-  const participants = (row.orbit_release_members ?? []).map((member) => {
-    const orbitMember = Array.isArray(member.orbit_members)
-      ? member.orbit_members[0]
-      : member.orbit_members;
-    return {
-      memberId: member.member_id,
-      memberNameJa: orbitMember?.name_ja ?? "",
-    };
-  });
+  const participants = (row.orbit_release_members ?? [])
+    .map((member) => {
+      const orbitMember = Array.isArray(member.orbit_members)
+        ? member.orbit_members[0]
+        : member.orbit_members;
+      // リリースのグループでの期を採用（無ければ null）
+      const membership = (orbitMember?.orbit_member_groups ?? []).find(
+        (mg) => mg.group_id === row.group_id
+      );
+      return {
+        memberId: member.member_id,
+        memberNameJa: orbitMember?.name_ja ?? "",
+        generation: membership?.generation ?? null,
+      };
+    })
+    .sort((a, b) =>
+      compareByGenerationThenName(
+        { generation: a.generation, name: a.memberNameJa },
+        { generation: b.generation, name: b.memberNameJa }
+      )
+    );
 
   return {
     id: row.id,
