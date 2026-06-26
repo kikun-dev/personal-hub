@@ -97,6 +97,8 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
 
 export function LiveDetail({ live }: LiveDetailProps) {
   const venueGroups = groupByVenue(live.performances);
+  // ツアー、または会場が複数ある場合は会場ごとのカードで表示する
+  const useVenueGrid = live.liveType === "tour" || venueGroups.length > 1;
 
   return (
     <div className="space-y-6">
@@ -125,7 +127,7 @@ export function LiveDetail({ live }: LiveDetailProps) {
       {/* 事前情報: 会場・日程 */}
       {live.performances.length > 0 && (
         <section className="space-y-3">
-          {live.liveType === "tour" ? (
+          {useVenueGrid ? (
             <>
               <h2 className="text-center text-sm font-semibold tracking-widest text-foreground">
                 公演・日程

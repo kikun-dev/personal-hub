@@ -359,7 +359,8 @@ export function LiveForm({
       performances: performances.map((performance) => ({
         venueId: performance.venueId,
         performanceDate: performance.performanceDate,
-        doorsOpenAt: performance.doorsOpenAt,
+        // 開場を出さない種別（フェス/配信）では送信時にクリアする
+        doorsOpenAt: hideDoorsOpen ? "" : performance.doorsOpenAt,
         startsAt: performance.startsAt,
         hasStreaming: performance.hasStreaming,
         hasLiveViewing: performance.hasLiveViewing,
@@ -477,9 +478,11 @@ export function LiveForm({
         </div>
       </div>
 
-      <div className="space-y-3">
+      <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-foreground/70">公演</label>
+          <label className="block text-sm font-medium text-foreground/70">
+            日程・会場（事前情報）
+          </label>
           <Button type="button" variant="secondary" onClick={addPerformance}>
             公演を追加
           </Button>
@@ -503,7 +506,6 @@ export function LiveForm({
               </button>
             </div>
 
-            <p className="text-xs font-medium text-foreground/50">日程・会場</p>
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
                 <label className="mb-1 block text-xs text-foreground/60">会場</label>
@@ -556,8 +558,25 @@ export function LiveForm({
               />
             </div>
 
-            <p className="text-xs font-medium text-foreground/50">当日情報</p>
-            <div className="flex flex-wrap gap-4">
+          </div>
+        ))}
+      </section>
+
+      <section className="space-y-3">
+        <label className="block text-sm font-medium text-foreground/70">
+          公演ごとの当日情報
+        </label>
+        <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+          {performances.map((performance, index) => (
+            <div
+              key={performance.key}
+              className="w-[22rem] shrink-0 snap-start space-y-3 rounded-lg border border-foreground/10 p-4"
+            >
+              <p className="text-sm font-medium text-foreground/70">
+                公演 {index + 1}
+                {performance.performanceDate ? ` ・ ${performance.performanceDate}` : ""}
+              </p>
+              <div className="flex flex-wrap gap-4">
               <label className="flex cursor-pointer items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -845,6 +864,7 @@ export function LiveForm({
           </div>
         ))}
       </div>
+      </section>
 
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}

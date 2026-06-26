@@ -59,7 +59,14 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
       });
     }
 
-    if (performance.doorsOpenAt.trim() && !isValidTimeString(performance.doorsOpenAt.trim())) {
+    // 開場は単発/ツアー/その他のみ（フェス=出演時刻、配信=配信時刻のため検証しない）
+    const showsDoorsOpen =
+      input.liveType !== "festival" && input.liveType !== "online";
+    if (
+      showsDoorsOpen &&
+      performance.doorsOpenAt.trim() &&
+      !isValidTimeString(performance.doorsOpenAt.trim())
+    ) {
       errors.push({
         field: `performances.${index}.doorsOpenAt`,
         message: "開場時刻はHH:MM形式で入力してください",
