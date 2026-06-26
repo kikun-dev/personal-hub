@@ -1,8 +1,10 @@
-import type { Event } from "@/types/event";
+import Link from "next/link";
+import type { OnThisDayItem } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
+import { LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
 
 type OnThisDayProps = {
-  events: Event[];
+  events: OnThisDayItem[];
   selectedDate: Date;
   title?: string;
   emptyMessage?: string;
@@ -18,9 +20,7 @@ export function OnThisDay({
 
   return (
     <div className="rounded-lg border border-foreground/10 bg-background p-4">
-      <h2 className="mb-3 text-sm font-medium text-foreground/70">
-        {title}
-      </h2>
+      <h2 className="mb-3 text-sm font-medium text-foreground/70">{title}</h2>
 
       {events.length === 0 ? (
         <p className="text-sm text-foreground/40">{emptyMessage}</p>
@@ -31,20 +31,47 @@ export function OnThisDay({
             const yearsAgo = currentYear - eventYear;
 
             return (
-              <div key={event.id} className="flex items-start gap-2 text-sm">
+              <div
+                key={`${event.type}-${event.id}`}
+                className="flex items-start gap-2 text-sm"
+              >
                 <span className="shrink-0 text-xs font-medium text-foreground/50">
                   {yearsAgo}年前
                 </span>
-                <Badge
-                  label={event.eventTypeName}
-                  color={event.eventTypeColor}
-                />
-                <div>
-                  <span className="text-foreground">{event.title}</span>
-                  <span className="ml-1 text-xs text-foreground/40">
-                    {event.groupNames.join(", ")}
-                  </span>
-                </div>
+                {event.type === "live" ? (
+                  <>
+                    <Badge label="ライブ" color={LIVE_COLOR} />
+                    <Link
+                      href={`/lives/${event.liveId}`}
+                      className="text-foreground hover:underline"
+                    >
+                      {event.name}
+                    </Link>
+                  </>
+                ) : event.type === "release" ? (
+                  <>
+                    <Badge label="リリース" color={RELEASE_COLOR} />
+                    <Link
+                      href={`/releases/${event.releaseId}`}
+                      className="text-foreground hover:underline"
+                    >
+                      {event.title}
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <Badge
+                      label={event.eventTypeName}
+                      color={event.eventTypeColor}
+                    />
+                    <div>
+                      <span className="text-foreground">{event.title}</span>
+                      <span className="ml-1 text-xs text-foreground/40">
+                        {event.groupNames.join(", ")}
+                      </span>
+                    </div>
+                  </>
+                )}
               </div>
             );
           })}

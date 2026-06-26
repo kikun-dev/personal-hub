@@ -344,6 +344,25 @@ export function createReleaseRepository(
       return ((data as ReleaseOptionRow[] | null) ?? []).map(mapToReleaseOption);
     },
 
+    async findCalendarItems() {
+      const { data, error } = await supabase
+        .from("orbit_releases")
+        .select("id, title, release_date")
+        .not("release_date", "is", null);
+
+      if (error) {
+        throw new RepositoryError("カレンダー用リリースの取得に失敗しました", error);
+      }
+
+      type Row = { id: string; title: string; release_date: string };
+
+      return ((data as Row[] | null) ?? []).map((row) => ({
+        releaseId: row.id,
+        title: row.title,
+        date: row.release_date,
+      }));
+    },
+
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_releases")

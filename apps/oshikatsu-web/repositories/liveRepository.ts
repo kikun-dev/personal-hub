@@ -287,6 +287,29 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
       });
     },
 
+    async findCalendarPerformances() {
+      const { data, error } = await supabase
+        .from("orbit_live_performances")
+        .select("performance_date, live_id, orbit_lives(name)")
+        .not("performance_date", "is", null);
+
+      if (error) {
+        throw new RepositoryError("カレンダー用ライブの取得に失敗しました", error);
+      }
+
+      type Row = {
+        performance_date: string;
+        live_id: string;
+        orbit_lives: { name: string } | { name: string }[] | null;
+      };
+
+      return ((data as unknown as Row[]) ?? []).map((row) => ({
+        liveId: row.live_id,
+        liveName: pickFirst(row.orbit_lives)?.name ?? "",
+        date: row.performance_date,
+      }));
+    },
+
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_lives")

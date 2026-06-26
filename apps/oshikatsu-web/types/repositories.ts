@@ -99,8 +99,21 @@ export type VenueRepository = {
   delete(id: string): Promise<void>;
 };
 
+export type LiveCalendarPerformance = {
+  liveId: string;
+  liveName: string;
+  date: string;
+};
+
+export type ReleaseCalendarItem = {
+  releaseId: string;
+  title: string;
+  date: string;
+};
+
 export type LiveRepository = {
   findPublicList(): Promise<LiveListItem[]>;
+  findCalendarPerformances(): Promise<LiveCalendarPerformance[]>;
   findOptions(): Promise<LiveOption[]>;
   findById(id: string): Promise<Live | null>;
   findPerformancesByVenue(venueId: string): Promise<VenuePerformanceSummary[]>;
@@ -112,6 +125,7 @@ export type LiveRepository = {
 export type ReleaseRepository = {
   findAll(filters?: ReleaseFilters): Promise<Release[]>;
   findPublicList(filters?: ReleaseFilters): Promise<ReleaseListItem[]>;
+  findCalendarItems(): Promise<ReleaseCalendarItem[]>;
   findOptions(): Promise<ReleaseOption[]>;
   findById(id: string): Promise<Release | null>;
   create(input: CreateReleaseInput): Promise<Release>;
