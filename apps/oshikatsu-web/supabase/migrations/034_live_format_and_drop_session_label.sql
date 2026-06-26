@@ -7,9 +7,12 @@
 -- ============================================================
 
 -- 種別の統合（live -> single、CHECK を拡張）
+-- 旧CHECK（'live' のみ許容）が残ったまま UPDATE すると制約違反になるため、
+-- 先に制約を外してからデータ移行し、最後に新CHECKを付与する。
+ALTER TABLE orbit_lives DROP CONSTRAINT IF EXISTS orbit_lives_live_type_check;
+
 UPDATE orbit_lives SET live_type = 'single' WHERE live_type = 'live';
 
-ALTER TABLE orbit_lives DROP CONSTRAINT IF EXISTS orbit_lives_live_type_check;
 ALTER TABLE orbit_lives
   ADD CONSTRAINT orbit_lives_live_type_check
   CHECK (live_type IN ('single', 'tour', 'festival', 'online', 'other'));
