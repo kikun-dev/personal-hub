@@ -178,6 +178,4 @@ export type UpdateSongInput = CreateSongInput;
 
 export type SongFilters = {
   groupId?: string;
-  label?: SongLabel;
-  generation?: string;
 };

@@ -296,6 +296,17 @@ export function SongForm({
     });
   };
 
+  // グループ変更で期の候補が変わるため、期はクリアする
+  const updateGroupId = (groupId: string) => {
+    setValues((prev) => ({ ...prev, groupId, generation: "" }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.groupId;
+      delete next.generation;
+      return next;
+    });
+  };
+
   const addReleaseLink = () => {
     const nextReleaseLink = withReleaseKey({
       releaseId: "",
@@ -519,7 +530,7 @@ export function SongForm({
         <select
           id="groupId"
           value={values.groupId}
-          onChange={(e) => update("groupId", e.target.value)}
+          onChange={(e) => updateGroupId(e.target.value)}
           className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
         >
           <option value="">選択してください</option>
