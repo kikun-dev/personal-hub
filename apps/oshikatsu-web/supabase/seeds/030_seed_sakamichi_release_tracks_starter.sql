@@ -196,13 +196,11 @@ WHERE NOT EXISTS (
 -- Tracks
 INSERT INTO public.orbit_tracks (
   title,
-  group_id,
-  duration_seconds
+  group_id
 )
 SELECT DISTINCT
   seed.track_title,
-  track_group.id,
-  seed.duration_seconds
+  track_group.id
 FROM orbit_seed_music_items seed
 JOIN public.orbit_groups track_group
   ON track_group.name_ja = seed.track_group_name

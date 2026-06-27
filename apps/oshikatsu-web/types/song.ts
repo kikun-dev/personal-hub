@@ -1,6 +1,49 @@
 import type { ReleaseType } from "@/types/release";
 import type { Group } from "@/types/group";
 
+export const SONG_LABELS = [
+  "title",
+  "senbatsu",
+  "under",
+  "solo",
+  "unit",
+  "generation",
+] as const;
+
+export type SongLabel = (typeof SONG_LABELS)[number];
+
+export const SONG_LABEL_LABELS: Record<SongLabel, string> = {
+  title: "表題",
+  senbatsu: "選抜",
+  under: "アンダー",
+  solo: "ソロ",
+  unit: "ユニット",
+  generation: "期別",
+};
+
+// アンダーのグループ別表示名（内部値は under 共通）
+const UNDER_LABEL_BY_GROUP: Record<string, string> = {
+  乃木坂46: "アンダー",
+  櫻坂46: "BACKS",
+  日向坂46: "ひなた坂",
+};
+
+export function isSongLabel(value: string): value is SongLabel {
+  return (SONG_LABELS as readonly string[]).includes(value);
+}
+
+// 表示用ラベル文字列（under はグループ別、generation は「N期生曲」）
+export function formatSongLabel(
+  label: SongLabel | null,
+  generation: string | null,
+  groupNameJa: string
+): string | null {
+  if (!label) return null;
+  if (label === "under") return UNDER_LABEL_BY_GROUP[groupNameJa] ?? "アンダー";
+  if (label === "generation") return generation ? `${generation}期生曲` : "期別";
+  return SONG_LABEL_LABELS[label];
+}
+
 export type SongCreditRole = "lyrics" | "music" | "arrangement" | "choreography";
 
 export type SongCredit = {
@@ -54,7 +97,8 @@ export type Song = {
   groupId: string;
   groupNameJa: string;
   groupColor: string;
-  durationSeconds: number | null;
+  label: SongLabel | null;
+  generation: string | null;
   releaseDate: string | null;
   releases: SongReleaseLink[];
   credits: SongCredit[];
@@ -69,6 +113,8 @@ export type SongListItem = {
   groupId: string;
   groupNameJa: string;
   groupColor: string;
+  label: SongLabel | null;
+  generation: string | null;
   releaseCount: number;
   firstReleaseDate: string | null;
   // 一覧の並び替え用：初出（最古）リリースの識別子とトラック番号
@@ -116,7 +162,8 @@ export type CreateSongCostumeInput = {
 export type CreateSongInput = {
   title: string;
   groupId: string;
-  durationSeconds: string;
+  label: string;
+  generation: string;
   releaseLinks: CreateSongReleaseLinkInput[];
   lyricsPeople: string;
   musicPeople: string;
@@ -131,4 +178,6 @@ export type UpdateSongInput = CreateSongInput;
 
 export type SongFilters = {
   groupId?: string;
+  label?: SongLabel;
+  generation?: string;
 };

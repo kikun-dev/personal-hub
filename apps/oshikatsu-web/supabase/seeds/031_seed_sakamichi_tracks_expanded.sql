@@ -216,13 +216,11 @@ WHERE NOT EXISTS (
 -- Tracks
 INSERT INTO public.orbit_tracks (
   title,
-  group_id,
-  duration_seconds
+  group_id
 )
 SELECT DISTINCT
   seed.track_title,
-  seed.track_group_id,
-  seed.duration_seconds
+  seed.track_group_id
 FROM orbit_seed_resolved_track_items seed
 WHERE NOT EXISTS (
   SELECT 1

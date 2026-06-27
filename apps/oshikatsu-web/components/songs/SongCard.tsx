@@ -1,8 +1,12 @@
 import { PendingLink } from "@/components/ui/PendingLink";
+import { Badge } from "@/components/ui/Badge";
 import type { SongListItem } from "@/types/song";
+import { formatSongLabel } from "@/types/song";
 import { formatReleaseTypeLabel } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
+
+const SONG_LABEL_COLOR = "#8B5CF6";
 
 type SongCardProps = {
   showGroupName?: boolean;
@@ -10,6 +14,7 @@ type SongCardProps = {
 };
 
 export function SongCard({ showGroupName = true, song }: SongCardProps) {
+  const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
   return (
     <PendingLink
       href={`/songs/${song.id}`}
@@ -22,13 +27,18 @@ export function SongCard({ showGroupName = true, song }: SongCardProps) {
           {song.groupNameJa}
         </p>
       )}
-      {song.representativeReleaseType && (
-        <p className="mt-1 text-xs text-foreground/50">
-          {formatReleaseTypeLabel(
-            song.representativeReleaseType,
-            song.representativeNumbering
+      {(song.representativeReleaseType || labelText) && (
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {song.representativeReleaseType && (
+            <span className="text-xs text-foreground/50">
+              {formatReleaseTypeLabel(
+                song.representativeReleaseType,
+                song.representativeNumbering
+              )}
+            </span>
           )}
-        </p>
+          {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+        </div>
       )}
       {song.firstReleaseDate && (
         <p className="mt-1 text-xs text-foreground/50">
