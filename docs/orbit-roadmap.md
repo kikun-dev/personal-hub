@@ -214,6 +214,12 @@
 - [x] メンバー一覧に期（世代）絞り込みを追加（Issue #96）
   - [x] グループ選択時のみ表示。選択肢は `Group.maxGeneration`（無ければ実在世代から導出）。グループスコープで絞り込み、グループ変更時はリセット。URL `generation` を同期
 
+### 楽曲ラベル（#141）
+
+- [x] 楽曲に単一ラベル（表題/選抜/アンダー/ソロ/ユニット/期別、任意）を追加し一覧で絞り込み
+  - [x] アンダーはグループ別表示（乃木坂=アンダー/櫻坂=BACKS/日向坂=ひなた坂）、期別は「N期生曲」表示＋期サブ絞り込み（候補は group.maxGeneration）
+  - [x] duration_seconds を廃止（列削除・入力/表示撤去）。migration 038、RPC は label/generation 対応に再生成
+
 ### リリース種別にベスト/コンピレーションを追加（#129）
 
 - [x] `release_type` に `best` / `compilation` を追加（ナンバリング無し）。一覧フィルタ「アルバム」でアルバム系（album/best/compilation）をまとめて表示、ラベルは `BEST Album` / `Compilation Album`（migration 037）

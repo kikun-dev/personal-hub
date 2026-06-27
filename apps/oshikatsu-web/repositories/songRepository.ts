@@ -11,7 +11,9 @@ import type {
   SongReleaseLink,
   CreateSongInput,
   SongListItem,
+  SongLabel,
 } from "@/types/song";
+import { isSongLabel } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
 import type { ReleaseType } from "@/types/release";
 import { RepositoryError } from "@/types/errors";
@@ -129,7 +131,8 @@ type SongRow = {
   title: string;
   group_id: string;
   orbit_groups: SongGroupRel;
-  duration_seconds: number | null;
+  label: string | null;
+  generation: string | null;
   orbit_release_tracks?: TrackReleaseRow[];
   orbit_track_credits?: TrackCreditRow[];
   orbit_track_formations?: FormationRel;
@@ -161,6 +164,8 @@ type SongListRow = {
   title: string;
   group_id: string;
   orbit_groups: SongGroupRel;
+  label: string | null;
+  generation: string | null;
   orbit_release_tracks?: SongListReleaseRow[];
 };
 
@@ -169,7 +174,8 @@ const SONG_LIST_SELECT = `
   title,
   group_id,
   orbit_groups(name_ja, color),
-  duration_seconds,
+  label,
+  generation,
   orbit_release_tracks(
     release_id,
     track_number,
@@ -189,7 +195,8 @@ const SONG_DETAIL_SELECT = `
   title,
   group_id,
   orbit_groups(name_ja, color),
-  duration_seconds,
+  label,
+  generation,
   orbit_release_tracks(
     release_id,
     track_number,
@@ -242,6 +249,8 @@ const SONG_PUBLIC_LIST_SELECT = `
   title,
   group_id,
   orbit_groups(name_ja, color),
+  label,
+  generation,
   orbit_release_tracks(
     release_id,
     track_number,
@@ -390,7 +399,8 @@ function mapSong(row: SongRow): Song {
     groupId: row.group_id,
     groupNameJa: songGroup?.name_ja ?? "",
     groupColor: songGroup?.color ?? "#6B7280",
-    durationSeconds: row.duration_seconds,
+    label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
+    generation: row.generation,
     releaseDate,
     releases,
     credits: mapCredits(row.orbit_track_credits),
@@ -434,6 +444,8 @@ function mapToSongListItem(row: SongListRow): SongListItem {
     groupId: row.group_id,
     groupNameJa: group?.name_ja ?? "",
     groupColor: group?.color ?? "#6B7280",
+    label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
+    generation: row.generation,
     releaseCount: releaseTracks.length,
     firstReleaseDate: representative?.releaseDate ?? null,
     representativeReleaseId: representative?.releaseId ?? null,
@@ -443,9 +455,15 @@ function mapToSongListItem(row: SongListRow): SongListItem {
   };
 }
 
-function parseDurationSeconds(value: string): number | null {
-  if (!value) return null;
-  return Number(value);
+// label は許容値のみ、generation は期別のときだけ保持する
+function parseLabel(value: string): string | null {
+  return isSongLabel(value) ? value : null;
+}
+
+function parseGeneration(label: string, generation: string): string | null {
+  if (label !== "generation") return null;
+  const trimmed = generation.trim();
+  return trimmed === "" ? null : trimmed;
 }
 
 function parseReleaseLinks(input: CreateSongInput["releaseLinks"]): Array<{
@@ -657,7 +675,8 @@ export function createSongRepository(
     },
 
     async create(input) {
-      const durationSeconds = parseDurationSeconds(input.durationSeconds);
+      const label = parseLabel(input.label);
+      const generation = parseGeneration(input.label, input.generation);
       const releaseLinks = await resolveReleaseLinkTrackNumbers(
         supabase,
         parseReleaseLinks(input.releaseLinks)
@@ -670,7 +689,8 @@ export function createSongRepository(
       const { data: trackId, error: rpcError } = await supabase.rpc("create_track_with_relations_v2", {
         p_title: input.title.trim(),
         p_group_id: input.groupId,
-        p_duration_seconds: durationSeconds,
+        p_label: label,
+        p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
         p_formation_rows: formationRows,
@@ -699,7 +719,8 @@ export function createSongRepository(
         throw new RepositoryError("更新対象の楽曲が見つかりません", null);
       }
 
-      const durationSeconds = parseDurationSeconds(input.durationSeconds);
+      const label = parseLabel(input.label);
+      const generation = parseGeneration(input.label, input.generation);
       const releaseLinks = await resolveReleaseLinkTrackNumbers(
         supabase,
         parseReleaseLinks(input.releaseLinks),
@@ -714,7 +735,8 @@ export function createSongRepository(
         p_track_id: id,
         p_title: input.title.trim(),
         p_group_id: input.groupId,
-        p_duration_seconds: durationSeconds,
+        p_label: label,
+        p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
         p_formation_rows: formationRows,

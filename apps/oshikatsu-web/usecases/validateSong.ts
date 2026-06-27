@@ -2,6 +2,7 @@ import type {
   CreateSongInput,
   SongCreditRole,
 } from "@/types/song";
+import { isSongLabel } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { isValidDateString, isValidHttpUrl } from "@/lib/validation";
 import { isTrackCostumeImagePath } from "@/lib/releaseImage";
@@ -27,14 +28,23 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
     errors.push({ field: "groupId", message: "楽曲グループを選択してください" });
   }
 
-  if (input.durationSeconds) {
-    const seconds = Number(input.durationSeconds);
-    if (!Number.isInteger(seconds) || seconds <= 0) {
-      errors.push({
-        field: "durationSeconds",
-        message: "時間は1以上の整数（秒）で入力してください",
-      });
+  // ラベルは任意。値が許容外ならエラー。期別のときは期（正の整数）が必須。
+  if (input.label) {
+    if (!isSongLabel(input.label)) {
+      errors.push({ field: "label", message: "ラベルの値が不正です" });
+    } else if (input.label === "generation") {
+      const generationRaw = input.generation.trim();
+      if (!generationRaw) {
+        errors.push({ field: "generation", message: "期別曲は期を選択してください" });
+      } else {
+        const generation = Number(generationRaw);
+        if (!Number.isInteger(generation) || generation <= 0) {
+          errors.push({ field: "generation", message: "期は1以上の整数で指定してください" });
+        }
+      }
     }
+  } else if (input.generation.trim()) {
+    errors.push({ field: "generation", message: "期はラベルが期別のときのみ指定できます" });
   }
 
   if (input.releaseLinks.length === 0) {

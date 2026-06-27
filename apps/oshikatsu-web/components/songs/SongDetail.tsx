@@ -1,9 +1,11 @@
 import type { Song } from "@/types/song";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { formatDate } from "@/lib/formatters";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { formatSongLabel } from "@/types/song";
 
 const CREDIT_LABELS: Record<string, string> = {
   lyrics: "作詞",
@@ -12,13 +14,10 @@ const CREDIT_LABELS: Record<string, string> = {
   choreography: "振付",
 };
 
-function formatDuration(seconds: number): string {
-  const minutes = Math.floor(seconds / 60);
-  const remain = seconds % 60;
-  return `${minutes}:${String(remain).padStart(2, "0")}`;
-}
+const SONG_LABEL_COLOR = "#8B5CF6";
 
 export function SongDetail({ song }: { song: Song }) {
+  const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
   const creditsByRole = new Map<string, string[]>();
   for (const credit of song.credits) {
     const list = creditsByRole.get(credit.role) ?? [];
@@ -30,9 +29,12 @@ export function SongDetail({ song }: { song: Song }) {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-bold text-foreground">{song.title}</h1>
-        {song.groupNameJa && (
-          <p className="mt-1 text-sm text-foreground/50">{song.groupNameJa}</p>
-        )}
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          {song.groupNameJa && (
+            <span className="text-sm text-foreground/50">{song.groupNameJa}</span>
+          )}
+          {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+        </div>
       </div>
 
       <Card>
@@ -58,12 +60,6 @@ export function SongDetail({ song }: { song: Song }) {
       <Card>
         <h2 className="mb-3 text-sm font-medium text-foreground/70">楽曲情報</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          {song.durationSeconds && (
-            <>
-              <dt className="text-foreground/50">時間</dt>
-              <dd className="text-foreground">{formatDuration(song.durationSeconds)}</dd>
-            </>
-          )}
           {Array.from(creditsByRole.entries()).map(([role, names]) => (
             <>
               <dt key={`${role}-dt`} className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>

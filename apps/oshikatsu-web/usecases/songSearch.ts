@@ -1,4 +1,4 @@
-import type { SongListItem, SongSection } from "@/types/song";
+import type { SongLabel, SongListItem, SongSection } from "@/types/song";
 
 export function filterSongsByGroup(
   songs: SongListItem[],
@@ -8,6 +8,28 @@ export function filterSongsByGroup(
     return songs;
   }
   return songs.filter((song) => song.groupId === groupId);
+}
+
+export function filterSongsByLabel(
+  songs: SongListItem[],
+  label: SongLabel | ""
+): SongListItem[] {
+  if (label === "") {
+    return songs;
+  }
+  return songs.filter((song) => song.label === label);
+}
+
+export function filterSongsByGeneration(
+  songs: SongListItem[],
+  generation: string
+): SongListItem[] {
+  if (generation === "") {
+    return songs;
+  }
+  return songs.filter(
+    (song) => song.label === "generation" && song.generation === generation
+  );
 }
 
 function normalizeQuery(query: string): string {
@@ -27,6 +49,21 @@ export function filterSongsByTitle(
     return songs;
   }
   return songs.filter((song) => matchesTitle(song.title, normalizedQuery));
+}
+
+export function filterSongSectionsByLabel(
+  sections: SongSection[],
+  label: SongLabel | ""
+): SongSection[] {
+  if (label === "") {
+    return sections;
+  }
+  return sections
+    .map((section) => ({
+      ...section,
+      songs: section.songs.filter((song) => song.label === label),
+    }))
+    .filter((section) => section.songs.length > 0);
 }
 
 export function filterSongSectionsByTitle(

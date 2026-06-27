@@ -31,7 +31,8 @@ export default async function EditSongPage({
   const initialValues: CreateSongInput = {
     title: song.title,
     groupId: song.groupId,
-    durationSeconds: song.durationSeconds ? String(song.durationSeconds) : "",
+    label: song.label ?? "",
+    generation: song.generation ?? "",
     releaseLinks: song.releases.map((release) => ({
       releaseId: release.releaseId,
       trackNumber: String(release.trackNumber),

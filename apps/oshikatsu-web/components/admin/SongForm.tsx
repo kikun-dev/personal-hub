@@ -10,6 +10,7 @@ import type {
   CreateSongFormationRowInput,
   CreateSongReleaseLinkInput,
 } from "@/types/song";
+import { SONG_LABELS, SONG_LABEL_LABELS } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -75,7 +76,8 @@ function getDefaultValues(): FormValues {
   return {
     title: "",
     groupId: "",
-    durationSeconds: "",
+    label: "",
+    generation: "",
     releaseLinks: [withReleaseKey({ releaseId: "", trackNumber: "" })],
     lyricsPeople: "",
     musicPeople: "",
@@ -106,7 +108,8 @@ function toSubmitValues(values: FormValues): CreateSongInput {
   return {
     title: values.title,
     groupId: values.groupId,
-    durationSeconds: values.durationSeconds,
+    label: values.label,
+    generation: values.label === "generation" ? values.generation : "",
     releaseLinks: values.releaseLinks.map((link) => ({
       releaseId: link.releaseId,
       trackNumber: link.trackNumber,
@@ -268,6 +271,38 @@ export function SongForm({
     setErrors((prev) => {
       const next = { ...prev };
       delete next[field];
+      return next;
+    });
+  };
+
+  // 期の候補はグループの maxGeneration から 1..max（メンバー登録と同じ供給源）
+  const generationOptions = useMemo(() => {
+    const group = groups.find((g) => g.id === values.groupId);
+    const max = group?.maxGeneration ?? 0;
+    return Array.from({ length: max }, (_, i) => String(i + 1));
+  }, [groups, values.groupId]);
+
+  const updateLabel = (label: string) => {
+    setValues((prev) => ({
+      ...prev,
+      label,
+      generation: label === "generation" ? prev.generation : "",
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.label;
+      delete next.generation;
+      return next;
+    });
+  };
+
+  // グループ変更で期の候補が変わるため、期はクリアする
+  const updateGroupId = (groupId: string) => {
+    setValues((prev) => ({ ...prev, groupId, generation: "" }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.groupId;
+      delete next.generation;
       return next;
     });
   };
@@ -495,7 +530,7 @@ export function SongForm({
         <select
           id="groupId"
           value={values.groupId}
-          onChange={(e) => update("groupId", e.target.value)}
+          onChange={(e) => updateGroupId(e.target.value)}
           className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
         >
           <option value="">選択してください</option>
@@ -510,15 +545,56 @@ export function SongForm({
         )}
       </div>
 
-      <Input
-        id="durationSeconds"
-        label="時間（秒）"
-        type="number"
-        min={1}
-        value={values.durationSeconds}
-        onChange={(e) => update("durationSeconds", e.target.value)}
-        error={errors.durationSeconds}
-      />
+      <div>
+        <label htmlFor="label" className="mb-1 block text-sm font-medium text-foreground/70">
+          ラベル
+        </label>
+        <select
+          id="label"
+          value={values.label}
+          onChange={(e) => updateLabel(e.target.value)}
+          className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+        >
+          <option value="">なし</option>
+          {SONG_LABELS.map((label) => (
+            <option key={label} value={label}>
+              {SONG_LABEL_LABELS[label]}
+            </option>
+          ))}
+        </select>
+        {errors.label && (
+          <p className="mt-1 text-xs text-red-500">{errors.label}</p>
+        )}
+      </div>
+
+      {values.label === "generation" && (
+        <div>
+          <label htmlFor="generation" className="mb-1 block text-sm font-medium text-foreground/70">
+            期
+          </label>
+          <select
+            id="generation"
+            value={values.generation}
+            onChange={(e) => update("generation", e.target.value)}
+            className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+          >
+            <option value="">選択してください</option>
+            {generationOptions.map((g) => (
+              <option key={g} value={g}>
+                {g}期
+              </option>
+            ))}
+          </select>
+          {!values.groupId && (
+            <p className="mt-1 text-xs text-foreground/40">
+              先にグループを選択すると期の候補が表示されます
+            </p>
+          )}
+          {errors.generation && (
+            <p className="mt-1 text-xs text-red-500">{errors.generation}</p>
+          )}
+        </div>
+      )}
 
       <div>
         <div className="mb-2 flex items-center justify-between">
