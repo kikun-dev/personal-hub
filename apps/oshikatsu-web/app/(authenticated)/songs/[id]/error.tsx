@@ -14,7 +14,8 @@ type SongDetailErrorProps = {
 // 回復可能な表示に留める（原因調査用に digest をログへ残す）。
 export default function SongDetailError({ error, reset }: SongDetailErrorProps) {
   useEffect(() => {
-    console.error("song detail render error", error);
+    // クライアントコンソールへの露出を最小化し、サーバーログ突合用の digest のみ記録する
+    console.error("song detail render error", { digest: error.digest });
   }, [error]);
 
   return (
