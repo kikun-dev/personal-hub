@@ -4,7 +4,11 @@ import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/client";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { HEADER_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
+import {
+  HEADER_NAV_ITEMS,
+  TOP_NAV_ITEMS,
+  isNavigationItemActive,
+} from "@/lib/navigation";
 
 export function Header() {
   const pathname = usePathname();
@@ -80,7 +84,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="border-t border-foreground/10 px-4 py-3 md:hidden">
           <nav className="flex flex-col gap-2">
-            {HEADER_NAV_ITEMS.map((item) => (
+            {TOP_NAV_ITEMS.map((item) => (
               <PendingLink
                 key={item.href}
                 href={item.href}
