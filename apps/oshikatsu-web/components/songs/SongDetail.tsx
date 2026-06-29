@@ -1,4 +1,5 @@
 import type { Song } from "@/types/song";
+import { Fragment } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -61,10 +62,10 @@ export function SongDetail({ song }: { song: Song }) {
         <h2 className="mb-3 text-sm font-medium text-foreground/70">楽曲情報</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {Array.from(creditsByRole.entries()).map(([role, names]) => (
-            <>
-              <dt key={`${role}-dt`} className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>
-              <dd key={`${role}-dd`} className="text-foreground">{names.join(" / ")}</dd>
-            </>
+            <Fragment key={role}>
+              <dt className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>
+              <dd className="text-foreground">{names.join(" / ")}</dd>
+            </Fragment>
           ))}
         </dl>
       </Card>
