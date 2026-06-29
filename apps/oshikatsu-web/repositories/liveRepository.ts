@@ -35,8 +35,16 @@ type PerformerMemberGroupRow = {
 };
 
 type PerformerMemberRel =
-  | { name_ja: string; orbit_member_groups: PerformerMemberGroupRow[] | null }
-  | { name_ja: string; orbit_member_groups: PerformerMemberGroupRow[] | null }[]
+  | {
+      name_ja: string;
+      name_kana: string;
+      orbit_member_groups: PerformerMemberGroupRow[] | null;
+    }
+  | {
+      name_ja: string;
+      name_kana: string;
+      orbit_member_groups: PerformerMemberGroupRow[] | null;
+    }[]
   | null;
 
 type PerformerMemberRow = {
@@ -108,7 +116,7 @@ const DETAIL_SELECT = `
   live_type,
   description,
   orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
-  orbit_live_performer_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
+  orbit_live_performer_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
   orbit_live_performances(
     id,
     venue_id,
@@ -205,13 +213,14 @@ function mapLive(row: LiveRow): Live {
         return {
           memberId: pm.member_id,
           memberNameJa: member?.name_ja ?? "",
+          memberNameKana: member?.name_kana ?? "",
           generation: pickMembershipGeneration(memberships, performerGroupIds),
         };
       })
       .sort((a, b) =>
         compareByGenerationThenName(
-          { generation: a.generation, name: a.memberNameJa },
-          { generation: b.generation, name: b.memberNameJa }
+          { generation: a.generation, nameKana: a.memberNameKana },
+          { generation: b.generation, nameKana: b.memberNameKana }
         )
       )
       .map(({ memberId, memberNameJa }) => ({ memberId, memberNameJa })),
