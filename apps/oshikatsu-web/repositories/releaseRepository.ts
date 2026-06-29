@@ -44,10 +44,12 @@ type ReleaseMemberGroupRow = {
 type ReleaseMemberNameRow =
   | {
       name_ja: string;
+      name_kana: string;
       orbit_member_groups: ReleaseMemberGroupRow[] | null;
     }
   | Array<{
       name_ja: string;
+      name_kana: string;
       orbit_member_groups: ReleaseMemberGroupRow[] | null;
     }>;
 
@@ -118,7 +120,7 @@ const RELEASE_LIST_SELECT = `
   artwork_path,
   orbit_people(display_name),
   orbit_groups(name_ja, color),
-  orbit_release_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
   orbit_release_tracks(track_number)
 `;
 
@@ -133,7 +135,7 @@ const RELEASE_DETAIL_SELECT = `
   orbit_people(display_name),
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
-  orbit_release_members(member_id, orbit_members(name_ja, orbit_member_groups(group_id, generation))),
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
   orbit_release_tracks(track_number, orbit_tracks(id, title))
 `;
 
@@ -177,13 +179,14 @@ function mapToRelease(row: ReleaseRow): Release {
       return {
         memberId: member.member_id,
         memberNameJa: orbitMember?.name_ja ?? "",
+        memberNameKana: orbitMember?.name_kana ?? "",
         generation: membership?.generation ?? null,
       };
     })
     .sort((a, b) =>
       compareByGenerationThenName(
-        { generation: a.generation, name: a.memberNameJa },
-        { generation: b.generation, name: b.memberNameJa }
+        { generation: a.generation, nameKana: a.memberNameKana },
+        { generation: b.generation, nameKana: b.memberNameKana }
       )
     );
 

@@ -1,9 +1,10 @@
-// 参加メンバーの並びを「期(generation)昇順 → 名前順」に統一するための比較関数。
+// 参加メンバーの並びを「期(generation)昇順 → かな(name_kana)順」に統一するための比較関数。
 // generation は数値（"1","2"...）想定。数値化できない/未設定は末尾に置く。
+// 氏名は漢字だと読み順に並ばないため、かな読み(name_kana)で比較する。
 
 export type MemberOrderInput = {
   generation: string | null;
-  name: string;
+  nameKana: string;
 };
 
 function generationRank(generation: string | null): number {
@@ -19,11 +20,11 @@ export function compareByGenerationThenName(
   const rankA = generationRank(a.generation);
   const rankB = generationRank(b.generation);
   if (rankA !== rankB) return rankA - rankB;
-  // 同順位（同期 or どちらも未設定/非数値）は generation 文字列→名前で安定化
+  // 同順位（同期 or どちらも未設定/非数値）は generation 文字列→かな読みで安定化
   if ((a.generation ?? "") !== (b.generation ?? "")) {
     return (a.generation ?? "").localeCompare(b.generation ?? "", "ja");
   }
-  return a.name.localeCompare(b.name, "ja");
+  return a.nameKana.localeCompare(b.nameKana, "ja");
 }
 
 type MembershipGeneration = {
