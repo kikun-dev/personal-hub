@@ -28,7 +28,7 @@ import {
 import {
   SortableContext,
   arrayMove,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
   sortableKeyboardCoordinates,
   useSortable,
 } from "@dnd-kit/sortable";
@@ -943,7 +943,7 @@ export function SongForm({
                     >
                       <SortableContext
                         items={row.memberIds}
-                        strategy={horizontalListSortingStrategy}
+                        strategy={rectSortingStrategy}
                       >
                         <ul className="flex flex-wrap gap-1.5">
                           {row.memberIds.map((memberId, slotIndex) => (
