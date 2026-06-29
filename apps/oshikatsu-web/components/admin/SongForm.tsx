@@ -197,7 +197,7 @@ export function SongForm({
   );
 
   const participantOptions = useMemo(() => {
-    const options = new Map<string, string>();
+    const options = new Map<string, { name: string; kana: string }>();
 
     for (const link of values.releaseLinks) {
       if (!link.releaseId) continue;
@@ -207,20 +207,28 @@ export function SongForm({
       for (let i = 0; i < release.participantMemberIds.length; i++) {
         const memberId = release.participantMemberIds[i];
         const name = release.participantMemberNames[i] ?? memberNameById.get(memberId) ?? "";
-        options.set(memberId, name || memberId);
+        const kana = release.participantMemberKanas[i] ?? "";
+        options.set(memberId, { name: name || memberId, kana });
       }
     }
 
     return Array.from(options.entries())
-      .map(([memberId, memberName]) => ({
+      .map(([memberId, { name, kana }]) => ({
         memberId,
-        memberName,
+        memberName: name,
+        memberKana: kana,
         isInSongGroup:
           values.groupId.length > 0
             ? (memberGroupIdsById.get(memberId)?.has(values.groupId) ?? false)
             : true,
       }))
-      .sort((a, b) => a.memberName.localeCompare(b.memberName));
+      // メンバー一覧/リリースと同じく、かな読み順で安定ソートする
+      .sort((a, b) => {
+        const kanaCompare = a.memberKana.localeCompare(b.memberKana, "ja");
+        return kanaCompare !== 0
+          ? kanaCompare
+          : a.memberName.localeCompare(b.memberName, "ja");
+      });
   }, [memberGroupIdsById, memberNameById, releaseMap, values.groupId, values.releaseLinks]);
 
   const selectedFormationMemberIds = useMemo(() => {
