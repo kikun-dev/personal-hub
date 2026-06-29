@@ -124,6 +124,7 @@ export type ReleaseOption = {
   releaseType: ReleaseType;
   participantMemberIds: string[];
   participantMemberNames: string[];
+  participantMemberKanas: string[];
 };
 
 export type CreateReleaseBonusVideoInput = {

@@ -100,7 +100,10 @@ type ReleaseListRow = {
 
 type ReleaseOptionMemberRow = {
   member_id: string;
-  orbit_members: { name_ja: string } | { name_ja: string }[] | null;
+  orbit_members:
+    | { name_ja: string; name_kana: string }
+    | { name_ja: string; name_kana: string }[]
+    | null;
 };
 
 type ReleaseOptionRow = {
@@ -154,7 +157,7 @@ const RELEASE_OPTION_SELECT = `
   id,
   title,
   release_type,
-  orbit_release_members(member_id, orbit_members(name_ja))
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana))
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
@@ -261,6 +264,7 @@ function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
     return {
       memberId: member.member_id,
       memberNameJa: orbitMember?.name_ja ?? "",
+      memberNameKana: orbitMember?.name_kana ?? "",
     };
   });
 
@@ -270,6 +274,7 @@ function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
     releaseType: row.release_type,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
+    participantMemberKanas: participants.map((member) => member.memberNameKana),
   };
 }
 
