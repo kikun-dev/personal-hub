@@ -44,6 +44,7 @@ type ReleaseRel =
       id: string;
       title: string;
       release_type: SongReleaseLink["releaseType"];
+      numbering: number | null;
       group_id: string;
       release_date: string | null;
       orbit_groups: ReleaseGroupRel;
@@ -52,6 +53,7 @@ type ReleaseRel =
       id: string;
       title: string;
       release_type: SongReleaseLink["releaseType"];
+      numbering: number | null;
       group_id: string;
       release_date: string | null;
       orbit_groups: ReleaseGroupRel;
@@ -163,6 +165,14 @@ type SongListReleaseRow = {
   orbit_releases: SongListReleaseDateRel;
 };
 
+type RepresentativeReleaseCandidate = {
+  releaseId: string;
+  trackNumber: number;
+  releaseDate: string | null;
+  releaseType: ReleaseType | null;
+  numbering: number | null;
+};
+
 type SongListRow = {
   id: string;
   title: string;
@@ -187,6 +197,7 @@ const SONG_LIST_SELECT = `
       id,
       title,
       release_type,
+      numbering,
       group_id,
       release_date,
       orbit_groups(name_ja, color)
@@ -208,6 +219,7 @@ const SONG_DETAIL_SELECT = `
       id,
       title,
       release_type,
+      numbering,
       group_id,
       release_date,
       orbit_groups(name_ja, color)
@@ -274,6 +286,25 @@ function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
+function pickFirstDatedRelease<T extends RepresentativeReleaseCandidate>(
+  links: T[]
+): T | null {
+  const datedLinks = links
+    .filter((link) => Boolean(link.releaseDate))
+    .sort((a, b) => {
+      const dateCompare = (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
+      return dateCompare !== 0 ? dateCompare : a.releaseId.localeCompare(b.releaseId);
+    });
+
+  return datedLinks[0] ?? null;
+}
+
+function pickRepresentativeReleaseLabelSource<T extends RepresentativeReleaseCandidate>(
+  links: T[]
+): T | null {
+  return pickFirstDatedRelease(links) ?? links[0] ?? null;
+}
+
 function mapRelease(row: TrackReleaseRow): SongReleaseLink | null {
   const release = pickFirst(row.orbit_releases);
   if (!release) return null;
@@ -284,6 +315,7 @@ function mapRelease(row: TrackReleaseRow): SongReleaseLink | null {
     releaseId: release.id,
     releaseTitle: release.title,
     releaseType: release.release_type,
+    numbering: release.numbering,
     groupId: release.group_id,
     groupNameJa: group?.name_ja ?? "",
     groupColor: group?.color ?? "#6B7280",
@@ -372,30 +404,26 @@ function mapCostumes(rows: CostumeRow[] | undefined): SongCostume[] {
 
 function mapSong(row: SongRow): Song {
   const songGroup = pickFirst(row.orbit_groups);
-  const releases = (row.orbit_release_tracks ?? [])
+  const mappedReleases = (row.orbit_release_tracks ?? [])
     .map(mapRelease)
-    .filter((release): release is SongReleaseLink => Boolean(release))
-    .sort((a, b) => {
-      if (a.releaseDate && b.releaseDate) {
-        if (a.releaseDate !== b.releaseDate) {
-          return a.releaseDate.localeCompare(b.releaseDate);
-        }
-      } else if (a.releaseDate) {
-        return -1;
-      } else if (b.releaseDate) {
-        return 1;
+    .filter((release): release is SongReleaseLink => Boolean(release));
+
+  const representative = pickFirstDatedRelease(mappedReleases);
+  const labelRepresentative = pickRepresentativeReleaseLabelSource(mappedReleases);
+
+  const releases = [...mappedReleases].sort((a, b) => {
+    if (a.releaseDate && b.releaseDate) {
+      if (a.releaseDate !== b.releaseDate) {
+        return a.releaseDate.localeCompare(b.releaseDate);
       }
+    } else if (a.releaseDate) {
+      return -1;
+    } else if (b.releaseDate) {
+      return 1;
+    }
 
-      return a.trackNumber - b.trackNumber;
-    });
-
-  const dates = releases
-    .map((release) => release.releaseDate)
-    .filter((releaseDate): releaseDate is string => Boolean(releaseDate));
-
-  const releaseDate = dates.length > 0
-    ? [...dates].sort((a, b) => a.localeCompare(b))[0]
-    : null;
+    return a.trackNumber - b.trackNumber;
+  });
 
   return {
     id: row.id,
@@ -405,7 +433,9 @@ function mapSong(row: SongRow): Song {
     groupColor: songGroup?.color ?? "#6B7280",
     label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
     generation: row.generation,
-    releaseDate,
+    releaseDate: representative?.releaseDate ?? null,
+    representativeReleaseType: labelRepresentative?.releaseType ?? null,
+    representativeNumbering: labelRepresentative?.numbering ?? null,
     releases,
     credits: mapCredits(row.orbit_track_credits),
     formationRows: mapFormation(row.orbit_track_formations),
@@ -431,16 +461,9 @@ function mapToSongListItem(row: SongListRow): SongListItem {
   });
 
   // 代表リリース = 初出（最古の非nullリリース日）。日付が並んだら release_id で決定的に。
-  const datedLinks = allLinks
-    .filter((link) => Boolean(link.releaseDate))
-    .sort((a, b) => {
-      const dateCompare = (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
-      return dateCompare !== 0 ? dateCompare : a.releaseId.localeCompare(b.releaseId);
-    });
-
-  const representative = datedLinks[0] ?? null;
+  const representative = pickFirstDatedRelease(allLinks);
   // 表示用代表 = 初出リリース（無ければ任意の紐づけ）。一覧の種別表記に使う。
-  const labelRepresentative = representative ?? allLinks[0] ?? null;
+  const labelRepresentative = pickRepresentativeReleaseLabelSource(allLinks);
 
   return {
     id: row.id,
