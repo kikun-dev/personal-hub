@@ -16,6 +16,22 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
+  useSortable,
+} from "@dnd-kit/sortable";
 
 type FormReleaseLink = CreateSongReleaseLinkInput & { _key: string };
 type FormFormationRow = CreateSongFormationRowInput & { _key: string };
@@ -149,6 +165,44 @@ function hasMvValue(mv: CreateSongInput["mv"]): boolean {
   );
 }
 
+// フォーメーション列内の1メンバー（dnd-kit で並べ替え可能なチップ）
+function SortableMemberChip({
+  id,
+  index,
+  name,
+}: {
+  id: string;
+  index: number;
+  name: string;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id });
+  const style = {
+    transform: transform
+      ? `translate3d(${transform.x}px, ${transform.y}px, 0)`
+      : undefined,
+    transition,
+    opacity: isDragging ? 0.6 : undefined,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      title="ドラッグで並べ替え"
+      className="flex cursor-grab touch-none items-center gap-1 rounded-full border border-foreground/10 bg-foreground/5 px-2.5 py-1 text-xs text-foreground active:cursor-grabbing"
+    >
+      <span aria-hidden className="text-foreground/30">
+        ⠿
+      </span>
+      <span className="text-foreground/40">{index + 1}.</span>
+      <span>{name}</span>
+    </li>
+  );
+}
+
 export function SongForm({
   mode,
   initialValues,
@@ -174,6 +228,11 @@ export function SongForm({
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
   const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
+  // フォーメーション列内の並べ替え用センサー（ポインタ＋キーボード）
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const releaseMap = useMemo(
     () => new Map<string, ReleaseOption>(releases.map((release) => [release.id, release])),
@@ -230,6 +289,12 @@ export function SongForm({
           : a.memberName.localeCompare(b.memberName, "ja");
       });
   }, [memberGroupIdsById, memberNameById, releaseMap, values.groupId, values.releaseLinks]);
+
+  const participantNameById = useMemo(
+    () =>
+      new Map(participantOptions.map((option) => [option.memberId, option.memberName])),
+    [participantOptions]
+  );
 
   const selectedFormationMemberIds = useMemo(() => {
     const selected = new Set<string>();
@@ -438,6 +503,26 @@ export function SongForm({
       }),
     }));
   };
+
+  // 列内のメンバー順（= slot_order = 左→右）をドラッグ&ドロップで入れ替える
+  const handleFormationDragEnd =
+    (key: string) =>
+    ({ active, over }: DragEndEvent) => {
+      if (!over || active.id === over.id) return;
+      setValues((prev) => ({
+        ...prev,
+        formationRows: prev.formationRows.map((row) => {
+          if (row._key !== key) return row;
+          const oldIndex = row.memberIds.indexOf(String(active.id));
+          const newIndex = row.memberIds.indexOf(String(over.id));
+          if (oldIndex === -1 || newIndex === -1) return row;
+          return {
+            ...row,
+            memberIds: arrayMove(row.memberIds, oldIndex, newIndex),
+          };
+        }),
+      }));
+    };
 
   const removeFormationRow = (key: string) => {
     setValues((prev) => ({
@@ -853,6 +938,35 @@ export function SongForm({
                     )}
                   </div>
                 </div>
+
+                {row.memberIds.length > 0 && (
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs text-foreground/60">
+                      並び順（ドラッグ/キーボードで左→右を調整）
+                    </p>
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleFormationDragEnd(row._key)}
+                    >
+                      <SortableContext
+                        items={row.memberIds}
+                        strategy={rectSortingStrategy}
+                      >
+                        <ul className="flex flex-wrap gap-1.5">
+                          {row.memberIds.map((memberId, slotIndex) => (
+                            <SortableMemberChip
+                              key={memberId}
+                              id={memberId}
+                              index={slotIndex}
+                              name={participantNameById.get(memberId) ?? memberId}
+                            />
+                          ))}
+                        </ul>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+                )}
               </div>
             );
           })}
