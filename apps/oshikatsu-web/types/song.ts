@@ -56,6 +56,7 @@ export type SongReleaseLink = {
   releaseId: string;
   releaseTitle: string;
   releaseType: ReleaseType;
+  numbering: number | null;
   groupId: string;
   groupNameJa: string;
   groupColor: string;
@@ -100,6 +101,8 @@ export type Song = {
   label: SongLabel | null;
   generation: string | null;
   releaseDate: string | null;
+  representativeReleaseType: ReleaseType | null;
+  representativeNumbering: number | null;
   releases: SongReleaseLink[];
   credits: SongCredit[];
   formationRows: SongFormationRow[];

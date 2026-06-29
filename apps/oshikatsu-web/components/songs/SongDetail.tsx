@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { formatDate } from "@/lib/formatters";
-import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatSongLabel } from "@/types/song";
 
 const CREDIT_LABELS: Record<string, string> = {
@@ -19,6 +19,9 @@ const SONG_LABEL_COLOR = "#8B5CF6";
 
 export function SongDetail({ song }: { song: Song }) {
   const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
+  const releaseLabelText = song.representativeReleaseType
+    ? formatReleaseTypeLabel(song.representativeReleaseType, song.representativeNumbering)
+    : null;
   const creditsByRole = new Map<string, string[]>();
   for (const credit of song.credits) {
     const list = creditsByRole.get(credit.role) ?? [];
@@ -33,6 +36,9 @@ export function SongDetail({ song }: { song: Song }) {
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {song.groupNameJa && (
             <span className="text-sm text-foreground/50">{song.groupNameJa}</span>
+          )}
+          {releaseLabelText && (
+            <span className="text-sm text-foreground/50">{releaseLabelText}</span>
           )}
           {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
         </div>
