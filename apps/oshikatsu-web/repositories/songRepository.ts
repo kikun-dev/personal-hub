@@ -118,6 +118,10 @@ type MvRow = {
   orbit_people: PersonRel | null;
 };
 
+// orbit_track_mvs は track_id が UNIQUE のため to-one として
+// 単一オブジェクト（リレーションが無ければ null）で返る。配列で返る場合にも備える。
+type MvRel = MvRow | MvRow[] | null;
+
 type CostumeRow = {
   id: string;
   image_path: string;
@@ -136,7 +140,7 @@ type SongRow = {
   orbit_release_tracks?: TrackReleaseRow[];
   orbit_track_credits?: TrackCreditRow[];
   orbit_track_formations?: FormationRel;
-  orbit_track_mvs?: MvRow[];
+  orbit_track_mvs?: MvRel;
   orbit_track_costumes?: CostumeRow[];
 };
 
@@ -335,9 +339,9 @@ function mapFormation(formationRel: FormationRel | undefined): SongFormationRow[
     .sort((a, b) => a.rowNumber - b.rowNumber);
 }
 
-function mapMv(rows: MvRow[] | undefined): SongMv | null {
-  if (!rows || rows.length === 0) return null;
-  const row = rows[0];
+function mapMv(mvRel: MvRel | undefined): SongMv | null {
+  const row = pickFirst(mvRel);
+  if (!row) return null;
   const director = pickFirst(row.orbit_people);
 
   return {
