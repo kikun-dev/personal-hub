@@ -37,6 +37,10 @@ export async function createSongAction(
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
+      console.error("createSongAction: repository error", {
+        message: e.message,
+        cause: e.cause,
+      });
       if (isDuplicateTrackNumberError(e)) {
         return {
           errors: [{ field: "_form", message: DUPLICATE_TRACK_NUMBER_MESSAGE }],
