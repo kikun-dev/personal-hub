@@ -10,13 +10,16 @@ export function FormationDisplay({ rows }: FormationDisplayProps) {
     return null;
   }
 
+  // 1列目(最前列)を最下段、最終列を最上段に積むため、列番号の降順で描画する
+  const orderedRows = [...rows].sort((a, b) => b.rowNumber - a.rowNumber);
+
   return (
     <Card>
       <h2 className="mb-4 text-sm font-medium text-foreground/70">
         フォーメーション
       </h2>
       <div className="space-y-4">
-        {rows.map((row) => (
+        {orderedRows.map((row) => (
           <div key={row.rowNumber} className="space-y-1">
             <div className="flex items-center gap-3">
               <div className="h-px flex-1 bg-foreground/10" />

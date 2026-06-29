@@ -174,6 +174,11 @@ export function SongForm({
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
   const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
+  // フォーメーション各列内の左右並べ替え（DnD）の掴んでいる要素
+  const [formationDrag, setFormationDrag] = useState<{
+    rowKey: string;
+    index: number;
+  } | null>(null);
 
   const releaseMap = useMemo(
     () => new Map<string, ReleaseOption>(releases.map((release) => [release.id, release])),
@@ -222,6 +227,12 @@ export function SongForm({
       }))
       .sort((a, b) => a.memberName.localeCompare(b.memberName));
   }, [memberGroupIdsById, memberNameById, releaseMap, values.groupId, values.releaseLinks]);
+
+  const participantNameById = useMemo(
+    () =>
+      new Map(participantOptions.map((option) => [option.memberId, option.memberName])),
+    [participantOptions]
+  );
 
   const selectedFormationMemberIds = useMemo(() => {
     const selected = new Set<string>();
@@ -427,6 +438,21 @@ export function SongForm({
           ...row,
           memberIds: [...row.memberIds, memberId],
         };
+      }),
+    }));
+  };
+
+  // 列内のメンバー順（= slot_order = 左→右）を入れ替える
+  const moveFormationMember = (key: string, fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    setValues((prev) => ({
+      ...prev,
+      formationRows: prev.formationRows.map((row) => {
+        if (row._key !== key) return row;
+        const nextIds = [...row.memberIds];
+        const [moved] = nextIds.splice(fromIndex, 1);
+        nextIds.splice(toIndex, 0, moved);
+        return { ...row, memberIds: nextIds };
       }),
     }));
   };
@@ -845,6 +871,42 @@ export function SongForm({
                     )}
                   </div>
                 </div>
+
+                {row.memberIds.length > 0 && (
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs text-foreground/60">
+                      並び順（ドラッグで左→右を調整）
+                    </p>
+                    <ul className="flex flex-wrap gap-1.5">
+                      {row.memberIds.map((memberId, slotIndex) => (
+                        <li
+                          key={memberId}
+                          draggable
+                          onDragStart={() =>
+                            setFormationDrag({ rowKey: row._key, index: slotIndex })
+                          }
+                          onDragOver={(e) => e.preventDefault()}
+                          onDrop={(e) => {
+                            e.preventDefault();
+                            if (formationDrag && formationDrag.rowKey === row._key) {
+                              moveFormationMember(row._key, formationDrag.index, slotIndex);
+                            }
+                            setFormationDrag(null);
+                          }}
+                          onDragEnd={() => setFormationDrag(null)}
+                          title="ドラッグで並べ替え"
+                          className="flex cursor-grab items-center gap-1 rounded-full border border-foreground/10 bg-foreground/5 px-2.5 py-1 text-xs text-foreground active:cursor-grabbing"
+                        >
+                          <span aria-hidden className="text-foreground/30">
+                            ⠿
+                          </span>
+                          <span className="text-foreground/40">{slotIndex + 1}.</span>
+                          <span>{participantNameById.get(memberId) ?? memberId}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             );
           })}
