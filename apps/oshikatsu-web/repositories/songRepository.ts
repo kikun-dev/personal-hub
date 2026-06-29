@@ -292,6 +292,19 @@ function mapRelease(row: TrackReleaseRow): SongReleaseLink | null {
   };
 }
 
+// クレジットの表示順（作詞→作曲→編曲→振付）。未知ロールは末尾へ回す。
+const CREDIT_ROLE_ORDER: SongCreditRole[] = [
+  "lyrics",
+  "music",
+  "arrangement",
+  "choreography",
+];
+
+function creditRoleRank(role: SongCreditRole): number {
+  const index = CREDIT_ROLE_ORDER.indexOf(role);
+  return index === -1 ? CREDIT_ROLE_ORDER.length : index;
+}
+
 function mapCredits(rows: TrackCreditRow[] | undefined): SongCredit[] {
   if (!rows) return [];
 
@@ -308,7 +321,7 @@ function mapCredits(rows: TrackCreditRow[] | undefined): SongCredit[] {
     })
     .filter((credit): credit is SongCredit => Boolean(credit))
     .sort((a, b) => {
-      if (a.role !== b.role) return a.role.localeCompare(b.role);
+      if (a.role !== b.role) return creditRoleRank(a.role) - creditRoleRank(b.role);
       return a.sortOrder - b.sortOrder;
     });
 }
