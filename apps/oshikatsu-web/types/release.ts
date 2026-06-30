@@ -113,7 +113,7 @@ export const SELECTION_TIERS = [
 export type SelectionTier = (typeof SELECTION_TIERS)[number];
 
 // 選抜/アンダー/期生・列・センターはフォーメーションから導出する（Decision #177）。
-// リリース×メンバーで手動保持するのは overlay（福神/櫻エイト・休業中）のみ。
+// 手動保持する overlay は福神/休業中のみ。櫻エイトは初期櫻坂ルールで自動導出する。
 export type ReleaseMemberPosition = {
   memberId: string;
   isFrontSpecial: boolean;

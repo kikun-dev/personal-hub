@@ -11,6 +11,11 @@ import type {
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
+import {
+  SAKURAZAKA_EIGHT_FRONT_ROW_COUNT,
+  getManualFrontSpecialSelectionLabel,
+  isSakurazakaEightEra,
+} from "@/lib/selectionPositionRules";
 
 type ReleaseGroupRow =
   | {
@@ -335,7 +340,79 @@ function labelDerivation(label: string | null | undefined) {
   return LABEL_DERIVATION.find((entry) => entry.label === label);
 }
 
-// overlay（福神/櫻エイト・休業中）の保存入力。いずれかが立つメンバーのみ送る。
+type FormationPlacement = { rowNumber: number; isCenter: boolean };
+
+type RepresentativeTrack = {
+  trackId: string;
+  trackNumber: number;
+  label: string;
+  tier: SelectionTier;
+  priority: number;
+};
+
+type DerivedSelection = {
+  tier: SelectionTier;
+  rowNumber: number | null;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
+};
+
+type RankedDerivedSelection = DerivedSelection & {
+  priority: number;
+  trackNumber: number;
+};
+
+function isBetterDerivedCandidate(
+  candidate: RankedDerivedSelection,
+  current: RankedDerivedSelection | null
+): boolean {
+  return (
+    !current ||
+    candidate.priority < current.priority ||
+    (candidate.priority === current.priority &&
+      candidate.trackNumber < current.trackNumber)
+  );
+}
+
+function toSakurazakaEightCandidate(
+  rep: RepresentativeTrack,
+  placement: FormationPlacement
+): RankedDerivedSelection | null {
+  if (rep.tier !== "senbatsu") return null;
+
+  // 表題曲の 1・2列目=櫻エイト、3列目以降=接頭辞なしの「◯列目」（どちらも選抜のまま）。
+  // 表題曲に居ないメンバーは別途 BACKS として補完する。
+  const isFrontSpecial =
+    placement.rowNumber <= SAKURAZAKA_EIGHT_FRONT_ROW_COUNT;
+  return {
+    priority: rep.priority,
+    trackNumber: rep.trackNumber,
+    tier: "senbatsu",
+    rowNumber: placement.rowNumber,
+    isCenter: placement.isCenter,
+    isFrontSpecial,
+  };
+}
+
+function toNormalDerivedCandidate(
+  rep: RepresentativeTrack,
+  placement: FormationPlacement
+): RankedDerivedSelection {
+  return {
+    priority: rep.priority,
+    trackNumber: rep.trackNumber,
+    tier: rep.tier,
+    rowNumber: placement.rowNumber,
+    isCenter: placement.isCenter,
+    isFrontSpecial: false,
+  };
+}
+
+function canApplyManualFrontSpecial(groupNameJa: string): boolean {
+  return getManualFrontSpecialSelectionLabel(groupNameJa) !== null;
+}
+
+// overlay（福神・休業中）の保存入力。いずれかが立つメンバーのみ送る。
 function toMemberPositionRpcInput(
   positions: CreateReleaseInput["memberPositions"]
 ): Array<{
@@ -522,10 +599,7 @@ export function createReleaseRepository(
       }
 
       // track_id -> { 列, センター }（メンバーは1トラックにつき1行）
-      const formationByTrack = new Map<
-        string,
-        { rowNumber: number; isCenter: boolean }
-      >();
+      const formationByTrack = new Map<string, FormationPlacement>();
       for (const mr of memberRows) {
         const info = rowInfo.get(mr.formation_row_id);
         if (!info) continue;
@@ -567,7 +641,17 @@ export function createReleaseRepository(
         );
       }
 
-      // 4) overlay（福神/櫻エイト・休業中）
+      // 3.5) メンバーが参加（出演）するリリース（櫻エイト期のBACKS判定に使う）
+      const { data: pm, error: pmErr } = await supabase
+        .from("orbit_release_members")
+        .select("release_id")
+        .eq("member_id", memberId);
+      if (pmErr) throw fail(pmErr);
+      const participationReleaseIds = (
+        (pm as Array<{ release_id: string }>) ?? []
+      ).map((x) => x.release_id);
+
+      // 4) overlay（福神・休業中）
       const { data: overlayData, error: ovErr } = await supabase
         .from("orbit_release_member_positions")
         .select("release_id, is_front_special, is_hiatus")
@@ -592,6 +676,7 @@ export function createReleaseRepository(
       const releaseIds = unique([
         ...candidateReleaseIds,
         ...overlayByRelease.keys(),
+        ...participationReleaseIds,
       ]);
       const releaseInfo = new Map<
         string,
@@ -628,21 +713,19 @@ export function createReleaseRepository(
         }
       }
       const singleReleaseIds = Array.from(releaseInfo.keys());
+      // 代表トラック算出は「メンバーが選抜対象トラックに居るシングル」に限定（重いクエリ抑制）
+      const formationCandidateSingleIds = unique(
+        candidateReleaseIds.filter((id) => releaseInfo.has(id))
+      );
 
       // 6) 候補シングルの全トラックから、グループごとの代表トラック（最小track_number）を求める。
       // グループキー = ラベル。ただし期別曲は期(generation)ごとに別グループとして潰さない。
-      type RepEntry = {
-        trackId: string;
-        trackNumber: number;
-        tier: SelectionTier;
-        priority: number;
-      };
-      const repByRelease = new Map<string, Map<string, RepEntry>>();
-      if (singleReleaseIds.length > 0) {
+      const repByRelease = new Map<string, Map<string, RepresentativeTrack>>();
+      if (formationCandidateSingleIds.length > 0) {
         const { data: allRt, error: allRtErr } = await supabase
           .from("orbit_release_tracks")
           .select("track_id, track_number, release_id")
-          .in("release_id", singleReleaseIds);
+          .in("release_id", formationCandidateSingleIds);
         if (allRtErr) throw fail(allRtErr);
         const allLinks =
           (allRt as Array<{
@@ -700,6 +783,7 @@ export function createReleaseRepository(
             byGroup.set(groupKey, {
               trackId: link.track_id,
               trackNumber: link.track_number,
+              label: info.label,
               tier: entry.tier,
               priority,
             });
@@ -708,24 +792,27 @@ export function createReleaseRepository(
       }
 
       // 7) リリースごとに、代表トラックにメンバーが居るグループのうち最優先のtierを採用
-      const derived = new Map<
-        string,
-        { tier: SelectionTier; rowNumber: number | null; isCenter: boolean }
-      >();
-      for (const releaseId of singleReleaseIds) {
+      const derived = new Map<string, DerivedSelection>();
+      for (const releaseId of formationCandidateSingleIds) {
         const byGroup = repByRelease.get(releaseId);
+        const release = releaseInfo.get(releaseId);
         if (!byGroup) continue;
-        let best: { priority: number; tier: SelectionTier; rowNumber: number; isCenter: boolean } | null = null;
+        const usesSakurazakaEightRule =
+          release != null &&
+          isSakurazakaEightEra(release.groupNameJa, release.numbering);
+        let best: RankedDerivedSelection | null = null;
         for (const rep of byGroup.values()) {
           const fm = formationByTrack.get(rep.trackId);
           if (!fm) continue; // 代表トラックにメンバーが居ない → 不該当
-          if (!best || rep.priority < best.priority) {
-            best = {
-              priority: rep.priority,
-              tier: rep.tier,
-              rowNumber: fm.rowNumber,
-              isCenter: fm.isCenter,
-            };
+          // 櫻エイト期は表題曲(label=title)のみ導出。選抜カップリング/BACKS曲等は
+          // 列を使わず、後段で「BACKS」として補完する。
+          const candidate = usesSakurazakaEightRule
+            ? rep.label === "title"
+              ? toSakurazakaEightCandidate(rep, fm)
+              : null
+            : toNormalDerivedCandidate(rep, fm);
+          if (candidate && isBetterDerivedCandidate(candidate, best)) {
+            best = candidate;
           }
         }
         if (best) {
@@ -733,8 +820,27 @@ export function createReleaseRepository(
             tier: best.tier,
             rowNumber: best.rowNumber,
             isCenter: best.isCenter,
+            isFrontSpecial: best.isFrontSpecial,
           });
         }
+      }
+
+      // 7.5) 櫻エイト期: 表題曲に居ない参加メンバーは BACKS（アンダー・列なし）として補完
+      const participationReleaseIdSet = new Set(participationReleaseIds);
+      for (const releaseId of singleReleaseIds) {
+        if (derived.has(releaseId)) continue;
+        if (!participationReleaseIdSet.has(releaseId)) continue;
+        const release = releaseInfo.get(releaseId);
+        if (!release) continue;
+        if (!isSakurazakaEightEra(release.groupNameJa, release.numbering)) {
+          continue;
+        }
+        derived.set(releaseId, {
+          tier: "under",
+          rowNumber: null,
+          isCenter: false,
+          isFrontSpecial: false,
+        });
       }
 
       // 8) 組み立て（overlay反映・休業中は上書き／休業中のみのリリースも表示）
@@ -772,9 +878,12 @@ export function createReleaseRepository(
           tier: base.tier,
           rowNumber: base.rowNumber,
           isCenter: base.isCenter,
-          // 福神/櫻エイトは選抜のメンバーにのみ反映する
+          // 福神は overlay、櫻エイトは初期櫻坂ルールの導出結果として反映する。
           isFrontSpecial:
-            base.tier === "senbatsu" ? (overlay?.isFrontSpecial ?? false) : false,
+            base.tier === "senbatsu" &&
+            (base.isFrontSpecial ||
+              (canApplyManualFrontSpecial(info.groupNameJa) &&
+                (overlay?.isFrontSpecial ?? false))),
         });
       }
 

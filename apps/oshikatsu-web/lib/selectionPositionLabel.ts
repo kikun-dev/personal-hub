@@ -1,7 +1,12 @@
 import type { SelectionTier } from "@/types/release";
+import {
+  getFrontSpecialSelectionLabel,
+  isSakurazakaEightEra,
+} from "@/lib/selectionPositionRules";
 
 type SelectionPositionLabelInput = {
   groupNameJa: string;
+  numbering: number | null;
   tier: SelectionTier;
   rowNumber: number | null;
   isCenter: boolean;
@@ -15,24 +20,12 @@ const UNDER_LABEL_BY_GROUP: Record<string, string> = {
   "日向坂46": "ひなた坂",
 };
 
-// 福神(乃木坂) / 櫻エイト(櫻坂)。該当しないグループは front_special なし
-const FRONT_SPECIAL_LABEL_BY_GROUP: Record<string, string> = {
-  "乃木坂46": "福神",
-  "櫻坂46": "櫻エイト",
-};
-
 export function getUnderSelectionLabel(
   groupNameJa: string | null | undefined
 ): string {
   return groupNameJa
     ? (UNDER_LABEL_BY_GROUP[groupNameJa] ?? "アンダー")
     : "アンダー";
-}
-
-export function getFrontSpecialSelectionLabel(
-  groupNameJa: string | null | undefined
-): string | null {
-  return groupNameJa ? (FRONT_SPECIAL_LABEL_BY_GROUP[groupNameJa] ?? null) : null;
 }
 
 // 選抜ポジションを表示用ラベルに変換する。
@@ -60,8 +53,15 @@ export function formatSelectionPositionLabel(
   // senbatsu
   if (position.isCenter) return "センター";
   if (position.isFrontSpecial) {
-    const frontLabel = getFrontSpecialSelectionLabel(position.groupNameJa);
+    const frontLabel = getFrontSpecialSelectionLabel(
+      position.groupNameJa,
+      position.numbering
+    );
     if (frontLabel) return rowSuffix ? `${frontLabel}${rowSuffix}` : frontLabel;
+  }
+  // 櫻エイト期は表題曲の後列（3列目以降）を接頭辞なしの「◯列目」で表示する
+  if (isSakurazakaEightEra(position.groupNameJa, position.numbering)) {
+    return rowSuffix || "選抜";
   }
   return rowSuffix ? `選抜${rowSuffix}` : "選抜";
 }
