@@ -112,20 +112,18 @@ export const SELECTION_TIERS = [
 ] as const;
 export type SelectionTier = (typeof SELECTION_TIERS)[number];
 
+// 選抜/アンダー/期生・列・センターはフォーメーションから導出する（Decision #177）。
+// リリース×メンバーで手動保持するのは overlay（福神/櫻エイト・休業中）のみ。
 export type ReleaseMemberPosition = {
   memberId: string;
-  tier: SelectionTier;
-  rowNumber: number | null;
-  isCenter: boolean;
   isFrontSpecial: boolean;
+  isHiatus: boolean;
 };
 
 export type CreateReleaseMemberPositionInput = {
   memberId: string;
-  tier: SelectionTier | "";
-  rowNumber: string;
-  isCenter: boolean;
   isFrontSpecial: boolean;
+  isHiatus: boolean;
 };
 
 // メンバー詳細で表示する、シングルごとの選抜ポジション

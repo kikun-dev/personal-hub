@@ -1,15 +1,11 @@
 import type { CreateReleaseInput } from "@/types/release";
 import type { ValidationError } from "@/types/errors";
-import { RELEASE_TYPES, SELECTION_TIERS } from "@/types/release";
+import { RELEASE_TYPES } from "@/types/release";
 import { isValidDateString } from "@/lib/validation";
 import { isReleaseArtworkPath } from "@/lib/releaseImage";
 
 function isReleaseType(value: string): boolean {
   return (RELEASE_TYPES as readonly string[]).includes(value);
-}
-
-function isSelectionTier(value: string): boolean {
-  return (SELECTION_TIERS as readonly string[]).includes(value);
 }
 
 export function validateRelease(input: CreateReleaseInput): ValidationError[] {
@@ -135,21 +131,17 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
     seenMemberIds.add(memberId);
   }
 
-  // 選抜ポジション：シングルのみ・参加メンバー限定・組み合わせ妥当性
+  // 選抜ポジション overlay（福神/休業中）：シングルのみ・参加メンバー限定・重複なし
   const participantMemberIdSet = new Set(input.participantMemberIds);
   const seenPositionMemberIds = new Set<string>();
   for (const position of input.memberPositions) {
-    if (position.tier === "") continue; // 未設定は保存対象外
+    if (!position.isFrontSpecial && !position.isHiatus) continue; // 空は保存対象外
 
     if (input.releaseType !== "single") {
       errors.push({
         field: "memberPositions",
         message: "選抜ポジションはシングルでのみ設定できます",
       });
-      break;
-    }
-    if (!isSelectionTier(position.tier)) {
-      errors.push({ field: "memberPositions", message: "選抜区分の値が不正です" });
       break;
     }
     if (!participantMemberIdSet.has(position.memberId)) {
@@ -168,35 +160,11 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
     }
     seenPositionMemberIds.add(position.memberId);
 
-    const hasRow = position.tier === "senbatsu" || position.tier === "under";
-    if (position.rowNumber.trim() !== "") {
-      if (!hasRow) {
-        errors.push({
-          field: "memberPositions",
-          message: "列は選抜/アンダーのみ指定できます",
-        });
-        break;
-      }
-      const rowNumber = Number(position.rowNumber);
-      if (!Number.isInteger(rowNumber) || rowNumber <= 0) {
-        errors.push({
-          field: "memberPositions",
-          message: "列は1以上の整数で入力してください",
-        });
-        break;
-      }
-    }
-    if (position.isCenter && !hasRow) {
+    // 休業中＝出演していない想定。福神（=選抜の前方）とは併存しない。
+    if (position.isFrontSpecial && position.isHiatus) {
       errors.push({
         field: "memberPositions",
-        message: "センターは選抜/アンダーのみ設定できます",
-      });
-      break;
-    }
-    if (position.isFrontSpecial && position.tier !== "senbatsu") {
-      errors.push({
-        field: "memberPositions",
-        message: "福神/櫻エイトは選抜のみ設定できます",
+        message: "休業中のメンバーに福神/櫻エイトは設定できません",
       });
       break;
     }

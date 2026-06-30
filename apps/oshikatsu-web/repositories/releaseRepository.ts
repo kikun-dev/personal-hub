@@ -8,7 +8,6 @@ import type {
   SelectionTier,
   MemberSelectionPosition,
 } from "@/types/release";
-import { SELECTION_TIERS } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
@@ -63,10 +62,8 @@ type ReleaseMemberRow = {
 
 type ReleaseMemberPositionRow = {
   member_id: string;
-  tier: string;
-  row_number: number | null;
-  is_center: boolean;
   is_front_special: boolean;
+  is_hiatus: boolean;
 };
 
 type ReleaseTrackRow = {
@@ -160,7 +157,7 @@ const RELEASE_DETAIL_SELECT = `
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
-  orbit_release_member_positions(member_id, tier, row_number, is_center, is_front_special),
+  orbit_release_member_positions(member_id, is_front_special, is_hiatus),
   orbit_release_tracks(track_number, orbit_tracks(id, title))
 `;
 
@@ -231,17 +228,11 @@ function mapToRelease(row: ReleaseRow): Release {
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     participantMemberGenerations: participants.map((member) => member.generation),
-    memberPositions: (row.orbit_release_member_positions ?? [])
-      .filter((position): position is ReleaseMemberPositionRow & { tier: SelectionTier } =>
-        (SELECTION_TIERS as readonly string[]).includes(position.tier)
-      )
-      .map((position) => ({
-        memberId: position.member_id,
-        tier: position.tier,
-        rowNumber: position.row_number,
-        isCenter: position.is_center,
-        isFrontSpecial: position.is_front_special,
-      })),
+    memberPositions: (row.orbit_release_member_positions ?? []).map((position) => ({
+      memberId: position.member_id,
+      isFrontSpecial: position.is_front_special,
+      isHiatus: position.is_hiatus,
+    })),
     bonusVideos: (row.orbit_release_bonus_videos ?? [])
       .map((bonus) => ({
         id: bonus.id,
@@ -331,77 +322,33 @@ function toTrackLinkRpcInput(
   }));
 }
 
-const MEMBER_POSITION_SELECT = `
-  tier,
-  row_number,
-  is_center,
-  is_front_special,
-  orbit_releases(id, title, numbering, release_type, group_id, orbit_groups(name_ja))
-`;
+// 楽曲ラベル → 選抜tier（表題=選抜 / アンダー=アンダー / 期別=期生）。
+// 配列の順序はそのまま導出時の優先度（上ほど優先）にも使う。
+const LABEL_TIER_PRIORITY: ReadonlyArray<{ label: string; tier: SelectionTier }> = [
+  { label: "title", tier: "senbatsu" },
+  { label: "under", tier: "under" },
+  { label: "generation", tier: "generation" },
+];
 
-type MemberPositionReleaseRow = {
-  id: string;
-  title: string;
-  numbering: number | null;
-  release_type: ReleaseType;
-  group_id: string;
-  orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
-};
-
-type MemberPositionRow = {
-  tier: string;
-  row_number: number | null;
-  is_center: boolean;
-  is_front_special: boolean;
-  orbit_releases: MemberPositionReleaseRow | MemberPositionReleaseRow[] | null;
-};
-
-function mapMemberPosition(
-  row: MemberPositionRow
-): MemberSelectionPosition | null {
-  const release = Array.isArray(row.orbit_releases)
-    ? row.orbit_releases[0]
-    : row.orbit_releases;
-  if (!release) return null;
-  // 選抜はシングルのみ。tier が不正な行も除外する
-  if (release.release_type !== "single") return null;
-  if (!(SELECTION_TIERS as readonly string[]).includes(row.tier)) return null;
-
-  const group = Array.isArray(release.orbit_groups)
-    ? release.orbit_groups[0]
-    : release.orbit_groups;
-
-  return {
-    releaseId: release.id,
-    releaseTitle: release.title,
-    numbering: release.numbering,
-    groupId: release.group_id,
-    groupNameJa: group?.name_ja ?? "",
-    tier: row.tier as SelectionTier,
-    rowNumber: row.row_number,
-    isCenter: row.is_center,
-    isFrontSpecial: row.is_front_special,
-  };
+function tierPriorityIndex(tier: SelectionTier): number {
+  const index = LABEL_TIER_PRIORITY.findIndex((entry) => entry.tier === tier);
+  return index === -1 ? LABEL_TIER_PRIORITY.length : index;
 }
 
+// overlay（福神/櫻エイト・休業中）の保存入力。いずれかが立つメンバーのみ送る。
 function toMemberPositionRpcInput(
   positions: CreateReleaseInput["memberPositions"]
 ): Array<{
   memberId: string;
-  tier: string;
-  rowNumber: number | null;
-  isCenter: boolean;
   isFrontSpecial: boolean;
+  isHiatus: boolean;
 }> {
   return positions
-    .filter((position) => position.tier !== "")
+    .filter((position) => position.isFrontSpecial || position.isHiatus)
     .map((position) => ({
       memberId: position.memberId,
-      tier: position.tier,
-      rowNumber:
-        position.rowNumber.trim() === "" ? null : Number(position.rowNumber),
-      isCenter: position.isCenter,
       isFrontSpecial: position.isFrontSpecial,
+      isHiatus: position.isHiatus,
     }));
 }
 
@@ -529,21 +476,233 @@ export function createReleaseRepository(
     },
 
     async findSelectionPositionsByMemberId(memberId) {
-      const { data, error } = await supabase
-        .from("orbit_release_member_positions")
-        .select(MEMBER_POSITION_SELECT)
-        .eq("member_id", memberId);
+      const fail = (cause: unknown) =>
+        new RepositoryError("選抜ポジションの取得に失敗しました", cause);
+      const unique = (values: string[]) => Array.from(new Set(values));
 
-      if (error) {
-        throw new RepositoryError("選抜ポジションの取得に失敗しました", error);
+      // 1) メンバーのフォーメーション所属（track別の列・センター）を解決
+      const { data: fmMembers, error: fmErr } = await supabase
+        .from("orbit_track_formation_members")
+        .select("formation_row_id, is_center")
+        .eq("member_id", memberId);
+      if (fmErr) throw fail(fmErr);
+      const memberRows =
+        (fmMembers as Array<{ formation_row_id: string; is_center: boolean }>) ?? [];
+
+      const rowInfo = new Map<string, { rowNumber: number; formationId: string }>();
+      const rowIds = unique(memberRows.map((r) => r.formation_row_id));
+      if (rowIds.length > 0) {
+        const { data: rows, error: rowsErr } = await supabase
+          .from("orbit_track_formation_rows")
+          .select("id, row_number, formation_id")
+          .in("id", rowIds);
+        if (rowsErr) throw fail(rowsErr);
+        for (const r of (rows as Array<{
+          id: string;
+          row_number: number;
+          formation_id: string;
+        }>) ?? []) {
+          rowInfo.set(r.id, { rowNumber: r.row_number, formationId: r.formation_id });
+        }
       }
 
-      return ((data as unknown as MemberPositionRow[]) ?? [])
-        .map(mapMemberPosition)
-        .filter(
-          (position): position is MemberSelectionPosition => position !== null
-        )
-        .sort((a, b) => (a.numbering ?? 0) - (b.numbering ?? 0));
+      const trackByFormation = new Map<string, string>();
+      const formationIds = unique(
+        Array.from(rowInfo.values()).map((v) => v.formationId)
+      );
+      if (formationIds.length > 0) {
+        const { data: formations, error: fErr } = await supabase
+          .from("orbit_track_formations")
+          .select("id, track_id")
+          .in("id", formationIds);
+        if (fErr) throw fail(fErr);
+        for (const f of (formations as Array<{ id: string; track_id: string }>) ?? []) {
+          trackByFormation.set(f.id, f.track_id);
+        }
+      }
+
+      // track_id -> { 列, センター }（メンバーは1トラックにつき1行）
+      const formationByTrack = new Map<
+        string,
+        { rowNumber: number; isCenter: boolean }
+      >();
+      for (const mr of memberRows) {
+        const info = rowInfo.get(mr.formation_row_id);
+        if (!info) continue;
+        const trackId = trackByFormation.get(info.formationId);
+        if (!trackId) continue;
+        formationByTrack.set(trackId, {
+          rowNumber: info.rowNumber,
+          isCenter: mr.is_center,
+        });
+      }
+
+      // 2) 各トラックの label を取り、選抜対象（表題/アンダー/期別）に絞る
+      const labelByTrack = new Map<string, string>();
+      const trackIds = Array.from(formationByTrack.keys());
+      if (trackIds.length > 0) {
+        const { data: tracks, error: tErr } = await supabase
+          .from("orbit_tracks")
+          .select("id, label")
+          .in("id", trackIds);
+        if (tErr) throw fail(tErr);
+        for (const t of (tracks as Array<{ id: string; label: string | null }>) ?? []) {
+          if (t.label && LABEL_TIER_PRIORITY.some((e) => e.label === t.label)) {
+            labelByTrack.set(t.id, t.label);
+          }
+        }
+      }
+
+      // 3) 対象トラック → リリース紐づけ（曲順含む）
+      type Link = { trackId: string; trackNumber: number; releaseId: string };
+      let links: Link[] = [];
+      const labeledTrackIds = Array.from(labelByTrack.keys());
+      if (labeledTrackIds.length > 0) {
+        const { data: rt, error: rtErr } = await supabase
+          .from("orbit_release_tracks")
+          .select("track_id, track_number, release_id")
+          .in("track_id", labeledTrackIds);
+        if (rtErr) throw fail(rtErr);
+        links = (
+          (rt as Array<{
+            track_id: string;
+            track_number: number;
+            release_id: string;
+          }>) ?? []
+        ).map((x) => ({
+          trackId: x.track_id,
+          trackNumber: x.track_number,
+          releaseId: x.release_id,
+        }));
+      }
+
+      // 4) overlay（福神/櫻エイト・休業中）
+      const { data: overlayData, error: ovErr } = await supabase
+        .from("orbit_release_member_positions")
+        .select("release_id, is_front_special, is_hiatus")
+        .eq("member_id", memberId);
+      if (ovErr) throw fail(ovErr);
+      const overlayByRelease = new Map<
+        string,
+        { isFrontSpecial: boolean; isHiatus: boolean }
+      >();
+      for (const o of (overlayData as Array<{
+        release_id: string;
+        is_front_special: boolean;
+        is_hiatus: boolean;
+      }>) ?? []) {
+        overlayByRelease.set(o.release_id, {
+          isFrontSpecial: o.is_front_special,
+          isHiatus: o.is_hiatus,
+        });
+      }
+
+      // 5) 関係するシングルの情報（導出 ＋ overlayのみのリリースも補完）
+      const releaseIds = unique([
+        ...links.map((l) => l.releaseId),
+        ...overlayByRelease.keys(),
+      ]);
+      const releaseInfo = new Map<
+        string,
+        {
+          title: string;
+          numbering: number | null;
+          groupId: string;
+          groupNameJa: string;
+        }
+      >();
+      if (releaseIds.length > 0) {
+        const { data: releases, error: relErr } = await supabase
+          .from("orbit_releases")
+          .select("id, title, numbering, release_type, group_id, orbit_groups(name_ja)")
+          .in("id", releaseIds)
+          .eq("release_type", "single");
+        if (relErr) throw fail(relErr);
+        for (const r of (releases as Array<{
+          id: string;
+          title: string;
+          numbering: number | null;
+          group_id: string;
+          orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
+        }>) ?? []) {
+          const group = Array.isArray(r.orbit_groups)
+            ? r.orbit_groups[0]
+            : r.orbit_groups;
+          releaseInfo.set(r.id, {
+            title: r.title,
+            numbering: r.numbering,
+            groupId: r.group_id,
+            groupNameJa: group?.name_ja ?? "",
+          });
+        }
+      }
+
+      // 6) リリースごとに最良の導出を選ぶ（tier優先 → 同tierは曲順が若い方）
+      const derived = new Map<
+        string,
+        { tier: SelectionTier; rowNumber: number | null; isCenter: boolean; trackNumber: number }
+      >();
+      for (const link of links) {
+        if (!releaseInfo.has(link.releaseId)) continue; // シングルのみ
+        const label = labelByTrack.get(link.trackId);
+        const entry = LABEL_TIER_PRIORITY.find((e) => e.label === label);
+        const fm = formationByTrack.get(link.trackId);
+        if (!entry || !fm) continue;
+        const candidate = {
+          tier: entry.tier,
+          rowNumber: fm.rowNumber as number | null,
+          isCenter: fm.isCenter,
+          trackNumber: link.trackNumber,
+        };
+        const current = derived.get(link.releaseId);
+        const isBetter =
+          !current ||
+          tierPriorityIndex(candidate.tier) < tierPriorityIndex(current.tier) ||
+          (candidate.tier === current.tier &&
+            candidate.trackNumber < current.trackNumber);
+        if (isBetter) derived.set(link.releaseId, candidate);
+      }
+
+      // 7) 組み立て（overlay反映・休業中は上書き／休業中のみのリリースも表示）
+      const result: MemberSelectionPosition[] = [];
+      for (const releaseId of unique([
+        ...derived.keys(),
+        ...overlayByRelease.keys(),
+      ])) {
+        const info = releaseInfo.get(releaseId);
+        if (!info) continue;
+        const overlay = overlayByRelease.get(releaseId);
+        const base = derived.get(releaseId);
+
+        if (overlay?.isHiatus) {
+          result.push({
+            releaseId,
+            releaseTitle: info.title,
+            numbering: info.numbering,
+            groupId: info.groupId,
+            groupNameJa: info.groupNameJa,
+            tier: "hiatus",
+            rowNumber: null,
+            isCenter: false,
+            isFrontSpecial: false,
+          });
+          continue;
+        }
+        if (!base) continue; // 導出が無く休業中でもない（福神のみ等）はスキップ
+        result.push({
+          releaseId,
+          releaseTitle: info.title,
+          numbering: info.numbering,
+          groupId: info.groupId,
+          groupNameJa: info.groupNameJa,
+          tier: base.tier,
+          rowNumber: base.rowNumber,
+          isCenter: base.isCenter,
+          isFrontSpecial: overlay?.isFrontSpecial ?? false,
+        });
+      }
+
+      return result.sort((a, b) => (a.numbering ?? 0) - (b.numbering ?? 0));
     },
 
     async create(input) {
