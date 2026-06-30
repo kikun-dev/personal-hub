@@ -322,17 +322,13 @@ function toTrackLinkRpcInput(
   }));
 }
 
-// 楽曲ラベル → 導出tierと優先度（priority が小さいほど優先）。
-// 表題(title)と選抜(senbatsu)はどちらも「選抜」。列・センターの代表は表題を優先する。
-const LABEL_DERIVATION: ReadonlyArray<{
-  label: string;
-  tier: SelectionTier;
-  priority: number;
-}> = [
-  { label: "title", tier: "senbatsu", priority: 0 },
-  { label: "senbatsu", tier: "senbatsu", priority: 1 },
-  { label: "under", tier: "under", priority: 2 },
-  { label: "generation", tier: "generation", priority: 3 },
+// 楽曲ラベル → 導出tier。配列の並び順がそのまま導出の優先順位（上ほど優先）。
+// 表題(title)と選抜(senbatsu)はどちらも「選抜」。表題を先に評価する。
+const LABEL_DERIVATION: ReadonlyArray<{ label: string; tier: SelectionTier }> = [
+  { label: "title", tier: "senbatsu" },
+  { label: "senbatsu", tier: "senbatsu" },
+  { label: "under", tier: "under" },
+  { label: "generation", tier: "generation" },
 ];
 
 function labelDerivation(label: string | null | undefined) {
@@ -557,27 +553,18 @@ export function createReleaseRepository(
         }
       }
 
-      // 3) 対象トラック → リリース紐づけ（曲順含む）
-      type Link = { trackId: string; trackNumber: number; releaseId: string };
-      let links: Link[] = [];
-      const labeledTrackIds = Array.from(labelByTrack.keys());
-      if (labeledTrackIds.length > 0) {
+      // 3) メンバーが選抜対象トラックで関わる候補リリースを集める
+      let candidateReleaseIds: string[] = [];
+      const labeledMemberTrackIds = Array.from(labelByTrack.keys());
+      if (labeledMemberTrackIds.length > 0) {
         const { data: rt, error: rtErr } = await supabase
           .from("orbit_release_tracks")
-          .select("track_id, track_number, release_id")
-          .in("track_id", labeledTrackIds);
+          .select("release_id")
+          .in("track_id", labeledMemberTrackIds);
         if (rtErr) throw fail(rtErr);
-        links = (
-          (rt as Array<{
-            track_id: string;
-            track_number: number;
-            release_id: string;
-          }>) ?? []
-        ).map((x) => ({
-          trackId: x.track_id,
-          trackNumber: x.track_number,
-          releaseId: x.release_id,
-        }));
+        candidateReleaseIds = ((rt as Array<{ release_id: string }>) ?? []).map(
+          (x) => x.release_id
+        );
       }
 
       // 4) overlay（福神/櫻エイト・休業中）
@@ -601,9 +588,9 @@ export function createReleaseRepository(
         });
       }
 
-      // 5) 関係するシングルの情報（導出 ＋ overlayのみのリリースも補完）
+      // 5) 候補シングルの情報（overlayのみのリリースも補完）
       const releaseIds = unique([
-        ...links.map((l) => l.releaseId),
+        ...candidateReleaseIds,
         ...overlayByRelease.keys(),
       ]);
       const releaseInfo = new Map<
@@ -640,40 +627,117 @@ export function createReleaseRepository(
           });
         }
       }
+      const singleReleaseIds = Array.from(releaseInfo.keys());
 
-      // 6) リリースごとに最良の導出を選ぶ（tier優先 → 同tierは曲順が若い方）
-      const derived = new Map<
-        string,
-        {
-          tier: SelectionTier;
-          rowNumber: number | null;
-          isCenter: boolean;
-          trackNumber: number;
-          priority: number;
+      // 6) 候補シングルの全トラックから、グループごとの代表トラック（最小track_number）を求める。
+      // グループキー = ラベル。ただし期別曲は期(generation)ごとに別グループとして潰さない。
+      type RepEntry = {
+        trackId: string;
+        trackNumber: number;
+        tier: SelectionTier;
+        priority: number;
+      };
+      const repByRelease = new Map<string, Map<string, RepEntry>>();
+      if (singleReleaseIds.length > 0) {
+        const { data: allRt, error: allRtErr } = await supabase
+          .from("orbit_release_tracks")
+          .select("track_id, track_number, release_id")
+          .in("release_id", singleReleaseIds);
+        if (allRtErr) throw fail(allRtErr);
+        const allLinks =
+          (allRt as Array<{
+            track_id: string;
+            track_number: number;
+            release_id: string;
+          }>) ?? [];
+
+        const labelInfoByTrack = new Map<
+          string,
+          { label: string; generation: string | null }
+        >();
+        const allTrackIds = unique(allLinks.map((l) => l.track_id));
+        if (allTrackIds.length > 0) {
+          const { data: tracks2, error: t2Err } = await supabase
+            .from("orbit_tracks")
+            .select("id, label, generation")
+            .in("id", allTrackIds);
+          if (t2Err) throw fail(t2Err);
+          for (const t of (tracks2 as Array<{
+            id: string;
+            label: string | null;
+            generation: string | null;
+          }>) ?? []) {
+            if (t.label && labelDerivation(t.label)) {
+              labelInfoByTrack.set(t.id, {
+                label: t.label,
+                generation: t.generation ?? null,
+              });
+            }
+          }
         }
-      >();
-      for (const link of links) {
-        if (!releaseInfo.has(link.releaseId)) continue; // シングルのみ
-        const entry = labelDerivation(labelByTrack.get(link.trackId));
-        const fm = formationByTrack.get(link.trackId);
-        if (!entry || !fm) continue;
-        const candidate = {
-          tier: entry.tier,
-          rowNumber: fm.rowNumber as number | null,
-          isCenter: fm.isCenter,
-          trackNumber: link.trackNumber,
-          priority: entry.priority,
-        };
-        const current = derived.get(link.releaseId);
-        const isBetter =
-          !current ||
-          candidate.priority < current.priority ||
-          (candidate.priority === current.priority &&
-            candidate.trackNumber < current.trackNumber);
-        if (isBetter) derived.set(link.releaseId, candidate);
+
+        for (const link of allLinks) {
+          const info = labelInfoByTrack.get(link.track_id);
+          if (!info) continue;
+          const entry = labelDerivation(info.label);
+          if (!entry) continue;
+          const priority = LABEL_DERIVATION.findIndex(
+            (e) => e.label === info.label
+          );
+          // 期別曲は期ごとに別グループ（別期の曲を潰さない）
+          const groupKey =
+            info.label === "generation"
+              ? `generation:${info.generation ?? ""}`
+              : info.label;
+
+          let byGroup = repByRelease.get(link.release_id);
+          if (!byGroup) {
+            byGroup = new Map();
+            repByRelease.set(link.release_id, byGroup);
+          }
+          const current = byGroup.get(groupKey);
+          if (!current || link.track_number < current.trackNumber) {
+            byGroup.set(groupKey, {
+              trackId: link.track_id,
+              trackNumber: link.track_number,
+              tier: entry.tier,
+              priority,
+            });
+          }
+        }
       }
 
-      // 7) 組み立て（overlay反映・休業中は上書き／休業中のみのリリースも表示）
+      // 7) リリースごとに、代表トラックにメンバーが居るグループのうち最優先のtierを採用
+      const derived = new Map<
+        string,
+        { tier: SelectionTier; rowNumber: number | null; isCenter: boolean }
+      >();
+      for (const releaseId of singleReleaseIds) {
+        const byGroup = repByRelease.get(releaseId);
+        if (!byGroup) continue;
+        let best: { priority: number; tier: SelectionTier; rowNumber: number; isCenter: boolean } | null = null;
+        for (const rep of byGroup.values()) {
+          const fm = formationByTrack.get(rep.trackId);
+          if (!fm) continue; // 代表トラックにメンバーが居ない → 不該当
+          if (!best || rep.priority < best.priority) {
+            best = {
+              priority: rep.priority,
+              tier: rep.tier,
+              rowNumber: fm.rowNumber,
+              isCenter: fm.isCenter,
+            };
+          }
+        }
+        if (best) {
+          derived.set(releaseId, {
+            tier: best.tier,
+            rowNumber: best.rowNumber,
+            isCenter: best.isCenter,
+          });
+        }
+      }
+
+      // 8) 組み立て（overlay反映・休業中は上書き／休業中のみのリリースも表示）
       const result: MemberSelectionPosition[] = [];
       for (const releaseId of unique([
         ...derived.keys(),
