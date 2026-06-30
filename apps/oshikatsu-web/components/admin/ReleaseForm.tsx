@@ -13,12 +13,10 @@ import {
   type CreateReleaseTrackLinkInput,
   type ReleaseImageUploadInput,
 } from "@/types/release";
-
-// 福神(乃木坂)/櫻エイト(櫻坂) のグループ別呼称。該当しないグループは front_special なし。
-const FRONT_SPECIAL_LABEL_BY_GROUP: Record<string, string> = {
-  "乃木坂46": "福神",
-  "櫻坂46": "櫻エイト",
-};
+import {
+  getFrontSpecialSelectionLabel,
+  getUnderSelectionLabel,
+} from "@/lib/selectionPositionLabel";
 
 // tier に応じてUIで表現できない従属フィールドをクリアし、保存内容を正規化する。
 function normalizePosition(
@@ -322,9 +320,8 @@ export function ReleaseForm({
   const selectedGroupName = groups.find(
     (group) => group.id === values.groupId
   )?.nameJa;
-  const frontSpecialLabel = selectedGroupName
-    ? (FRONT_SPECIAL_LABEL_BY_GROUP[selectedGroupName] ?? null)
-    : null;
+  const underLabel = getUnderSelectionLabel(selectedGroupName);
+  const frontSpecialLabel = getFrontSpecialSelectionLabel(selectedGroupName);
 
   const getPosition = (memberId: string): CreateReleaseMemberPositionInput =>
     values.memberPositions.find((position) => position.memberId === memberId) ?? {
@@ -920,7 +917,7 @@ export function ReleaseForm({
                       >
                         <option value="">未設定</option>
                         <option value="senbatsu">選抜</option>
-                        <option value="under">アンダー</option>
+                        <option value="under">{underLabel}</option>
                         <option value="generation">期生</option>
                       </select>
                       {hasRow && (
