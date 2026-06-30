@@ -629,11 +629,15 @@ export function createReleaseRepository(
       }
       const singleReleaseIds = Array.from(releaseInfo.keys());
 
-      // 6) 候補シングルの全トラックから、ラベルごとの代表トラック（最小track_number）を求める
-      const repByRelease = new Map<
-        string,
-        Map<string, { trackId: string; trackNumber: number }>
-      >();
+      // 6) 候補シングルの全トラックから、グループごとの代表トラック（最小track_number）を求める。
+      // グループキー = ラベル。ただし期別曲は期(generation)ごとに別グループとして潰さない。
+      type RepEntry = {
+        trackId: string;
+        trackNumber: number;
+        tier: SelectionTier;
+        priority: number;
+      };
+      const repByRelease = new Map<string, Map<string, RepEntry>>();
       if (singleReleaseIds.length > 0) {
         const { data: allRt, error: allRtErr } = await supabase
           .from("orbit_release_tracks")
@@ -647,61 +651,89 @@ export function createReleaseRepository(
             release_id: string;
           }>) ?? [];
 
-        const labelByAnyTrack = new Map<string, string>();
+        const labelInfoByTrack = new Map<
+          string,
+          { label: string; generation: string | null }
+        >();
         const allTrackIds = unique(allLinks.map((l) => l.track_id));
         if (allTrackIds.length > 0) {
           const { data: tracks2, error: t2Err } = await supabase
             .from("orbit_tracks")
-            .select("id, label")
+            .select("id, label, generation")
             .in("id", allTrackIds);
           if (t2Err) throw fail(t2Err);
           for (const t of (tracks2 as Array<{
             id: string;
             label: string | null;
+            generation: string | null;
           }>) ?? []) {
             if (t.label && labelDerivation(t.label)) {
-              labelByAnyTrack.set(t.id, t.label);
+              labelInfoByTrack.set(t.id, {
+                label: t.label,
+                generation: t.generation ?? null,
+              });
             }
           }
         }
 
         for (const link of allLinks) {
-          const label = labelByAnyTrack.get(link.track_id);
-          if (!label) continue;
-          let byLabel = repByRelease.get(link.release_id);
-          if (!byLabel) {
-            byLabel = new Map();
-            repByRelease.set(link.release_id, byLabel);
+          const info = labelInfoByTrack.get(link.track_id);
+          if (!info) continue;
+          const entry = labelDerivation(info.label);
+          if (!entry) continue;
+          const priority = LABEL_DERIVATION.findIndex(
+            (e) => e.label === info.label
+          );
+          // 期別曲は期ごとに別グループ（別期の曲を潰さない）
+          const groupKey =
+            info.label === "generation"
+              ? `generation:${info.generation ?? ""}`
+              : info.label;
+
+          let byGroup = repByRelease.get(link.release_id);
+          if (!byGroup) {
+            byGroup = new Map();
+            repByRelease.set(link.release_id, byGroup);
           }
-          const current = byLabel.get(label);
+          const current = byGroup.get(groupKey);
           if (!current || link.track_number < current.trackNumber) {
-            byLabel.set(label, {
+            byGroup.set(groupKey, {
               trackId: link.track_id,
               trackNumber: link.track_number,
+              tier: entry.tier,
+              priority,
             });
           }
         }
       }
 
-      // 7) リリースごとに、ラベル優先順で「代表トラックにメンバーが居る」最初のtierを採用
+      // 7) リリースごとに、代表トラックにメンバーが居るグループのうち最優先のtierを採用
       const derived = new Map<
         string,
         { tier: SelectionTier; rowNumber: number | null; isCenter: boolean }
       >();
       for (const releaseId of singleReleaseIds) {
-        const byLabel = repByRelease.get(releaseId);
-        if (!byLabel) continue;
-        for (const entry of LABEL_DERIVATION) {
-          const rep = byLabel.get(entry.label);
-          if (!rep) continue;
+        const byGroup = repByRelease.get(releaseId);
+        if (!byGroup) continue;
+        let best: { priority: number; tier: SelectionTier; rowNumber: number; isCenter: boolean } | null = null;
+        for (const rep of byGroup.values()) {
           const fm = formationByTrack.get(rep.trackId);
           if (!fm) continue; // 代表トラックにメンバーが居ない → 不該当
+          if (!best || rep.priority < best.priority) {
+            best = {
+              priority: rep.priority,
+              tier: rep.tier,
+              rowNumber: fm.rowNumber,
+              isCenter: fm.isCenter,
+            };
+          }
+        }
+        if (best) {
           derived.set(releaseId, {
-            tier: entry.tier,
-            rowNumber: fm.rowNumber,
-            isCenter: fm.isCenter,
+            tier: best.tier,
+            rowNumber: best.rowNumber,
+            isCenter: best.isCenter,
           });
-          break;
         }
       }
 
