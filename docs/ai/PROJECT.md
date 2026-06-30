@@ -157,6 +157,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 | 0004 | チャートライブラリ（recharts）採用 | Accepted |
 | 0005 | Orbit Phase 1 設計 | Accepted |
 | 0006 | Orbit 閲覧導線の read cache 戦略 | Accepted |
+| 0007 | Orbit 選抜ポジションのフォーメーション一元管理 | Accepted |
 
 ---
 
