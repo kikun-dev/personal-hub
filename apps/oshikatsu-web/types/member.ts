@@ -55,6 +55,10 @@ export type MemberOption = {
   nameJa: string;
   groupIds: string[];
   groupNames: string[];
+  groupGenerations: Array<{
+    groupId: string;
+    generation: string | null;
+  }>;
   isActive: boolean;
 };
 

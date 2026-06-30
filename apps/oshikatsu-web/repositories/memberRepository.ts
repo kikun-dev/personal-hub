@@ -69,6 +69,7 @@ type BirthdayMemberRow = {
 
 type MemberOptionGroupRow = {
   group_id: string;
+  generation: string | null;
   graduated_at: string | null;
   orbit_groups:
     | {
@@ -267,6 +268,10 @@ function mapToMemberOption(row: MemberOptionRow): MemberOption {
     nameJa: row.name_ja,
     groupIds,
     groupNames,
+    groupGenerations: groups.map((group) => ({
+      groupId: group.group_id,
+      generation: group.generation,
+    })),
     isActive: groups.some((group) => group.graduated_at === null),
   };
 }
@@ -344,6 +349,7 @@ const MEMBER_OPTION_SELECT = `
   name_ja,
   orbit_member_groups(
     group_id,
+    generation,
     graduated_at,
     orbit_groups(name_ja)
   )

@@ -14,6 +14,7 @@ import {
   type ReleaseImageUploadInput,
 } from "@/types/release";
 import {
+  formatSelectionPositionLabel,
   getFrontSpecialSelectionLabel,
   getUnderSelectionLabel,
 } from "@/lib/selectionPositionLabel";
@@ -29,6 +30,102 @@ function normalizePosition(
     return { ...position, isFrontSpecial: false };
   }
   return position;
+}
+
+type SelectionPositionSummaryItem = {
+  label: string;
+  count: number;
+  sortKey: [number, number, number, string];
+};
+
+function parseRowNumber(rowNumber: string): number | null {
+  const trimmed = rowNumber.trim();
+  if (trimmed === "") return null;
+  const parsed = Number(trimmed);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function generationRank(generation: string | null): number {
+  if (!generation) return Number.POSITIVE_INFINITY;
+  const parsed = Number(generation);
+  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
+}
+
+function createSummarySortKey(
+  position: CreateReleaseMemberPositionInput,
+  generation: string | null
+): [number, number, number, string] {
+  const rowNumber = parseRowNumber(position.rowNumber);
+  if (position.tier === "senbatsu") {
+    const flagRank = position.isCenter ? 0 : position.isFrontSpecial ? 1 : 2;
+    return [0, rowNumber ?? Number.POSITIVE_INFINITY, flagRank, ""];
+  }
+  if (position.tier === "under") {
+    return [
+      1,
+      rowNumber ?? Number.POSITIVE_INFINITY,
+      position.isCenter ? 0 : 1,
+      "",
+    ];
+  }
+  return [2, generationRank(generation), 0, generation ?? ""];
+}
+
+function compareSummaryItems(
+  a: SelectionPositionSummaryItem,
+  b: SelectionPositionSummaryItem
+): number {
+  const tierDiff = a.sortKey[0] - b.sortKey[0];
+  if (tierDiff !== 0) return tierDiff;
+  const rowDiff = a.sortKey[1] - b.sortKey[1];
+  if (rowDiff !== 0) return rowDiff;
+  const flagDiff = a.sortKey[2] - b.sortKey[2];
+  if (flagDiff !== 0) return flagDiff;
+  const generationDiff = a.sortKey[3].localeCompare(b.sortKey[3], "ja");
+  if (generationDiff !== 0) return generationDiff;
+  return a.label.localeCompare(b.label, "ja");
+}
+
+function buildSelectionPositionSummary(
+  memberPositions: CreateReleaseMemberPositionInput[],
+  participantMemberIds: string[],
+  memberGenerationById: Map<string, string | null>,
+  groupNameJa: string
+): SelectionPositionSummaryItem[] {
+  const positionByMemberId = new Map(
+    memberPositions.map((position) => [position.memberId, position])
+  );
+  const summaryByLabel = new Map<string, SelectionPositionSummaryItem>();
+
+  for (const memberId of participantMemberIds) {
+    const position = positionByMemberId.get(memberId);
+    if (!position || position.tier === "") continue;
+
+    const rowNumber = parseRowNumber(position.rowNumber);
+    const generation = memberGenerationById.get(memberId) ?? null;
+    const label = formatSelectionPositionLabel(
+      {
+        groupNameJa,
+        tier: position.tier,
+        rowNumber,
+        isCenter: position.isCenter,
+        isFrontSpecial: position.isFrontSpecial,
+      },
+      generation
+    );
+    const existing = summaryByLabel.get(label);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    summaryByLabel.set(label, {
+      label,
+      count: 1,
+      sortKey: createSummarySortKey(position, generation),
+    });
+  }
+
+  return Array.from(summaryByLabel.values()).sort(compareSummaryItems);
 }
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
@@ -316,12 +413,39 @@ export function ReleaseForm({
     () => new Map(members.map((member) => [member.id, member.nameJa])),
     [members]
   );
+  const memberGenerationById = useMemo(
+    () =>
+      new Map(
+        members.map((member) => [
+          member.id,
+          member.groupGenerations.find(
+            (group) => group.groupId === values.groupId
+          )?.generation ?? null,
+        ])
+      ),
+    [members, values.groupId]
+  );
 
   const selectedGroupName = groups.find(
     (group) => group.id === values.groupId
   )?.nameJa;
   const underLabel = getUnderSelectionLabel(selectedGroupName);
   const frontSpecialLabel = getFrontSpecialSelectionLabel(selectedGroupName);
+  const selectionPositionSummary = useMemo(
+    () =>
+      buildSelectionPositionSummary(
+        values.memberPositions,
+        values.participantMemberIds,
+        memberGenerationById,
+        selectedGroupName ?? ""
+      ),
+    [
+      memberGenerationById,
+      selectedGroupName,
+      values.memberPositions,
+      values.participantMemberIds,
+    ]
+  );
 
   const getPosition = (memberId: string): CreateReleaseMemberPositionInput =>
     values.memberPositions.find((position) => position.memberId === memberId) ?? {
@@ -891,6 +1015,25 @@ export function ReleaseForm({
             <p className="text-xs text-foreground/50">
               参加メンバーごとに位置を登録します（未設定はメンバー詳細に表示されません）。
             </p>
+            <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-2">
+              <p className="mb-1 text-xs font-medium text-foreground/60">
+                選択状況
+              </p>
+              {selectionPositionSummary.length > 0 ? (
+                <div className="flex flex-wrap gap-1.5">
+                  {selectionPositionSummary.map((item) => (
+                    <span
+                      key={item.label}
+                      className="rounded-full bg-background px-2 py-1 text-xs text-foreground/70 ring-1 ring-foreground/10"
+                    >
+                      {item.label} {item.count}人
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-foreground/40">未設定</p>
+              )}
+            </div>
             <div className="space-y-2">
               {values.participantMemberIds.map((memberId) => {
                 const position = getPosition(memberId);

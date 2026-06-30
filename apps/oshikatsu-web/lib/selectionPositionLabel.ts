@@ -1,4 +1,12 @@
-import type { MemberSelectionPosition } from "@/types/release";
+import type { SelectionTier } from "@/types/release";
+
+type SelectionPositionLabelInput = {
+  groupNameJa: string;
+  tier: SelectionTier;
+  rowNumber: number | null;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
+};
 
 // アンダーのグループ別呼称（乃木坂=アンダー / 櫻坂=BACKS / 日向坂=ひなた坂）
 const UNDER_LABEL_BY_GROUP: Record<string, string> = {
@@ -30,7 +38,7 @@ export function getFrontSpecialSelectionLabel(
 // 選抜ポジションを表示用ラベルに変換する。
 // 優先度: センター → 福神/櫻エイト → 選抜(列) / アンダー(列) / ◯期生
 export function formatSelectionPositionLabel(
-  position: MemberSelectionPosition,
+  position: SelectionPositionLabelInput,
   generation: string | null
 ): string {
   const rowSuffix = position.rowNumber != null ? `${position.rowNumber}列目` : "";
