@@ -36,12 +36,16 @@ export function getFrontSpecialSelectionLabel(
 }
 
 // 選抜ポジションを表示用ラベルに変換する。
-// 優先度: センター → 福神/櫻エイト → 選抜(列) / アンダー(列) / ◯期生
+// 優先度: センター → 福神/櫻エイト → 選抜(列) / アンダー(列) / ◯期生 / 休業中
 export function formatSelectionPositionLabel(
   position: SelectionPositionLabelInput,
   generation: string | null
 ): string {
   const rowSuffix = position.rowNumber != null ? `${position.rowNumber}列目` : "";
+
+  if (position.tier === "hiatus") {
+    return "休業中";
+  }
 
   if (position.tier === "generation") {
     return generation ? `${generation}期生` : "期生";

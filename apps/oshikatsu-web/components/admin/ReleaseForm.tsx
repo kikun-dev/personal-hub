@@ -23,7 +23,11 @@ import {
 function normalizePosition(
   position: CreateReleaseMemberPositionInput
 ): CreateReleaseMemberPositionInput {
-  if (position.tier === "" || position.tier === "generation") {
+  if (
+    position.tier === "" ||
+    position.tier === "generation" ||
+    position.tier === "hiatus"
+  ) {
     return { ...position, rowNumber: "", isCenter: false, isFrontSpecial: false };
   }
   if (position.tier === "under") {
@@ -68,7 +72,10 @@ function createSummarySortKey(
       "",
     ];
   }
-  return [2, generationRank(generation), 0, generation ?? ""];
+  if (position.tier === "generation") {
+    return [2, generationRank(generation), 0, generation ?? ""];
+  }
+  return [3, 0, 0, ""];
 }
 
 function compareSummaryItems(
@@ -1062,6 +1069,7 @@ export function ReleaseForm({
                         <option value="senbatsu">選抜</option>
                         <option value="under">{underLabel}</option>
                         <option value="generation">期生</option>
+                        <option value="hiatus">休業中</option>
                       </select>
                       {hasRow && (
                         <input
