@@ -109,7 +109,10 @@ function toFormValues(input: CreateReleaseInput): FormValues {
   };
 }
 
-function toSubmitValues(input: FormValues): CreateReleaseInput {
+function toSubmitValues(
+  input: FormValues,
+  supportsFrontSpecial: boolean
+): CreateReleaseInput {
   return {
     title: input.title,
     groupId: input.groupId,
@@ -122,9 +125,17 @@ function toSubmitValues(input: FormValues): CreateReleaseInput {
     // 選抜ポジションはシングルのみ・参加メンバーに限定して保存する
     memberPositions:
       input.releaseType === "single"
-        ? input.memberPositions.filter((position) =>
-            input.participantMemberIds.includes(position.memberId)
-          )
+        ? input.memberPositions
+            .filter((position) =>
+              input.participantMemberIds.includes(position.memberId)
+            )
+            // グループが福神/櫻エイト非対応なら front_special をクリア
+            .map((position) => ({
+              ...position,
+              isFrontSpecial: supportsFrontSpecial
+                ? position.isFrontSpecial
+                : false,
+            }))
         : [],
     bonusVideos: input.bonusVideos.map((bonus) => ({
       edition: bonus.edition,
@@ -511,7 +522,10 @@ export function ReleaseForm({
         }
       }
 
-      const result = await onSubmit(toSubmitValues(values), imageFile);
+      const result = await onSubmit(
+        toSubmitValues(values, frontSpecialLabel !== null),
+        imageFile
+      );
       if (result.errors) {
         const errorMap: Record<string, string> = {};
         for (const err of result.errors) {
