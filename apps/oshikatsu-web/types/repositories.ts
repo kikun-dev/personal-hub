@@ -46,6 +46,7 @@ import type {
   ReleaseFilters,
   ReleaseListItem,
   ReleaseOption,
+  MemberSelectionPosition,
 } from "./release";
 
 export type GroupRepository = {
@@ -128,6 +129,9 @@ export type ReleaseRepository = {
   findCalendarItems(): Promise<ReleaseCalendarItem[]>;
   findOptions(): Promise<ReleaseOption[]>;
   findById(id: string): Promise<Release | null>;
+  findSelectionPositionsByMemberId(
+    memberId: string
+  ): Promise<MemberSelectionPosition[]>;
   create(input: CreateReleaseInput): Promise<Release>;
   update(id: string, input: UpdateReleaseInput): Promise<Release>;
   delete(id: string): Promise<void>;

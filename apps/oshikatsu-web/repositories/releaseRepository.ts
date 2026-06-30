@@ -6,6 +6,7 @@ import type {
   ReleaseListItem,
   ReleaseOption,
   SelectionTier,
+  MemberSelectionPosition,
 } from "@/types/release";
 import { SELECTION_TIERS } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
@@ -314,6 +315,59 @@ function toTrackLinkRpcInput(
   }));
 }
 
+const MEMBER_POSITION_SELECT = `
+  tier,
+  row_number,
+  is_center,
+  is_front_special,
+  orbit_releases(id, title, numbering, release_type, group_id, orbit_groups(name_ja))
+`;
+
+type MemberPositionReleaseRow = {
+  id: string;
+  title: string;
+  numbering: number | null;
+  release_type: ReleaseType;
+  group_id: string;
+  orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
+};
+
+type MemberPositionRow = {
+  tier: string;
+  row_number: number | null;
+  is_center: boolean;
+  is_front_special: boolean;
+  orbit_releases: MemberPositionReleaseRow | MemberPositionReleaseRow[] | null;
+};
+
+function mapMemberPosition(
+  row: MemberPositionRow
+): MemberSelectionPosition | null {
+  const release = Array.isArray(row.orbit_releases)
+    ? row.orbit_releases[0]
+    : row.orbit_releases;
+  if (!release) return null;
+  // 選抜はシングルのみ。tier が不正な行も除外する
+  if (release.release_type !== "single") return null;
+  if (!(SELECTION_TIERS as readonly string[]).includes(row.tier)) return null;
+
+  const group = Array.isArray(release.orbit_groups)
+    ? release.orbit_groups[0]
+    : release.orbit_groups;
+
+  return {
+    releaseId: release.id,
+    releaseTitle: release.title,
+    numbering: release.numbering,
+    groupId: release.group_id,
+    groupNameJa: group?.name_ja ?? "",
+    tier: row.tier as SelectionTier,
+    rowNumber: row.row_number,
+    isCenter: row.is_center,
+    isFrontSpecial: row.is_front_special,
+  };
+}
+
 function toMemberPositionRpcInput(
   positions: CreateReleaseInput["memberPositions"]
 ): Array<{
@@ -456,6 +510,24 @@ export function createReleaseRepository(
       }
 
       return mapToRelease(data as ReleaseRow);
+    },
+
+    async findSelectionPositionsByMemberId(memberId) {
+      const { data, error } = await supabase
+        .from("orbit_release_member_positions")
+        .select(MEMBER_POSITION_SELECT)
+        .eq("member_id", memberId);
+
+      if (error) {
+        throw new RepositoryError("選抜ポジションの取得に失敗しました", error);
+      }
+
+      return ((data as unknown as MemberPositionRow[]) ?? [])
+        .map(mapMemberPosition)
+        .filter(
+          (position): position is MemberSelectionPosition => position !== null
+        )
+        .sort((a, b) => (a.numbering ?? 0) - (b.numbering ?? 0));
     },
 
     async create(input) {

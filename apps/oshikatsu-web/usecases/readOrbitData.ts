@@ -6,6 +6,7 @@ import {
   isReadOnlyServerClientAvailable,
 } from "@personal-hub/supabase/read-only-server";
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
+import { formatSelectionPositionLabel } from "@/lib/selectionPositionLabel";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
@@ -122,6 +123,7 @@ const loadMemberDetailPageData = createSharedReadLoader(
       const groupRepo = createGroupRepository(supabase);
       const eventRepo = createEventRepository(supabase);
       const songRepo = createSongRepository(supabase);
+      const releaseRepo = createReleaseRepository(supabase);
 
       const [member, groups] = await Promise.all([
         getMember(memberRepo, id),
@@ -132,11 +134,24 @@ const loadMemberDetailPageData = createSharedReadLoader(
         return null;
       }
 
-      const [histories, songs, centerTrackIds] = await Promise.all([
-        eventRepo.findHistoryByMemberId(member.id),
-        songRepo.findByMemberId(member.id),
-        songRepo.findCenterTrackIdsByMemberId(member.id),
-      ]);
+      const [histories, songs, centerTrackIds, rawSelectionPositions] =
+        await Promise.all([
+          eventRepo.findHistoryByMemberId(member.id),
+          songRepo.findByMemberId(member.id),
+          songRepo.findCenterTrackIdsByMemberId(member.id),
+          releaseRepo.findSelectionPositionsByMemberId(member.id),
+        ]);
+
+      // シングルごとの選抜ポジションを表示用ラベルに整形する（期は所属から）
+      const selectionPositions = rawSelectionPositions.map((position) => ({
+        releaseId: position.releaseId,
+        numbering: position.numbering,
+        label: formatSelectionPositionLabel(
+          position,
+          member.groups.find((group) => group.groupId === position.groupId)
+            ?.generation ?? null
+        ),
+      }));
 
       const mainGroupId = member.groups[0]?.groupId;
       const mainGroupPenlightColorNames = mainGroupId
@@ -151,6 +166,7 @@ const loadMemberDetailPageData = createSharedReadLoader(
         member,
         songs,
         centerTrackIds,
+        selectionPositions,
       };
     })
 );
