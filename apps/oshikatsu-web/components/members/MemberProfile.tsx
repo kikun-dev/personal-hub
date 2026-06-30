@@ -1,10 +1,10 @@
 import Image from "next/image";
-import Link from "next/link";
 import type { ReactNode } from "react";
 import type { MemberWithGroups, MemberHistory } from "@/types/member";
 import type { Song } from "@/types/song";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
+import { MemberSongsSection } from "@/components/members/MemberSongsSection";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
 import {
@@ -17,6 +17,7 @@ type MemberProfileProps = {
   member: MemberWithGroups;
   histories: MemberHistory[];
   songs: Song[];
+  centerTrackIds: string[];
   mainGroupPenlightColorNames?: string[];
 };
 
@@ -144,6 +145,7 @@ export function MemberProfile({
   member,
   histories,
   songs,
+  centerTrackIds,
   mainGroupPenlightColorNames = [],
 }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
@@ -359,25 +361,7 @@ export function MemberProfile({
       )}
 
       {/* 参加楽曲 */}
-      {songs.length > 0 && (
-        <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">参加楽曲</h2>
-          <div className="space-y-2">
-            {songs.map((song) => (
-              <Link
-                key={song.id}
-                href={`/songs/${song.id}`}
-                className="block rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground hover:bg-foreground/5"
-              >
-                <p className="font-medium">{song.title}</p>
-                {song.groupNameJa && (
-                  <p className="mt-1 text-xs text-foreground/50">{song.groupNameJa}</p>
-                )}
-              </Link>
-            ))}
-          </div>
-        </Card>
-      )}
+      <MemberSongsSection songs={songs} centerTrackIds={centerTrackIds} />
 
       {/* 来歴 */}
       {histories.length > 0 && (

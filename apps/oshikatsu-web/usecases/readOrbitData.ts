@@ -132,9 +132,10 @@ const loadMemberDetailPageData = createSharedReadLoader(
         return null;
       }
 
-      const [histories, songs] = await Promise.all([
+      const [histories, songs, centerTrackIds] = await Promise.all([
         eventRepo.findHistoryByMemberId(member.id),
         songRepo.findByMemberId(member.id),
+        songRepo.findCenterTrackIdsByMemberId(member.id),
       ]);
 
       const mainGroupId = member.groups[0]?.groupId;
@@ -149,6 +150,7 @@ const loadMemberDetailPageData = createSharedReadLoader(
         mainGroupPenlightColorNames,
         member,
         songs,
+        centerTrackIds,
       };
     })
 );

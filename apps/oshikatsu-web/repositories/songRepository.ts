@@ -645,6 +645,41 @@ export function createSongRepository(
     return (data as unknown as SongRow[]).map(mapSong);
   }
 
+  // フォーメーション列(formation_row)の集合から、所属する楽曲(track)IDを解決する
+  async function resolveTrackIdsFromRowIds(rowIds: string[]): Promise<string[]> {
+    if (rowIds.length === 0) return [];
+
+    const { data: formationRows, error: formationRowsError } = await supabase
+      .from("orbit_track_formation_rows")
+      .select("formation_id")
+      .in("id", rowIds);
+
+    if (formationRowsError) {
+      throw new RepositoryError("参加楽曲の取得に失敗しました", formationRowsError);
+    }
+
+    const formationIds = uniqueStrings(
+      ((formationRows as Array<{ formation_id: string }>) ?? []).map(
+        (row) => row.formation_id
+      )
+    );
+
+    if (formationIds.length === 0) return [];
+
+    const { data: formations, error: formationsError } = await supabase
+      .from("orbit_track_formations")
+      .select("track_id")
+      .in("id", formationIds);
+
+    if (formationsError) {
+      throw new RepositoryError("参加楽曲の取得に失敗しました", formationsError);
+    }
+
+    return uniqueStrings(
+      ((formations as Array<{ track_id: string }>) ?? []).map((row) => row.track_id)
+    );
+  }
+
   return {
     async findAll(filters) {
       let query = supabase
@@ -839,41 +874,27 @@ export function createSongRepository(
         ((memberRows as Array<{ formation_row_id: string }>) ?? []).map((row) => row.formation_row_id)
       );
 
-      if (formationRowIds.length === 0) {
-        return [];
-      }
-
-      const { data: formationRows, error: formationRowsError } = await supabase
-        .from("orbit_track_formation_rows")
-        .select("formation_id")
-        .in("id", formationRowIds);
-
-      if (formationRowsError) {
-        throw new RepositoryError("参加楽曲の取得に失敗しました", formationRowsError);
-      }
-
-      const formationIds = uniqueStrings(
-        ((formationRows as Array<{ formation_id: string }>) ?? []).map((row) => row.formation_id)
-      );
-
-      if (formationIds.length === 0) {
-        return [];
-      }
-
-      const { data: formations, error: formationsError } = await supabase
-        .from("orbit_track_formations")
-        .select("track_id")
-        .in("id", formationIds);
-
-      if (formationsError) {
-        throw new RepositoryError("参加楽曲の取得に失敗しました", formationsError);
-      }
-
-      const trackIds = uniqueStrings(
-        ((formations as Array<{ track_id: string }>) ?? []).map((row) => row.track_id)
-      );
+      const trackIds = await resolveTrackIdsFromRowIds(formationRowIds);
 
       return findManyByIds(trackIds, SONG_LIST_SELECT);
+    },
+
+    async findCenterTrackIdsByMemberId(memberId) {
+      const { data: centerRows, error: centerRowsError } = await supabase
+        .from("orbit_track_formation_members")
+        .select("formation_row_id")
+        .eq("member_id", memberId)
+        .eq("is_center", true);
+
+      if (centerRowsError) {
+        throw new RepositoryError("センター楽曲の取得に失敗しました", centerRowsError);
+      }
+
+      const centerRowIds = uniqueStrings(
+        ((centerRows as Array<{ formation_row_id: string }>) ?? []).map((row) => row.formation_row_id)
+      );
+
+      return resolveTrackIdsFromRowIds(centerRowIds);
     },
   };
 }
