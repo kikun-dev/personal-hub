@@ -104,7 +104,12 @@ export type Release = {
 };
 
 // シングルの選抜ポジション（メンバー × リリース）
-export const SELECTION_TIERS = ["senbatsu", "under", "generation"] as const;
+export const SELECTION_TIERS = [
+  "senbatsu",
+  "under",
+  "generation",
+  "hiatus",
+] as const;
 export type SelectionTier = (typeof SELECTION_TIERS)[number];
 
 export type ReleaseMemberPosition = {
