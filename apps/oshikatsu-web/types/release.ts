@@ -98,8 +98,29 @@ export type Release = {
   participantMemberIds: string[];
   participantMemberNames: string[];
   participantMemberGenerations: Array<string | null>;
+  memberPositions: ReleaseMemberPosition[];
   bonusVideos: ReleaseBonusVideo[];
   tracks: ReleaseTrack[];
+};
+
+// シングルの選抜ポジション（メンバー × リリース）
+export const SELECTION_TIERS = ["senbatsu", "under", "generation"] as const;
+export type SelectionTier = (typeof SELECTION_TIERS)[number];
+
+export type ReleaseMemberPosition = {
+  memberId: string;
+  tier: SelectionTier;
+  rowNumber: number | null;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
+};
+
+export type CreateReleaseMemberPositionInput = {
+  memberId: string;
+  tier: SelectionTier | "";
+  rowNumber: string;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
 };
 
 export type ReleaseListItem = {
@@ -148,6 +169,7 @@ export type CreateReleaseInput = {
   artworkPath: string;
   artworkPersonName: string;
   participantMemberIds: string[];
+  memberPositions: CreateReleaseMemberPositionInput[];
   bonusVideos: CreateReleaseBonusVideoInput[];
   trackLinks: CreateReleaseTrackLinkInput[];
 };

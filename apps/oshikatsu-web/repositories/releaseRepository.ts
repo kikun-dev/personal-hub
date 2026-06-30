@@ -5,7 +5,9 @@ import type {
   ReleaseType,
   ReleaseListItem,
   ReleaseOption,
+  SelectionTier,
 } from "@/types/release";
+import { SELECTION_TIERS } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import { RepositoryError } from "@/types/errors";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
@@ -58,6 +60,14 @@ type ReleaseMemberRow = {
   orbit_members: ReleaseMemberNameRow;
 };
 
+type ReleaseMemberPositionRow = {
+  member_id: string;
+  tier: string;
+  row_number: number | null;
+  is_center: boolean;
+  is_front_special: boolean;
+};
+
 type ReleaseTrackRow = {
   track_number: number;
   orbit_tracks?:
@@ -84,6 +94,7 @@ type ReleaseRow = {
   orbit_groups: ReleaseGroupRow;
   orbit_release_bonus_videos?: ReleaseBonusVideoRow[];
   orbit_release_members?: ReleaseMemberRow[];
+  orbit_release_member_positions?: ReleaseMemberPositionRow[];
   orbit_release_tracks?: ReleaseTrackRow[];
 };
 
@@ -139,6 +150,7 @@ const RELEASE_DETAIL_SELECT = `
   orbit_groups(name_ja, color),
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
+  orbit_release_member_positions(member_id, tier, row_number, is_center, is_front_special),
   orbit_release_tracks(track_number, orbit_tracks(id, title))
 `;
 
@@ -208,6 +220,17 @@ function mapToRelease(row: ReleaseRow): Release {
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     participantMemberGenerations: participants.map((member) => member.generation),
+    memberPositions: (row.orbit_release_member_positions ?? [])
+      .filter((position): position is ReleaseMemberPositionRow & { tier: SelectionTier } =>
+        (SELECTION_TIERS as readonly string[]).includes(position.tier)
+      )
+      .map((position) => ({
+        memberId: position.member_id,
+        tier: position.tier,
+        rowNumber: position.row_number,
+        isCenter: position.is_center,
+        isFrontSpecial: position.is_front_special,
+      })),
     bonusVideos: (row.orbit_release_bonus_videos ?? [])
       .map((bonus) => ({
         id: bonus.id,
@@ -289,6 +312,27 @@ function toTrackLinkRpcInput(
     trackId: trackLink.trackId,
     trackNumber: Number(trackLink.trackNumber),
   }));
+}
+
+function toMemberPositionRpcInput(
+  positions: CreateReleaseInput["memberPositions"]
+): Array<{
+  memberId: string;
+  tier: string;
+  rowNumber: number | null;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
+}> {
+  return positions
+    .filter((position) => position.tier !== "")
+    .map((position) => ({
+      memberId: position.memberId,
+      tier: position.tier,
+      rowNumber:
+        position.rowNumber.trim() === "" ? null : Number(position.rowNumber),
+      isCenter: position.isCenter,
+      isFrontSpecial: position.isFrontSpecial,
+    }));
 }
 
 function toNumbering(
@@ -438,6 +482,17 @@ export function createReleaseRepository(
         throw new RepositoryError("作成したリリースIDの取得に失敗しました", null);
       }
 
+      const { error: positionsError } = await supabase.rpc(
+        "set_release_member_positions",
+        {
+          p_release_id: releaseId,
+          p_positions: toMemberPositionRpcInput(input.memberPositions),
+        }
+      );
+      if (positionsError) {
+        throw new RepositoryError("選抜ポジションの保存に失敗しました", positionsError);
+      }
+
       const created = await this.findById(releaseId);
       if (!created) {
         throw new RepositoryError("作成したリリースの取得に失敗しました", null);
@@ -469,6 +524,17 @@ export function createReleaseRepository(
 
       if (rpcError) {
         throw new RepositoryError("リリースの更新に失敗しました", rpcError);
+      }
+
+      const { error: positionsError } = await supabase.rpc(
+        "set_release_member_positions",
+        {
+          p_release_id: id,
+          p_positions: toMemberPositionRpcInput(input.memberPositions),
+        }
+      );
+      if (positionsError) {
+        throw new RepositoryError("選抜ポジションの保存に失敗しました", positionsError);
       }
 
       const updated = await this.findById(id);

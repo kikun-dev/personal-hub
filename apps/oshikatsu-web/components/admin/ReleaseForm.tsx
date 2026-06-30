@@ -9,9 +9,29 @@ import {
   RELEASE_TYPE_LABELS,
   type CreateReleaseInput,
   type CreateReleaseBonusVideoInput,
+  type CreateReleaseMemberPositionInput,
   type CreateReleaseTrackLinkInput,
   type ReleaseImageUploadInput,
 } from "@/types/release";
+
+// 福神(乃木坂)/櫻エイト(櫻坂) のグループ別呼称。該当しないグループは front_special なし。
+const FRONT_SPECIAL_LABEL_BY_GROUP: Record<string, string> = {
+  "乃木坂46": "福神",
+  "櫻坂46": "櫻エイト",
+};
+
+// tier に応じてUIで表現できない従属フィールドをクリアし、保存内容を正規化する。
+function normalizePosition(
+  position: CreateReleaseMemberPositionInput
+): CreateReleaseMemberPositionInput {
+  if (position.tier === "" || position.tier === "generation") {
+    return { ...position, rowNumber: "", isCenter: false, isFrontSpecial: false };
+  }
+  if (position.tier === "under") {
+    return { ...position, isFrontSpecial: false };
+  }
+  return position;
+}
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -75,6 +95,7 @@ function getDefaultValues(): FormValues {
     artworkPath: "",
     artworkPersonName: "",
     participantMemberIds: [],
+    memberPositions: [],
     bonusVideos: [],
     trackLinks: [],
   };
@@ -88,7 +109,10 @@ function toFormValues(input: CreateReleaseInput): FormValues {
   };
 }
 
-function toSubmitValues(input: FormValues): CreateReleaseInput {
+function toSubmitValues(
+  input: FormValues,
+  supportsFrontSpecial: boolean
+): CreateReleaseInput {
   return {
     title: input.title,
     groupId: input.groupId,
@@ -98,6 +122,21 @@ function toSubmitValues(input: FormValues): CreateReleaseInput {
     artworkPath: input.artworkPath,
     artworkPersonName: input.artworkPersonName,
     participantMemberIds: input.participantMemberIds,
+    // 選抜ポジションはシングルのみ・参加メンバーに限定して保存する
+    memberPositions:
+      input.releaseType === "single"
+        ? input.memberPositions
+            .filter((position) =>
+              input.participantMemberIds.includes(position.memberId)
+            )
+            // グループが福神/櫻エイト非対応なら front_special をクリア
+            .map((position) => ({
+              ...position,
+              isFrontSpecial: supportsFrontSpecial
+                ? position.isFrontSpecial
+                : false,
+            }))
+        : [],
     bonusVideos: input.bonusVideos.map((bonus) => ({
       edition: bonus.edition,
       title: bonus.title,
@@ -275,6 +314,56 @@ export function ReleaseForm({
     });
   };
 
+  const memberNameById = useMemo(
+    () => new Map(members.map((member) => [member.id, member.nameJa])),
+    [members]
+  );
+
+  const selectedGroupName = groups.find(
+    (group) => group.id === values.groupId
+  )?.nameJa;
+  const frontSpecialLabel = selectedGroupName
+    ? (FRONT_SPECIAL_LABEL_BY_GROUP[selectedGroupName] ?? null)
+    : null;
+
+  const getPosition = (memberId: string): CreateReleaseMemberPositionInput =>
+    values.memberPositions.find((position) => position.memberId === memberId) ?? {
+      memberId,
+      tier: "",
+      rowNumber: "",
+      isCenter: false,
+      isFrontSpecial: false,
+    };
+
+  const updatePosition = (
+    memberId: string,
+    patch: Partial<CreateReleaseMemberPositionInput>
+  ) => {
+    setValues((prev) => {
+      const exists = prev.memberPositions.some(
+        (position) => position.memberId === memberId
+      );
+      const base = prev.memberPositions.find(
+        (position) => position.memberId === memberId
+      ) ?? {
+        memberId,
+        tier: "" as CreateReleaseMemberPositionInput["tier"],
+        rowNumber: "",
+        isCenter: false,
+        isFrontSpecial: false,
+      };
+      const nextPosition = normalizePosition({ ...base, ...patch });
+      return {
+        ...prev,
+        memberPositions: exists
+          ? prev.memberPositions.map((position) =>
+              position.memberId === memberId ? nextPosition : position
+            )
+          : [...prev.memberPositions, nextPosition],
+      };
+    });
+  };
+
   const addBonusVideo = () => {
     setValues((prev) => ({
       ...prev,
@@ -433,7 +522,10 @@ export function ReleaseForm({
         }
       }
 
-      const result = await onSubmit(toSubmitValues(values), imageFile);
+      const result = await onSubmit(
+        toSubmitValues(values, frontSpecialLabel !== null),
+        imageFile
+      );
       if (result.errors) {
         const errorMap: Record<string, string> = {};
         for (const err of result.errors) {
@@ -792,6 +884,94 @@ export function ReleaseForm({
           )}
         </div>
       </div>
+
+      {values.releaseType === "single" &&
+        values.participantMemberIds.length > 0 && (
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground/70">
+              選抜ポジション
+            </label>
+            <p className="text-xs text-foreground/50">
+              参加メンバーごとに位置を登録します（未設定はメンバー詳細に表示されません）。
+            </p>
+            <div className="space-y-2">
+              {values.participantMemberIds.map((memberId) => {
+                const position = getPosition(memberId);
+                const hasRow =
+                  position.tier === "senbatsu" || position.tier === "under";
+                return (
+                  <div
+                    key={memberId}
+                    className="rounded-lg border border-foreground/10 p-2"
+                  >
+                    <p className="mb-1 text-sm text-foreground">
+                      {memberNameById.get(memberId) ?? memberId}
+                    </p>
+                    <div className="flex flex-wrap items-center gap-2 text-xs">
+                      <select
+                        value={position.tier}
+                        onChange={(e) =>
+                          updatePosition(memberId, {
+                            tier: e.target
+                              .value as CreateReleaseMemberPositionInput["tier"],
+                          })
+                        }
+                        className="rounded-lg border border-foreground/10 bg-background px-2 py-1"
+                      >
+                        <option value="">未設定</option>
+                        <option value="senbatsu">選抜</option>
+                        <option value="under">アンダー</option>
+                        <option value="generation">期生</option>
+                      </select>
+                      {hasRow && (
+                        <input
+                          type="number"
+                          min={1}
+                          placeholder="列"
+                          value={position.rowNumber}
+                          onChange={(e) =>
+                            updatePosition(memberId, {
+                              rowNumber: e.target.value,
+                            })
+                          }
+                          className="w-16 rounded-lg border border-foreground/10 bg-background px-2 py-1"
+                        />
+                      )}
+                      {hasRow && (
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={position.isCenter}
+                            onChange={(e) =>
+                              updatePosition(memberId, {
+                                isCenter: e.target.checked,
+                              })
+                            }
+                          />
+                          センター
+                        </label>
+                      )}
+                      {position.tier === "senbatsu" && frontSpecialLabel && (
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="checkbox"
+                            checked={position.isFrontSpecial}
+                            onChange={(e) =>
+                              updatePosition(memberId, {
+                                isFrontSpecial: e.target.checked,
+                              })
+                            }
+                          />
+                          {frontSpecialLabel}
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       <Button type="submit" disabled={isSubmitting || isUploadingImage} className="w-full">
         {isSubmitting || isUploadingImage
