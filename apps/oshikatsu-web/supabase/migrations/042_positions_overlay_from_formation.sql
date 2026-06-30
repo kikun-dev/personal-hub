@@ -7,11 +7,20 @@
 -- - 既存データ移行は不要（運用上ほぼ未投入のため）。
 -- ============================================================
 
+-- 1) is_hiatus を先に追加
+ALTER TABLE public.orbit_release_member_positions
+  ADD COLUMN IF NOT EXISTS is_hiatus BOOLEAN NOT NULL DEFAULT false;
+
+-- 2) 既存の tier='hiatus'（#176）を is_hiatus へ backfill（列削除前に実施）
+UPDATE public.orbit_release_member_positions
+  SET is_hiatus = true
+  WHERE tier = 'hiatus';
+
+-- 3) 導出に委ねる列を撤去（is_front_special は overlay として保持）
 ALTER TABLE public.orbit_release_member_positions
   DROP COLUMN IF EXISTS tier,
   DROP COLUMN IF EXISTS row_number,
-  DROP COLUMN IF EXISTS is_center,
-  ADD COLUMN IF NOT EXISTS is_hiatus BOOLEAN NOT NULL DEFAULT false;
+  DROP COLUMN IF EXISTS is_center;
 
 -- overlay の総入れ替え。福神 or 休業中 のいずれかが立つ行のみ保持する。
 CREATE OR REPLACE FUNCTION public.set_release_member_positions(
