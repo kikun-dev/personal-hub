@@ -207,6 +207,7 @@ function mapToRelease(row: ReleaseRow): Release {
     trackCount: row.orbit_release_tracks?.length ?? 0,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
+    participantMemberGenerations: participants.map((member) => member.generation),
     bonusVideos: (row.orbit_release_bonus_videos ?? [])
       .map((bonus) => ({
         id: bonus.id,
