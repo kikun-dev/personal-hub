@@ -223,7 +223,11 @@ function mapLive(row: LiveRow): Live {
           { generation: b.generation, nameKana: b.memberNameKana }
         )
       )
-      .map(({ memberId, memberNameJa }) => ({ memberId, memberNameJa })),
+      .map(({ memberId, memberNameJa, generation }) => ({
+        memberId,
+        memberNameJa,
+        generation,
+      })),
     performances: (row.orbit_live_performances ?? [])
       .map(mapPerformance)
       .sort((a, b) => {

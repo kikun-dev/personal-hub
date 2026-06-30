@@ -113,8 +113,16 @@ type ReleaseListRow = {
 type ReleaseOptionMemberRow = {
   member_id: string;
   orbit_members:
-    | { name_ja: string; name_kana: string }
-    | { name_ja: string; name_kana: string }[]
+    | {
+        name_ja: string;
+        name_kana: string;
+        orbit_member_groups: ReleaseMemberGroupRow[] | null;
+      }
+    | {
+        name_ja: string;
+        name_kana: string;
+        orbit_member_groups: ReleaseMemberGroupRow[] | null;
+      }[]
     | null;
 };
 
@@ -122,6 +130,7 @@ type ReleaseOptionRow = {
   id: string;
   title: string;
   release_type: ReleaseType;
+  group_id: string;
   orbit_release_members?: ReleaseOptionMemberRow[];
 };
 
@@ -170,7 +179,8 @@ const RELEASE_OPTION_SELECT = `
   id,
   title,
   release_type,
-  orbit_release_members(member_id, orbit_members(name_ja, name_kana))
+  group_id,
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
 `;
 
 function mapToRelease(row: ReleaseRow): Release {
@@ -285,11 +295,16 @@ function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
     const orbitMember = Array.isArray(member.orbit_members)
       ? member.orbit_members[0]
       : member.orbit_members;
+    // リリースのグループでの期を採用（無ければ null）
+    const membership = (orbitMember?.orbit_member_groups ?? []).find(
+      (mg) => mg.group_id === row.group_id
+    );
 
     return {
       memberId: member.member_id,
       memberNameJa: orbitMember?.name_ja ?? "",
       memberNameKana: orbitMember?.name_kana ?? "",
+      generation: membership?.generation ?? null,
     };
   });
 
@@ -300,6 +315,7 @@ function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     participantMemberKanas: participants.map((member) => member.memberNameKana),
+    participantMemberGenerations: participants.map((member) => member.generation),
   };
 }
 

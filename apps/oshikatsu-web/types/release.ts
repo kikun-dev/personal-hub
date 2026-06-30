@@ -160,6 +160,7 @@ export type ReleaseOption = {
   participantMemberIds: string[];
   participantMemberNames: string[];
   participantMemberKanas: string[];
+  participantMemberGenerations: Array<string | null>;
 };
 
 export type CreateReleaseBonusVideoInput = {
