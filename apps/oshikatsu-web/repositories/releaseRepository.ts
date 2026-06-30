@@ -322,17 +322,21 @@ function toTrackLinkRpcInput(
   }));
 }
 
-// 楽曲ラベル → 選抜tier（表題=選抜 / アンダー=アンダー / 期別=期生）。
-// 配列の順序はそのまま導出時の優先度（上ほど優先）にも使う。
-const LABEL_TIER_PRIORITY: ReadonlyArray<{ label: string; tier: SelectionTier }> = [
-  { label: "title", tier: "senbatsu" },
-  { label: "under", tier: "under" },
-  { label: "generation", tier: "generation" },
+// 楽曲ラベル → 導出tierと優先度（priority が小さいほど優先）。
+// 表題(title)と選抜(senbatsu)はどちらも「選抜」。列・センターの代表は表題を優先する。
+const LABEL_DERIVATION: ReadonlyArray<{
+  label: string;
+  tier: SelectionTier;
+  priority: number;
+}> = [
+  { label: "title", tier: "senbatsu", priority: 0 },
+  { label: "senbatsu", tier: "senbatsu", priority: 1 },
+  { label: "under", tier: "under", priority: 2 },
+  { label: "generation", tier: "generation", priority: 3 },
 ];
 
-function tierPriorityIndex(tier: SelectionTier): number {
-  const index = LABEL_TIER_PRIORITY.findIndex((entry) => entry.tier === tier);
-  return index === -1 ? LABEL_TIER_PRIORITY.length : index;
+function labelDerivation(label: string | null | undefined) {
+  return LABEL_DERIVATION.find((entry) => entry.label === label);
 }
 
 // overlay（福神/櫻エイト・休業中）の保存入力。いずれかが立つメンバーのみ送る。
@@ -547,7 +551,7 @@ export function createReleaseRepository(
           .in("id", trackIds);
         if (tErr) throw fail(tErr);
         for (const t of (tracks as Array<{ id: string; label: string | null }>) ?? []) {
-          if (t.label && LABEL_TIER_PRIORITY.some((e) => e.label === t.label)) {
+          if (t.label && labelDerivation(t.label)) {
             labelByTrack.set(t.id, t.label);
           }
         }
@@ -640,12 +644,17 @@ export function createReleaseRepository(
       // 6) リリースごとに最良の導出を選ぶ（tier優先 → 同tierは曲順が若い方）
       const derived = new Map<
         string,
-        { tier: SelectionTier; rowNumber: number | null; isCenter: boolean; trackNumber: number }
+        {
+          tier: SelectionTier;
+          rowNumber: number | null;
+          isCenter: boolean;
+          trackNumber: number;
+          priority: number;
+        }
       >();
       for (const link of links) {
         if (!releaseInfo.has(link.releaseId)) continue; // シングルのみ
-        const label = labelByTrack.get(link.trackId);
-        const entry = LABEL_TIER_PRIORITY.find((e) => e.label === label);
+        const entry = labelDerivation(labelByTrack.get(link.trackId));
         const fm = formationByTrack.get(link.trackId);
         if (!entry || !fm) continue;
         const candidate = {
@@ -653,12 +662,13 @@ export function createReleaseRepository(
           rowNumber: fm.rowNumber as number | null,
           isCenter: fm.isCenter,
           trackNumber: link.trackNumber,
+          priority: entry.priority,
         };
         const current = derived.get(link.releaseId);
         const isBetter =
           !current ||
-          tierPriorityIndex(candidate.tier) < tierPriorityIndex(current.tier) ||
-          (candidate.tier === current.tier &&
+          candidate.priority < current.priority ||
+          (candidate.priority === current.priority &&
             candidate.trackNumber < current.trackNumber);
         if (isBetter) derived.set(link.releaseId, candidate);
       }
@@ -698,7 +708,9 @@ export function createReleaseRepository(
           tier: base.tier,
           rowNumber: base.rowNumber,
           isCenter: base.isCenter,
-          isFrontSpecial: overlay?.isFrontSpecial ?? false,
+          // 福神/櫻エイトは選抜のメンバーにのみ反映する
+          isFrontSpecial:
+            base.tier === "senbatsu" ? (overlay?.isFrontSpecial ?? false) : false,
         });
       }
 

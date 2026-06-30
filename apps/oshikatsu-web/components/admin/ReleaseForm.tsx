@@ -869,6 +869,9 @@ export function ReleaseForm({
             <p className="text-xs text-foreground/50">
               選抜/アンダー/列/センターは楽曲のフォーメーションから自動表示されます。
               ここでは{frontSpecialLabel ? `${frontSpecialLabel}・` : ""}休業中のみ指定します。
+              {frontSpecialLabel
+                ? `（${frontSpecialLabel}は選抜=表題曲のメンバーにのみ反映されます）`
+                : ""}
             </p>
             <div className="space-y-1">
               {values.participantMemberIds.map((memberId) => {
