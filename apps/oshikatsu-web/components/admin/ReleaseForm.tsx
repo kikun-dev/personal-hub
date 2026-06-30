@@ -19,6 +19,19 @@ const FRONT_SPECIAL_LABEL_BY_GROUP: Record<string, string> = {
   "乃木坂46": "福神",
   "櫻坂46": "櫻エイト",
 };
+
+// tier に応じてUIで表現できない従属フィールドをクリアし、保存内容を正規化する。
+function normalizePosition(
+  position: CreateReleaseMemberPositionInput
+): CreateReleaseMemberPositionInput {
+  if (position.tier === "" || position.tier === "generation") {
+    return { ...position, rowNumber: "", isCenter: false, isFrontSpecial: false };
+  }
+  if (position.tier === "under") {
+    return { ...position, isFrontSpecial: false };
+  }
+  return position;
+}
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -328,7 +341,7 @@ export function ReleaseForm({
         isCenter: false,
         isFrontSpecial: false,
       };
-      const nextPosition = { ...base, ...patch };
+      const nextPosition = normalizePosition({ ...base, ...patch });
       return {
         ...prev,
         memberPositions: exists

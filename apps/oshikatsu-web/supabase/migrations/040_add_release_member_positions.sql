@@ -68,6 +68,17 @@ BEGIN
     COALESCE((item->>'isFrontSpecial')::BOOLEAN, false)
   FROM jsonb_array_elements(COALESCE(p_positions, '[]'::JSONB)) AS item
   WHERE NULLIF(item->>'tier', '') IS NOT NULL
-    AND NULLIF(item->>'memberId', '') IS NOT NULL;
+    AND NULLIF(item->>'memberId', '') IS NOT NULL
+    -- 防御: シングルのみ
+    AND EXISTS (
+      SELECT 1 FROM public.orbit_releases r
+      WHERE r.id = p_release_id AND r.release_type = 'single'
+    )
+    -- 防御: 当該リリースの参加メンバーに限定
+    AND EXISTS (
+      SELECT 1 FROM public.orbit_release_members rm
+      WHERE rm.release_id = p_release_id
+        AND rm.member_id = (item->>'memberId')::UUID
+    );
 END;
 $$;
