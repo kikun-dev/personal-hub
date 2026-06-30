@@ -150,6 +150,27 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
     }
   }
 
+  // センターは1列目(最前列)のメンバーから最大2人（Wセンター可）
+  if (input.centerMemberIds.length > 0) {
+    if (input.centerMemberIds.length > 2) {
+      errors.push({
+        field: "centerMemberIds",
+        message: "センターは最大2人まで指定できます",
+      });
+    }
+
+    const frontRowMemberIds = new Set(input.formationRows[0]?.memberIds ?? []);
+    const hasInvalidCenter = input.centerMemberIds.some(
+      (memberId) => !frontRowMemberIds.has(memberId)
+    );
+    if (hasInvalidCenter) {
+      errors.push({
+        field: "centerMemberIds",
+        message: "センターは1列目のメンバーから選んでください",
+      });
+    }
+  }
+
   const hasMvAnyField =
     input.mv.url.trim() ||
     input.mv.directorName.trim() ||

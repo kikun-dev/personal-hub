@@ -84,6 +84,7 @@ type TrackCreditRow = {
 type FormationMemberRow = {
   member_id: string;
   slot_order: number;
+  is_center: boolean;
   orbit_members:
     | {
         name_ja: string;
@@ -240,6 +241,7 @@ const SONG_DETAIL_SELECT = `
       orbit_track_formation_members(
         member_id,
         slot_order,
+        is_center,
         orbit_members(name_ja)
       )
     )
@@ -371,6 +373,7 @@ function mapFormation(formationRel: FormationRel | undefined): SongFormationRow[
             memberId: member.member_id,
             memberNameJa: orbitMember?.name_ja ?? "",
             slotOrder: member.slot_order,
+            isCenter: member.is_center ?? false,
           };
         })
         .sort((a, b) => a.slotOrder - b.slotOrder);
@@ -746,6 +749,14 @@ export function createSongRepository(
         throw new RepositoryError("作成した楽曲IDの取得に失敗しました", null);
       }
 
+      const { error: centerError } = await supabase.rpc("set_track_centers", {
+        p_track_id: trackId,
+        p_center_member_ids: input.centerMemberIds,
+      });
+      if (centerError) {
+        throw new RepositoryError("センターの設定に失敗しました", centerError);
+      }
+
       const created = await this.findById(trackId);
       if (!created) {
         throw new RepositoryError("作成した楽曲の取得に失敗しました", null);
@@ -786,6 +797,14 @@ export function createSongRepository(
 
       if (rpcError) {
         throw new RepositoryError("楽曲の更新に失敗しました", rpcError);
+      }
+
+      const { error: centerError } = await supabase.rpc("set_track_centers", {
+        p_track_id: id,
+        p_center_member_ids: input.centerMemberIds,
+      });
+      if (centerError) {
+        throw new RepositoryError("センターの更新に失敗しました", centerError);
       }
 
       const updated = await this.findById(id);

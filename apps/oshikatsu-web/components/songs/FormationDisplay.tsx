@@ -24,7 +24,13 @@ export function FormationDisplay({ rows }: FormationDisplayProps) {
             {row.members.map((member, index) => (
               <span key={`${row.rowNumber}-${member.memberId}`}>
                 {index > 0 && " ・ "}
-                {member.memberNameJa}
+                {member.isCenter ? (
+                  <span className="font-bold text-amber-600">
+                    ★{member.memberNameJa}
+                  </span>
+                ) : (
+                  member.memberNameJa
+                )}
               </span>
             ))}
           </p>

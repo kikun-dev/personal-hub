@@ -68,6 +68,7 @@ export type SongFormationMember = {
   memberId: string;
   memberNameJa: string;
   slotOrder: number;
+  isCenter: boolean;
 };
 
 export type SongFormationRow = {
@@ -173,6 +174,8 @@ export type CreateSongInput = {
   arrangementPeople: string;
   choreographyPeople: string;
   formationRows: CreateSongFormationRowInput[];
+  // フォーメーション1列目のセンター（Wセンター可・最大2人）
+  centerMemberIds: string[];
   mv: CreateSongMvInput;
   costumes: CreateSongCostumeInput[];
 };
