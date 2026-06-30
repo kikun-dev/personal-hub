@@ -164,7 +164,7 @@ export function validateRelease(input: CreateReleaseInput): ValidationError[] {
     if (position.isFrontSpecial && position.isHiatus) {
       errors.push({
         field: "memberPositions",
-        message: "休業中のメンバーに福神/櫻エイトは設定できません",
+        message: "休業中のメンバーに福神は設定できません",
       });
       break;
     }

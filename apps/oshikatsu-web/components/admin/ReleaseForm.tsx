@@ -13,7 +13,7 @@ import {
   type CreateReleaseTrackLinkInput,
   type ReleaseImageUploadInput,
 } from "@/types/release";
-import { getFrontSpecialSelectionLabel } from "@/lib/selectionPositionLabel";
+import { getManualFrontSpecialSelectionLabel } from "@/lib/selectionPositionRules";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -307,7 +307,8 @@ export function ReleaseForm({
   const selectedGroupName = groups.find(
     (group) => group.id === values.groupId
   )?.nameJa;
-  const frontSpecialLabel = getFrontSpecialSelectionLabel(selectedGroupName);
+  const frontSpecialLabel =
+    getManualFrontSpecialSelectionLabel(selectedGroupName);
 
   const getPosition = (memberId: string): CreateReleaseMemberPositionInput =>
     values.memberPositions.find((position) => position.memberId === memberId) ?? {
