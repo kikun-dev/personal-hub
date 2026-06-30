@@ -2,6 +2,8 @@ const NOGIZAKA_GROUP_NAME = "乃木坂46";
 const SAKURAZAKA_GROUP_NAME = "櫻坂46";
 const SAKURAZAKA_EIGHT_MIN_SINGLE = 1;
 const SAKURAZAKA_EIGHT_MAX_SINGLE = 5;
+// 櫻エイト期の表題曲フォーメーションで「櫻エイト」となる前方の列数（1・2列目）。
+export const SAKURAZAKA_EIGHT_FRONT_ROW_COUNT = 2;
 
 export function isSakurazakaEightEra(
   groupNameJa: string | null | undefined,

@@ -1,5 +1,8 @@
 import type { SelectionTier } from "@/types/release";
-import { getFrontSpecialSelectionLabel } from "@/lib/selectionPositionRules";
+import {
+  getFrontSpecialSelectionLabel,
+  isSakurazakaEightEra,
+} from "@/lib/selectionPositionRules";
 
 type SelectionPositionLabelInput = {
   groupNameJa: string;
@@ -55,6 +58,10 @@ export function formatSelectionPositionLabel(
       position.numbering
     );
     if (frontLabel) return rowSuffix ? `${frontLabel}${rowSuffix}` : frontLabel;
+  }
+  // 櫻エイト期は表題曲の後列（3列目以降）を接頭辞なしの「◯列目」で表示する
+  if (isSakurazakaEightEra(position.groupNameJa, position.numbering)) {
+    return rowSuffix || "選抜";
   }
   return rowSuffix ? `選抜${rowSuffix}` : "選抜";
 }
