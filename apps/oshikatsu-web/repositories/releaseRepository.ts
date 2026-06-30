@@ -345,6 +345,7 @@ type FormationPlacement = { rowNumber: number; isCenter: boolean };
 type RepresentativeTrack = {
   trackId: string;
   trackNumber: number;
+  label: string;
   tier: SelectionTier;
   priority: number;
 };
@@ -782,6 +783,7 @@ export function createReleaseRepository(
             byGroup.set(groupKey, {
               trackId: link.track_id,
               trackNumber: link.track_number,
+              label: info.label,
               tier: entry.tier,
               priority,
             });
@@ -802,10 +804,10 @@ export function createReleaseRepository(
         for (const rep of byGroup.values()) {
           const fm = formationByTrack.get(rep.trackId);
           if (!fm) continue; // 代表トラックにメンバーが居ない → 不該当
-          // 櫻エイト期は表題曲(senbatsu)のみ導出。それ以外（BACKS曲等）は
+          // 櫻エイト期は表題曲(label=title)のみ導出。選抜カップリング/BACKS曲等は
           // 列を使わず、後段で「BACKS」として補完する。
           const candidate = usesSakurazakaEightRule
-            ? rep.tier === "senbatsu"
+            ? rep.label === "title"
               ? toSakurazakaEightCandidate(rep, fm)
               : null
             : toNormalDerivedCandidate(rep, fm);
