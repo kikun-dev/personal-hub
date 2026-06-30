@@ -57,6 +57,9 @@ export default async function EditSongPage({
       memberCount: String(row.memberCount),
       memberIds: row.members.map((member) => member.memberId),
     })),
+    centerMemberIds: song.formationRows.flatMap((row) =>
+      row.members.filter((member) => member.isCenter).map((member) => member.memberId)
+    ),
     mv: {
       url: song.mv?.url ?? "",
       directorName: song.mv?.directorName ?? "",

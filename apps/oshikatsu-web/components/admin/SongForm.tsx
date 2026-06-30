@@ -100,6 +100,7 @@ function getDefaultValues(): FormValues {
     arrangementPeople: "",
     choreographyPeople: "",
     formationRows: [],
+    centerMemberIds: [],
     mv: {
       url: "",
       directorName: "",
@@ -138,6 +139,7 @@ function toSubmitValues(values: FormValues): CreateSongInput {
       memberCount: row.memberCount,
       memberIds: row.memberIds,
     })),
+    centerMemberIds: values.centerMemberIds,
     mv: values.mv,
     costumes: values.costumes.map((costume) => ({
       stylistName: costume.stylistName,
@@ -336,6 +338,19 @@ export function SongForm({
     }));
   }, [participantOptions]);
 
+  // 1列目(最前列)に居なくなったメンバーはセンター指定から外す
+  useEffect(() => {
+    setValues((prev) => {
+      const frontRow = prev.formationRows[0];
+      const allowed = new Set(frontRow ? frontRow.memberIds : []);
+      const filtered = prev.centerMemberIds.filter((memberId) =>
+        allowed.has(memberId)
+      );
+      if (filtered.length === prev.centerMemberIds.length) return prev;
+      return { ...prev, centerMemberIds: filtered };
+    });
+  }, [values.formationRows]);
+
   const update = <K extends keyof FormValues>(
     field: K,
     value: FormValues[K]
@@ -502,6 +517,25 @@ export function SongForm({
         };
       }),
     }));
+  };
+
+  // センター（1列目・最大2人）の指定を切り替える
+  const toggleCenter = (memberId: string) => {
+    setValues((prev) => {
+      if (prev.centerMemberIds.includes(memberId)) {
+        return {
+          ...prev,
+          centerMemberIds: prev.centerMemberIds.filter((id) => id !== memberId),
+        };
+      }
+      if (prev.centerMemberIds.length >= 2) return prev;
+      return { ...prev, centerMemberIds: [...prev.centerMemberIds, memberId] };
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.centerMemberIds;
+      return next;
+    });
   };
 
   // 列内のメンバー順（= slot_order = 左→右）をドラッグ&ドロップで入れ替える
@@ -965,6 +999,42 @@ export function SongForm({
                         </ul>
                       </SortableContext>
                     </DndContext>
+                  </div>
+                )}
+
+                {index === 0 && row.memberIds.length > 0 && (
+                  <div className="mt-2">
+                    <p className="mb-1 text-xs text-foreground/60">
+                      センター（1列目・最大2人）
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {row.memberIds.map((memberId) => {
+                        const isCenter = values.centerMemberIds.includes(memberId);
+                        const disabled =
+                          !isCenter && values.centerMemberIds.length >= 2;
+                        return (
+                          <button
+                            type="button"
+                            key={memberId}
+                            onClick={() => toggleCenter(memberId)}
+                            disabled={disabled}
+                            className={`rounded-full border px-2.5 py-1 text-xs transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+                              isCenter
+                                ? "border-amber-400 bg-amber-100 text-amber-700"
+                                : "border-foreground/10 bg-background text-foreground hover:bg-foreground/5"
+                            }`}
+                          >
+                            {isCenter ? "★ " : ""}
+                            {participantNameById.get(memberId) ?? memberId}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {errors.centerMemberIds && (
+                      <p className="mt-1 text-xs text-red-500">
+                        {errors.centerMemberIds}
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
