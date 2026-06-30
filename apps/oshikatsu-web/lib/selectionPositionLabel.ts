@@ -13,6 +13,20 @@ const FRONT_SPECIAL_LABEL_BY_GROUP: Record<string, string> = {
   "櫻坂46": "櫻エイト",
 };
 
+export function getUnderSelectionLabel(
+  groupNameJa: string | null | undefined
+): string {
+  return groupNameJa
+    ? (UNDER_LABEL_BY_GROUP[groupNameJa] ?? "アンダー")
+    : "アンダー";
+}
+
+export function getFrontSpecialSelectionLabel(
+  groupNameJa: string | null | undefined
+): string | null {
+  return groupNameJa ? (FRONT_SPECIAL_LABEL_BY_GROUP[groupNameJa] ?? null) : null;
+}
+
 // 選抜ポジションを表示用ラベルに変換する。
 // 優先度: センター → 福神/櫻エイト → 選抜(列) / アンダー(列) / ◯期生
 export function formatSelectionPositionLabel(
@@ -26,7 +40,7 @@ export function formatSelectionPositionLabel(
   }
 
   if (position.tier === "under") {
-    const underLabel = UNDER_LABEL_BY_GROUP[position.groupNameJa] ?? "アンダー";
+    const underLabel = getUnderSelectionLabel(position.groupNameJa);
     if (position.isCenter) return `${underLabel}センター`;
     return rowSuffix ? `${underLabel}${rowSuffix}` : underLabel;
   }
@@ -34,7 +48,7 @@ export function formatSelectionPositionLabel(
   // senbatsu
   if (position.isCenter) return "センター";
   if (position.isFrontSpecial) {
-    const frontLabel = FRONT_SPECIAL_LABEL_BY_GROUP[position.groupNameJa];
+    const frontLabel = getFrontSpecialSelectionLabel(position.groupNameJa);
     if (frontLabel) return rowSuffix ? `${frontLabel}${rowSuffix}` : frontLabel;
   }
   return rowSuffix ? `選抜${rowSuffix}` : "選抜";
