@@ -39,10 +39,8 @@ export default async function EditReleasePage({
     participantMemberIds: release.participantMemberIds,
     memberPositions: release.memberPositions.map((position) => ({
       memberId: position.memberId,
-      tier: position.tier,
-      rowNumber: position.rowNumber != null ? String(position.rowNumber) : "",
-      isCenter: position.isCenter,
       isFrontSpecial: position.isFrontSpecial,
+      isHiatus: position.isHiatus,
     })),
     bonusVideos: release.bonusVideos.map((bonus) => ({
       edition: bonus.edition,

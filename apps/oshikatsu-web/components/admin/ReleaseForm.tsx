@@ -13,127 +13,7 @@ import {
   type CreateReleaseTrackLinkInput,
   type ReleaseImageUploadInput,
 } from "@/types/release";
-import {
-  formatSelectionPositionLabel,
-  getFrontSpecialSelectionLabel,
-  getUnderSelectionLabel,
-} from "@/lib/selectionPositionLabel";
-
-// tier に応じてUIで表現できない従属フィールドをクリアし、保存内容を正規化する。
-function normalizePosition(
-  position: CreateReleaseMemberPositionInput
-): CreateReleaseMemberPositionInput {
-  if (
-    position.tier === "" ||
-    position.tier === "generation" ||
-    position.tier === "hiatus"
-  ) {
-    return { ...position, rowNumber: "", isCenter: false, isFrontSpecial: false };
-  }
-  if (position.tier === "under") {
-    return { ...position, isFrontSpecial: false };
-  }
-  return position;
-}
-
-type SelectionPositionSummaryItem = {
-  label: string;
-  count: number;
-  sortKey: [number, number, number, string];
-};
-
-function parseRowNumber(rowNumber: string): number | null {
-  const trimmed = rowNumber.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed);
-  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
-}
-
-function generationRank(generation: string | null): number {
-  if (!generation) return Number.POSITIVE_INFINITY;
-  const parsed = Number(generation);
-  return Number.isFinite(parsed) ? parsed : Number.POSITIVE_INFINITY;
-}
-
-function createSummarySortKey(
-  position: CreateReleaseMemberPositionInput,
-  generation: string | null
-): [number, number, number, string] {
-  const rowNumber = parseRowNumber(position.rowNumber);
-  if (position.tier === "senbatsu") {
-    const flagRank = position.isCenter ? 0 : position.isFrontSpecial ? 1 : 2;
-    return [0, rowNumber ?? Number.POSITIVE_INFINITY, flagRank, ""];
-  }
-  if (position.tier === "under") {
-    return [
-      1,
-      rowNumber ?? Number.POSITIVE_INFINITY,
-      position.isCenter ? 0 : 1,
-      "",
-    ];
-  }
-  if (position.tier === "generation") {
-    return [2, generationRank(generation), 0, generation ?? ""];
-  }
-  return [3, 0, 0, ""];
-}
-
-function compareSummaryItems(
-  a: SelectionPositionSummaryItem,
-  b: SelectionPositionSummaryItem
-): number {
-  const tierDiff = a.sortKey[0] - b.sortKey[0];
-  if (tierDiff !== 0) return tierDiff;
-  const rowDiff = a.sortKey[1] - b.sortKey[1];
-  if (rowDiff !== 0) return rowDiff;
-  const flagDiff = a.sortKey[2] - b.sortKey[2];
-  if (flagDiff !== 0) return flagDiff;
-  const generationDiff = a.sortKey[3].localeCompare(b.sortKey[3], "ja");
-  if (generationDiff !== 0) return generationDiff;
-  return a.label.localeCompare(b.label, "ja");
-}
-
-function buildSelectionPositionSummary(
-  memberPositions: CreateReleaseMemberPositionInput[],
-  participantMemberIds: string[],
-  memberGenerationById: Map<string, string | null>,
-  groupNameJa: string
-): SelectionPositionSummaryItem[] {
-  const positionByMemberId = new Map(
-    memberPositions.map((position) => [position.memberId, position])
-  );
-  const summaryByLabel = new Map<string, SelectionPositionSummaryItem>();
-
-  for (const memberId of participantMemberIds) {
-    const position = positionByMemberId.get(memberId);
-    if (!position || position.tier === "") continue;
-
-    const rowNumber = parseRowNumber(position.rowNumber);
-    const generation = memberGenerationById.get(memberId) ?? null;
-    const label = formatSelectionPositionLabel(
-      {
-        groupNameJa,
-        tier: position.tier,
-        rowNumber,
-        isCenter: position.isCenter,
-        isFrontSpecial: position.isFrontSpecial,
-      },
-      generation
-    );
-    const existing = summaryByLabel.get(label);
-    if (existing) {
-      existing.count += 1;
-      continue;
-    }
-    summaryByLabel.set(label, {
-      label,
-      count: 1,
-      sortKey: createSummarySortKey(position, generation),
-    });
-  }
-
-  return Array.from(summaryByLabel.values()).sort(compareSummaryItems);
-}
+import { getFrontSpecialSelectionLabel } from "@/lib/selectionPositionLabel";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
@@ -231,13 +111,16 @@ function toSubmitValues(
             .filter((position) =>
               input.participantMemberIds.includes(position.memberId)
             )
-            // グループが福神/櫻エイト非対応なら front_special をクリア
             .map((position) => ({
-              ...position,
+              memberId: position.memberId,
+              // グループが福神/櫻エイト非対応なら front_special をクリア
               isFrontSpecial: supportsFrontSpecial
                 ? position.isFrontSpecial
                 : false,
+              isHiatus: position.isHiatus,
             }))
+            // 福神/休業中いずれかが立つメンバーのみ保持（overlay）
+            .filter((position) => position.isFrontSpecial || position.isHiatus)
         : [],
     bonusVideos: input.bonusVideos.map((bonus) => ({
       edition: bonus.edition,
@@ -420,47 +303,17 @@ export function ReleaseForm({
     () => new Map(members.map((member) => [member.id, member.nameJa])),
     [members]
   );
-  const memberGenerationById = useMemo(
-    () =>
-      new Map(
-        members.map((member) => [
-          member.id,
-          member.groupGenerations.find(
-            (group) => group.groupId === values.groupId
-          )?.generation ?? null,
-        ])
-      ),
-    [members, values.groupId]
-  );
 
   const selectedGroupName = groups.find(
     (group) => group.id === values.groupId
   )?.nameJa;
-  const underLabel = getUnderSelectionLabel(selectedGroupName);
   const frontSpecialLabel = getFrontSpecialSelectionLabel(selectedGroupName);
-  const selectionPositionSummary = useMemo(
-    () =>
-      buildSelectionPositionSummary(
-        values.memberPositions,
-        values.participantMemberIds,
-        memberGenerationById,
-        selectedGroupName ?? ""
-      ),
-    [
-      memberGenerationById,
-      selectedGroupName,
-      values.memberPositions,
-      values.participantMemberIds,
-    ]
-  );
 
   const getPosition = (memberId: string): CreateReleaseMemberPositionInput =>
     values.memberPositions.find((position) => position.memberId === memberId) ?? {
       memberId,
-      tier: "",
-      rowNumber: "",
-      isCenter: false,
       isFrontSpecial: false,
+      isHiatus: false,
     };
 
   const updatePosition = (
@@ -473,14 +326,8 @@ export function ReleaseForm({
       );
       const base = prev.memberPositions.find(
         (position) => position.memberId === memberId
-      ) ?? {
-        memberId,
-        tier: "" as CreateReleaseMemberPositionInput["tier"],
-        rowNumber: "",
-        isCenter: false,
-        isFrontSpecial: false,
-      };
-      const nextPosition = normalizePosition({ ...base, ...patch });
+      ) ?? { memberId, isFrontSpecial: false, isHiatus: false };
+      const nextPosition = { ...base, ...patch };
       return {
         ...prev,
         memberPositions: exists
@@ -1017,103 +864,52 @@ export function ReleaseForm({
         values.participantMemberIds.length > 0 && (
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground/70">
-              選抜ポジション
+              選抜ポジション（手動指定）
             </label>
             <p className="text-xs text-foreground/50">
-              参加メンバーごとに位置を登録します（未設定はメンバー詳細に表示されません）。
+              選抜/アンダー/列/センターは楽曲のフォーメーションから自動表示されます。
+              ここでは{frontSpecialLabel ? `${frontSpecialLabel}・` : ""}休業中のみ指定します。
+              {frontSpecialLabel
+                ? `（${frontSpecialLabel}は選抜=表題曲のメンバーにのみ反映されます）`
+                : ""}
             </p>
-            <div className="rounded-lg border border-foreground/10 bg-foreground/[0.03] p-2">
-              <p className="mb-1 text-xs font-medium text-foreground/60">
-                選択状況
-              </p>
-              {selectionPositionSummary.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {selectionPositionSummary.map((item) => (
-                    <span
-                      key={item.label}
-                      className="rounded-full bg-background px-2 py-1 text-xs text-foreground/70 ring-1 ring-foreground/10"
-                    >
-                      {item.label} {item.count}人
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs text-foreground/40">未設定</p>
-              )}
-            </div>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {values.participantMemberIds.map((memberId) => {
                 const position = getPosition(memberId);
-                const hasRow =
-                  position.tier === "senbatsu" || position.tier === "under";
                 return (
                   <div
                     key={memberId}
-                    className="rounded-lg border border-foreground/10 p-2"
+                    className="flex flex-wrap items-center gap-3 rounded-lg border border-foreground/10 p-2 text-xs"
                   >
-                    <p className="mb-1 text-sm text-foreground">
+                    <span className="text-sm text-foreground">
                       {memberNameById.get(memberId) ?? memberId}
-                    </p>
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <select
-                        value={position.tier}
-                        onChange={(e) =>
-                          updatePosition(memberId, {
-                            tier: e.target
-                              .value as CreateReleaseMemberPositionInput["tier"],
-                          })
-                        }
-                        className="rounded-lg border border-foreground/10 bg-background px-2 py-1"
-                      >
-                        <option value="">未設定</option>
-                        <option value="senbatsu">選抜</option>
-                        <option value="under">{underLabel}</option>
-                        <option value="generation">期生</option>
-                        <option value="hiatus">休業中</option>
-                      </select>
-                      {hasRow && (
+                    </span>
+                    {frontSpecialLabel && (
+                      <label className="flex items-center gap-1">
                         <input
-                          type="number"
-                          min={1}
-                          placeholder="列"
-                          value={position.rowNumber}
+                          type="checkbox"
+                          checked={position.isFrontSpecial}
                           onChange={(e) =>
                             updatePosition(memberId, {
-                              rowNumber: e.target.value,
+                              isFrontSpecial: e.target.checked,
                             })
                           }
-                          className="w-16 rounded-lg border border-foreground/10 bg-background px-2 py-1"
                         />
-                      )}
-                      {hasRow && (
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={position.isCenter}
-                            onChange={(e) =>
-                              updatePosition(memberId, {
-                                isCenter: e.target.checked,
-                              })
-                            }
-                          />
-                          センター
-                        </label>
-                      )}
-                      {position.tier === "senbatsu" && frontSpecialLabel && (
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="checkbox"
-                            checked={position.isFrontSpecial}
-                            onChange={(e) =>
-                              updatePosition(memberId, {
-                                isFrontSpecial: e.target.checked,
-                              })
-                            }
-                          />
-                          {frontSpecialLabel}
-                        </label>
-                      )}
-                    </div>
+                        {frontSpecialLabel}
+                      </label>
+                    )}
+                    <label className="flex items-center gap-1">
+                      <input
+                        type="checkbox"
+                        checked={position.isHiatus}
+                        onChange={(e) =>
+                          updatePosition(memberId, {
+                            isHiatus: e.target.checked,
+                          })
+                        }
+                      />
+                      休業中
+                    </label>
                   </div>
                 );
               })}
