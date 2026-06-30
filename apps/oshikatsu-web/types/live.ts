@@ -29,6 +29,7 @@ export type LivePerformerGroup = {
 export type LivePerformerMember = {
   memberId: string;
   memberNameJa: string;
+  generation: string | null;
 };
 
 export const SETLIST_ITEM_TYPE_VALUES = [

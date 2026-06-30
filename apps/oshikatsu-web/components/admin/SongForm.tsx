@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import {
   DndContext,
   KeyboardSensor,
@@ -798,7 +799,10 @@ export function SongForm({
                 </div>
                 {selectedRelease && (
                   <p className="mt-2 text-xs text-foreground/50">
-                    参加メンバー {selectedRelease.participantMemberIds.length}人
+                    参加メンバー{" "}
+                    {formatMemberCountSummary(
+                      selectedRelease.participantMemberGenerations
+                    )}
                   </p>
                 )}
               </div>

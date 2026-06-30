@@ -7,6 +7,7 @@ import {
 } from "@/types/live";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
+import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
 type LiveDetailProps = {
   live: Live;
@@ -120,6 +121,14 @@ export function LiveDetail({ live }: LiveDetailProps) {
               />
             ))}
           </div>
+        )}
+        {live.performerMembers.length > 0 && (
+          <p className="text-xs text-foreground/50">
+            出演メンバー{" "}
+            {formatMemberCountSummary(
+              live.performerMembers.map((member) => member.generation)
+            )}
+          </p>
         )}
       </div>
 
