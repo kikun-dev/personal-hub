@@ -44,7 +44,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 personal-hub/
   apps/
     household-web/        ← Ledger（実装済み・デプロイ済み）
-    oshikatsu-web/        ← Orbit（Phase 1 実装済み・PR #29）
+    oshikatsu-web/        ← Orbit（継続実装中）
     tasks-web/            ← Flow（未着手）
   packages/
     supabase/             ← @personal-hub/supabase（認証・DB クライアント共有）
@@ -92,10 +92,12 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 
 ## 6. oshikatsu-web（Orbit）の現状
 
-### 機能（Phase 1）
+### 主な機能
 - **トップページ**（月間カレンダー + 今日のイベント + 今日はなんの日）
 - **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
 - **メンバー詳細**（プロフィール + グループ履歴 + 来歴）
+- **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、衣装）
+- **ライブ/会場/セットリスト管理**（公演、出演メンバー、披露メンバー、披露タイプ）
 - **管理画面**（メンバー CRUD + イベント CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
   - 来歴はイベント管理で `is_member_history` を付与して管理（メンバー画面側での来歴入力は廃止）
@@ -110,7 +112,8 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
 - Top は集約 usecase で取得し、誕生日 / OnThisDay は 1 往復 RPC を優先する
 - 公開一覧は `findAll` とは別に public list DTO を使い、一覧表示に不要な join を避ける
-- メンバー/楽曲/リリースの一覧は、グループ絞り込みなしのとき `usecases/groupListSections.ts`（`createMemberSections` / `createSongSections` / `createReleaseSections`）でグループ別セクションに整形し、`GroupSectionHeading` + `*SectionList` / `*Grid` で表示する。グループ絞り込み時はフラットな `*Grid` にフォールバックする
+- メンバー/楽曲の一覧は、グループ絞り込みなしのとき `usecases/groupListSections.ts`（`createMemberSections` / `createSongSections`）でグループ別セクションに整形し、`GroupSectionHeading` + `*SectionList` / `*Grid` で表示する。グループ絞り込み時はフラットな `*Grid` にフォールバックする
+- リリース一覧はグループ別セクションではなく、リリース日降順のフラット表示を基本とする
 - 更新系は `updateTag` で `orbit:*` の top / list / detail tag を即時失効する
 
 ### 管理導線の運用メモ
@@ -119,21 +122,30 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 管理フォームでは `findAll` / `findById` の重い payload を流用せず、option DTO を使う
 - 制作陣更新は `people` だけでなく、関連する楽曲/リリース詳細キャッシュも失効する
 
-### DB テーブル（`orbit_` プレフィクス）
-- `orbit_groups` — グループ（5件。successor_id で改名関係）
-- `orbit_members` — メンバープロフィール
-- `orbit_member_groups` — メンバー×グループ（多対多）
-- `orbit_event_types` — イベント種別（10件）
-- `orbit_events` — イベント（`is_member_history` フラグで来歴兼用）
-- `orbit_event_groups` — イベント×グループ
-- `orbit_event_members` — イベント×メンバー
+### 楽曲/リリース管理の運用メモ
+- 選抜ポジションは ADR 0007 に従い、選抜/アンダー/期別、列、センターを楽曲ラベルとフォーメーションから導出する
+- リリース×メンバーで手動保持する選抜ポジション情報は、福神/休業中 overlay に限定する
+- 櫻坂46 1st〜5th Single の櫻エイト期は、`label = title` の代表トラックを基準に特別ルールで導出する
+
+### 主要DBテーブル（`orbit_` プレフィクス）
+- `orbit_groups` — グループ（successor_id で改名関係）
+- `orbit_members` / `orbit_member_groups` / `orbit_member_sns` — メンバープロフィール、所属履歴、SNS
+- `orbit_group_penlight_colors` — グループ別サイリウム色候補
+- `orbit_event_types` / `orbit_events` / `orbit_event_groups` / `orbit_event_members` — イベント、グループ/メンバー紐づけ、来歴兼用イベント
+- `orbit_people` — 制作陣マスタ
+- `orbit_releases` / `orbit_release_tracks` / `orbit_release_members` / `orbit_release_bonus_videos` — リリース本体、収録曲、参加メンバー、特典映像
+- `orbit_release_member_positions` — リリース×メンバーの選抜ポジション overlay（福神/休業中）
+- `orbit_tracks` / `orbit_track_credits` / `orbit_track_formations` / `orbit_track_formation_rows` / `orbit_track_formation_members` / `orbit_track_mvs` / `orbit_track_costumes` — 楽曲、クレジット、フォーメーション、MV、衣装
+- `orbit_venues` — 会場マスタ
+- `orbit_lives` / `orbit_live_performances` / `orbit_live_performer_groups` / `orbit_live_performer_members` / `orbit_live_performance_absences` — ライブ、公演、出演/休演情報
+- `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
 
 ### RLS 方針
 グローバルデータのため `auth.role() = 'authenticated'` で統一。
 将来の公開時は SELECT を `true` に変更するだけ。
 
 ### 今後の予定
-`docs/orbit-roadmap.md` を参照。設計判断は ADR 0005。
+`docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0007。
 
 ---
 
