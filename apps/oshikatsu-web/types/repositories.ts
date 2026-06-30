@@ -142,6 +142,7 @@ export type SongRepository = {
   update(id: string, input: UpdateSongInput): Promise<Song>;
   delete(id: string): Promise<void>;
   findByMemberId(memberId: string): Promise<Song[]>;
+  findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
 };
 
 export type MemberImageRepository = {
