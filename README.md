@@ -10,7 +10,7 @@
 | Directory | Brand | Description | Status |
 | --- | --- | --- | --- |
 | `apps/household-web` | Ledger | 支出特化型の家計管理 | Deployed |
-| `apps/oshikatsu-web` | Orbit | 坂道グループ総合データベース | Phase 1 Complete |
+| `apps/oshikatsu-web` | Orbit | 坂道グループ総合データベース | Active |
 | `apps/tasks-web` | Flow | タスク管理 | Planned |
 
 ------------------------------------------------------------------------
