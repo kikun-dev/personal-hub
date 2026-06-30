@@ -123,6 +123,19 @@ export type CreateReleaseMemberPositionInput = {
   isFrontSpecial: boolean;
 };
 
+// メンバー詳細で表示する、シングルごとの選抜ポジション
+export type MemberSelectionPosition = {
+  releaseId: string;
+  releaseTitle: string;
+  numbering: number | null;
+  groupId: string;
+  groupNameJa: string;
+  tier: SelectionTier;
+  rowNumber: number | null;
+  isCenter: boolean;
+  isFrontSpecial: boolean;
+};
+
 export type ReleaseListItem = {
   id: string;
   title: string;

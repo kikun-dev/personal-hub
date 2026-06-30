@@ -2,6 +2,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import type { MemberWithGroups, MemberHistory } from "@/types/member";
 import type { Song } from "@/types/song";
+import { ordinalNumber } from "@/types/release";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { MemberSongsSection } from "@/components/members/MemberSongsSection";
@@ -13,11 +14,18 @@ import {
   isHttpUrl,
 } from "@/lib/linkParser";
 
+type MemberSelectionPositionView = {
+  releaseId: string;
+  numbering: number | null;
+  label: string;
+};
+
 type MemberProfileProps = {
   member: MemberWithGroups;
   histories: MemberHistory[];
   songs: Song[];
   centerTrackIds: string[];
+  selectionPositions: MemberSelectionPositionView[];
   mainGroupPenlightColorNames?: string[];
 };
 
@@ -146,6 +154,7 @@ export function MemberProfile({
   histories,
   songs,
   centerTrackIds,
+  selectionPositions,
   mainGroupPenlightColorNames = [],
 }: MemberProfileProps) {
   const age = member.dateOfBirth ? calculateAge(member.dateOfBirth) : null;
@@ -357,6 +366,25 @@ export function MemberProfile({
               );
             })}
           </div>
+        </Card>
+      )}
+
+      {/* 選抜ポジション（シングル別） */}
+      {selectionPositions.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">選抜ポジション</h2>
+          <ul className="space-y-1 text-sm">
+            {selectionPositions.map((position) => (
+              <li key={position.releaseId} className="flex items-baseline gap-3">
+                <span className="w-12 shrink-0 text-foreground/50">
+                  {position.numbering != null
+                    ? ordinalNumber(position.numbering)
+                    : "—"}
+                </span>
+                <span className="text-foreground">{position.label}</span>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 

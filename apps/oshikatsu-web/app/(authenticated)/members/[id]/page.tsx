@@ -19,8 +19,14 @@ export default async function MemberDetailPage({
   if (!data) {
     notFound();
   }
-  const { histories, mainGroupPenlightColorNames, member, songs, centerTrackIds } =
-    data;
+  const {
+    histories,
+    mainGroupPenlightColorNames,
+    member,
+    songs,
+    centerTrackIds,
+    selectionPositions,
+  } = data;
 
   return (
     <div className="space-y-4">
@@ -43,6 +49,7 @@ export default async function MemberDetailPage({
         histories={histories}
         songs={songs}
         centerTrackIds={centerTrackIds}
+        selectionPositions={selectionPositions}
         mainGroupPenlightColorNames={mainGroupPenlightColorNames}
       />
     </div>
