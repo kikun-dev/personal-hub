@@ -6,6 +6,7 @@ import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/formatters";
 import { resolveReleaseImageSrc } from "@/lib/releaseImage";
+import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
 type ReleaseDetailProps = {
   release: Release;
@@ -118,7 +119,12 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
 
       {release.participantMemberNames.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">参加メンバー</h2>
+          <div className="mb-3 flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium text-foreground/70">参加メンバー</h2>
+            <span className="text-xs text-foreground/60">
+              {formatMemberCountSummary(release.participantMemberGenerations)}
+            </span>
+          </div>
           <p className="text-sm text-foreground">{release.participantMemberNames.join(" / ")}</p>
         </Card>
       )}

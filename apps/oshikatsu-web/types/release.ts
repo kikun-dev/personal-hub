@@ -97,6 +97,7 @@ export type Release = {
   trackCount: number;
   participantMemberIds: string[];
   participantMemberNames: string[];
+  participantMemberGenerations: Array<string | null>;
   bonusVideos: ReleaseBonusVideo[];
   tracks: ReleaseTrack[];
 };
