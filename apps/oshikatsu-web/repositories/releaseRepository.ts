@@ -848,12 +848,15 @@ export function createReleaseRepository(
         for (const rep of byGroup.values()) {
           const fm = formationByTrack.get(rep.trackId);
           if (!fm) continue; // 代表トラックにメンバーが居ない → 不該当
-          // 櫻エイト期は表題曲(label=title)のみ導出。選抜カップリング/BACKS曲等は
-          // 列を使わず、後段で「BACKS」として補完する。
+          // 櫻エイト期は表題曲(label=title)を櫻エイトルールで、期別(label=generation)は
+          // 通常どおり「◯期生」で導出する（例: 櫻坂5thの3期生曲は3期生として活動）。
+          // 選抜カップリング/BACKS曲等は列を使わず、後段で「BACKS」補完に回す。
           const candidate = usesSakurazakaEightRule
             ? rep.label === "title"
               ? toSakurazakaEightCandidate(rep, fm)
-              : null
+              : rep.label === "generation"
+                ? toNormalDerivedCandidate(rep, fm)
+                : null
             : toNormalDerivedCandidate(rep, fm);
           if (candidate && isBetterDerivedCandidate(candidate, best)) {
             best = candidate;
