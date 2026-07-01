@@ -86,6 +86,8 @@ export function SongDetail({ song }: { song: Song }) {
         </dl>
       </Card>
 
+      <FormationDisplay rows={song.formationRows} />
+
       {song.mv && (
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">MV</h2>
@@ -175,8 +177,6 @@ export function SongDetail({ song }: { song: Song }) {
           </ul>
         </Card>
       )}
-
-      <FormationDisplay rows={song.formationRows} />
     </div>
   );
 }
