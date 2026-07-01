@@ -1,3 +1,5 @@
+import type { SongCreditRole } from "@/types/song";
+
 export const PERSON_ROLE_VALUES = [
   "lyrics",
   "music",
@@ -50,3 +52,15 @@ export type EnsurePersonRoleEntry = {
 };
 
 export type UpdatePersonInput = CreatePersonInput;
+
+// 制作陣詳細で表示する、担当した楽曲（クレジット由来・楽曲単位で担当をまとめる）
+export type PersonCreditedSong = {
+  trackId: string;
+  trackTitle: string;
+  roles: SongCreditRole[];
+};
+
+export type PersonDetail = {
+  person: Person;
+  creditedSongs: PersonCreditedSong[];
+};

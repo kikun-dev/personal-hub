@@ -68,7 +68,14 @@ export function PeopleBrowser({ people }: PeopleBrowserProps) {
           <tbody>
             {filtered.map((person) => (
               <tr key={person.id} className="border-b border-foreground/5">
-                <td className="py-2 pr-4 text-foreground">{person.displayName}</td>
+                <td className="py-2 pr-4">
+                  <Link
+                    href={`/people/${person.id}`}
+                    className="text-foreground hover:underline"
+                  >
+                    {person.displayName}
+                  </Link>
+                </td>
                 <td className="py-2 pr-4 text-foreground/70">
                   {person.dateOfBirth ?? "—"}
                 </td>

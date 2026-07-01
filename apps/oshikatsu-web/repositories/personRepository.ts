@@ -5,11 +5,33 @@ import type {
   PersonOption,
   PersonRole,
   EnsurePersonRoleEntry,
+  PersonCreditedSong,
 } from "@/types/person";
 import { PERSON_ROLE_VALUES } from "@/types/person";
+import type { SongCreditRole } from "@/types/song";
 import { RepositoryError } from "@/types/errors";
 
 const MAX_DISPLAY_NAME_LENGTH = 100;
+
+// 楽曲クレジットの表示順（作詞→作曲→編曲→振付）
+const CREDIT_ROLE_ORDER: SongCreditRole[] = [
+  "lyrics",
+  "music",
+  "arrangement",
+  "choreography",
+];
+
+function isSongCreditRole(value: string): value is SongCreditRole {
+  return (CREDIT_ROLE_ORDER as string[]).includes(value);
+}
+
+type CreditedSongRow = {
+  credit_role: string;
+  orbit_tracks:
+    | { id: string; title: string }
+    | Array<{ id: string; title: string }>
+    | null;
+};
 
 type PersonRow = {
   id: string;
@@ -67,6 +89,47 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       }
 
       return ((data as PersonOptionRow[] | null) ?? []).map(mapPersonOption);
+    },
+
+    async findCreditedSongsByPersonId(personId: string) {
+      const { data, error } = await supabase
+        .from("orbit_track_credits")
+        .select("credit_role, orbit_tracks(id, title)")
+        .eq("person_id", personId);
+      if (error) {
+        throw new RepositoryError("担当楽曲の取得に失敗しました", error);
+      }
+
+      // 楽曲単位で担当(role)を集約する
+      const byTrack = new Map<
+        string,
+        { trackId: string; trackTitle: string; roles: Set<SongCreditRole> }
+      >();
+      for (const row of (data as CreditedSongRow[] | null) ?? []) {
+        const track = Array.isArray(row.orbit_tracks)
+          ? row.orbit_tracks[0]
+          : row.orbit_tracks;
+        if (!track) continue;
+        const entry = byTrack.get(track.id) ?? {
+          trackId: track.id,
+          trackTitle: track.title,
+          roles: new Set<SongCreditRole>(),
+        };
+        if (isSongCreditRole(row.credit_role)) {
+          entry.roles.add(row.credit_role);
+        }
+        byTrack.set(track.id, entry);
+      }
+
+      const songs: PersonCreditedSong[] = Array.from(byTrack.values()).map(
+        (entry) => ({
+          trackId: entry.trackId,
+          trackTitle: entry.trackTitle,
+          roles: CREDIT_ROLE_ORDER.filter((role) => entry.roles.has(role)),
+        })
+      );
+      songs.sort((a, b) => a.trackTitle.localeCompare(b.trackTitle, "ja"));
+      return songs;
     },
 
     async ensurePeopleRoles(entries: EnsurePersonRoleEntry[]) {

@@ -22,6 +22,7 @@ import type {
 import type {
   Person,
   PersonOption,
+  PersonCreditedSong,
   CreatePersonInput,
   UpdatePersonInput,
   EnsurePersonRoleEntry,
@@ -87,6 +88,7 @@ export type PersonRepository = {
   findAll(): Promise<Person[]>;
   findOptions(): Promise<PersonOption[]>;
   ensurePeopleRoles(entries: EnsurePersonRoleEntry[]): Promise<void>;
+  findCreditedSongsByPersonId(personId: string): Promise<PersonCreditedSong[]>;
   findById(id: string): Promise<Person | null>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
