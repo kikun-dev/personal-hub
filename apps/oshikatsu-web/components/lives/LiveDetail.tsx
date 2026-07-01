@@ -313,6 +313,24 @@ export function LiveDetail({ live }: LiveDetailProps) {
           </div>
         </section>
       )}
+
+      {live.performerMembers.length > 0 && (
+        <section className="space-y-2">
+          <div className="flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold text-foreground">参加メンバー</h2>
+            <span className="text-xs text-foreground/60">
+              {formatMemberCountSummary(
+                live.performerMembers.map((member) => member.generation)
+              )}
+            </span>
+          </div>
+          <p className="text-sm text-foreground/80">
+            {live.performerMembers
+              .map((member) => member.memberNameJa)
+              .join(" / ")}
+          </p>
+        </section>
+      )}
     </div>
   );
 }
