@@ -185,7 +185,7 @@ export function createSongSections(
     }));
 }
 
-// グループ内の担当楽曲を「リリース日降順 → 曲順降順」で並べる
+// グループ内の担当楽曲を「リリース日昇順 → 曲順昇順」で並べる（古い曲・若い曲順を上に）
 function comparePersonCreditedSongs(
   a: PersonCreditedSong,
   b: PersonCreditedSong
@@ -198,8 +198,8 @@ function comparePersonCreditedSongs(
   }
 
   if (a.firstReleaseDate && b.firstReleaseDate) {
-    // 代表（初出）リリース日の降順
-    const dateCompare = b.firstReleaseDate.localeCompare(a.firstReleaseDate);
+    // 代表（初出）リリース日の昇順（古いものを上に）
+    const dateCompare = a.firstReleaseDate.localeCompare(b.firstReleaseDate);
     if (dateCompare !== 0) {
       return dateCompare;
     }
@@ -209,11 +209,11 @@ function comparePersonCreditedSongs(
     if (aReleaseId !== bReleaseId) {
       return aReleaseId.localeCompare(bReleaseId);
     }
-    // 同一リリース内は曲順の降順
-    const aTrack = a.representativeTrackNumber ?? Number.MIN_SAFE_INTEGER;
-    const bTrack = b.representativeTrackNumber ?? Number.MIN_SAFE_INTEGER;
+    // 同一リリース内は曲順の昇順
+    const aTrack = a.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
+    const bTrack = b.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
     if (aTrack !== bTrack) {
-      return bTrack - aTrack;
+      return aTrack - bTrack;
     }
   }
 
