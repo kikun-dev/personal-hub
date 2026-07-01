@@ -27,16 +27,49 @@ function isSongCreditRole(value: string): value is SongCreditRole {
 
 type CreditedTrackGroup = { id: string; name_ja: string; color: string };
 
+type CreditedReleaseRow = { id: string; release_date: string | null };
+
+type CreditedReleaseLinkRow = {
+  track_number: number;
+  orbit_releases: CreditedReleaseRow | CreditedReleaseRow[] | null;
+};
+
 type CreditedTrackRel = {
   id: string;
   title: string;
   orbit_groups: CreditedTrackGroup | CreditedTrackGroup[] | null;
+  orbit_release_tracks: CreditedReleaseLinkRow[] | null;
 };
 
 type CreditedSongRow = {
   credit_role: string;
   orbit_tracks: CreditedTrackRel | CreditedTrackRel[] | null;
 };
+
+// 楽曲の初出（最古のリリース日）リリースと、そのリリースでの曲順を代表として選ぶ
+function pickRepresentativeReleaseLink(
+  links: CreditedReleaseLinkRow[] | null | undefined
+): { releaseId: string; releaseDate: string; trackNumber: number } | null {
+  let best: {
+    releaseId: string;
+    releaseDate: string;
+    trackNumber: number;
+  } | null = null;
+  for (const link of links ?? []) {
+    const release = Array.isArray(link.orbit_releases)
+      ? link.orbit_releases[0]
+      : link.orbit_releases;
+    if (!release?.release_date) continue;
+    if (!best || release.release_date < best.releaseDate) {
+      best = {
+        releaseId: release.id,
+        releaseDate: release.release_date,
+        trackNumber: link.track_number,
+      };
+    }
+  }
+  return best;
+}
 
 type PersonRow = {
   id: string;
@@ -99,7 +132,9 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
     async findCreditedSongsByPersonId(personId: string) {
       const { data, error } = await supabase
         .from("orbit_track_credits")
-        .select("credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color))")
+        .select(
+          "credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color), orbit_release_tracks(track_number, orbit_releases(id, release_date)))"
+        )
         .eq("person_id", personId);
       if (error) {
         throw new RepositoryError("担当楽曲の取得に失敗しました", error);
@@ -114,6 +149,9 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
           groupId: string;
           groupNameJa: string;
           groupColor: string;
+          firstReleaseDate: string | null;
+          representativeReleaseId: string | null;
+          representativeTrackNumber: number | null;
           roles: Set<SongCreditRole>;
         }
       >();
@@ -125,12 +163,18 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
         const trackGroup = Array.isArray(track.orbit_groups)
           ? track.orbit_groups[0]
           : track.orbit_groups;
+        const representative = pickRepresentativeReleaseLink(
+          track.orbit_release_tracks
+        );
         const entry = byTrack.get(track.id) ?? {
           trackId: track.id,
           trackTitle: track.title,
           groupId: trackGroup?.id ?? "",
           groupNameJa: trackGroup?.name_ja ?? "",
           groupColor: trackGroup?.color ?? "",
+          firstReleaseDate: representative?.releaseDate ?? null,
+          representativeReleaseId: representative?.releaseId ?? null,
+          representativeTrackNumber: representative?.trackNumber ?? null,
           roles: new Set<SongCreditRole>(),
         };
         if (isSongCreditRole(row.credit_role)) {
@@ -146,10 +190,13 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
           groupId: entry.groupId,
           groupNameJa: entry.groupNameJa,
           groupColor: entry.groupColor,
+          firstReleaseDate: entry.firstReleaseDate,
+          representativeReleaseId: entry.representativeReleaseId,
+          representativeTrackNumber: entry.representativeTrackNumber,
           roles: CREDIT_ROLE_ORDER.filter((role) => entry.roles.has(role)),
         })
       );
-      songs.sort((a, b) => a.trackTitle.localeCompare(b.trackTitle, "ja"));
+      // 並び順は createPersonCreditedSongSections（グループ内: リリース日降順→曲順降順）で決める
       return songs;
     },
 
