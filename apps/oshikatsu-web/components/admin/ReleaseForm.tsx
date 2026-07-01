@@ -27,6 +27,13 @@ import {
   resolveReleaseImageSrc,
 } from "@/lib/releaseImage";
 import { computeLiveRosterAction } from "@/app/(authenticated)/admin/lives/rosterAction";
+import { ensureStaffRolesAction } from "@/app/(authenticated)/admin/staffRolesAction";
+import { UnregisteredStaffModal } from "@/components/admin/UnregisteredStaffModal";
+import {
+  findUnregisteredStaff,
+  dedupeUnregisteredStaff,
+  type UnregisteredStaff,
+} from "@/lib/staffRoles";
 
 type FormBonusVideo = CreateReleaseBonusVideoInput & { _key: string };
 type FormTrackLink = CreateReleaseTrackLinkInput & { _key: string };
@@ -174,6 +181,9 @@ export function ReleaseForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unregisteredStaff, setUnregisteredStaff] = useState<UnregisteredStaff[]>(
+    []
+  );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [pendingArtworkFile, setPendingArtworkFile] = useState<File | null>(null);
   const [pendingArtworkPreviewUrl, setPendingArtworkPreviewUrl] = useState<string | null>(null);
@@ -472,8 +482,13 @@ export function ReleaseForm({
     update("artworkPersonName", "");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // アートワーク担当で、artwork role の候補に無い名前を未登録として集める
+  const collectUnregisteredStaff = (): UnregisteredStaff[] =>
+    dedupeUnregisteredStaff(
+      findUnregisteredStaff(people, "artwork", [values.artworkPersonName])
+    );
+
+  const proceedSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
     let imageFile: ReleaseImageUploadInput | undefined;
@@ -514,6 +529,38 @@ export function ReleaseForm({
       setIsSubmitting(false);
       setIsUploadingImage(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const unregistered = collectUnregisteredStaff();
+    if (unregistered.length > 0) {
+      setUnregisteredStaff(unregistered);
+      return;
+    }
+    await proceedSubmit();
+  };
+
+  const handleConfirmUnregistered = async () => {
+    setIsSubmitting(true);
+    try {
+      await ensureStaffRolesAction(
+        unregisteredStaff.map((entry) => ({
+          displayName: entry.displayName,
+          role: entry.role,
+        }))
+      );
+    } catch {
+      setErrors((prev) => ({
+        ...prev,
+        _form: "制作陣の追加に失敗しました。時間をおいて再度お試しください",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+    setUnregisteredStaff([]);
+    setIsSubmitting(false);
+    await proceedSubmit();
   };
 
   const savedArtworkSrc = resolveReleaseImageSrc(values.artworkPath || null);
@@ -928,6 +975,13 @@ export function ReleaseForm({
             ? "登録する"
             : "更新する"}
       </Button>
+
+      <UnregisteredStaffModal
+        entries={unregisteredStaff}
+        isSubmitting={isSubmitting}
+        onConfirm={handleConfirmUnregistered}
+        onCancel={() => setUnregisteredStaff([])}
+      />
     </form>
   );
 }

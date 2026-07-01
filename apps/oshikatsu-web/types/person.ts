@@ -43,4 +43,10 @@ export type CreatePersonInput = {
   biography: string;
 };
 
+// 各フォームから未登録の制作陣を担当(role)付きで登録するための入力
+export type EnsurePersonRoleEntry = {
+  displayName: string;
+  role: PersonRole;
+};
+
 export type UpdatePersonInput = CreatePersonInput;

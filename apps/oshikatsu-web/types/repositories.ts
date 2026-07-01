@@ -24,6 +24,7 @@ import type {
   PersonOption,
   CreatePersonInput,
   UpdatePersonInput,
+  EnsurePersonRoleEntry,
 } from "./person";
 import type {
   Venue,
@@ -85,6 +86,7 @@ export type EventTypeRepository = {
 export type PersonRepository = {
   findAll(): Promise<Person[]>;
   findOptions(): Promise<PersonOption[]>;
+  ensurePeopleRoles(entries: EnsurePersonRoleEntry[]): Promise<void>;
   findById(id: string): Promise<Person | null>;
   create(input: CreatePersonInput): Promise<Person>;
   update(id: string, input: UpdatePersonInput): Promise<Person>;
