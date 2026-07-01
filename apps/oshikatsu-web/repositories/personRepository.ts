@@ -203,7 +203,7 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
           roles: CREDIT_ROLE_ORDER.filter((role) => entry.roles.has(role)),
         })
       );
-      // 並び順は createPersonCreditedSongSections（グループ内: リリース日降順→曲順降順）で決める
+      // 並び順は createPersonCreditedSongSections（グループ内: リリース日昇順→曲順昇順）で決める
       return songs;
     },
 

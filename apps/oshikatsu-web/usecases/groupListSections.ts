@@ -222,7 +222,7 @@ function comparePersonCreditedSongs(
 }
 
 // 制作陣詳細の担当楽曲を、楽曲一覧と同じグループ順で区切る。
-// グループ内はリリース日降順→曲順降順。
+// グループ内はリリース日昇順→曲順昇順。
 export function createPersonCreditedSongSections(
   songs: PersonCreditedSong[],
   groups: Group[]
