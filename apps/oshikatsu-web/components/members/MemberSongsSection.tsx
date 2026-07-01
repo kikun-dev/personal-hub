@@ -3,8 +3,15 @@
 import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { Song } from "@/types/song";
-import { SONG_LABELS, SONG_LABEL_LABELS } from "@/types/song";
+import {
+  SONG_LABELS,
+  SONG_LABEL_LABELS,
+  SONG_LABEL_BADGE_COLOR,
+  formatSongLabel,
+} from "@/types/song";
+import { formatReleaseTypeLabel } from "@/types/release";
 
 type MemberSongsSectionProps = {
   songs: Song[];
@@ -75,21 +82,36 @@ export function MemberSongsSection({
         <div className="mt-2 space-y-2">
           {songs.map((song) => {
             const isCenter = centerTrackIdSet.has(song.id);
+            const releaseLabel = song.representativeReleaseType
+              ? formatReleaseTypeLabel(
+                  song.representativeReleaseType,
+                  song.representativeNumbering
+                )
+              : null;
+            const labelText = formatSongLabel(
+              song.label,
+              song.generation,
+              song.groupNameJa
+            );
             return (
               <Link
                 key={song.id}
                 href={`/songs/${song.id}`}
                 className="block rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground hover:bg-foreground/5"
               >
-                <p className="font-medium">
-                  {isCenter && <span className="text-amber-600">★ </span>}
-                  {song.title}
-                </p>
-                {song.groupNameJa && (
-                  <p className="mt-1 text-xs text-foreground/50">
-                    {song.groupNameJa}
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="font-medium">
+                    {isCenter && <span className="text-amber-600">★ </span>}
+                    {song.title}
                   </p>
-                )}
+                  {labelText && (
+                    <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />
+                  )}
+                </div>
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground/50">
+                  {releaseLabel && <span>{releaseLabel}</span>}
+                  {song.groupNameJa && <span>{song.groupNameJa}</span>}
+                </div>
               </Link>
             );
           })}

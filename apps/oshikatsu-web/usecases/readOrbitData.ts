@@ -12,6 +12,7 @@ import { createGroupRepository } from "@/repositories/groupRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
+import { sortMemberSongsByReleaseOrder } from "@/usecases/memberSongOrder";
 import { createVenueRepository } from "@/repositories/venueRepository";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { getGroups } from "@/usecases/getGroups";
@@ -164,7 +165,7 @@ const loadMemberDetailPageData = createSharedReadLoader(
         histories,
         mainGroupPenlightColorNames,
         member,
-        songs,
+        songs: sortMemberSongsByReleaseOrder(songs),
         centerTrackIds,
         selectionPositions,
       };
