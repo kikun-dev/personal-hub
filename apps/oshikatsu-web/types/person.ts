@@ -33,6 +33,7 @@ export type Person = {
 export type PersonOption = {
   id: string;
   displayName: string;
+  roles: PersonRole[];
 };
 
 export type CreatePersonInput = {

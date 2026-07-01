@@ -14,6 +14,7 @@ type PersonRow = {
 type PersonOptionRow = {
   id: string;
   display_name: string;
+  roles: string[] | null;
 };
 
 export function createPersonRepository(supabase: SupabaseClient): PersonRepository {
@@ -30,6 +31,7 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
   const mapPersonOption = (row: PersonOptionRow): PersonOption => ({
     id: row.id,
     displayName: row.display_name,
+    roles: (row.roles ?? []) as PersonRole[],
   });
 
   return {
@@ -49,7 +51,7 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_people")
-        .select("id, display_name")
+        .select("id, display_name, roles")
         .order("display_name");
 
       if (error) {

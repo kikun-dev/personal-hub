@@ -109,7 +109,7 @@ export default async function EditSongPage({
         groups={groups}
         releases={releases}
         members={members}
-        people={people.map((person) => person.displayName)}
+        people={people}
         onSubmit={handleSubmit}
       />
     </div>

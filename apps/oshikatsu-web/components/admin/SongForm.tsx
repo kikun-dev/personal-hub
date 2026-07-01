@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Group } from "@/types/group";
 import type { ReleaseOption } from "@/types/release";
 import type { MemberOption } from "@/types/member";
+import type { PersonOption, PersonRole } from "@/types/person";
 import type {
   CreateSongInput,
   CreateSongCostumeInput,
@@ -50,20 +51,31 @@ type SongFormProps = {
   groups: Group[];
   releases: ReleaseOption[];
   members: MemberOption[];
-  people: string[];
+  people: PersonOption[];
   onSubmit: (
     values: CreateSongInput
   ) => Promise<{ errors?: ValidationError[] }>;
 };
 
+// 制作陣フィールドと担当(role)の対応。編曲は作曲(music)を共用する。
 const CREDIT_FIELDS = [
-  { key: "lyricsPeople", label: "作詞" },
-  { key: "musicPeople", label: "作曲" },
-  { key: "arrangementPeople", label: "編曲" },
-  { key: "choreographyPeople", label: "振付" },
+  { key: "lyricsPeople", label: "作詞", role: "lyrics" },
+  { key: "musicPeople", label: "作曲", role: "music" },
+  { key: "arrangementPeople", label: "編曲", role: "music" },
+  { key: "choreographyPeople", label: "振付", role: "choreography" },
 ] as const;
 
 type CreditFieldKey = (typeof CREDIT_FIELDS)[number]["key"];
+
+// 担当(role)を持つ人物の表示名のみを候補に返す
+function peopleNamesForRole(
+  people: PersonOption[],
+  role: PersonRole
+): string[] {
+  return people
+    .filter((person) => person.roles.includes(role))
+    .map((person) => person.displayName);
+}
 
 function splitPeople(value: string): string[] {
   return value
@@ -812,10 +824,10 @@ export function SongForm({
       </div>
 
       <div className="space-y-3">
-        {CREDIT_FIELDS.map(({ key, label }) => {
+        {CREDIT_FIELDS.map(({ key, label, role }) => {
           const selectedPeople = splitPeople(values[key]);
           const query = creditQueries[key];
-          const suggestions = people
+          const suggestions = peopleNamesForRole(people, role)
             .filter((personName) => personName.toLowerCase().includes(query.trim().toLowerCase()))
             .slice(0, 20);
 
@@ -1080,7 +1092,7 @@ export function SongForm({
               <Input
                 id="mv-director"
                 label="監督"
-                list="song-person-suggestions"
+                list="person-suggestions-mv_director"
                 value={values.mv.directorName}
                 onChange={(e) => update("mv", { ...values.mv, directorName: e.target.value })}
                 error={errors["mv.directorName"]}
@@ -1140,7 +1152,7 @@ export function SongForm({
                 <Input
                   id={`costume-stylist-${costume._key}`}
                   label="衣装担当*"
-                  list="song-person-suggestions"
+                  list="person-suggestions-costume"
                   value={costume.stylistName}
                   onChange={(e) => updateCostume(costume._key, "stylistName", e.target.value)}
                   error={errors[`costumes.${index}.stylistName`]}
@@ -1170,8 +1182,13 @@ export function SongForm({
         </div>
       </div>
 
-      <datalist id="song-person-suggestions">
-        {people.map((personName) => (
+      <datalist id="person-suggestions-mv_director">
+        {peopleNamesForRole(people, "mv_director").map((personName) => (
+          <option key={personName} value={personName} />
+        ))}
+      </datalist>
+      <datalist id="person-suggestions-costume">
+        {peopleNamesForRole(people, "costume").map((personName) => (
           <option key={personName} value={personName} />
         ))}
       </datalist>
