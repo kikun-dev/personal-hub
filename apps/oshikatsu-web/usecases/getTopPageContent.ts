@@ -103,6 +103,7 @@ export async function getTopPageContent(
       trackId: v.trackId,
       trackTitle: v.trackTitle,
       videoLabel,
+      url: v.url,
       date: v.date,
     };
   };

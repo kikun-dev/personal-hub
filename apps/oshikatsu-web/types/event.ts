@@ -64,6 +64,7 @@ export type VideoCalendarEvent = {
   trackId: string;
   trackTitle: string;
   videoLabel: string;
+  url: string;
   date: string;
 };
 

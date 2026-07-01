@@ -123,6 +123,7 @@ export type CalendarVideoItem = {
   trackTitle: string;
   groupNameJa: string;
   videoType: "mv" | SongVideoType;
+  url: string;
   date: string;
 };
 

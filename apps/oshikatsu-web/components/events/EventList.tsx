@@ -65,12 +65,14 @@ export function EventList({
               ) : event.type === "video" ? (
                 <>
                   <Badge label="動画" color={VIDEO_COLOR} />
-                  <Link
-                    href={`/songs/${event.trackId}`}
+                  <a
+                    href={event.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="text-foreground hover:underline"
                   >
                     {event.trackTitle}（{event.videoLabel}）
-                  </Link>
+                  </a>
                 </>
               ) : event.type === "birthday" ? (
                 <>

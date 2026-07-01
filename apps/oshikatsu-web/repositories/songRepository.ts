@@ -979,7 +979,9 @@ export function createSongRepository(
       // MV配信日
       const { data: mvData, error: mvError } = await supabase
         .from("orbit_track_mvs")
-        .select("published_on, orbit_tracks(id, title, orbit_groups(name_ja))")
+        .select(
+          "mv_url, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
+        )
         .not("published_on", "is", null);
       if (mvError) {
         throw new RepositoryError("カレンダー用MVの取得に失敗しました", mvError);
@@ -989,7 +991,7 @@ export function createSongRepository(
       const { data: videoData, error: videoError } = await supabase
         .from("orbit_track_videos")
         .select(
-          "video_type, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
+          "video_url, video_type, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
         )
         .not("published_on", "is", null);
       if (videoError) {
@@ -998,7 +1000,11 @@ export function createSongRepository(
 
       const items: CalendarVideoItem[] = [];
       for (const row of (mvData as
-        | Array<{ published_on: string; orbit_tracks: TrackRel | TrackRel[] | null }>
+        | Array<{
+            mv_url: string;
+            published_on: string;
+            orbit_tracks: TrackRel | TrackRel[] | null;
+          }>
         | null) ?? []) {
         const track = pickTrack(row.orbit_tracks);
         if (!track) continue;
@@ -1007,11 +1013,13 @@ export function createSongRepository(
           trackTitle: track.title,
           groupNameJa: groupNameOf(track),
           videoType: "mv",
+          url: row.mv_url,
           date: row.published_on,
         });
       }
       for (const row of (videoData as
         | Array<{
+            video_url: string;
             video_type: string;
             published_on: string;
             orbit_tracks: TrackRel | TrackRel[] | null;
@@ -1025,6 +1033,7 @@ export function createSongRepository(
           trackTitle: track.title,
           groupNameJa: groupNameOf(track),
           videoType: row.video_type,
+          url: row.video_url,
           date: row.published_on,
         });
       }
