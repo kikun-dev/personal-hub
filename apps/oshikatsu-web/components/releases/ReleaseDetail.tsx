@@ -59,6 +59,26 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
     bonusByEdition.set(bonus.edition, list);
   }
 
+  // 休業中は参加メンバー表示・人数から除外する（参加登録自体は保持）
+  const hiatusMemberIds = new Set(
+    release.memberPositions
+      .filter((position) => position.isHiatus)
+      .map((position) => position.memberId)
+  );
+  const activeParticipants = release.participantMemberIds
+    .map((memberId, index) => ({
+      memberId,
+      name: release.participantMemberNames[index],
+      generation: release.participantMemberGenerations[index],
+    }))
+    .filter((participant) => !hiatusMemberIds.has(participant.memberId));
+  const activeParticipantNames = activeParticipants.map(
+    (participant) => participant.name
+  );
+  const activeParticipantGenerations = activeParticipants.map(
+    (participant) => participant.generation
+  );
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -172,15 +192,15 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
         </Card>
       )}
 
-      {release.participantMemberNames.length > 0 && (
+      {activeParticipantNames.length > 0 && (
         <Card>
           <div className="mb-3 flex items-baseline justify-between gap-2">
             <h2 className="text-sm font-medium text-foreground/70">参加メンバー</h2>
             <span className="text-xs text-foreground/60">
-              {formatMemberCountSummary(release.participantMemberGenerations)}
+              {formatMemberCountSummary(activeParticipantGenerations)}
             </span>
           </div>
-          <p className="text-sm text-foreground">{release.participantMemberNames.join(" / ")}</p>
+          <p className="text-sm text-foreground">{activeParticipantNames.join(" / ")}</p>
         </Card>
       )}
     </div>
