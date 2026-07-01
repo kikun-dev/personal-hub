@@ -85,6 +85,9 @@ export type ReleaseTrack = {
   groupNameJa: string;
   label: SongLabel | null;
   generation: string | null;
+  hasMv: boolean;
+  hasDancePracticeVideo: boolean;
+  hasCallVideo: boolean;
 };
 
 export type Release = {
