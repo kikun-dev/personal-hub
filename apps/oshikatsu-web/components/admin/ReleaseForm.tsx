@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import type { Group } from "@/types/group";
 import type { MemberOption } from "@/types/member";
+import type { PersonOption } from "@/types/person";
 import {
   RELEASE_TYPES,
   RELEASE_TYPE_LABELS,
@@ -46,7 +47,7 @@ type ReleaseFormProps = {
   groups: Group[];
   members: MemberOption[];
   tracks: ReleaseTrackOption[];
-  people: string[];
+  people: PersonOption[];
   onSubmit: (
     values: CreateReleaseInput,
     imageFile?: ReleaseImageUploadInput
@@ -595,9 +596,11 @@ export function ReleaseForm({
           error={errors.artworkPersonName}
         />
         <datalist id="artwork-person-suggestions">
-          {people.map((personName) => (
-            <option key={personName} value={personName} />
-          ))}
+          {people
+            .filter((person) => person.roles.includes("artwork"))
+            .map((person) => (
+              <option key={person.id} value={person.displayName} />
+            ))}
         </datalist>
 
         <div>

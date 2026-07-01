@@ -28,7 +28,7 @@ export default async function NewReleasePage() {
         groups={groups}
         members={members}
         tracks={songOptions}
-        people={people.map((person) => person.displayName)}
+        people={people}
         onSubmit={handleSubmit}
       />
     </div>
