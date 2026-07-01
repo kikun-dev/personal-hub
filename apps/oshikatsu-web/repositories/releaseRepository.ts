@@ -16,6 +16,7 @@ import {
   getManualFrontSpecialSelectionLabel,
   isSakurazakaEightEra,
 } from "@/lib/selectionPositionRules";
+import { isSongLabel, type SongLabel } from "@/types/song";
 
 type ReleaseGroupRow =
   | {
@@ -77,10 +78,16 @@ type ReleaseTrackRow = {
     | {
         id: string;
         title: string;
+        label: string | null;
+        generation: string | null;
+        orbit_groups: ReleaseGroupRow;
       }
     | Array<{
         id: string;
         title: string;
+        label: string | null;
+        generation: string | null;
+        orbit_groups: ReleaseGroupRow;
       }>
     | null;
 };
@@ -163,7 +170,7 @@ const RELEASE_DETAIL_SELECT = `
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
   orbit_release_member_positions(member_id, is_front_special, is_hiatus),
-  orbit_release_tracks(track_number, orbit_tracks(id, title))
+  orbit_release_tracks(track_number, orbit_tracks(id, title, label, generation, orbit_groups(name_ja, color)))
 `;
 
 const RELEASE_PUBLIC_LIST_SELECT = `
@@ -253,16 +260,25 @@ function mapToRelease(row: ReleaseRow): Release {
           ? item.orbit_tracks[0]
           : item.orbit_tracks;
         if (!track) return null;
+        const trackGroup = Array.isArray(track.orbit_groups)
+          ? track.orbit_groups[0]
+          : track.orbit_groups;
         return {
           trackId: track.id,
           trackTitle: track.title,
           trackNumber: item.track_number,
+          groupNameJa: trackGroup?.name_ja ?? "",
+          label: isSongLabel(track.label ?? "") ? (track.label as SongLabel) : null,
+          generation: track.generation,
         };
       })
       .filter((item): item is {
         trackId: string;
         trackTitle: string;
         trackNumber: number;
+        groupNameJa: string;
+        label: SongLabel | null;
+        generation: string | null;
       } => Boolean(item))
       .sort((a, b) => a.trackNumber - b.trackNumber),
   };

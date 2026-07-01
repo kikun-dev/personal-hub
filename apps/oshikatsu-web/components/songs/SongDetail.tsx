@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
-import { formatSongLabel } from "@/types/song";
+import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
 
 const CREDIT_LABELS: Record<string, string> = {
   lyrics: "作詞",
@@ -14,8 +14,6 @@ const CREDIT_LABELS: Record<string, string> = {
   arrangement: "編曲",
   choreography: "振付",
 };
-
-const SONG_LABEL_COLOR = "#8B5CF6";
 
 export function SongDetail({ song }: { song: Song }) {
   const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
@@ -40,7 +38,7 @@ export function SongDetail({ song }: { song: Song }) {
           {releaseLabelText && (
             <span className="text-sm text-foreground/50">{releaseLabelText}</span>
           )}
-          {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+          {labelText && <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />}
         </div>
       </div>
 
