@@ -60,7 +60,14 @@ function pickRepresentativeReleaseLink(
       ? link.orbit_releases[0]
       : link.orbit_releases;
     if (!release?.release_date) continue;
-    if (!best || release.release_date < best.releaseDate) {
+    // 最古のリリース日を代表に。同一日付は release.id で決定的にタイブレークする
+    // （楽曲一覧の並び替えと同じ方針）。
+    const isOlder = !best || release.release_date < best.releaseDate;
+    const isSameDateSmallerId =
+      best !== null &&
+      release.release_date === best.releaseDate &&
+      release.id < best.releaseId;
+    if (isOlder || isSameDateSmallerId) {
       best = {
         releaseId: release.id,
         releaseDate: release.release_date,
