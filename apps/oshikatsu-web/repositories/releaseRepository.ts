@@ -139,18 +139,12 @@ type ReleaseOptionMemberRow = {
     | null;
 };
 
-type ReleaseOptionMemberPositionRow = {
-  member_id: string;
-  is_hiatus: boolean;
-};
-
 type ReleaseOptionRow = {
   id: string;
   title: string;
   release_type: ReleaseType;
   group_id: string;
   orbit_release_members?: ReleaseOptionMemberRow[];
-  orbit_release_member_positions?: ReleaseOptionMemberPositionRow[];
 };
 
 const RELEASE_LIST_SELECT = `
@@ -210,8 +204,7 @@ const RELEASE_OPTION_SELECT = `
   title,
   release_type,
   group_id,
-  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
-  orbit_release_member_positions(member_id, is_hiatus)
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
 `;
 
 function hasMv(mvRel: TrackMvRow | TrackMvRow[] | null | undefined): boolean {
@@ -338,29 +331,22 @@ function mapToReleaseListItem(row: ReleaseListRow): ReleaseListItem {
 }
 
 function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
-  const hiatusMemberIds = new Set(
-    (row.orbit_release_member_positions ?? [])
-      .filter((position) => position.is_hiatus)
-      .map((position) => position.member_id)
-  );
-  const participants = (row.orbit_release_members ?? [])
-    .filter((member) => !hiatusMemberIds.has(member.member_id))
-    .map((member) => {
-      const orbitMember = Array.isArray(member.orbit_members)
-        ? member.orbit_members[0]
-        : member.orbit_members;
-      // リリースのグループでの期を採用（無ければ null）
-      const membership = (orbitMember?.orbit_member_groups ?? []).find(
-        (mg) => mg.group_id === row.group_id
-      );
+  const participants = (row.orbit_release_members ?? []).map((member) => {
+    const orbitMember = Array.isArray(member.orbit_members)
+      ? member.orbit_members[0]
+      : member.orbit_members;
+    // リリースのグループでの期を採用（無ければ null）
+    const membership = (orbitMember?.orbit_member_groups ?? []).find(
+      (mg) => mg.group_id === row.group_id
+    );
 
-      return {
-        memberId: member.member_id,
-        memberNameJa: orbitMember?.name_ja ?? "",
-        memberNameKana: orbitMember?.name_kana ?? "",
-        generation: membership?.generation ?? null,
-      };
-    });
+    return {
+      memberId: member.member_id,
+      memberNameJa: orbitMember?.name_ja ?? "",
+      memberNameKana: orbitMember?.name_kana ?? "",
+      generation: membership?.generation ?? null,
+    };
+  });
 
   return {
     id: row.id,
