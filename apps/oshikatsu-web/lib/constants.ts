@@ -4,6 +4,7 @@ export type BloodType = (typeof BLOOD_TYPES)[number];
 export const BIRTHDAY_COLOR = "#D946EF";
 export const LIVE_COLOR = "#F97316";
 export const RELEASE_COLOR = "#3B82F6";
+export const VIDEO_COLOR = "#10B981";
 
 export const SNS_TYPES = [
   { value: "x", label: "X" },

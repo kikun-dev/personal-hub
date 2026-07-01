@@ -18,6 +18,7 @@ import type {
   UpdateSongInput,
   SongFilters,
   SongListItem,
+  CalendarVideoItem,
 } from "./song";
 import type {
   Person,
@@ -151,6 +152,7 @@ export type SongRepository = {
   delete(id: string): Promise<void>;
   findByMemberId(memberId: string): Promise<Song[]>;
   findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
+  findCalendarVideoItems(): Promise<CalendarVideoItem[]>;
 };
 
 export type MemberImageRepository = {

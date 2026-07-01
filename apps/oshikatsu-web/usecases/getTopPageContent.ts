@@ -3,13 +3,17 @@ import type {
   LiveCalendarEvent,
   OnThisDayItem,
   ReleaseCalendarEvent,
+  VideoCalendarEvent,
 } from "@/types/event";
 import type {
   EventRepository,
   LiveRepository,
   MemberRepository,
   ReleaseRepository,
+  SongRepository,
 } from "@/types/repositories";
+import type { CalendarVideoItem } from "@/types/song";
+import { formatSongVideoTypeLabel } from "@/types/song";
 import { getEventsForDate } from "@/usecases/getEventsForDate";
 import { getEventsForMonth } from "@/usecases/getEventsForMonth";
 import { getOnThisDay } from "@/usecases/getOnThisDay";
@@ -29,6 +33,7 @@ export async function getTopPageContent(
   memberRepo: MemberRepository,
   liveRepo: LiveRepository,
   releaseRepo: ReleaseRepository,
+  songRepo: SongRepository,
   year: number,
   month: number,
   day: number
@@ -41,12 +46,14 @@ export async function getTopPageContent(
     onThisDayBaseEvents,
     livePerformances,
     releaseItems,
+    videoItems,
   ] = await Promise.all([
     getEventsForMonth(eventRepo, memberRepo, year, month),
     getEventsForDate(eventRepo, memberRepo, selectedDate),
     getOnThisDay(eventRepo, selectedDate),
     liveRepo.findCalendarPerformances(),
     releaseRepo.findCalendarItems(),
+    songRepo.findCalendarVideoItems(),
   ]);
 
   // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する
@@ -84,6 +91,27 @@ export async function getTopPageContent(
     date: r.date,
   });
 
+  const toVideoEvent = (v: CalendarVideoItem): VideoCalendarEvent | null => {
+    const videoLabel =
+      v.videoType === "mv"
+        ? "MV"
+        : formatSongVideoTypeLabel(v.videoType, v.groupNameJa);
+    if (!videoLabel) return null;
+    return {
+      type: "video",
+      id: `${v.trackId}:${v.videoType}`,
+      trackId: v.trackId,
+      trackTitle: v.trackTitle,
+      videoLabel,
+      url: v.url,
+      date: v.date,
+    };
+  };
+
+  const videoEvents = videoItems
+    .map(toVideoEvent)
+    .filter((event): event is VideoCalendarEvent => event !== null);
+
   // 月のカレンダー
   for (const p of uniqueLivePerformances) {
     if (p.date.startsWith(monthPrefix)) monthEvents.push(toLiveEvent(p));
@@ -91,11 +119,17 @@ export async function getTopPageContent(
   for (const r of releaseItems) {
     if (r.date.startsWith(monthPrefix)) monthEvents.push(toReleaseEvent(r));
   }
+  for (const v of videoEvents) {
+    if (v.date.startsWith(monthPrefix)) monthEvents.push(v);
+  }
   monthEvents.sort((a, b) => a.date.localeCompare(b.date));
 
   // 選択日
   for (const p of uniqueLivePerformances) {
     if (p.date === dateStr) selectedDateEvents.push(toLiveEvent(p));
+  }
+  for (const v of videoEvents) {
+    if (v.date === dateStr) selectedDateEvents.push(v);
   }
   for (const r of releaseItems) {
     if (r.date === dateStr) selectedDateEvents.push(toReleaseEvent(r));
@@ -114,6 +148,11 @@ export async function getTopPageContent(
   for (const r of releaseItems) {
     if (r.date.endsWith(monthDaySuffix) && r.date < dateStr) {
       onThisDayEvents.push(toReleaseEvent(r));
+    }
+  }
+  for (const v of videoEvents) {
+    if (v.date.endsWith(monthDaySuffix) && v.date < dateStr) {
+      onThisDayEvents.push(v);
     }
   }
   onThisDayEvents.sort((a, b) => b.date.localeCompare(a.date));

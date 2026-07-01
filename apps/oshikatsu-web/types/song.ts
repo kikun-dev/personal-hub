@@ -117,6 +117,16 @@ export function formatSongVideoTypeLabel(
   return SONG_VIDEO_TYPE_LABELS[type];
 }
 
+// トップのカレンダー/◯年前に出す、楽曲動画（MV・関連動画）の配信日イベント用の生データ
+export type CalendarVideoItem = {
+  trackId: string;
+  trackTitle: string;
+  groupNameJa: string;
+  videoType: "mv" | SongVideoType;
+  url: string;
+  date: string;
+};
+
 export type SongVideo = {
   type: SongVideoType;
   url: string;

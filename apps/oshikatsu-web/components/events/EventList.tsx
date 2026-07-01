@@ -2,7 +2,12 @@ import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
 import { formatTime } from "@/lib/formatters";
-import { BIRTHDAY_COLOR, LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
+import {
+  BIRTHDAY_COLOR,
+  LIVE_COLOR,
+  RELEASE_COLOR,
+  VIDEO_COLOR,
+} from "@/lib/constants";
 
 function eventKey(event: CalendarEvent): string {
   switch (event.type) {
@@ -56,6 +61,18 @@ export function EventList({
                   >
                     {event.title}
                   </Link>
+                </>
+              ) : event.type === "video" ? (
+                <>
+                  <Badge label="動画" color={VIDEO_COLOR} />
+                  <a
+                    href={event.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground hover:underline"
+                  >
+                    {event.trackTitle}（{event.videoLabel}）
+                  </a>
                 </>
               ) : event.type === "birthday" ? (
                 <>

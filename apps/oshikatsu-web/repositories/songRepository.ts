@@ -14,6 +14,7 @@ import type {
   CreateSongInput,
   SongListItem,
   SongLabel,
+  CalendarVideoItem,
 } from "@/types/song";
 import { SONG_VIDEO_TYPES, isSongLabel, isSongVideoType } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
@@ -958,6 +959,85 @@ export function createSongRepository(
       );
 
       return resolveTrackIdsFromRowIds(centerRowIds);
+    },
+
+    async findCalendarVideoItems() {
+      type TrackRel = {
+        id: string;
+        title: string;
+        orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
+      };
+      const pickTrack = (rel: TrackRel | TrackRel[] | null): TrackRel | null =>
+        Array.isArray(rel) ? (rel[0] ?? null) : rel;
+      const groupNameOf = (track: TrackRel): string => {
+        const group = Array.isArray(track.orbit_groups)
+          ? track.orbit_groups[0]
+          : track.orbit_groups;
+        return group?.name_ja ?? "";
+      };
+
+      // MV配信日
+      const { data: mvData, error: mvError } = await supabase
+        .from("orbit_track_mvs")
+        .select(
+          "mv_url, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
+        )
+        .not("published_on", "is", null);
+      if (mvError) {
+        throw new RepositoryError("カレンダー用MVの取得に失敗しました", mvError);
+      }
+
+      // 関連動画の配信日
+      const { data: videoData, error: videoError } = await supabase
+        .from("orbit_track_videos")
+        .select(
+          "video_url, video_type, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
+        )
+        .not("published_on", "is", null);
+      if (videoError) {
+        throw new RepositoryError("カレンダー用動画の取得に失敗しました", videoError);
+      }
+
+      const items: CalendarVideoItem[] = [];
+      for (const row of (mvData as
+        | Array<{
+            mv_url: string;
+            published_on: string;
+            orbit_tracks: TrackRel | TrackRel[] | null;
+          }>
+        | null) ?? []) {
+        const track = pickTrack(row.orbit_tracks);
+        if (!track) continue;
+        items.push({
+          trackId: track.id,
+          trackTitle: track.title,
+          groupNameJa: groupNameOf(track),
+          videoType: "mv",
+          url: row.mv_url,
+          date: row.published_on,
+        });
+      }
+      for (const row of (videoData as
+        | Array<{
+            video_url: string;
+            video_type: string;
+            published_on: string;
+            orbit_tracks: TrackRel | TrackRel[] | null;
+          }>
+        | null) ?? []) {
+        if (!isSongVideoType(row.video_type)) continue;
+        const track = pickTrack(row.orbit_tracks);
+        if (!track) continue;
+        items.push({
+          trackId: track.id,
+          trackTitle: track.title,
+          groupNameJa: groupNameOf(track),
+          videoType: row.video_type,
+          url: row.video_url,
+          date: row.published_on,
+        });
+      }
+      return items;
     },
   };
 }

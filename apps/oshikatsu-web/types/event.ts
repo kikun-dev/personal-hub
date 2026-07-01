@@ -57,14 +57,27 @@ export type ReleaseCalendarEvent = {
   date: string;
 };
 
+// 楽曲に登録した動画（MV・関連動画）の配信日イベント
+export type VideoCalendarEvent = {
+  type: "video";
+  id: string;
+  trackId: string;
+  trackTitle: string;
+  videoLabel: string;
+  url: string;
+  date: string;
+};
+
 export type CalendarEvent =
   | (Event & { type: "event" })
   | BirthdayEvent
   | LiveCalendarEvent
-  | ReleaseCalendarEvent;
+  | ReleaseCalendarEvent
+  | VideoCalendarEvent;
 
 // 「今日はなんの日」用（過去の出来事。誕生日は含めない）
 export type OnThisDayItem =
   | (Event & { type: "event" })
   | LiveCalendarEvent
-  | ReleaseCalendarEvent;
+  | ReleaseCalendarEvent
+  | VideoCalendarEvent;
