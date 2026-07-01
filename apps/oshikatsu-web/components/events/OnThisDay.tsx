@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { OnThisDayItem } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
-import { LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
+import { LIVE_COLOR, RELEASE_COLOR, VIDEO_COLOR } from "@/lib/constants";
 
 type OnThisDayProps = {
   events: OnThisDayItem[];
@@ -56,6 +56,16 @@ export function OnThisDay({
                       className="text-foreground hover:underline"
                     >
                       {event.title}
+                    </Link>
+                  </>
+                ) : event.type === "video" ? (
+                  <>
+                    <Badge label="動画" color={VIDEO_COLOR} />
+                    <Link
+                      href={`/songs/${event.trackId}`}
+                      className="text-foreground hover:underline"
+                    >
+                      {event.trackTitle}（{event.videoLabel}）
                     </Link>
                   </>
                 ) : (

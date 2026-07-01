@@ -1,7 +1,12 @@
 import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { generateCalendarGrid } from "@/lib/calendarUtils";
-import { BIRTHDAY_COLOR, LIVE_COLOR, RELEASE_COLOR } from "@/lib/constants";
+import {
+  BIRTHDAY_COLOR,
+  LIVE_COLOR,
+  RELEASE_COLOR,
+  VIDEO_COLOR,
+} from "@/lib/constants";
 import { getTodayInAppTimeZone } from "@/lib/dateParams";
 
 function calendarEventColor(event: CalendarEvent): string {
@@ -12,6 +17,8 @@ function calendarEventColor(event: CalendarEvent): string {
       return LIVE_COLOR;
     case "release":
       return RELEASE_COLOR;
+    case "video":
+      return VIDEO_COLOR;
     default:
       return event.eventTypeColor;
   }

@@ -62,7 +62,12 @@ function createSharedReadLoader<TArgs extends unknown[], TResult>(
 
 const loadTopPageData = createSharedReadLoader(
   ["orbit", "top-page-data"],
-  [ORBIT_CACHE_TAGS.top, ORBIT_CACHE_TAGS.lives, ORBIT_CACHE_TAGS.releases],
+  [
+    ORBIT_CACHE_TAGS.top,
+    ORBIT_CACHE_TAGS.lives,
+    ORBIT_CACHE_TAGS.releases,
+    ORBIT_CACHE_TAGS.songs,
+  ],
   async (year: number, month: number, day: number) =>
     withOrbitReadClient(async (supabase) => {
       return getTopPageContent(
@@ -70,6 +75,7 @@ const loadTopPageData = createSharedReadLoader(
         createMemberRepository(supabase),
         createLiveRepository(supabase),
         createReleaseRepository(supabase),
+        createSongRepository(supabase),
         year,
         month,
         day
