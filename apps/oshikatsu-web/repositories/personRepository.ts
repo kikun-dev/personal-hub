@@ -5,11 +5,38 @@ import type {
   PersonOption,
   PersonRole,
   EnsurePersonRoleEntry,
+  PersonCreditedSong,
 } from "@/types/person";
 import { PERSON_ROLE_VALUES } from "@/types/person";
+import type { SongCreditRole } from "@/types/song";
 import { RepositoryError } from "@/types/errors";
 
 const MAX_DISPLAY_NAME_LENGTH = 100;
+
+// 楽曲クレジットの表示順（作詞→作曲→編曲→振付）
+const CREDIT_ROLE_ORDER: SongCreditRole[] = [
+  "lyrics",
+  "music",
+  "arrangement",
+  "choreography",
+];
+
+function isSongCreditRole(value: string): value is SongCreditRole {
+  return (CREDIT_ROLE_ORDER as string[]).includes(value);
+}
+
+type CreditedTrackGroup = { id: string; name_ja: string; color: string };
+
+type CreditedTrackRel = {
+  id: string;
+  title: string;
+  orbit_groups: CreditedTrackGroup | CreditedTrackGroup[] | null;
+};
+
+type CreditedSongRow = {
+  credit_role: string;
+  orbit_tracks: CreditedTrackRel | CreditedTrackRel[] | null;
+};
 
 type PersonRow = {
   id: string;
@@ -67,6 +94,63 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       }
 
       return ((data as PersonOptionRow[] | null) ?? []).map(mapPersonOption);
+    },
+
+    async findCreditedSongsByPersonId(personId: string) {
+      const { data, error } = await supabase
+        .from("orbit_track_credits")
+        .select("credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color))")
+        .eq("person_id", personId);
+      if (error) {
+        throw new RepositoryError("担当楽曲の取得に失敗しました", error);
+      }
+
+      // 楽曲単位で担当(role)を集約する（グループは楽曲自身のグループ）
+      const byTrack = new Map<
+        string,
+        {
+          trackId: string;
+          trackTitle: string;
+          groupId: string;
+          groupNameJa: string;
+          groupColor: string;
+          roles: Set<SongCreditRole>;
+        }
+      >();
+      for (const row of (data as CreditedSongRow[] | null) ?? []) {
+        const track = Array.isArray(row.orbit_tracks)
+          ? row.orbit_tracks[0]
+          : row.orbit_tracks;
+        if (!track) continue;
+        const trackGroup = Array.isArray(track.orbit_groups)
+          ? track.orbit_groups[0]
+          : track.orbit_groups;
+        const entry = byTrack.get(track.id) ?? {
+          trackId: track.id,
+          trackTitle: track.title,
+          groupId: trackGroup?.id ?? "",
+          groupNameJa: trackGroup?.name_ja ?? "",
+          groupColor: trackGroup?.color ?? "",
+          roles: new Set<SongCreditRole>(),
+        };
+        if (isSongCreditRole(row.credit_role)) {
+          entry.roles.add(row.credit_role);
+        }
+        byTrack.set(track.id, entry);
+      }
+
+      const songs: PersonCreditedSong[] = Array.from(byTrack.values()).map(
+        (entry) => ({
+          trackId: entry.trackId,
+          trackTitle: entry.trackTitle,
+          groupId: entry.groupId,
+          groupNameJa: entry.groupNameJa,
+          groupColor: entry.groupColor,
+          roles: CREDIT_ROLE_ORDER.filter((role) => entry.roles.has(role)),
+        })
+      );
+      songs.sort((a, b) => a.trackTitle.localeCompare(b.trackTitle, "ja"));
+      return songs;
     },
 
     async ensurePeopleRoles(entries: EnsurePersonRoleEntry[]) {
