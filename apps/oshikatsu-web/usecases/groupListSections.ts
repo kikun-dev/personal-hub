@@ -185,7 +185,44 @@ export function createSongSections(
     }));
 }
 
-// 制作陣詳細の担当楽曲を、楽曲一覧と同じグループ順で区切る（楽曲内はタイトル順）
+// グループ内の担当楽曲を「リリース日昇順 → 曲順昇順」で並べる（古い曲・若い曲順を上に）
+function comparePersonCreditedSongs(
+  a: PersonCreditedSong,
+  b: PersonCreditedSong
+): number {
+  // リリース未紐付け（リリース日なし）はグループ内の末尾へ
+  const aHasDate = a.firstReleaseDate !== null;
+  const bHasDate = b.firstReleaseDate !== null;
+  if (aHasDate !== bHasDate) {
+    return aHasDate ? -1 : 1;
+  }
+
+  if (a.firstReleaseDate && b.firstReleaseDate) {
+    // 代表（初出）リリース日の昇順（古いものを上に）
+    const dateCompare = a.firstReleaseDate.localeCompare(b.firstReleaseDate);
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+    // 同一リリース日は代表リリースごとにまとめる（決定的順序）
+    const aReleaseId = a.representativeReleaseId ?? "";
+    const bReleaseId = b.representativeReleaseId ?? "";
+    if (aReleaseId !== bReleaseId) {
+      return aReleaseId.localeCompare(bReleaseId);
+    }
+    // 同一リリース内は曲順の昇順
+    const aTrack = a.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
+    const bTrack = b.representativeTrackNumber ?? Number.MAX_SAFE_INTEGER;
+    if (aTrack !== bTrack) {
+      return aTrack - bTrack;
+    }
+  }
+
+  // 最終タイブレーク（決定的にするためタイトル順）
+  return a.trackTitle.localeCompare(b.trackTitle, "ja");
+}
+
+// 制作陣詳細の担当楽曲を、楽曲一覧と同じグループ順で区切る。
+// グループ内はリリース日昇順→曲順昇順。
 export function createPersonCreditedSongSections(
   songs: PersonCreditedSong[],
   groups: Group[]
@@ -200,9 +237,7 @@ export function createPersonCreditedSongSections(
 
   return toSortedSectionBuckets(buckets).map((bucket) => ({
     group: bucket.group,
-    songs: [...bucket.items].sort((a, b) =>
-      a.trackTitle.localeCompare(b.trackTitle, "ja")
-    ),
+    songs: [...bucket.items].sort(comparePersonCreditedSongs),
   }));
 }
 

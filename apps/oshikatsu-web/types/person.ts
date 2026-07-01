@@ -62,6 +62,10 @@ export type PersonCreditedSong = {
   groupNameJa: string;
   groupColor: string;
   roles: SongCreditRole[];
+  // 並び替え用：初出（最古）リリースの日付・識別子と、そのリリースでの曲順
+  firstReleaseDate: string | null;
+  representativeReleaseId: string | null;
+  representativeTrackNumber: number | null;
 };
 
 export type PersonDetail = {
