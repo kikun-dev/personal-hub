@@ -2,6 +2,10 @@ import type { Group } from "@/types/group";
 import type { MemberListItem, MemberSection } from "@/types/member";
 import type { ReleaseListItem, ReleaseSection } from "@/types/release";
 import type { SongListItem, SongSection } from "@/types/song";
+import type {
+  PersonCreditedSong,
+  PersonCreditedSongSection,
+} from "@/types/person";
 
 type SectionBucket<TItem> = {
   group: Group | null;
@@ -179,6 +183,27 @@ export function createSongSections(
       group: bucket.group,
       songs: [...bucket.items].sort(compareSongsForListOrder),
     }));
+}
+
+// 制作陣詳細の担当楽曲を、楽曲一覧と同じグループ順で区切る（楽曲内はタイトル順）
+export function createPersonCreditedSongSections(
+  songs: PersonCreditedSong[],
+  groups: Group[]
+): PersonCreditedSongSection[] {
+  const buckets = createSectionBuckets<PersonCreditedSong>(groups);
+
+  songs.forEach((song) => {
+    const bucket =
+      buckets.get(song.groupId) ?? getOrCreateUngroupedBucket(buckets);
+    bucket.items.push(song);
+  });
+
+  return toSortedSectionBuckets(buckets).map((bucket) => ({
+    group: bucket.group,
+    songs: [...bucket.items].sort((a, b) =>
+      a.trackTitle.localeCompare(b.trackTitle, "ja")
+    ),
+  }));
 }
 
 export function createReleaseSections(

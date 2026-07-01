@@ -1,4 +1,5 @@
 import type { SongCreditRole } from "@/types/song";
+import type { Group } from "@/types/group";
 
 export const PERSON_ROLE_VALUES = [
   "lyrics",
@@ -57,10 +58,19 @@ export type UpdatePersonInput = CreatePersonInput;
 export type PersonCreditedSong = {
   trackId: string;
   trackTitle: string;
+  groupId: string;
+  groupNameJa: string;
+  groupColor: string;
   roles: SongCreditRole[];
 };
 
 export type PersonDetail = {
   person: Person;
   creditedSongs: PersonCreditedSong[];
+};
+
+// 楽曲一覧と同じく、担当楽曲をグループごとに区切って表示するためのセクション
+export type PersonCreditedSongSection = {
+  group: Group | null;
+  songs: PersonCreditedSong[];
 };

@@ -1,7 +1,9 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { createPersonRepository } from "@/repositories/personRepository";
+import { createGroupRepository } from "@/repositories/groupRepository";
 import { getPersonDetail } from "@/usecases/getPersonDetail";
+import { createPersonCreditedSongSections } from "@/usecases/groupListSections";
 import { PersonDetail } from "@/components/people/PersonDetail";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
@@ -18,11 +20,19 @@ export default async function PersonDetailPage({
   const { id } = await params;
   const supabase = await createClient();
   const repo = createPersonRepository(supabase);
-  const detail = await getPersonDetail(repo, id);
+  const [detail, groups] = await Promise.all([
+    getPersonDetail(repo, id),
+    createGroupRepository(supabase).findAll(),
+  ]);
 
   if (!detail) {
     notFound();
   }
+
+  const sections = createPersonCreditedSongSections(
+    detail.creditedSongs,
+    groups
+  );
 
   return (
     <div className="space-y-4">
@@ -37,7 +47,7 @@ export default async function PersonDetailPage({
           <Button variant="secondary">編集</Button>
         </PendingLink>
       </div>
-      <PersonDetail detail={detail} />
+      <PersonDetail person={detail.person} sections={sections} />
     </div>
   );
 }
