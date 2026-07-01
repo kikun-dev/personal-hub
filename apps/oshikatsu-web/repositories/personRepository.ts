@@ -6,7 +6,10 @@ import type {
   PersonRole,
   EnsurePersonRoleEntry,
 } from "@/types/person";
+import { PERSON_ROLE_VALUES } from "@/types/person";
 import { RepositoryError } from "@/types/errors";
+
+const MAX_DISPLAY_NAME_LENGTH = 100;
 
 type PersonRow = {
   id: string;
@@ -72,6 +75,16 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       for (const entry of entries) {
         const name = entry.displayName.trim();
         if (!name) continue;
+        // データ境界での防御的検証（本体バリデーションと同じ上限/許可値）
+        if (name.length > MAX_DISPLAY_NAME_LENGTH) {
+          throw new RepositoryError(
+            "担当者名は100文字以内で入力してください",
+            null
+          );
+        }
+        if (!(PERSON_ROLE_VALUES as readonly string[]).includes(entry.role)) {
+          throw new RepositoryError("担当(role)が不正です", null);
+        }
         const set = rolesByName.get(name) ?? new Set<PersonRole>();
         set.add(entry.role);
         rolesByName.set(name, set);

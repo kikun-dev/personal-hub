@@ -34,6 +34,7 @@ import {
   dedupeUnregisteredStaff,
   type UnregisteredStaff,
 } from "@/lib/staffRoles";
+import { validateRelease } from "@/usecases/validateRelease";
 
 type FormBonusVideo = CreateReleaseBonusVideoInput & { _key: string };
 type FormTrackLink = CreateReleaseTrackLinkInput & { _key: string };
@@ -482,6 +483,14 @@ export function ReleaseForm({
     update("artworkPersonName", "");
   };
 
+  const applyValidationErrors = (validationErrors: ValidationError[]) => {
+    const errorMap: Record<string, string> = {};
+    for (const err of validationErrors) {
+      errorMap[err.field] = err.message;
+    }
+    setErrors(errorMap);
+  };
+
   // アートワーク担当で、artwork role の候補に無い名前を未登録として集める
   const collectUnregisteredStaff = (): UnregisteredStaff[] =>
     dedupeUnregisteredStaff(
@@ -519,11 +528,7 @@ export function ReleaseForm({
         imageFile
       );
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        applyValidationErrors(result.errors);
       }
     } finally {
       setIsSubmitting(false);
@@ -533,6 +538,14 @@ export function ReleaseForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
+    const validationErrors = validateRelease(
+      toSubmitValues(values, frontSpecialLabel !== null)
+    );
+    if (validationErrors.length > 0) {
+      applyValidationErrors(validationErrors);
+      return;
+    }
     const unregistered = collectUnregisteredStaff();
     if (unregistered.length > 0) {
       setUnregisteredStaff(unregistered);

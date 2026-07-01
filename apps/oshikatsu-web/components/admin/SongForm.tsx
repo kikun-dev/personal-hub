@@ -25,6 +25,7 @@ import {
   dedupeUnregisteredStaff,
   type UnregisteredStaff,
 } from "@/lib/staffRoles";
+import { validateSong } from "@/usecases/validateSong";
 import {
   DndContext,
   KeyboardSensor,
@@ -659,17 +660,21 @@ export function SongForm({
     return dedupeUnregisteredStaff(entries);
   };
 
+  const applyValidationErrors = (validationErrors: ValidationError[]) => {
+    const errorMap: Record<string, string> = {};
+    for (const err of validationErrors) {
+      errorMap[err.field] = err.message;
+    }
+    setErrors(errorMap);
+  };
+
   const proceedSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
     try {
       const result = await onSubmit(toSubmitValues(values));
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        applyValidationErrors(result.errors);
       }
     } finally {
       setIsSubmitting(false);
@@ -678,6 +683,12 @@ export function SongForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
+    const validationErrors = validateSong(toSubmitValues(values));
+    if (validationErrors.length > 0) {
+      applyValidationErrors(validationErrors);
+      return;
+    }
     const unregistered = collectUnregisteredStaff();
     if (unregistered.length > 0) {
       setUnregisteredStaff(unregistered);
