@@ -5,6 +5,7 @@ export const SONG_LABELS = [
   "title",
   "senbatsu",
   "under",
+  "all",
   "solo",
   "unit",
   "generation",
@@ -16,6 +17,7 @@ export const SONG_LABEL_LABELS: Record<SongLabel, string> = {
   title: "表題",
   senbatsu: "選抜",
   under: "アンダー",
+  all: "全員",
   solo: "ソロ",
   unit: "ユニット",
   generation: "期別",
@@ -34,7 +36,7 @@ export function isSongLabel(value: string): value is SongLabel {
   return (SONG_LABELS as readonly string[]).includes(value);
 }
 
-// 表示用ラベル文字列（under はグループ別、generation は「N期生曲」）
+// 表示用ラベル文字列（under はグループ別、generation は「N期生」）
 export function formatSongLabel(
   label: SongLabel | null,
   generation: string | null,
@@ -42,7 +44,7 @@ export function formatSongLabel(
 ): string | null {
   if (!label) return null;
   if (label === "under") return UNDER_LABEL_BY_GROUP[groupNameJa] ?? "アンダー";
-  if (label === "generation") return generation ? `${generation}期生曲` : "期別";
+  if (label === "generation") return generation ? `${generation}期生` : "期別";
   return SONG_LABEL_LABELS[label];
 }
 
