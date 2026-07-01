@@ -8,13 +8,11 @@ import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/formatters";
 import { resolveReleaseImageSrc } from "@/lib/releaseImage";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
-import { formatSongLabel } from "@/types/song";
+import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
 
 type ReleaseDetailProps = {
   release: Release;
 };
-
-const SONG_LABEL_COLOR = "#8B5CF6";
 
 export function ReleaseDetail({ release }: ReleaseDetailProps) {
   const artworkSrc = resolveReleaseImageSrc(release.artworkPath);
@@ -98,7 +96,7 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
                     >
                       {track.trackTitle}
                     </Link>
-                    {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+                    {labelText && <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />}
                   </div>
                 </li>
               );

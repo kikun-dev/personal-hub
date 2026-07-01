@@ -21,6 +21,8 @@ export const SONG_LABEL_LABELS: Record<SongLabel, string> = {
   generation: "期別",
 };
 
+export const SONG_LABEL_BADGE_COLOR = "#8B5CF6";
+
 // アンダーのグループ別表示名（内部値は under 共通）
 const UNDER_LABEL_BY_GROUP: Record<string, string> = {
   乃木坂46: "アンダー",

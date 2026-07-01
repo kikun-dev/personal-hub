@@ -1,12 +1,10 @@
 import { PendingLink } from "@/components/ui/PendingLink";
 import { Badge } from "@/components/ui/Badge";
 import type { SongListItem } from "@/types/song";
-import { formatSongLabel } from "@/types/song";
+import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
 import { formatReleaseTypeLabel } from "@/types/release";
 import { formatDate } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
-
-const SONG_LABEL_COLOR = "#8B5CF6";
 
 type SongCardProps = {
   showGroupName?: boolean;
@@ -37,7 +35,7 @@ export function SongCard({ showGroupName = true, song }: SongCardProps) {
               )}
             </span>
           )}
-          {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+          {labelText && <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />}
         </div>
       )}
       {song.firstReleaseDate && (
