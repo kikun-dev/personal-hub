@@ -1,4 +1,5 @@
 import type { Group } from "@/types/group";
+import type { SongLabel } from "@/types/song";
 
 export const RELEASE_TYPES = [
   "single",
@@ -81,6 +82,9 @@ export type ReleaseTrack = {
   trackId: string;
   trackTitle: string;
   trackNumber: number;
+  groupNameJa: string;
+  label: SongLabel | null;
+  generation: string | null;
 };
 
 export type Release = {

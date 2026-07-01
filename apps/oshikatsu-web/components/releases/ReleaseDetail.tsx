@@ -4,13 +4,17 @@ import type { Release } from "@/types/release";
 import { RELEASE_TYPE_LABELS, ordinalNumber } from "@/types/release";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/formatters";
 import { resolveReleaseImageSrc } from "@/lib/releaseImage";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
+import { formatSongLabel } from "@/types/song";
 
 type ReleaseDetailProps = {
   release: Release;
 };
+
+const SONG_LABEL_COLOR = "#8B5CF6";
 
 export function ReleaseDetail({ release }: ReleaseDetailProps) {
   const artworkSrc = resolveReleaseImageSrc(release.artworkPath);
@@ -77,19 +81,28 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
         <Card>
           <h2 className="mb-3 text-sm font-medium text-foreground/70">収録曲</h2>
           <ol className="space-y-2">
-            {release.tracks.map((track) => (
-              <li key={track.trackId} className="rounded-lg border border-foreground/10 p-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-foreground/60">{track.trackNumber}.</span>
-                  <Link
-                    href={`/songs/${track.trackId}`}
-                    className="flex-1 text-sm text-foreground hover:underline"
-                  >
-                    {track.trackTitle}
-                  </Link>
-                </div>
-              </li>
-            ))}
+            {release.tracks.map((track) => {
+              const labelText = formatSongLabel(
+                track.label,
+                track.generation,
+                track.groupNameJa
+              );
+
+              return (
+                <li key={track.trackId} className="rounded-lg border border-foreground/10 p-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-sm text-foreground/60">{track.trackNumber}.</span>
+                    <Link
+                      href={`/songs/${track.trackId}`}
+                      className="min-w-0 flex-1 text-sm text-foreground hover:underline"
+                    >
+                      {track.trackTitle}
+                    </Link>
+                    {labelText && <Badge label={labelText} color={SONG_LABEL_COLOR} />}
+                  </div>
+                </li>
+              );
+            })}
           </ol>
         </Card>
       )}
