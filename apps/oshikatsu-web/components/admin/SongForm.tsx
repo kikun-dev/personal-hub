@@ -10,8 +10,15 @@ import type {
   CreateSongCostumeInput,
   CreateSongFormationRowInput,
   CreateSongReleaseLinkInput,
+  CreateSongVideoInput,
+  SongVideoType,
 } from "@/types/song";
-import { SONG_LABELS, SONG_LABEL_LABELS } from "@/types/song";
+import {
+  SONG_LABELS,
+  SONG_LABEL_LABELS,
+  SONG_VIDEO_TYPE_LABELS,
+  formatSongVideoTypeLabel,
+} from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
@@ -109,6 +116,21 @@ function withCostumeKey(costume: CreateSongCostumeInput): FormCostume {
   return { ...costume, _key: crypto.randomUUID() };
 }
 
+function createEmptyVideoInput(): CreateSongVideoInput {
+  return {
+    url: "",
+    publishedOn: "",
+    memo: "",
+  };
+}
+
+function createEmptyVideos(): Record<SongVideoType, CreateSongVideoInput> {
+  return {
+    dance_practice: createEmptyVideoInput(),
+    call: createEmptyVideoInput(),
+  };
+}
+
 function getDefaultValues(): FormValues {
   return {
     title: "",
@@ -129,6 +151,7 @@ function getDefaultValues(): FormValues {
       publishedOn: "",
       memo: "",
     },
+    videos: createEmptyVideos(),
     costumes: [],
   };
 }
@@ -142,7 +165,19 @@ function toFormValues(input: CreateSongInput): FormValues {
   };
 }
 
-function toSubmitValues(values: FormValues): CreateSongInput {
+function normalizeVideosForGroup(
+  videos: Record<SongVideoType, CreateSongVideoInput>,
+  groupNameJa: string
+): Record<SongVideoType, CreateSongVideoInput> {
+  return {
+    dance_practice: formatSongVideoTypeLabel("dance_practice", groupNameJa)
+      ? videos.dance_practice
+      : createEmptyVideoInput(),
+    call: videos.call,
+  };
+}
+
+function toSubmitValues(values: FormValues, groupNameJa: string): CreateSongInput {
   return {
     title: values.title,
     groupId: values.groupId,
@@ -162,6 +197,7 @@ function toSubmitValues(values: FormValues): CreateSongInput {
     })),
     centerMemberIds: values.centerMemberIds,
     mv: values.mv,
+    videos: normalizeVideosForGroup(values.videos, groupNameJa),
     costumes: values.costumes.map((costume) => ({
       stylistName: costume.stylistName,
       imagePath: costume.imagePath,
@@ -185,6 +221,14 @@ function hasMvValue(mv: CreateSongInput["mv"]): boolean {
       mv.location.trim() ||
       mv.publishedOn.trim() ||
       mv.memo.trim()
+  );
+}
+
+function hasVideoValue(video: CreateSongVideoInput): boolean {
+  return Boolean(
+    video.url.trim() ||
+      video.publishedOn.trim() ||
+      video.memo.trim()
   );
 }
 
@@ -253,6 +297,14 @@ export function SongForm({
   const [isMvFormVisible, setIsMvFormVisible] = useState<boolean>(
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
+  const [visibleVideos, setVisibleVideos] = useState<Record<SongVideoType, boolean>>(
+    () => ({
+      dance_practice: Boolean(
+        initialValues && hasVideoValue(initialValues.videos.dance_practice)
+      ),
+      call: Boolean(initialValues && hasVideoValue(initialValues.videos.call)),
+    })
+  );
   const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
   // フォーメーション列内の並べ替え用センサー（ポインタ＋キーボード）
   const sensors = useSensors(
@@ -268,6 +320,16 @@ export function SongForm({
   const memberNameById = useMemo(
     () => new Map<string, string>(members.map((member) => [member.id, member.nameJa])),
     [members]
+  );
+
+  const selectedGroup = useMemo(
+    () => groups.find((group) => group.id === values.groupId) ?? null,
+    [groups, values.groupId]
+  );
+  const selectedGroupNameJa = selectedGroup?.nameJa ?? "";
+  const dancePracticeVideoLabel = formatSongVideoTypeLabel(
+    "dance_practice",
+    selectedGroupNameJa
   );
 
   const memberGroupIdsById = useMemo(
@@ -389,10 +451,9 @@ export function SongForm({
 
   // 期の候補はグループの maxGeneration から 1..max（メンバー登録と同じ供給源）
   const generationOptions = useMemo(() => {
-    const group = groups.find((g) => g.id === values.groupId);
-    const max = group?.maxGeneration ?? 0;
+    const max = selectedGroup?.maxGeneration ?? 0;
     return Array.from({ length: max }, (_, i) => String(i + 1));
-  }, [groups, values.groupId]);
+  }, [selectedGroup]);
 
   const updateLabel = (label: string) => {
     setValues((prev) => ({
@@ -639,6 +700,50 @@ export function SongForm({
     setIsMvFormVisible(false);
   };
 
+  const setVideoFormVisible = (type: SongVideoType, isVisible: boolean) => {
+    setVisibleVideos((prev) => ({ ...prev, [type]: isVisible }));
+  };
+
+  const updateVideo = (
+    type: SongVideoType,
+    field: keyof CreateSongVideoInput,
+    value: string
+  ) => {
+    setValues((prev) => ({
+      ...prev,
+      videos: {
+        ...prev.videos,
+        [type]: {
+          ...prev.videos[type],
+          [field]: value,
+        },
+      },
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`videos.${type}.${field}`];
+      return next;
+    });
+  };
+
+  const clearVideo = (type: SongVideoType) => {
+    setValues((prev) => ({
+      ...prev,
+      videos: {
+        ...prev.videos,
+        [type]: createEmptyVideoInput(),
+      },
+    }));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next[`videos.${type}.url`];
+      delete next[`videos.${type}.publishedOn`];
+      delete next[`videos.${type}.memo`];
+      return next;
+    });
+    setVideoFormVisible(type, false);
+  };
+
   // 各制作陣フィールドで、担当(role)の候補に無い名前を未登録として集める
   const collectUnregisteredStaff = (): UnregisteredStaff[] => {
     const entries: UnregisteredStaff[] = [];
@@ -672,7 +777,7 @@ export function SongForm({
     setIsSubmitting(true);
     setErrors({});
     try {
-      const result = await onSubmit(toSubmitValues(values));
+      const result = await onSubmit(toSubmitValues(values, selectedGroupNameJa));
       if (result.errors) {
         applyValidationErrors(result.errors);
       }
@@ -683,8 +788,9 @@ export function SongForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const submitValues = toSubmitValues(values, selectedGroupNameJa);
     // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
-    const validationErrors = validateSong(toSubmitValues(values));
+    const validationErrors = validateSong(submitValues);
     if (validationErrors.length > 0) {
       applyValidationErrors(validationErrors);
       return;
@@ -717,6 +823,63 @@ export function SongForm({
     setUnregisteredStaff([]);
     setIsSubmitting(false);
     await proceedSubmit();
+  };
+
+  const renderVideoForm = (type: SongVideoType, label: string) => {
+    const video = values.videos[type];
+    const isVisible = visibleVideos[type];
+
+    return (
+      <div key={type}>
+        <div className="mb-2 flex items-center justify-between">
+          <label className="text-sm font-medium text-foreground/70">{label}</label>
+          {!isVisible ? (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setVideoFormVisible(type, true)}
+            >
+              + {label}を追加
+            </Button>
+          ) : (
+            <Button type="button" variant="ghost" onClick={() => clearVideo(type)}>
+              {label}を削除
+            </Button>
+          )}
+        </div>
+
+        {isVisible ? (
+          <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
+            <Input
+              id={`song-video-${type}-url`}
+              label={`${label}リンク`}
+              value={video.url}
+              onChange={(e) => updateVideo(type, "url", e.target.value)}
+              error={errors[`videos.${type}.url`]}
+            />
+            <Input
+              id={`song-video-${type}-published-on`}
+              label="配信日"
+              type="date"
+              value={video.publishedOn}
+              onChange={(e) => updateVideo(type, "publishedOn", e.target.value)}
+              error={errors[`videos.${type}.publishedOn`]}
+            />
+            <Textarea
+              id={`song-video-${type}-memo`}
+              label={`${label}メモ`}
+              value={video.memo}
+              onChange={(e) => updateVideo(type, "memo", e.target.value)}
+              error={errors[`videos.${type}.memo`]}
+            />
+          </div>
+        ) : (
+          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+            {label}は未設定です
+          </p>
+        )}
+      </div>
+    );
   };
 
   return (
@@ -1198,6 +1361,12 @@ export function SongForm({
             MVは未設定です
           </p>
         )}
+      </div>
+
+      <div className="space-y-4">
+        {dancePracticeVideoLabel &&
+          renderVideoForm("dance_practice", dancePracticeVideoLabel)}
+        {renderVideoForm("call", SONG_VIDEO_TYPE_LABELS.call)}
       </div>
 
       <div>

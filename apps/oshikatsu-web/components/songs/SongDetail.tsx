@@ -1,4 +1,4 @@
-import type { Song } from "@/types/song";
+import type { Song, SongVideo } from "@/types/song";
 import { Fragment } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
@@ -6,7 +6,11 @@ import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
-import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
+import {
+  SONG_LABEL_BADGE_COLOR,
+  formatSongLabel,
+  formatSongVideoTypeLabel,
+} from "@/types/song";
 
 const CREDIT_LABELS: Record<string, string> = {
   lyrics: "作詞",
@@ -20,6 +24,14 @@ export function SongDetail({ song }: { song: Song }) {
   const releaseLabelText = song.representativeReleaseType
     ? formatReleaseTypeLabel(song.representativeReleaseType, song.representativeNumbering)
     : null;
+  const displayVideos = song.videos
+    .map((video) => ({
+      video,
+      label: formatSongVideoTypeLabel(video.type, song.groupNameJa),
+    }))
+    .filter((item): item is { video: SongVideo; label: string } =>
+      Boolean(item.label)
+    );
   const creditsByRole = new Map<string, string[]>();
   for (const credit of song.credits) {
     const list = creditsByRole.get(credit.role) ?? [];
@@ -109,6 +121,41 @@ export function SongDetail({ song }: { song: Song }) {
               </>
             )}
           </dl>
+        </Card>
+      )}
+
+      {displayVideos.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">関連動画</h2>
+          <div className="space-y-4">
+            {displayVideos.map(({ video, label }) => (
+              <dl
+                key={video.type}
+                className="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-foreground/10 pb-4 text-sm last:border-0 last:pb-0"
+              >
+                <dt className="text-foreground/50">種別</dt>
+                <dd className="text-foreground">{label}</dd>
+                <dt className="text-foreground/50">リンク</dt>
+                <dd className="break-all text-blue-500">
+                  <a href={video.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                    {video.url}
+                  </a>
+                </dd>
+                {video.publishedOn && (
+                  <>
+                    <dt className="text-foreground/50">配信日</dt>
+                    <dd className="text-foreground">{formatDate(video.publishedOn)}</dd>
+                  </>
+                )}
+                {video.memo && (
+                  <>
+                    <dt className="text-foreground/50">メモ</dt>
+                    <dd className="whitespace-pre-wrap text-foreground">{video.memo}</dd>
+                  </>
+                )}
+              </dl>
+            ))}
+          </div>
         </Card>
       )}
 

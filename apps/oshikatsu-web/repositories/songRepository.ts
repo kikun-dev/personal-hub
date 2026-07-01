@@ -8,12 +8,14 @@ import type {
   SongFormationMember,
   SongFormationRow,
   SongMv,
+  SongVideo,
+  SongVideoType,
   SongReleaseLink,
   CreateSongInput,
   SongListItem,
   SongLabel,
 } from "@/types/song";
-import { isSongLabel } from "@/types/song";
+import { SONG_VIDEO_TYPES, isSongLabel, isSongVideoType } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
 import type { ReleaseType } from "@/types/release";
 import { RepositoryError } from "@/types/errors";
@@ -125,6 +127,13 @@ type MvRow = {
 // 単一オブジェクト（リレーションが無ければ null）で返る。配列で返る場合にも備える。
 type MvRel = MvRow | MvRow[] | null;
 
+type VideoRow = {
+  video_type: string;
+  video_url: string;
+  published_on: string | null;
+  memo: string | null;
+};
+
 type CostumeRow = {
   id: string;
   image_path: string;
@@ -144,6 +153,7 @@ type SongRow = {
   orbit_track_credits?: TrackCreditRow[];
   orbit_track_formations?: FormationRel;
   orbit_track_mvs?: MvRel;
+  orbit_track_videos?: VideoRow[];
   orbit_track_costumes?: CostumeRow[];
 };
 
@@ -252,6 +262,12 @@ const SONG_DETAIL_SELECT = `
     published_on,
     memo,
     orbit_people(display_name)
+  ),
+  orbit_track_videos(
+    video_type,
+    video_url,
+    published_on,
+    memo
   ),
   orbit_track_costumes(
     id,
@@ -401,6 +417,28 @@ function mapMv(mvRel: MvRel | undefined): SongMv | null {
   };
 }
 
+function videoTypeRank(type: SongVideoType): number {
+  const index = SONG_VIDEO_TYPES.indexOf(type);
+  return index === -1 ? SONG_VIDEO_TYPES.length : index;
+}
+
+function mapVideos(rows: VideoRow[] | undefined): SongVideo[] {
+  if (!rows) return [];
+
+  return rows
+    .map((row) => {
+      if (!isSongVideoType(row.video_type)) return null;
+      return {
+        type: row.video_type,
+        url: row.video_url,
+        publishedOn: row.published_on,
+        memo: row.memo,
+      } satisfies SongVideo;
+    })
+    .filter((video): video is SongVideo => Boolean(video))
+    .sort((a, b) => videoTypeRank(a.type) - videoTypeRank(b.type));
+}
+
 function mapCostumes(rows: CostumeRow[] | undefined): SongCostume[] {
   if (!rows) return [];
 
@@ -456,6 +494,7 @@ function mapSong(row: SongRow): Song {
     credits: mapCredits(row.orbit_track_credits),
     formationRows: mapFormation(row.orbit_track_formations),
     mv: mapMv(row.orbit_track_mvs),
+    videos: mapVideos(row.orbit_track_videos),
     costumes: mapCostumes(row.orbit_track_costumes),
   };
 }
@@ -614,6 +653,26 @@ function parseMv(input: CreateSongInput["mv"]): {
   };
 }
 
+function parseVideos(input: CreateSongInput["videos"]): Array<{
+  type: SongVideoType;
+  url: string;
+  publishedOn: string;
+  memo: string;
+}> {
+  return SONG_VIDEO_TYPES.flatMap((type) => {
+    const video = input[type];
+    const url = video.url.trim();
+    if (!url) return [];
+
+    return [{
+      type,
+      url,
+      publishedOn: video.publishedOn.trim(),
+      memo: video.memo.trim(),
+    }];
+  });
+}
+
 function parseCostumes(input: CreateSongInput["costumes"]): Array<{
   stylistName: string;
   imagePath: string;
@@ -762,6 +821,7 @@ export function createSongRepository(
       const credits = parseCredits(input);
       const formationRows = parseFormationRows(input.formationRows);
       const mv = parseMv(input.mv);
+      const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
       const { data: trackId, error: rpcError } = await supabase.rpc("create_track_with_relations_v2", {
@@ -773,6 +833,7 @@ export function createSongRepository(
         p_credits: credits,
         p_formation_rows: formationRows,
         p_mv: mv,
+        p_videos: videos,
         p_costumes: costumes,
       });
 
@@ -815,6 +876,7 @@ export function createSongRepository(
       const credits = parseCredits(input);
       const formationRows = parseFormationRows(input.formationRows);
       const mv = parseMv(input.mv);
+      const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
       const { error: rpcError } = await supabase.rpc("update_track_with_relations_v2", {
@@ -827,6 +889,7 @@ export function createSongRepository(
         p_credits: credits,
         p_formation_rows: formationRows,
         p_mv: mv,
+        p_videos: videos,
         p_costumes: costumes,
       });
 
