@@ -1,0 +1,44 @@
+import type { PersonOption, PersonRole } from "@/types/person";
+
+// 未登録（＝当該 role の候補に無い）制作陣。
+// isExisting は「別 role で人物が既に存在する（＝担当を追加するだけ）」を表す。
+export type UnregisteredStaff = {
+  displayName: string;
+  role: PersonRole;
+  isExisting: boolean;
+};
+
+// 指定 role の候補に含まれない名前を「未登録（要追加）」として返す。
+export function findUnregisteredStaff(
+  people: PersonOption[],
+  role: PersonRole,
+  names: string[]
+): UnregisteredStaff[] {
+  const result: UnregisteredStaff[] = [];
+  for (const raw of names) {
+    const name = raw.trim();
+    if (!name) continue;
+    const hasRole = people.some(
+      (person) => person.displayName === name && person.roles.includes(role)
+    );
+    if (hasRole) continue;
+    const isExisting = people.some((person) => person.displayName === name);
+    result.push({ displayName: name, role, isExisting });
+  }
+  return result;
+}
+
+// (displayName, role) の重複を除去する。
+export function dedupeUnregisteredStaff(
+  entries: UnregisteredStaff[]
+): UnregisteredStaff[] {
+  const seen = new Set<string>();
+  const result: UnregisteredStaff[] = [];
+  for (const entry of entries) {
+    const key = JSON.stringify([entry.displayName, entry.role]);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(entry);
+  }
+  return result;
+}

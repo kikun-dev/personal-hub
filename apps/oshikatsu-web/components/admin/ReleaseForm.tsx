@@ -23,10 +23,19 @@ import { Button } from "@/components/ui/Button";
 import {
   RELEASE_IMAGE_ALLOWED_MIME_TYPES,
   RELEASE_IMAGE_MAX_BYTES,
+  RELEASE_IMAGE_PATH_PREFIX,
   isAllowedReleaseImageMimeType,
   resolveReleaseImageSrc,
 } from "@/lib/releaseImage";
 import { computeLiveRosterAction } from "@/app/(authenticated)/admin/lives/rosterAction";
+import { ensureStaffRolesAction } from "@/app/(authenticated)/admin/staffRolesAction";
+import { UnregisteredStaffModal } from "@/components/admin/UnregisteredStaffModal";
+import {
+  findUnregisteredStaff,
+  dedupeUnregisteredStaff,
+  type UnregisteredStaff,
+} from "@/lib/staffRoles";
+import { validateRelease } from "@/usecases/validateRelease";
 
 type FormBonusVideo = CreateReleaseBonusVideoInput & { _key: string };
 type FormTrackLink = CreateReleaseTrackLinkInput & { _key: string };
@@ -174,6 +183,9 @@ export function ReleaseForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unregisteredStaff, setUnregisteredStaff] = useState<UnregisteredStaff[]>(
+    []
+  );
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [pendingArtworkFile, setPendingArtworkFile] = useState<File | null>(null);
   const [pendingArtworkPreviewUrl, setPendingArtworkPreviewUrl] = useState<string | null>(null);
@@ -472,8 +484,21 @@ export function ReleaseForm({
     update("artworkPersonName", "");
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const applyValidationErrors = (validationErrors: ValidationError[]) => {
+    const errorMap: Record<string, string> = {};
+    for (const err of validationErrors) {
+      errorMap[err.field] = err.message;
+    }
+    setErrors(errorMap);
+  };
+
+  // アートワーク担当で、artwork role の候補に無い名前を未登録として集める
+  const collectUnregisteredStaff = (): UnregisteredStaff[] =>
+    dedupeUnregisteredStaff(
+      findUnregisteredStaff(people, "artwork", [values.artworkPersonName])
+    );
+
+  const proceedSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
     let imageFile: ReleaseImageUploadInput | undefined;
@@ -504,16 +529,57 @@ export function ReleaseForm({
         imageFile
       );
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        applyValidationErrors(result.errors);
       }
     } finally {
       setIsSubmitting(false);
       setIsUploadingImage(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）。
+    // アップロード予定ファイルがある場合、実際の artworkPath は保存アクションの
+    // アップロード後に設定されるため、事前検証では暫定の有効 path を入れる。
+    const submitValues = toSubmitValues(values, frontSpecialLabel !== null);
+    const validationInput =
+      pendingArtworkFile && !submitValues.artworkPath
+        ? { ...submitValues, artworkPath: `${RELEASE_IMAGE_PATH_PREFIX}pending` }
+        : submitValues;
+    const validationErrors = validateRelease(validationInput);
+    if (validationErrors.length > 0) {
+      applyValidationErrors(validationErrors);
+      return;
+    }
+    const unregistered = collectUnregisteredStaff();
+    if (unregistered.length > 0) {
+      setUnregisteredStaff(unregistered);
+      return;
+    }
+    await proceedSubmit();
+  };
+
+  const handleConfirmUnregistered = async () => {
+    setIsSubmitting(true);
+    try {
+      await ensureStaffRolesAction(
+        unregisteredStaff.map((entry) => ({
+          displayName: entry.displayName,
+          role: entry.role,
+        }))
+      );
+    } catch {
+      setErrors((prev) => ({
+        ...prev,
+        _form: "制作陣の追加に失敗しました。時間をおいて再度お試しください",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+    setUnregisteredStaff([]);
+    setIsSubmitting(false);
+    await proceedSubmit();
   };
 
   const savedArtworkSrc = resolveReleaseImageSrc(values.artworkPath || null);
@@ -928,6 +994,13 @@ export function ReleaseForm({
             ? "登録する"
             : "更新する"}
       </Button>
+
+      <UnregisteredStaffModal
+        entries={unregisteredStaff}
+        isSubmitting={isSubmitting}
+        onConfirm={handleConfirmUnregistered}
+        onCancel={() => setUnregisteredStaff([])}
+      />
     </form>
   );
 }

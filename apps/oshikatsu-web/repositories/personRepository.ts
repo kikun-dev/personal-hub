@@ -1,7 +1,15 @@
 import type { SupabaseClient } from "@personal-hub/supabase";
 import type { PersonRepository } from "@/types/repositories";
-import type { Person, PersonOption, PersonRole } from "@/types/person";
+import type {
+  Person,
+  PersonOption,
+  PersonRole,
+  EnsurePersonRoleEntry,
+} from "@/types/person";
+import { PERSON_ROLE_VALUES } from "@/types/person";
 import { RepositoryError } from "@/types/errors";
+
+const MAX_DISPLAY_NAME_LENGTH = 100;
 
 type PersonRow = {
   id: string;
@@ -59,6 +67,78 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       }
 
       return ((data as PersonOptionRow[] | null) ?? []).map(mapPersonOption);
+    },
+
+    async ensurePeopleRoles(entries: EnsurePersonRoleEntry[]) {
+      // display_name ごとに付与する role を集約する
+      const rolesByName = new Map<string, Set<PersonRole>>();
+      for (const entry of entries) {
+        const name = entry.displayName.trim();
+        if (!name) continue;
+        // データ境界での防御的検証（本体バリデーションと同じ上限/許可値）
+        if (name.length > MAX_DISPLAY_NAME_LENGTH) {
+          throw new RepositoryError(
+            "担当者名は100文字以内で入力してください",
+            null
+          );
+        }
+        if (!(PERSON_ROLE_VALUES as readonly string[]).includes(entry.role)) {
+          throw new RepositoryError("担当(role)が不正です", null);
+        }
+        const set = rolesByName.get(name) ?? new Set<PersonRole>();
+        set.add(entry.role);
+        rolesByName.set(name, set);
+      }
+      const names = Array.from(rolesByName.keys());
+      if (names.length === 0) return;
+
+      const { data, error } = await supabase
+        .from("orbit_people")
+        .select("id, display_name, roles")
+        .in("display_name", names);
+      if (error) {
+        throw new RepositoryError("制作陣の担当情報の取得に失敗しました", error);
+      }
+      const existing = new Map(
+        (
+          (data as Array<{
+            id: string;
+            display_name: string;
+            roles: string[] | null;
+          }>) ?? []
+        ).map((row) => [row.display_name, row] as const)
+      );
+
+      const toInsert: Array<{ display_name: string; roles: PersonRole[] }> = [];
+      for (const [name, roleSet] of rolesByName) {
+        const person = existing.get(name);
+        if (!person) {
+          toInsert.push({ display_name: name, roles: Array.from(roleSet) });
+          continue;
+        }
+        // 名前一致は既存人物に不足 role を追加する（重複は付けない）
+        const merged = new Set<PersonRole>((person.roles ?? []) as PersonRole[]);
+        const before = merged.size;
+        for (const role of roleSet) merged.add(role);
+        if (merged.size === before) continue;
+
+        const { error: updateError } = await supabase
+          .from("orbit_people")
+          .update({ roles: Array.from(merged) })
+          .eq("id", person.id);
+        if (updateError) {
+          throw new RepositoryError("制作陣の担当追加に失敗しました", updateError);
+        }
+      }
+
+      if (toInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from("orbit_people")
+          .insert(toInsert);
+        if (insertError) {
+          throw new RepositoryError("制作陣の登録に失敗しました", insertError);
+        }
+      }
     },
 
     async findById(id) {

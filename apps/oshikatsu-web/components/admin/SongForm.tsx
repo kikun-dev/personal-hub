@@ -18,6 +18,14 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
+import { ensureStaffRolesAction } from "@/app/(authenticated)/admin/staffRolesAction";
+import { UnregisteredStaffModal } from "@/components/admin/UnregisteredStaffModal";
+import {
+  findUnregisteredStaff,
+  dedupeUnregisteredStaff,
+  type UnregisteredStaff,
+} from "@/lib/staffRoles";
+import { validateSong } from "@/usecases/validateSong";
 import {
   DndContext,
   KeyboardSensor,
@@ -232,6 +240,9 @@ export function SongForm({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [unregisteredStaff, setUnregisteredStaff] = useState<UnregisteredStaff[]>(
+    []
+  );
   const [releaseQueries, setReleaseQueries] = useState<Record<string, string>>({});
   const [creditQueries, setCreditQueries] = useState<Record<CreditFieldKey, string>>({
     lyricsPeople: "",
@@ -628,23 +639,84 @@ export function SongForm({
     setIsMvFormVisible(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // 各制作陣フィールドで、担当(role)の候補に無い名前を未登録として集める
+  const collectUnregisteredStaff = (): UnregisteredStaff[] => {
+    const entries: UnregisteredStaff[] = [];
+    for (const { key, role } of CREDIT_FIELDS) {
+      entries.push(
+        ...findUnregisteredStaff(people, role, splitPeople(values[key]))
+      );
+    }
+    entries.push(
+      ...findUnregisteredStaff(people, "mv_director", [values.mv.directorName])
+    );
+    entries.push(
+      ...findUnregisteredStaff(
+        people,
+        "costume",
+        values.costumes.map((costume) => costume.stylistName)
+      )
+    );
+    return dedupeUnregisteredStaff(entries);
+  };
+
+  const applyValidationErrors = (validationErrors: ValidationError[]) => {
+    const errorMap: Record<string, string> = {};
+    for (const err of validationErrors) {
+      errorMap[err.field] = err.message;
+    }
+    setErrors(errorMap);
+  };
+
+  const proceedSubmit = async () => {
     setIsSubmitting(true);
     setErrors({});
-
     try {
       const result = await onSubmit(toSubmitValues(values));
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        applyValidationErrors(result.errors);
       }
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
+    const validationErrors = validateSong(toSubmitValues(values));
+    if (validationErrors.length > 0) {
+      applyValidationErrors(validationErrors);
+      return;
+    }
+    const unregistered = collectUnregisteredStaff();
+    if (unregistered.length > 0) {
+      setUnregisteredStaff(unregistered);
+      return;
+    }
+    await proceedSubmit();
+  };
+
+  const handleConfirmUnregistered = async () => {
+    setIsSubmitting(true);
+    try {
+      await ensureStaffRolesAction(
+        unregisteredStaff.map((entry) => ({
+          displayName: entry.displayName,
+          role: entry.role,
+        }))
+      );
+    } catch {
+      setErrors((prev) => ({
+        ...prev,
+        _form: "制作陣の追加に失敗しました。時間をおいて再度お試しください",
+      }));
+      setIsSubmitting(false);
+      return;
+    }
+    setUnregisteredStaff([]);
+    setIsSubmitting(false);
+    await proceedSubmit();
   };
 
   return (
@@ -1196,6 +1268,13 @@ export function SongForm({
       <Button type="submit" disabled={isSubmitting} className="w-full">
         {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}
       </Button>
+
+      <UnregisteredStaffModal
+        entries={unregisteredStaff}
+        isSubmitting={isSubmitting}
+        onConfirm={handleConfirmUnregistered}
+        onCancel={() => setUnregisteredStaff([])}
+      />
     </form>
   );
 }
