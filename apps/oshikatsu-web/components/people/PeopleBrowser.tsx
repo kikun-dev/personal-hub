@@ -5,8 +5,11 @@ import Link from "next/link";
 import type { Person, PersonRole } from "@/types/person";
 import { PERSON_ROLE_LABELS, PERSON_ROLE_VALUES } from "@/types/person";
 
+// 一覧表示・検索に必要なフィールドのみ（biography 等はクライアントへ渡さない）
+type PersonListRow = Pick<Person, "id" | "displayName" | "dateOfBirth" | "roles">;
+
 type PeopleBrowserProps = {
-  people: Person[];
+  people: PersonListRow[];
 };
 
 export function PeopleBrowser({ people }: PeopleBrowserProps) {

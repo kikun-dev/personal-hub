@@ -19,7 +19,14 @@ export default async function PeoplePage() {
         </Link>
       </div>
 
-      <PeopleBrowser people={people} />
+      <PeopleBrowser
+        people={people.map(({ id, displayName, dateOfBirth, roles }) => ({
+          id,
+          displayName,
+          dateOfBirth,
+          roles,
+        }))}
+      />
     </div>
   );
 }
