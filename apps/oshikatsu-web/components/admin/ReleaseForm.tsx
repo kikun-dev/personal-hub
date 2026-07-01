@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/Button";
 import {
   RELEASE_IMAGE_ALLOWED_MIME_TYPES,
   RELEASE_IMAGE_MAX_BYTES,
+  RELEASE_IMAGE_PATH_PREFIX,
   isAllowedReleaseImageMimeType,
   resolveReleaseImageSrc,
 } from "@/lib/releaseImage";
@@ -538,10 +539,15 @@ export function ReleaseForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
-    const validationErrors = validateRelease(
-      toSubmitValues(values, frontSpecialLabel !== null)
-    );
+    // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）。
+    // アップロード予定ファイルがある場合、実際の artworkPath は保存アクションの
+    // アップロード後に設定されるため、事前検証では暫定の有効 path を入れる。
+    const submitValues = toSubmitValues(values, frontSpecialLabel !== null);
+    const validationInput =
+      pendingArtworkFile && !submitValues.artworkPath
+        ? { ...submitValues, artworkPath: `${RELEASE_IMAGE_PATH_PREFIX}pending` }
+        : submitValues;
+    const validationErrors = validateRelease(validationInput);
     if (validationErrors.length > 0) {
       applyValidationErrors(validationErrors);
       return;
