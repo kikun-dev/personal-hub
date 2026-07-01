@@ -6,12 +6,29 @@ import { SongForm } from "@/components/admin/SongForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { getSongFormMasterData } from "@/usecases/readOrbitAdminData";
 import { updateSongAction, deleteSongAction } from "./actions";
-import type { CreateSongInput } from "@/types/song";
+import type {
+  CreateSongInput,
+  CreateSongVideoInput,
+  Song,
+  SongVideoType,
+} from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 
 type EditSongPageProps = {
   params: Promise<{ id: string }>;
 };
+
+function getVideoInitialValue(
+  song: Song,
+  type: SongVideoType
+): CreateSongVideoInput {
+  const video = song.videos.find((item) => item.type === type);
+  return {
+    url: video?.url ?? "",
+    publishedOn: video?.publishedOn ?? "",
+    memo: video?.memo ?? "",
+  };
+}
 
 export default async function EditSongPage({
   params,
@@ -66,6 +83,10 @@ export default async function EditSongPage({
       location: song.mv?.location ?? "",
       publishedOn: song.mv?.publishedOn ?? "",
       memo: song.mv?.memo ?? "",
+    },
+    videos: {
+      dance_practice: getVideoInitialValue(song, "dance_practice"),
+      call: getVideoInitialValue(song, "call"),
     },
     costumes: song.costumes.map((costume) => ({
       stylistName: costume.stylistName,

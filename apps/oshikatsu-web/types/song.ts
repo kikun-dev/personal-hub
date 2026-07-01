@@ -87,6 +87,41 @@ export type SongMv = {
   memo: string | null;
 };
 
+export const SONG_VIDEO_TYPES = ["dance_practice", "call"] as const;
+
+export type SongVideoType = (typeof SONG_VIDEO_TYPES)[number];
+
+export const SONG_VIDEO_TYPE_LABELS: Record<SongVideoType, string> = {
+  dance_practice: "Dance Practice/ひなリハ",
+  call: "コール動画",
+};
+
+const DANCE_PRACTICE_LABEL_BY_GROUP: Record<string, string> = {
+  櫻坂46: "Dance Practice",
+  日向坂46: "ひなリハ",
+};
+
+export function isSongVideoType(value: string): value is SongVideoType {
+  return (SONG_VIDEO_TYPES as readonly string[]).includes(value);
+}
+
+export function formatSongVideoTypeLabel(
+  type: SongVideoType,
+  groupNameJa: string
+): string | null {
+  if (type === "dance_practice") {
+    return DANCE_PRACTICE_LABEL_BY_GROUP[groupNameJa] ?? null;
+  }
+  return SONG_VIDEO_TYPE_LABELS[type];
+}
+
+export type SongVideo = {
+  type: SongVideoType;
+  url: string;
+  publishedOn: string | null;
+  memo: string | null;
+};
+
 export type SongCostume = {
   id: string;
   stylistName: string;
@@ -110,6 +145,7 @@ export type Song = {
   credits: SongCredit[];
   formationRows: SongFormationRow[];
   mv: SongMv | null;
+  videos: SongVideo[];
   costumes: SongCostume[];
 };
 
@@ -159,6 +195,12 @@ export type CreateSongMvInput = {
   memo: string;
 };
 
+export type CreateSongVideoInput = {
+  url: string;
+  publishedOn: string;
+  memo: string;
+};
+
 export type CreateSongCostumeInput = {
   stylistName: string;
   imagePath: string;
@@ -179,6 +221,7 @@ export type CreateSongInput = {
   // フォーメーション1列目のセンター（Wセンター可・最大2人）
   centerMemberIds: string[];
   mv: CreateSongMvInput;
+  videos: Record<SongVideoType, CreateSongVideoInput>;
   costumes: CreateSongCostumeInput[];
 };
 

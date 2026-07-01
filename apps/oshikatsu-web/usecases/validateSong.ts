@@ -1,8 +1,9 @@
 import type {
   CreateSongInput,
   SongCreditRole,
+  SongVideoType,
 } from "@/types/song";
-import { isSongLabel } from "@/types/song";
+import { SONG_VIDEO_TYPE_LABELS, SONG_VIDEO_TYPES, isSongLabel } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { isValidDateString, isValidHttpUrl } from "@/lib/validation";
 import { isTrackCostumeImagePath } from "@/lib/releaseImage";
@@ -14,6 +15,47 @@ const CREDIT_ROLE_FIELDS: Array<{ role: SongCreditRole; field: keyof CreateSongI
   { role: "arrangement", field: "arrangementPeople" },
   { role: "choreography", field: "choreographyPeople" },
 ];
+
+function validateRelatedVideo(
+  errors: ValidationError[],
+  type: SongVideoType,
+  video: CreateSongInput["videos"][SongVideoType]
+): void {
+  const label = SONG_VIDEO_TYPE_LABELS[type];
+  const fieldPrefix = `videos.${type}`;
+  const hasAnyField =
+    video.url.trim() ||
+    video.publishedOn.trim() ||
+    video.memo.trim();
+
+  if (!hasAnyField) return;
+
+  if (!video.url.trim()) {
+    errors.push({
+      field: `${fieldPrefix}.url`,
+      message: `${label}がある場合はリンクを入力してください`,
+    });
+  } else if (!isValidHttpUrl(video.url.trim())) {
+    errors.push({
+      field: `${fieldPrefix}.url`,
+      message: `${label}リンクは有効なhttp(s) URLを入力してください`,
+    });
+  }
+
+  if (video.publishedOn && !isValidDateString(video.publishedOn)) {
+    errors.push({
+      field: `${fieldPrefix}.publishedOn`,
+      message: `${label}配信日はYYYY-MM-DD形式で入力してください`,
+    });
+  }
+
+  if (video.memo.length > 1000) {
+    errors.push({
+      field: `${fieldPrefix}.memo`,
+      message: `${label}メモは1000文字以内で入力してください`,
+    });
+  }
+}
 
 export function validateSong(input: CreateSongInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -212,6 +254,10 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
         message: "MVメモは1000文字以内で入力してください",
       });
     }
+  }
+
+  for (const type of SONG_VIDEO_TYPES) {
+    validateRelatedVideo(errors, type, input.videos[type]);
   }
 
   for (let i = 0; i < input.costumes.length; i++) {
