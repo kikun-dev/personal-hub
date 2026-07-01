@@ -8,11 +8,47 @@ import { Badge } from "@/components/ui/Badge";
 import { formatDate } from "@/lib/formatters";
 import { resolveReleaseImageSrc } from "@/lib/releaseImage";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
-import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
+import {
+  SONG_LABEL_BADGE_COLOR,
+  formatSongLabel,
+  formatSongVideoTypeLabel,
+} from "@/types/song";
 
 type ReleaseDetailProps = {
   release: Release;
 };
+
+type TrackVideoBadge = {
+  label: string;
+  color: string;
+};
+
+const VIDEO_BADGE_COLORS = {
+  mv: "#EF4444",
+  dancePractice: "#0EA5E9",
+  call: "#10B981",
+} as const;
+
+function getTrackVideoBadges(track: Release["tracks"][number]): TrackVideoBadge[] {
+  const badges: TrackVideoBadge[] = [];
+
+  if (track.hasMv) {
+    badges.push({ label: "MV", color: VIDEO_BADGE_COLORS.mv });
+  }
+
+  if (track.hasDancePracticeVideo) {
+    const label = formatSongVideoTypeLabel("dance_practice", track.groupNameJa);
+    if (label) {
+      badges.push({ label, color: VIDEO_BADGE_COLORS.dancePractice });
+    }
+  }
+
+  if (track.hasCallVideo) {
+    badges.push({ label: "コール", color: VIDEO_BADGE_COLORS.call });
+  }
+
+  return badges;
+}
 
 export function ReleaseDetail({ release }: ReleaseDetailProps) {
   const artworkSrc = resolveReleaseImageSrc(release.artworkPath);
@@ -85,6 +121,7 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
                 track.generation,
                 track.groupNameJa
               );
+              const videoBadges = getTrackVideoBadges(track);
 
               return (
                 <li key={track.trackId} className="rounded-lg border border-foreground/10 p-3">
@@ -92,11 +129,18 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
                     <span className="text-sm text-foreground/60">{track.trackNumber}.</span>
                     <Link
                       href={`/songs/${track.trackId}`}
-                      className="min-w-0 flex-1 text-sm text-foreground hover:underline"
+                      className="min-w-0 flex-1 basis-40 text-sm text-foreground hover:underline"
                     >
                       {track.trackTitle}
                     </Link>
                     {labelText && <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />}
+                    {videoBadges.map((badge) => (
+                      <Badge
+                        key={`${track.trackId}-${badge.label}`}
+                        label={badge.label}
+                        color={badge.color}
+                      />
+                    ))}
                   </div>
                 </li>
               );

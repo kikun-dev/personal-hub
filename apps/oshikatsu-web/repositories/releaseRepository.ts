@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   Release,
   CreateReleaseInput,
+  ReleaseTrack,
   ReleaseType,
   ReleaseListItem,
   ReleaseOption,
@@ -16,7 +17,7 @@ import {
   getManualFrontSpecialSelectionLabel,
   isSakurazakaEightEra,
 } from "@/lib/selectionPositionRules";
-import { isSongLabel, type SongLabel } from "@/types/song";
+import { isSongLabel, isSongVideoType, type SongLabel } from "@/types/song";
 
 type ReleaseGroupRow =
   | {
@@ -72,24 +73,27 @@ type ReleaseMemberPositionRow = {
   is_hiatus: boolean;
 };
 
+type TrackMvRow = {
+  id: string;
+};
+
+type TrackVideoRow = {
+  video_type: string;
+};
+
+type ReleaseTrackRel = {
+  id: string;
+  title: string;
+  label: string | null;
+  generation: string | null;
+  orbit_groups: ReleaseGroupRow;
+  orbit_track_mvs?: TrackMvRow | TrackMvRow[] | null;
+  orbit_track_videos?: TrackVideoRow[] | null;
+};
+
 type ReleaseTrackRow = {
   track_number: number;
-  orbit_tracks?:
-    | {
-        id: string;
-        title: string;
-        label: string | null;
-        generation: string | null;
-        orbit_groups: ReleaseGroupRow;
-      }
-    | Array<{
-        id: string;
-        title: string;
-        label: string | null;
-        generation: string | null;
-        orbit_groups: ReleaseGroupRow;
-      }>
-    | null;
+  orbit_tracks?: ReleaseTrackRel | ReleaseTrackRel[] | null;
 };
 
 type ReleaseRow = {
@@ -170,7 +174,18 @@ const RELEASE_DETAIL_SELECT = `
   orbit_release_bonus_videos(id, edition, title, description, sort_order),
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
   orbit_release_member_positions(member_id, is_front_special, is_hiatus),
-  orbit_release_tracks(track_number, orbit_tracks(id, title, label, generation, orbit_groups(name_ja, color)))
+  orbit_release_tracks(
+    track_number,
+    orbit_tracks(
+      id,
+      title,
+      label,
+      generation,
+      orbit_groups(name_ja, color),
+      orbit_track_mvs(id),
+      orbit_track_videos(video_type)
+    )
+  )
 `;
 
 const RELEASE_PUBLIC_LIST_SELECT = `
@@ -191,6 +206,20 @@ const RELEASE_OPTION_SELECT = `
   group_id,
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
 `;
+
+function hasMv(mvRel: TrackMvRow | TrackMvRow[] | null | undefined): boolean {
+  if (!mvRel) return false;
+  return Array.isArray(mvRel) ? mvRel.length > 0 : true;
+}
+
+function hasTrackVideoType(
+  videos: TrackVideoRow[] | null | undefined,
+  type: "dance_practice" | "call"
+): boolean {
+  return (videos ?? []).some(
+    (video) => isSongVideoType(video.video_type) && video.video_type === type
+  );
+}
 
 function mapToRelease(row: ReleaseRow): Release {
   const artworkPerson = row.orbit_people
@@ -270,16 +299,15 @@ function mapToRelease(row: ReleaseRow): Release {
           groupNameJa: trackGroup?.name_ja ?? "",
           label: isSongLabel(track.label ?? "") ? (track.label as SongLabel) : null,
           generation: track.generation,
+          hasMv: hasMv(track.orbit_track_mvs),
+          hasDancePracticeVideo: hasTrackVideoType(
+            track.orbit_track_videos,
+            "dance_practice"
+          ),
+          hasCallVideo: hasTrackVideoType(track.orbit_track_videos, "call"),
         };
       })
-      .filter((item): item is {
-        trackId: string;
-        trackTitle: string;
-        trackNumber: number;
-        groupNameJa: string;
-        label: SongLabel | null;
-        generation: string | null;
-      } => Boolean(item))
+      .filter((item): item is ReleaseTrack => Boolean(item))
       .sort((a, b) => a.trackNumber - b.trackNumber),
   };
 }
