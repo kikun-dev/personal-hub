@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { getPerson } from "@/usecases/getPerson";
 import { PersonForm } from "@/components/admin/PersonForm";
@@ -16,7 +16,7 @@ export default async function EditPersonPage({
   params,
 }: EditPersonPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const person = await getPerson(createPersonRepository(supabase), id);
 
   if (!person) {
