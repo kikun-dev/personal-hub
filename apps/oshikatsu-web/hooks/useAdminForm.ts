@@ -21,7 +21,8 @@ export type UseAdminFormResult<TValues> = {
   handleSubmit: (e: React.FormEvent) => Promise<void>;
 };
 
-function toErrorMap(validationErrors: ValidationError[]): Record<string, string> {
+/** ValidationError[] をフィールド名をキーにしたエラーへ変換する。フォーム側の独自 handleSubmit からも再利用できるよう export する。 */
+export function toErrorMap(validationErrors: ValidationError[]): Record<string, string> {
   const errorMap: Record<string, string> = {};
   for (const err of validationErrors) {
     errorMap[err.field] = err.message;

@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Textarea } from "@/components/ui/Textarea";
+import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { BLOOD_TYPES, SNS_TYPES } from "@/lib/constants";
 import { calculateZodiac } from "@/lib/zodiac";
 import {
@@ -22,6 +23,8 @@ import {
   isAllowedMemberImageMimeType,
   resolveMemberImageSrc,
 } from "@/lib/memberImage";
+import { addKeyedItem, removeKeyedItem, updateKeyedItem, withGeneratedKey } from "@/lib/keyedList";
+import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
 type SnsWithKey = CreateMemberSnsInput & { _key: string };
@@ -50,11 +53,11 @@ const CIRCLED_NUMBERS = [
 ] as const;
 
 function withGroupKey(group: CreateMemberGroupInput): GroupWithKey {
-  return { ...group, _key: crypto.randomUUID() };
+  return withGeneratedKey(group);
 }
 
 function withSnsKey(sns: CreateMemberSnsInput): SnsWithKey {
-  return { ...sns, _key: crypto.randomUUID() };
+  return withGeneratedKey(sns);
 }
 
 function getDefaultValues(): FormValues {
@@ -141,11 +144,13 @@ export function MemberForm({
   groups,
   onSubmit,
 }: MemberFormProps) {
-  const [values, setValues] = useState<FormValues>(
-    () => (initialValues ? toFormValues(initialValues) : getDefaultValues())
-  );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { values, setValues, update, errors, setErrors, isSubmitting, setIsSubmitting } =
+    useAdminForm<FormValues>({
+      initialValues: () => (initialValues ? toFormValues(initialValues) : getDefaultValues()),
+      // MemberForm は画像アップロードを含む独自の handleSubmit を持つため、
+      // hook の handleSubmit は使わない（state 基盤のみ利用する）。onSubmit は未使用。
+      onSubmit: async () => ({}),
+    });
   const [isUploadingImage, setIsUploadingImage] = useState(false);
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [pendingImagePreviewUrl, setPendingImagePreviewUrl] = useState<string | null>(null);
@@ -180,32 +185,23 @@ export function MemberForm({
     }));
   };
 
-  const update = <K extends keyof FormValues>(
-    field: K,
-    value: FormValues[K]
-  ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
-    });
-  };
-
   const updateGroup = (
+    key: string,
     index: number,
     field: keyof CreateMemberGroupInput,
     value: string
   ) => {
     setValues((prev) => {
-      const newGroups = [...prev.groups];
-      newGroups[index] = { ...newGroups[index], [field]: value };
-      if (field === "groupId" && newGroups[index].generation) {
-        const options = generationOptions(value);
-        if (!options.some((option) => option.value === newGroups[index].generation)) {
-          newGroups[index].generation = "";
+      const newGroups = updateKeyedItem(prev.groups, (g) => g._key, key, (group) => {
+        const nextGroup = { ...group, [field]: value };
+        if (field === "groupId" && nextGroup.generation) {
+          const options = generationOptions(value);
+          if (!options.some((option) => option.value === nextGroup.generation)) {
+            nextGroup.generation = "";
+          }
         }
-      }
+        return nextGroup;
+      });
 
       if (field === "groupId" && index === 0) {
         return {
@@ -233,16 +229,16 @@ export function MemberForm({
   const addGroup = () => {
     setValues((prev) => ({
       ...prev,
-      groups: [
-        ...prev.groups,
-        withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
-      ],
+      groups: addKeyedItem(
+        prev.groups,
+        withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" })
+      ),
     }));
   };
 
-  const removeGroup = (index: number) => {
+  const removeGroup = (key: string, index: number) => {
     setValues((prev) => {
-      const nextGroups = prev.groups.filter((_, i) => i !== index);
+      const nextGroups = removeKeyedItem(prev.groups, (g) => g._key, key);
       if (index === 0) {
         return {
           ...prev,
@@ -256,15 +252,17 @@ export function MemberForm({
   };
 
   const updateSns = (
+    key: string,
     index: number,
     field: keyof CreateMemberSnsInput,
     value: string
   ) => {
-    setValues((prev) => {
-      const next = [...prev.sns];
-      next[index] = { ...next[index], [field]: value };
-      return { ...prev, sns: next };
-    });
+    setValues((prev) => ({
+      ...prev,
+      sns: updateKeyedItem(prev.sns, (sns) => sns._key, key, {
+        [field]: value,
+      } as Partial<SnsWithKey>),
+    }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next[`sns.${index}.${field}`];
@@ -275,17 +273,17 @@ export function MemberForm({
   const addSns = () => {
     setValues((prev) => ({
       ...prev,
-      sns: [
-        ...prev.sns,
-        withSnsKey({ snsType: "x", displayName: "", url: "", hashtag: "" }),
-      ],
+      sns: addKeyedItem(
+        prev.sns,
+        withSnsKey({ snsType: "x", displayName: "", url: "", hashtag: "" })
+      ),
     }));
   };
 
-  const removeSns = (index: number) => {
+  const removeSns = (key: string) => {
     setValues((prev) => ({
       ...prev,
-      sns: prev.sns.filter((_, i) => i !== index),
+      sns: removeKeyedItem(prev.sns, (sns) => sns._key, key),
     }));
   };
 
@@ -366,11 +364,7 @@ export function MemberForm({
 
       const result = await onSubmit(submitValues, imageFile);
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        setErrors(toErrorMap(result.errors));
       }
     } finally {
       setIsSubmitting(false);
@@ -380,11 +374,7 @@ export function MemberForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {errors._form && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-          {errors._form}
-        </p>
-      )}
+      <FormErrorBanner message={errors._form} />
 
       <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
         <h2 className="text-sm font-medium text-foreground/70">プロフィール情報</h2>
@@ -521,7 +511,7 @@ export function MemberForm({
               {values.groups.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => removeGroup(i)}
+                  onClick={() => removeGroup(groupValue._key, i)}
                   className="text-xs text-red-500 hover:text-red-600"
                 >
                   削除
@@ -535,7 +525,7 @@ export function MemberForm({
               placeholder="選択してください"
               options={groups.map((group) => ({ value: group.id, label: group.nameJa }))}
               value={groupValue.groupId}
-              onChange={(e) => updateGroup(i, "groupId", e.target.value)}
+              onChange={(e) => updateGroup(groupValue._key, i, "groupId", e.target.value)}
               error={errors[`groups.${i}.groupId`]}
             />
 
@@ -545,7 +535,7 @@ export function MemberForm({
               placeholder={groupValue.groupId ? "選択してください" : "先にグループを選択"}
               options={generationOptions(groupValue.groupId)}
               value={groupValue.generation}
-              onChange={(e) => updateGroup(i, "generation", e.target.value)}
+              onChange={(e) => updateGroup(groupValue._key, i, "generation", e.target.value)}
               error={errors[`groups.${i}.generation`]}
             />
 
@@ -555,14 +545,14 @@ export function MemberForm({
                 label="加入日"
                 type="date"
                 value={groupValue.joinedAt}
-                onChange={(e) => updateGroup(i, "joinedAt", e.target.value)}
+                onChange={(e) => updateGroup(groupValue._key, i, "joinedAt", e.target.value)}
               />
               <Input
                 id={`graduatedAt-${i}`}
                 label="卒業日"
                 type="date"
                 value={groupValue.graduatedAt}
-                onChange={(e) => updateGroup(i, "graduatedAt", e.target.value)}
+                onChange={(e) => updateGroup(groupValue._key, i, "graduatedAt", e.target.value)}
               />
             </div>
           </div>
@@ -657,7 +647,7 @@ export function MemberForm({
                 <span className="text-xs text-foreground/50">SNS {i + 1}</span>
                 <button
                   type="button"
-                  onClick={() => removeSns(i)}
+                  onClick={() => removeSns(sns._key)}
                   className="text-xs text-red-500 hover:text-red-600"
                 >
                   削除
@@ -669,14 +659,14 @@ export function MemberForm({
                 placeholder="選択してください"
                 options={SNS_TYPES.map((type) => ({ value: type.value, label: type.label }))}
                 value={sns.snsType}
-                onChange={(e) => updateSns(i, "snsType", e.target.value)}
+                onChange={(e) => updateSns(sns._key, i, "snsType", e.target.value)}
                 error={errors[`sns.${i}.snsType`]}
               />
               <Input
                 id={`snsDisplayName-${i}`}
                 label="表示名"
                 value={sns.displayName}
-                onChange={(e) => updateSns(i, "displayName", e.target.value)}
+                onChange={(e) => updateSns(sns._key, i, "displayName", e.target.value)}
                 error={errors[`sns.${i}.displayName`]}
               />
               <Input
@@ -684,7 +674,7 @@ export function MemberForm({
                 label="URL"
                 type="url"
                 value={sns.url}
-                onChange={(e) => updateSns(i, "url", e.target.value)}
+                onChange={(e) => updateSns(sns._key, i, "url", e.target.value)}
                 error={errors[`sns.${i}.url`]}
               />
               <Input
@@ -692,7 +682,7 @@ export function MemberForm({
                 label="ハッシュタグ"
                 placeholder="#example"
                 value={sns.hashtag}
-                onChange={(e) => updateSns(i, "hashtag", e.target.value)}
+                onChange={(e) => updateSns(sns._key, i, "hashtag", e.target.value)}
                 error={errors[`sns.${i}.hashtag`]}
               />
             </div>
