@@ -195,6 +195,8 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
     sns: (row.orbit_member_sns ?? [])
       .map((sns) => ({
         id: sns.id,
+        // DB 上の sns_type 列は string。SnsType のドメイン制約は入力境界
+        //（フォームの選択肢と validateMember）でのみ保証されるため as で絞り込む。
         snsType: sns.sns_type as SnsType,
         displayName: sns.display_name,
         url: sns.url,
