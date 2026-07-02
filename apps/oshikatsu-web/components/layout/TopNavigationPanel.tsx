@@ -3,16 +3,25 @@
 import { usePathname } from "next/navigation";
 import { Card } from "@/components/ui/Card";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { TOP_NAV_ITEMS, isNavigationItemActive } from "@/lib/navigation";
+import {
+  TOP_NAV_ITEMS,
+  filterNavItemsForRole,
+  isNavigationItemActive,
+} from "@/lib/navigation";
 
-export function TopNavigationPanel() {
+type TopNavigationPanelProps = {
+  isAdmin: boolean;
+};
+
+export function TopNavigationPanel({ isAdmin }: TopNavigationPanelProps) {
   const pathname = usePathname();
+  const navItems = filterNavItemsForRole(TOP_NAV_ITEMS, isAdmin);
 
   return (
     <Card className="sticky top-6">
       <h2 className="text-sm font-medium text-foreground/70">ナビゲーション</h2>
       <nav className="mt-3 flex flex-col gap-2">
-        {TOP_NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <PendingLink
             key={item.href}
             href={item.href}

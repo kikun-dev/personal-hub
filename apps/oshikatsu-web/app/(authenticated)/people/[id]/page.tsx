@@ -8,6 +8,7 @@ import { PersonDetail } from "@/components/people/PersonDetail";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { APP_ROUTES } from "@/lib/routes";
 
 type PersonDetailPageProps = {
@@ -24,6 +25,8 @@ export default async function PersonDetailPage({
     getPersonDetail(repo, id),
     createGroupRepository(supabase).findAll(),
   ]);
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   if (!detail) {
     notFound();
@@ -43,9 +46,11 @@ export default async function PersonDetailPage({
         >
           ← 制作陣一覧
         </ListBackButton>
-        <PendingLink href={`/people/${id}/edit`} feedback="global">
-          <Button variant="secondary">編集</Button>
-        </PendingLink>
+        {isAdmin && (
+          <PendingLink href={`/people/${id}/edit`} feedback="global">
+            <Button variant="secondary">編集</Button>
+          </PendingLink>
+        )}
       </div>
       <PersonDetail person={detail.person} sections={sections} />
     </div>
