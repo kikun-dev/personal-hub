@@ -8,6 +8,7 @@ import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
 } from "@/lib/dateParams";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { getTopPageData } from "@/usecases/readOrbitData";
 
 type TopPageProps = {
@@ -36,6 +37,8 @@ export default async function TopPage({ searchParams }: TopPageProps) {
 
   const { monthEvents, selectedDateEvents, onThisDayEvents } =
     await getTopPageData(year, month, day);
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_13rem]">
@@ -75,7 +78,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
       </div>
 
       <aside className="hidden lg:block">
-        <TopNavigationPanel />
+        <TopNavigationPanel isAdmin={isAdmin} />
       </aside>
     </div>
   );

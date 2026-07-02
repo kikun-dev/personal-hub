@@ -10,9 +10,10 @@ type PersonListRow = Pick<Person, "id" | "displayName" | "dateOfBirth" | "roles"
 
 type PeopleBrowserProps = {
   people: PersonListRow[];
+  isAdmin: boolean;
 };
 
-export function PeopleBrowser({ people }: PeopleBrowserProps) {
+export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
   const [query, setQuery] = useState("");
   const [role, setRole] = useState<PersonRole | "">("");
 
@@ -62,7 +63,9 @@ export function PeopleBrowser({ people }: PeopleBrowserProps) {
               <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
               <th className="pb-2 pr-4 font-medium text-foreground/70">生年月日</th>
               <th className="pb-2 pr-4 font-medium text-foreground/70">担当</th>
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+              {isAdmin && (
+                <th className="pb-2 font-medium text-foreground/70">操作</th>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -95,14 +98,16 @@ export function PeopleBrowser({ people }: PeopleBrowserProps) {
                     )}
                   </div>
                 </td>
-                <td className="py-2">
-                  <Link
-                    href={`/people/${person.id}/edit`}
-                    className="text-sm text-blue-500 hover:underline"
-                  >
-                    編集
-                  </Link>
-                </td>
+                {isAdmin && (
+                  <td className="py-2">
+                    <Link
+                      href={`/people/${person.id}/edit`}
+                      className="text-sm text-blue-500 hover:underline"
+                    >
+                      編集
+                    </Link>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

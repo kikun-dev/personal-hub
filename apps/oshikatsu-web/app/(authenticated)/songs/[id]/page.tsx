@@ -3,6 +3,7 @@ import { SongDetail } from "@/components/songs/SongDetail";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { APP_ROUTES } from "@/lib/routes";
 import { getSongDetailPageData } from "@/usecases/readOrbitData";
 
@@ -13,6 +14,8 @@ type SongDetailPageProps = {
 export default async function SongDetailPage({ params }: SongDetailPageProps) {
   const { id } = await params;
   const song = await getSongDetailPageData(id);
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   if (!song) {
     notFound();
@@ -27,9 +30,11 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
         >
           ← 楽曲一覧
         </ListBackButton>
-        <PendingLink href={`/admin/songs/${song.id}/edit`} feedback="global">
-          <Button variant="secondary">編集</Button>
-        </PendingLink>
+        {isAdmin && (
+          <PendingLink href={`/admin/songs/${song.id}/edit`} feedback="global">
+            <Button variant="secondary">編集</Button>
+          </PendingLink>
+        )}
       </div>
       <SongDetail song={song} />
     </div>
