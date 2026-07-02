@@ -1,3 +1,4 @@
+import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type { LiveRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { asWritableClient } from "@/lib/asWritableClient";
@@ -6,10 +7,7 @@ import type {
   Live,
   LiveListItem,
   LiveOption,
-  LivePerformance,
   LiveType,
-  SetlistItem,
-  VenuePerformanceSummary,
 } from "@/types/live";
 import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
@@ -17,99 +15,6 @@ import {
   compareByGenerationThenName,
   pickMembershipGeneration,
 } from "@/lib/memberOrder";
-
-type GroupRel = { name_ja: string; color: string } | { name_ja: string; color: string }[] | null;
-type MemberRel = { name_ja: string } | { name_ja: string }[] | null;
-type VenueRel =
-  | { name: string; prefecture: string | null }
-  | { name: string; prefecture: string | null }[]
-  | null;
-
-type PerformerGroupRow = {
-  group_id: string;
-  orbit_groups: GroupRel;
-};
-
-type PerformerMemberGroupRow = {
-  group_id: string;
-  generation: string | null;
-};
-
-type PerformerMemberRel =
-  | {
-      name_ja: string;
-      name_kana: string;
-      orbit_member_groups: PerformerMemberGroupRow[] | null;
-    }
-  | {
-      name_ja: string;
-      name_kana: string;
-      orbit_member_groups: PerformerMemberGroupRow[] | null;
-    }[]
-  | null;
-
-type PerformerMemberRow = {
-  member_id: string;
-  orbit_members: PerformerMemberRel;
-};
-
-type AbsenceRow = {
-  member_id: string;
-  note: string | null;
-  orbit_members: MemberRel;
-};
-
-type TrackRel = { title: string } | { title: string }[] | null;
-
-type SetlistItemMemberRow = {
-  member_id: string;
-  is_center: boolean;
-  sort_order: number;
-  orbit_members: MemberRel;
-};
-
-type SetlistItemRow = {
-  position: number;
-  item_type: string;
-  track_id: string | null;
-  song_title: string | null;
-  note: string | null;
-  performance_style: string | null;
-  orbit_tracks: TrackRel;
-  orbit_setlist_item_members: SetlistItemMemberRow[] | null;
-};
-
-type PerformanceRow = {
-  id: string;
-  venue_id: string | null;
-  performance_date: string | null;
-  doors_open_at: string | null;
-  starts_at: string | null;
-  has_streaming: boolean;
-  has_live_viewing: boolean;
-  ticket_info: string | null;
-  seat_info: string | null;
-  sort_order: number;
-  orbit_venues: VenueRel;
-  orbit_live_performance_absences: AbsenceRow[] | null;
-  orbit_setlist_items: SetlistItemRow[] | null;
-};
-
-type LiveRow = {
-  id: string;
-  name: string;
-  live_type: LiveType;
-  description: string | null;
-  orbit_live_performer_groups: PerformerGroupRow[] | null;
-  orbit_live_performer_members: PerformerMemberRow[] | null;
-  orbit_live_performances: PerformanceRow[] | null;
-};
-
-function pickFirst<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
-  if (Array.isArray(value)) return value.length > 0 ? value[0] : null;
-  return value;
-}
 
 const DETAIL_SELECT = `
   id,
@@ -142,10 +47,33 @@ const DETAIL_SELECT = `
       orbit_setlist_item_members(member_id, is_center, sort_order, orbit_members(name_ja))
     )
   )
-`;
+` as const;
 
-function mapPerformance(row: PerformanceRow): LivePerformance {
-  const venue = pickFirst(row.orbit_venues);
+const PUBLIC_LIST_SELECT = `
+  id,
+  name,
+  live_type,
+  orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
+  orbit_live_performances(performance_date)
+` as const;
+
+const CALENDAR_PERFORMANCE_SELECT =
+  "performance_date, live_id, orbit_lives(name)" as const;
+
+const LIVE_OPTION_SELECT = "id, name" as const;
+
+const VENUE_PERFORMANCE_SELECT = `
+  id,
+  performance_date,
+  live_id,
+  orbit_lives(name)
+` as const;
+
+type LiveRow = SelectRows<"orbit_lives", typeof DETAIL_SELECT>[number];
+type PerformanceRow = LiveRow["orbit_live_performances"][number];
+
+function mapPerformance(row: PerformanceRow): Live["performances"][number] {
+  const venue = row.orbit_venues;
   return {
     id: row.id,
     venueId: row.venue_id,
@@ -159,28 +87,28 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
     ticketInfo: row.ticket_info,
     seatInfo: row.seat_info,
     sortOrder: row.sort_order,
-    absences: (row.orbit_live_performance_absences ?? []).map((absence) => ({
+    absences: row.orbit_live_performance_absences.map((absence) => ({
       memberId: absence.member_id,
-      memberNameJa: pickFirst(absence.orbit_members)?.name_ja ?? "",
+      memberNameJa: absence.orbit_members.name_ja,
       note: absence.note,
     })),
-    setlistItems: (row.orbit_setlist_items ?? [])
-      .map((item): SetlistItem => ({
+    setlistItems: row.orbit_setlist_items
+      .map((item) => ({
         itemType: isSetlistItemType(item.item_type) ? item.item_type : "other",
         trackId: item.track_id,
-        trackTitle: pickFirst(item.orbit_tracks)?.title ?? null,
+        trackTitle: item.orbit_tracks?.title ?? null,
         songTitle: item.song_title,
         note: item.note,
         performanceStyle:
           item.performance_style && isPerformanceStyle(item.performance_style)
             ? item.performance_style
             : null,
-        members: (item.orbit_setlist_item_members ?? [])
+        members: item.orbit_setlist_item_members
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order)
           .map((member) => ({
             memberId: member.member_id,
-            memberNameJa: pickFirst(member.orbit_members)?.name_ja ?? "",
+            memberNameJa: member.orbit_members.name_ja,
             isCenter: member.is_center,
           })),
         position: item.position,
@@ -191,30 +119,31 @@ function mapPerformance(row: PerformanceRow): LivePerformance {
 
 function mapLive(row: LiveRow): Live {
   const performerGroupIds = new Set(
-    (row.orbit_live_performer_groups ?? []).map((pg) => pg.group_id)
+    row.orbit_live_performer_groups.map((pg) => pg.group_id)
   );
   return {
     id: row.id,
     name: row.name,
-    liveType: row.live_type,
+    // live_type は DB 上 string 列（CHECK 制約で許容値を保証）。LiveType は null を持たない
+    // ドメイン型のため、実行時ガード（isLiveType）を導入するとフォールバック分岐が新たに
+    // 必要になりロジックが変わってしまう。移行前も無条件 cast だったため、同じ挙動を保つ
+    // cast として残す。
+    liveType: row.live_type as LiveType,
     description: row.description,
-    performerGroups: (row.orbit_live_performer_groups ?? []).map((pg) => {
-      const group = pickFirst(pg.orbit_groups);
-      return {
-        groupId: pg.group_id,
-        groupNameJa: group?.name_ja ?? "",
-        groupColor: group?.color ?? "#6B7280",
-      };
-    }),
-    performerMembers: (row.orbit_live_performer_members ?? [])
+    performerGroups: row.orbit_live_performer_groups.map((pg) => ({
+      groupId: pg.group_id,
+      groupNameJa: pg.orbit_groups.name_ja,
+      groupColor: pg.orbit_groups.color,
+    })),
+    performerMembers: row.orbit_live_performer_members
       .map((pm) => {
-        const member = pickFirst(pm.orbit_members);
-        const memberships = member?.orbit_member_groups ?? [];
+        const member = pm.orbit_members;
+        const memberships = member.orbit_member_groups ?? [];
         // 出演グループでの期を優先しつつ、DB返却順に依存せず決定的に選ぶ
         return {
           memberId: pm.member_id,
-          memberNameJa: member?.name_ja ?? "",
-          memberNameKana: member?.name_kana ?? "",
+          memberNameJa: member.name_ja,
+          memberNameKana: member.name_kana,
           generation: pickMembershipGeneration(memberships, performerGroupIds),
         };
       })
@@ -229,7 +158,7 @@ function mapLive(row: LiveRow): Live {
         memberNameJa,
         generation,
       })),
-    performances: (row.orbit_live_performances ?? [])
+    performances: row.orbit_live_performances
       .map(mapPerformance)
       .sort((a, b) => {
         if (a.sortOrder !== b.sortOrder) return a.sortOrder - b.sortOrder;
@@ -287,47 +216,31 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
     async findPublicList() {
       const { data, error } = await supabase
         .from("orbit_lives")
-        .select(`
-          id,
-          name,
-          live_type,
-          orbit_live_performer_groups(group_id, orbit_groups(name_ja, color)),
-          orbit_live_performances(performance_date)
-        `)
+        .select(PUBLIC_LIST_SELECT)
         .order("name");
 
       if (error) {
         throw new RepositoryError("ライブ一覧の取得に失敗しました", error);
       }
 
-      type ListRow = {
-        id: string;
-        name: string;
-        live_type: LiveType;
-        orbit_live_performer_groups: PerformerGroupRow[] | null;
-        orbit_live_performances: { performance_date: string | null }[] | null;
-      };
-
-      return ((data as unknown as ListRow[]) ?? []).map((row): LiveListItem => {
-        const dates = (row.orbit_live_performances ?? [])
+      return data.map((row): LiveListItem => {
+        const dates = row.orbit_live_performances
           .map((p) => p.performance_date)
           .filter((d): d is string => Boolean(d))
           .sort((a, b) => a.localeCompare(b));
         return {
           id: row.id,
           name: row.name,
-          liveType: row.live_type,
-          performerGroups: (row.orbit_live_performer_groups ?? []).map((pg) => {
-            const group = pickFirst(pg.orbit_groups);
-            return {
-              groupId: pg.group_id,
-              groupNameJa: group?.name_ja ?? "",
-              groupColor: group?.color ?? "#6B7280",
-            };
-          }),
+          // live_type は DB 上 string 列。理由は mapLive の comment を参照。
+          liveType: row.live_type as LiveType,
+          performerGroups: row.orbit_live_performer_groups.map((pg) => ({
+            groupId: pg.group_id,
+            groupNameJa: pg.orbit_groups.name_ja,
+            groupColor: pg.orbit_groups.color,
+          })),
           firstDate: dates[0] ?? null,
           lastDate: dates.length > 0 ? dates[dates.length - 1] : null,
-          performanceCount: row.orbit_live_performances?.length ?? 0,
+          performanceCount: row.orbit_live_performances.length,
         };
       });
     },
@@ -335,39 +248,34 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
     async findCalendarPerformances() {
       const { data, error } = await supabase
         .from("orbit_live_performances")
-        .select("performance_date, live_id, orbit_lives(name)")
+        .select(CALENDAR_PERFORMANCE_SELECT)
         .not("performance_date", "is", null);
 
       if (error) {
         throw new RepositoryError("カレンダー用ライブの取得に失敗しました", error);
       }
 
-      type Row = {
-        performance_date: string;
-        live_id: string;
-        orbit_lives: { name: string } | { name: string }[] | null;
-      };
-
-      return ((data as unknown as Row[]) ?? []).map((row) => ({
+      return data.map((row) => ({
         liveId: row.live_id,
-        liveName: pickFirst(row.orbit_lives)?.name ?? "",
-        date: row.performance_date,
+        liveName: row.orbit_lives.name,
+        // performance_date は .not(..., "is", null) で非null行のみに絞っているが、生成型は
+        // 列自体のnull許容をそのまま反映するため、クエリによる絞り込みを反映した cast として
+        // 残す。
+        date: row.performance_date as string,
       }));
     },
 
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_lives")
-        .select("id, name")
+        .select(LIVE_OPTION_SELECT)
         .order("name");
 
       if (error) {
         throw new RepositoryError("ライブ候補の取得に失敗しました", error);
       }
 
-      return ((data as { id: string; name: string }[] | null) ?? []).map(
-        (row): LiveOption => ({ id: row.id, name: row.name })
-      );
+      return data.map((row): LiveOption => ({ id: row.id, name: row.name }));
     },
 
     async findById(id) {
@@ -384,18 +292,13 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
         throw new RepositoryError("ライブの取得に失敗しました", error);
       }
 
-      return mapLive(data as unknown as LiveRow);
+      return mapLive(data);
     },
 
     async findPerformancesByVenue(venueId) {
       const { data, error } = await supabase
         .from("orbit_live_performances")
-        .select(`
-          id,
-          performance_date,
-          live_id,
-          orbit_lives(name)
-        `)
+        .select(VENUE_PERFORMANCE_SELECT)
         .eq("venue_id", venueId)
         .order("performance_date", { ascending: false, nullsFirst: false });
 
@@ -403,24 +306,19 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
         throw new RepositoryError("会場の公演一覧の取得に失敗しました", error);
       }
 
-      type Row = {
-        id: string;
-        performance_date: string | null;
-        live_id: string;
-        orbit_lives: { name: string } | { name: string }[] | null;
-      };
-
-      return ((data as unknown as Row[]) ?? []).map(
-        (row): VenuePerformanceSummary => ({
-          performanceId: row.id,
-          liveId: row.live_id,
-          liveName: pickFirst(row.orbit_lives)?.name ?? "",
-          performanceDate: row.performance_date,
-        })
-      );
+      return data.map((row) => ({
+        performanceId: row.id,
+        liveId: row.live_id,
+        liveName: row.orbit_lives.name,
+        performanceDate: row.performance_date,
+      }));
     },
 
     async create(input) {
+      // upsert_orbit_live の p_id は生成型上 non-null な string になっているが、create
+      // では新規作成のため p_id: null を送る必要がある（関数は null を「新規作成」の合図
+      // として受け付ける）。生成型がこのケースを表現できない既知の制約のため、
+      // TypedSupabaseClient にせず asWritableClient の返り値（未typed）のまま呼び出す。
       const writable = asWritableClient(supabase);
       const { data, error } = await writable.rpc("upsert_orbit_live", {
         p_id: null,
@@ -439,7 +337,9 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
     },
 
     async update(id, input) {
-      const writable = asWritableClient(supabase);
+      // update では p_id に既存の非null文字列idを渡すため実ペイロードと生成型 Args が
+      // 一致する。typed client で呼び出す。
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable.rpc("upsert_orbit_live", {
         p_id: id,
         p_payload: toLivePayload(input),
@@ -449,7 +349,7 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
         throw new RepositoryError("ライブの更新に失敗しました", error);
       }
 
-      const updated = await this.findById(data as string);
+      const updated = await this.findById(data);
       if (!updated) {
         throw new RepositoryError("更新したライブの取得に失敗しました", null);
       }
