@@ -69,6 +69,10 @@ oshikatsu-web の `proxy.ts` で `requiredRole: "admin"` を指定して非 admi
 - `requiredRole` は opt-in（default: null）のため、household-web は従来どおりログイン有無のみで動作する
 - これにより読み取りは「アプリ境界ガード」、書き込みは「アプリ境界ガード + RLS」の多層になる
 
+※ Issue #221 で `requiredRole` は複数ロール許可の `allowedRoles`（oshikatsu-web は
+`["admin", "viewer"]`）とパス単位の `roleGuards`（`/admin` 配下は admin のみ）に
+置き換えた。詳細は本 ADR 末尾の「追記（2026-07-02, #221）」を参照。
+
 ## Consequences（結果・影響）
 
 ### 良い点
