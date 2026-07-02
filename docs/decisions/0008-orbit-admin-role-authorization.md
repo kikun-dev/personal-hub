@@ -171,6 +171,24 @@ WHERE email = 'target-user@example.com';
 いずれの方法でも、**設定後は対象ユーザーの再ログインが必要**
 （JWT の `app_metadata` はログイン時に発行されるため、既存セッションには反映されない）。
 
+### アプリ境界（proxy / Server Actions / ページ）のロールガード
+
+RLS と対になるアプリ境界のガードは以下の構成にする（実装は Issue #221 の後続 PR）。
+
+- **proxy（middleware）**: `requiredRole: string | null` を `allowedRoles: string[] | null` に拡張し、
+  oshikatsu-web は `allowedRoles: ["admin", "viewer"]` を指定する（service role read path は
+  RLS を通らないため、閲覧の認可は引き続きアプリ境界が担う）。
+  さらに `roleGuards`（パスプレフィックス単位の許可ロール指定）を追加し、
+  `/admin` 配下は admin のみ・非 admin はトップ（`/`）へリダイレクトする
+  （認証済みユーザーを login へ落とさない）
+- **admin 外の編集系4ルート**（`people/new`・`people/[id]/edit`・`venues/new`・`venues/[id]/edit`）:
+  動的セグメントを含み middleware のプレフィックス一致で表現しにくいため、
+  page レベルの `requireAdmin()` ガードで担保する
+- **書き込み系 Server Actions**: `lib/requireAdmin.ts`（未認証は `/login`、非 admin は `/` へ
+  リダイレクトし、認証済みクライアントを返す）に集約する。漏れても RLS が書き込みを拒否する
+- **UI 出し分け**: Header の管理メニュー・編集/削除導線は viewer に非表示にする。
+  これはコスメティックな出し分けであり、防御は上記ガードと RLS が担う
+
 ### Notes 更新
 
 - 実装: migration 046、Issue #221

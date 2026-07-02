@@ -150,7 +150,10 @@ household-web と同パターン。Repository に `userId` パラメータなし
 閲覧（SELECT）は admin/viewer 双方に許可（`public.has_orbit_read_role()`）、
 書き込み（INSERT/UPDATE/DELETE）は admin のみ（`public.is_orbit_admin()`）。
 ADR 0008 参照（Issue #213 / #221 対応済み）。
-アプリ境界でも proxy の `requiredRole: "admin"` ガードで非 admin を遮断する（service role read path は RLS を通らないため）。
+アプリ境界でも proxy のロールガードで遮断する（service role read path は RLS を通らないため）:
+アプリ全体は `allowedRoles: ["admin", "viewer"]`、`/admin` 配下は roleGuards で admin のみ、
+`people` / `venues` の new・edit ページは `requireAdmin()` によるページガード、
+書き込み系 Server Actions も `requireAdmin()` で admin のみ（Issue #221）。
 将来の匿名公開時は、公開対象の SELECT ポリシーだけを広げる。
 
 ### 今後の予定
