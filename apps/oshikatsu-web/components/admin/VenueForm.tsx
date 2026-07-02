@@ -7,6 +7,8 @@ import { PREFECTURES, isPrefecture } from "@/lib/prefectures";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { useAdminForm } from "@/hooks/useAdminForm";
 
 type VenueFormProps = {
   mode: "create" | "edit";
@@ -32,28 +34,32 @@ function getDefaultValues(): CreateVenueInput {
   };
 }
 
-export function VenueForm({ mode, initialValues, onSubmit }: VenueFormProps) {
-  const [values, setValues] = useState<CreateVenueInput>(
-    () => initialValues ?? getDefaultValues()
-  );
-  // 都道府県が空でなく47に無い＝海外（地域名手入力）
-  const [isOverseas, setIsOverseas] = useState(
-    () => values.prefecture !== "" && !isPrefecture(values.prefecture)
-  );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+function resolveInitialValues(
+  initialValues?: CreateVenueInput
+): CreateVenueInput {
+  return initialValues ?? getDefaultValues();
+}
 
-  const update = <K extends keyof CreateVenueInput>(
-    field: K,
-    value: CreateVenueInput[K]
-  ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
+export function VenueForm({ mode, initialValues, onSubmit }: VenueFormProps) {
+  // 都道府県が空でなく47に無い＝海外（地域名手入力）
+  const [isOverseas, setIsOverseas] = useState(() => {
+    const initial = resolveInitialValues(initialValues);
+    return initial.prefecture !== "" && !isPrefecture(initial.prefecture);
+  });
+
+  const { values, update, errors, isSubmitting, handleSubmit } =
+    useAdminForm<CreateVenueInput>({
+      initialValues: () => resolveInitialValues(initialValues),
+      onSubmit,
+      // 「海外」選択時は国・地域名の入力を必須にする
+      // （CreateVenueInput だけでは「未選択」と「海外選択・未入力」を区別できないためUI側で担保）
+      validate: (formValues) => {
+        if (isOverseas && !formValues.prefecture.trim()) {
+          return { prefecture: "国・地域名を入力してください" };
+        }
+        return null;
+      },
     });
-  };
 
   const handlePrefectureSelect = (selected: string) => {
     if (selected === OVERSEAS_VALUE) {
@@ -65,33 +71,6 @@ export function VenueForm({ mode, initialValues, onSubmit }: VenueFormProps) {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    // 「海外」選択時は国・地域名の入力を必須にする
-    // （CreateVenueInput だけでは「未選択」と「海外選択・未入力」を区別できないためUI側で担保）
-    if (isOverseas && !values.prefecture.trim()) {
-      setErrors({ prefecture: "国・地域名を入力してください" });
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      const result = await onSubmit(values);
-      if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   const selectValue = isOverseas
     ? OVERSEAS_VALUE
     : isPrefecture(values.prefecture)
@@ -100,11 +79,7 @@ export function VenueForm({ mode, initialValues, onSubmit }: VenueFormProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {errors._form && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-          {errors._form}
-        </p>
-      )}
+      <FormErrorBanner message={errors._form} />
 
       <Input
         id="name"
