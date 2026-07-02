@@ -11,6 +11,7 @@ on:
       - "pnpm-workspace.yaml"
       - ".nvmrc"
       - ".github/workflows/ci-household-web.yml"
+      - ".github/actions/setup/**"
   pull_request:
     paths:
       - "apps/household-web/**"
@@ -19,37 +20,46 @@ on:
       - "pnpm-workspace.yaml"
       - ".nvmrc"
       - ".github/workflows/ci-household-web.yml"
+      - ".github/actions/setup/**"
+
+permissions:
+  contents: read
+
+# 同一 PR で連続 push した場合、古い run をキャンセルする（main への push はキャンセルしない）
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   check:
     name: Typecheck / Lint / Build
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: apps/household-web
+    timeout-minutes: 15
 
     steps:
       - uses: actions/checkout@v5
 
-      - uses: pnpm/action-setup@v5
+      - uses: ./.github/actions/setup
 
-      - uses: actions/setup-node@v5
-        with:
-          node-version-file: ".nvmrc"
-          cache: "pnpm"
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-        working-directory: .
+      - name: Typecheck (packages/supabase)
+        run: pnpm --filter @personal-hub/supabase typecheck
 
       - name: Typecheck
-        run: pnpm typecheck
+        run: pnpm --filter household-web typecheck
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm --filter household-web lint
+
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: apps/household-web/.next/cache
+          key: nextjs-household-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-${{ hashFiles('apps/household-web/**/*.ts', 'apps/household-web/**/*.tsx') }}
+          restore-keys: |
+            nextjs-household-web-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}-
 
       - name: Build
-        run: pnpm build
+        run: pnpm --filter household-web build
         env:
           NEXT_PUBLIC_SUPABASE_URL: https://placeholder.supabase.co
           NEXT_PUBLIC_SUPABASE_ANON_KEY: placeholder
