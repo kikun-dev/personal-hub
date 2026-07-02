@@ -2,8 +2,8 @@
 
 ## 役割分担
 
-- Claude：設計 + 実装
-- Codex：レビュー + リファクタリング
+- Claude（Claude Code）：設計 + 実装（リファクタリングの実装を含む）
+- Codex：レビュー（リファクタリングの提案を含む）
 
 ---
 
@@ -11,9 +11,11 @@
 
 1. Issueを起点に作業開始
 2. ClaudeがIssueで設計提案・Decisionを明示
-3. Claudeが実装しPRを作成（Issueにリンク、`@codex review` をbodyに記載）
-4. Codexがレビューし、指摘をPRコメントに残す
-5. Claudeがレビュー指摘を修正し、PRに対応サマリーと `@codex review` をコメント
+3. Claudeが実装しPRを作成（Issueにリンク）
+   - Codexレビューを依頼する場合のみ `@codex review` をbodyに記載する（任意。依頼しないPRも多い）
+4. （Codexレビューを依頼した場合）Codexがレビューし、指摘をPRコメントに残す
+5. Claudeがレビュー指摘を修正し、PRに対応サマリーをコメント
+   - 再レビューを依頼する場合のみ `@codex review` を添える
 6. 指摘がなくなるまで 4-5 を繰り返す
 7. レビュー完了後マージ
 
