@@ -1,8 +1,4 @@
-import type {
-  Database,
-  ReadOnlySupabaseClient,
-  TypedSupabaseClient,
-} from "@personal-hub/supabase";
+import type { Database, ReadOnlySupabaseClient } from "@personal-hub/supabase";
 
 /**
  * read path で使用を許可する読み取り専用 RPC 関数名。
@@ -19,31 +15,9 @@ export type OrbitReadRpcFunction = Extract<
 >;
 
 /**
- * `TypedSupabaseClient["rpc"]` は Args にデフォルト値を持つ単一シグネチャの
- * ジェネリックメソッドだが、`fn` を `OrbitReadRpcFunction` に絞り込んだ上で
- * `Args` / `Returns` を関数ごとに推論させるため、`from()` と同様に実際に呼び出す
- * 関数でラップし通常の呼び出し時型推論に委ねる。
- * `typedClientForInference` は値を持たない `declare const` なので、この関数が
- * 実際に呼び出されることはない（`typeof` で戻り値型を取り出す目的のみで使用）。
- */
-declare const typedClientForInference: TypedSupabaseClient;
-function readOnlyRpc<FnName extends OrbitReadRpcFunction>(
-  fn: FnName,
-  args: Database["public"]["Functions"][FnName]["Args"]
-) {
-  return typedClientForInference.rpc(fn, args);
-}
-// 型抽出専用の関数であることを明示しつつ、値としても参照しておく
-// （`no-unused-vars` は `typeof` 経由の型参照のみだと「未使用」と判定するため）。
-void readOnlyRpc;
-
-/**
  * Orbit の read path 用クライアント型。
  * 書き込みメソッドと更新系 RPC の呼び出しをコンパイルエラーにする。
+ * rpc は ReadOnlySupabaseClient の型パラメータで許可関数名だけに絞り、
+ * 関数ごとの Args / Returns はパッケージ側の推論ラッパーで型付けされる。
  */
-export type OrbitReadClient = Omit<ReadOnlySupabaseClient, "rpc"> & {
-  rpc<FnName extends OrbitReadRpcFunction>(
-    fn: FnName,
-    args: Database["public"]["Functions"][FnName]["Args"]
-  ): ReturnType<typeof readOnlyRpc<FnName>>;
-};
+export type OrbitReadClient = ReadOnlySupabaseClient<OrbitReadRpcFunction>;

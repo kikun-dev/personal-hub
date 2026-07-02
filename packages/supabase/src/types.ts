@@ -37,20 +37,45 @@ type ReadOnlyQueryBuilder<TableName extends PublicTableName> = Pick<
   "select"
 >;
 
+/** public スキーマの RPC 関数名 */
+export type RpcFunctionName = string & keyof Database["public"]["Functions"];
+
+/**
+ * `rpc()` もオーバーロード付きジェネリックのため、`selectableFrom` と同様に
+ * 実際に呼び出す関数でラップし、関数名ごとの Args / Returns を
+ * 呼び出し時型推論で取り出す（この関数が実際に呼び出されることはない）。
+ */
+function rpcForInference<FnName extends RpcFunctionName>(
+  fn: FnName,
+  args: Database["public"]["Functions"][FnName]["Args"]
+) {
+  return typedClientForInference.rpc(fn, args);
+}
+
 /**
  * 型レベルで書き込みを禁止した Supabase クライアント。
  * service role キーで RLS をバイパスする read path（ADR 0006）で、
  * 誤って insert/update/delete/upsert を呼ぶとコンパイルエラーになる。
  * `from()` は select チェーンのみを公開し、`Database` 生成型からテーブルごとの
- * 行型が推論される。rpc は Database 型上そのまま公開する
- * （読み書きの区別はアプリ側で関数名ユニオンに絞ることを推奨。
- * oshikatsu-web の OrbitReadClient 参照）。
+ * 行型が推論される。
+ * rpc は Database 生成型があっても読み取り専用か更新系かを型からは判別できないため、
+ * 許可する関数名ユニオンを型パラメータ TAllowedRpc で明示的に渡す設計にする
+ * （default: never = 何も呼べない。raw な createReadOnlyClient() の返り値で
+ * 更新系 rpc を呼ぶコードもコンパイルエラーになる）。
+ * 読み取り専用 rpc を使う場合はアプリ側で関数名を絞って渡す
+ * （oshikatsu-web の OrbitReadClient 参照）。
  * schema() は書き込み可能なクライアントを返すため公開しない。
  */
-export type ReadOnlySupabaseClient = Omit<TypedSupabaseClient, "from" | "schema"> & {
+export type ReadOnlySupabaseClient<
+  TAllowedRpc extends RpcFunctionName = never,
+> = Omit<TypedSupabaseClient, "from" | "schema" | "rpc"> & {
   from<TableName extends PublicTableName>(
     relation: TableName
   ): ReadOnlyQueryBuilder<TableName>;
+  rpc<FnName extends TAllowedRpc>(
+    fn: FnName,
+    args: Database["public"]["Functions"][FnName]["Args"]
+  ): ReturnType<typeof rpcForInference<FnName>>;
 };
 
 /**
