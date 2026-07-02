@@ -29,3 +29,6 @@ coverage/
 
 # Next (monorepo safety)
 .next/
+
+# Supabase CLI local state
+/supabase/.temp/
