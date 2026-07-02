@@ -10,6 +10,7 @@ type SortDir = "asc" | "desc";
 
 type VenueTableProps = {
   venues: Venue[];
+  isAdmin: boolean;
 };
 
 // 北→南の順序（PREFECTURES の並び）。海外は48番目（47都道府県の次）。
@@ -19,7 +20,7 @@ function prefectureRank(prefecture: string): number {
   return index === -1 ? PREFECTURES.length : index;
 }
 
-export function VenueTable({ venues }: VenueTableProps) {
+export function VenueTable({ venues, isAdmin }: VenueTableProps) {
   // 既定は都道府県の北→南（昇順）
   const [sortKey, setSortKey] = useState<SortKey>("prefecture");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
@@ -111,9 +112,11 @@ export function VenueTable({ venues }: VenueTableProps) {
             {sortableHeader("name", "会場名")}
             {sortableHeader("prefecture", "都道府県")}
             {sortableHeader("capacity", "キャパ")}
-            <th scope="col" className="pb-2 font-medium text-foreground/70">
-              操作
-            </th>
+            {isAdmin && (
+              <th scope="col" className="pb-2 font-medium text-foreground/70">
+                操作
+              </th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -135,14 +138,16 @@ export function VenueTable({ venues }: VenueTableProps) {
                   ? `${venue.capacity.toLocaleString()}人`
                   : "—"}
               </td>
-              <td className="py-2">
-                <Link
-                  href={`/venues/${venue.id}/edit`}
-                  className="text-sm text-blue-500 hover:underline"
-                >
-                  編集
-                </Link>
-              </td>
+              {isAdmin && (
+                <td className="py-2">
+                  <Link
+                    href={`/venues/${venue.id}/edit`}
+                    className="text-sm text-blue-500 hover:underline"
+                  >
+                    編集
+                  </Link>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
