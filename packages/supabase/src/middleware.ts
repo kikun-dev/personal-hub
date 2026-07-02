@@ -16,6 +16,13 @@ function getAppMetadataRole(user: User): string | null {
   return typeof role === "string" ? role : null;
 }
 
+// セグメント境界でのpublicRoute判定: 前方一致だけだと "/login" が
+// "/loginfoo" のような無関係なパスにもマッチしてしまうため、
+// 完全一致または "/" 区切りでの前方一致のみ許可する。
+function isPathWithinRoute(pathname: string, route: string): boolean {
+  return pathname === route || pathname.startsWith(`${route}/`);
+}
+
 function mergePaths(
   defaults: string[],
   customPaths: string[] | undefined,
@@ -80,8 +87,9 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
     // 未認証で保護ルートにアクセスした場合、ログインページへリダイレクト
     const { pathname } = request.nextUrl;
     const isPublicRoute =
-      mergedConfig.publicRoutes.some((route) => pathname.startsWith(route)) ||
-      mergedConfig.publicExactPaths.some((path) => pathname === path);
+      mergedConfig.publicRoutes.some((route) =>
+        isPathWithinRoute(pathname, route)
+      ) || mergedConfig.publicExactPaths.some((path) => pathname === path);
 
     if (!user && !isPublicRoute) {
       const url = request.nextUrl.clone();
