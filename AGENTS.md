@@ -1,91 +1,39 @@
 # AGENTS.md
 
-personal-hub で作業する AI エージェント向けの共通運用ガイド。
+personal-hub で作業する AI エージェント（主に Codex）向けの運用ガイド。
 
 ## 1. 適用範囲と優先順位
 
 - このファイルはリポジトリ全体に適用する。
 - ルールが衝突する場合は、`rules/` と ADR（`docs/decisions/`）を優先する。
 
-## 2. 現在の運用方針
+## 2. 役割分担（現在の運用）
 
-- 現在は Codex で実装を進める前提で作業する。
-- 小さく安全な差分を優先し、必要なときだけ設計を拡張する。
+- Claude（Claude Code）：設計 + 実装（リファクタリングの実装を含む）
+- Codex：レビュー（リファクタリングの提案を含む）
+- ワークフローの詳細は `rules/ai-collaboration.md` を参照。
 
-## 3. 開発優先順位
+## 3. 共通ルール（マスタは rules/。内容をここに複製しない）
 
-1. 可読性・保守性
-2. 正しさ
-3. テスト容易性
-4. 差分の小ささ（リスク最小化）
-5. パフォーマンス（必要時のみ）
+- 層分離・依存方向・モノレポ境界：`rules/architecture.md`
+  - 依存方向は `UI → UseCase → Repository` のみ。`apps → packages` は可、逆は禁止
+- 開発優先順位・実装・検証・Git・言語ポリシー：`rules/implementation.md`
+- Issue / PR / ADR の記録ルール：`rules/process.md`
+- 技術スタックの正典：`docs/ai/PROJECT.md`
+  （Next.js 16 / TypeScript / Tailwind CSS 4 / Supabase / pnpm workspaces）
 
-## 4. アーキテクチャ原則（必須）
+## 4. レビュー時の観点（Codex 向け）
 
-- 技術前提: Next.js 16 / TypeScript / Tailwind CSS 4 / Supabase。
-- 層の責務を分離する。
-  - UI: 表示・入力・画面状態
-  - UseCase: ビジネスロジック・検証
-  - Repository/Data: DB/API など外部 I/O と副作用
-- 依存方向は `UI -> UseCase -> Repository` のみ。逆依存・循環依存は禁止。
-- `apps -> packages` は可、`packages -> apps` は禁止。
-- 入力境界（フォーム・API・外部入力）で必ずバリデーションする。
+- PR 差分の定型レビューは `.codex/skills/pr-review/SKILL.md` の手順・出力形式に従う
+- `rules/` と ADR への準拠を確認する（依存方向・層責務・`any` 禁止・境界バリデーション）
+- 指摘は PR コメントに残す。設計レベルの議論が必要なら PR ではなく Issue へ誘導する
+- リファクタ提案は原則「振る舞い不変」の範囲で行い、振る舞い変更を伴う場合は Issue 化を提案する
+- レビュー言語は日本語ベース（`rules/implementation.md` の言語ポリシーに従う）
 
-## 5. 実装ルール
-
-- `any` は使わない。必要なら型を追加する。
-- 型は明示的に記述し、暗黙推論に依存しすぎない。
-- 関数は短く保ち、長くなったら分割する。
-- 命名規約:
-  - boolean: `isX` / `hasX` / `canX`
-  - バリデーション関数: `validateX`
-- リファクタは原則として振る舞い不変で行う。
-
-## 6. 進め方（Plan -> Design -> Implement -> Verify）
-
-- ブロッカーでなければ合理的な仮定を置いて前進する（仮定は明示）。
-- 1変更1責務を意識し、PR は小さく保つ。
-- 新規ライブラリ導入時は、理由・代替案・影響を記録する。
-
-## 7. 記録ルール（Issue / PR / ADR）
-
-- 設計議論は Issue で行い、PR では実装とレビューに集中する。
-- PR は必ず関連 Issue を参照する（例: `Closes #123`）。
-- 言語ポリシー:
-  - PR 本文は日本語ベースで記載する。
-  - PR に記載するコメント（対応サマリー、レビュー返信、再レビュー依頼を含む）は日本語ベースで記載する。
-  - `docs/` 配下の資料は日本語ベースで記載する。
-- 次に該当する変更は Issue に Decision を残す:
-  - 新規ライブラリ導入
-  - 層構造や依存方向への影響
-  - データモデルの追加/変更
-  - 取り返しがつきにくい UX/仕様決定
-- 長期的に参照する判断は `docs/decisions/` に ADR として昇格する。
-
-## 8. Git 運用
-
-- 作業は必ずブランチで行う。
-- `main` への直接 push をしない（PR + CI 前提）。
-- force push はしない。
-- コミットメッセージは簡潔に要約する。
-
-## 9. 検証ルール
-
-- 変更したアプリに対して、少なくとも typecheck と lint を実行する。
-- 代表コマンド:
-  - `pnpm --filter household-web typecheck`
-  - `pnpm --filter household-web lint`
-  - `pnpm --filter oshikatsu-web typecheck`
-  - `pnpm --filter oshikatsu-web lint`
-- テスト未実行の場合は、未実行であることと理由を明示する。
-
-## 10. 参照ドキュメント
+## 5. 参照ドキュメント
 
 - 全体像: `README.md`, `docs/ai/PROJECT.md`
 - 現在の実装計画: `docs/orbit-roadmap.md`
+- 全体レビューと改善計画: `docs/advisor/`
 - 設計判断: `docs/decisions/*.md`
-- ルール:
-  - `rules/architecture.md`
-  - `rules/process.md`
-  - `rules/ai-collaboration.md`
 - Claude 向け運用文書（参考）: `CLAUDE.md`
