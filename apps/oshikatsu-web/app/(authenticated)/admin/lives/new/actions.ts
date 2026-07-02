@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { revalidateOrbitLiveData } from "@/lib/revalidateOrbit";
 import { createLive } from "@/usecases/createLive";
@@ -12,14 +11,7 @@ import { RepositoryError } from "@/types/errors";
 export async function createLiveAction(
   input: CreateLiveInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createLiveRepository(supabase);
 

@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { revalidateOrbitLiveData } from "@/lib/revalidateOrbit";
 import { updateLive } from "@/usecases/updateLive";
@@ -14,14 +13,7 @@ export async function updateLiveAction(
   id: string,
   input: UpdateLiveInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createLiveRepository(supabase);
 
@@ -46,14 +38,7 @@ export async function updateLiveAction(
 export async function deleteLiveAction(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createLiveRepository(supabase);
 
