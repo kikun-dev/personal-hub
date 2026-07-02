@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   Song,
   SongOption,
@@ -18,9 +17,11 @@ import type {
 } from "@/types/song";
 import { SONG_VIDEO_TYPES, isSongLabel, isSongVideoType } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type { ReleaseType } from "@/types/release";
 import { RepositoryError } from "@/types/errors";
 import { splitCreditNames } from "@/lib/songCredits";
+import { asWritableClient } from "@/lib/asWritableClient";
 
 type ReleaseGroupRel =
   | {
@@ -564,8 +565,9 @@ function parseReleaseLinks(input: CreateSongInput["releaseLinks"]): Array<{
 }
 
 // 曲順が空欄(null)の紐づけを、そのリリース内の末尾（max + 1）に解決する
+// select のみを行う読み取り専用処理のため OrbitReadClient で受け取る
 async function resolveReleaseLinkTrackNumbers(
-  supabase: SupabaseClient,
+  supabase: OrbitReadClient,
   links: Array<{ releaseId: string; trackNumber: number | null }>,
   excludeTrackId?: string
 ): Promise<Array<{ releaseId: string; trackNumber: number }>> {
@@ -687,7 +689,7 @@ function parseCostumes(input: CreateSongInput["costumes"]): Array<{
 }
 
 export function createSongRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): SongRepository {
   async function findManyByIds(ids: string[], select: string): Promise<Song[]> {
     if (ids.length === 0) return [];
@@ -825,7 +827,8 @@ export function createSongRepository(
       const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
-      const { data: trackId, error: rpcError } = await supabase.rpc("create_track_with_relations_v2", {
+      const writable = asWritableClient(supabase);
+      const { data: trackId, error: rpcError } = await writable.rpc("create_track_with_relations_v2", {
         p_title: input.title.trim(),
         p_group_id: input.groupId,
         p_label: label,
@@ -846,7 +849,7 @@ export function createSongRepository(
         throw new RepositoryError("作成した楽曲IDの取得に失敗しました", null);
       }
 
-      const { error: centerError } = await supabase.rpc("set_track_centers", {
+      const { error: centerError } = await writable.rpc("set_track_centers", {
         p_track_id: trackId,
         p_center_member_ids: input.centerMemberIds,
       });
@@ -880,7 +883,8 @@ export function createSongRepository(
       const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
-      const { error: rpcError } = await supabase.rpc("update_track_with_relations_v2", {
+      const writable = asWritableClient(supabase);
+      const { error: rpcError } = await writable.rpc("update_track_with_relations_v2", {
         p_track_id: id,
         p_title: input.title.trim(),
         p_group_id: input.groupId,
@@ -898,7 +902,7 @@ export function createSongRepository(
         throw new RepositoryError("楽曲の更新に失敗しました", rpcError);
       }
 
-      const { error: centerError } = await supabase.rpc("set_track_centers", {
+      const { error: centerError } = await writable.rpc("set_track_centers", {
         p_track_id: id,
         p_center_member_ids: input.centerMemberIds,
       });
@@ -914,7 +918,8 @@ export function createSongRepository(
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_tracks")
         .delete()
         .eq("id", id);

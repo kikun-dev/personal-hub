@@ -1,5 +1,6 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { LiveRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
+import { asWritableClient } from "@/lib/asWritableClient";
 import type {
   CreateLiveInput,
   Live,
@@ -281,7 +282,7 @@ function toLivePayload(input: CreateLiveInput) {
   };
 }
 
-export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
+export function createLiveRepository(supabase: OrbitReadClient): LiveRepository {
   return {
     async findPublicList() {
       const { data, error } = await supabase
@@ -420,7 +421,8 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
     },
 
     async create(input) {
-      const { data, error } = await supabase.rpc("upsert_orbit_live", {
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable.rpc("upsert_orbit_live", {
         p_id: null,
         p_payload: toLivePayload(input),
       });
@@ -437,7 +439,8 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
     },
 
     async update(id, input) {
-      const { data, error } = await supabase.rpc("upsert_orbit_live", {
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable.rpc("upsert_orbit_live", {
         p_id: id,
         p_payload: toLivePayload(input),
       });
@@ -454,7 +457,8 @@ export function createLiveRepository(supabase: SupabaseClient): LiveRepository {
     },
 
     async delete(id) {
-      const { error } = await supabase.from("orbit_lives").delete().eq("id", id);
+      const writable = asWritableClient(supabase);
+      const { error } = await writable.from("orbit_lives").delete().eq("id", id);
       if (error) {
         throw new RepositoryError("ライブの削除に失敗しました", error);
       }
