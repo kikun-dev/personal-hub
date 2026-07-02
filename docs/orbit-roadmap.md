@@ -337,3 +337,4 @@
 | song/release リポジトリ肥大化 | select 定義と mapper が CRUD 本体に同居している | Issue #217 で mapper 分割予定 |
 | 管理フォーム巨大化 | `SongForm` / `ReleaseForm` / `LiveForm` / `MemberForm` に submit・errors・keyed array 操作が重複 | Issue #218 で共通化・分割予定 |
 | ルート error / not-found 未整備 | `notFound()` は複数箇所で使うが、カスタム 404 とルートエラー画面がない | Issue #219 で対応予定 |
+| admin/viewer ロール体系が未導入 | 現状はオーナー単独運用前提。閲覧のみ共有ができない | Issue #221 で将来対応（#213 完了後に着手。書き込み権限の差のみなら中規模で拡張可能） |
