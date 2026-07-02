@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   BirthdayMember,
   MemberGroup,
@@ -7,8 +6,10 @@ import type {
   MemberWithGroups,
 } from "@/types/member";
 import type { MemberRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 import type { SnsType } from "@/lib/constants";
+import { asWritableClient } from "@/lib/asWritableClient";
 
 type MemberGroupRow = {
   id: string;
@@ -356,13 +357,15 @@ const MEMBER_OPTION_SELECT = `
 `;
 
 export function createMemberRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): MemberRepository {
+  // create/update からのみ呼ばれる書き込み専用ヘルパーのため、冒頭で writable に変換する
   async function replaceMemberGroups(
     memberId: string,
     inputGroups: { groupId: string; generation: string; joinedAt: string; graduatedAt: string }[]
   ): Promise<void> {
-    const { error: deleteError } = await supabase
+    const writable = asWritableClient(supabase);
+    const { error: deleteError } = await writable
       .from("orbit_member_groups")
       .delete()
       .eq("member_id", memberId);
@@ -381,7 +384,7 @@ export function createMemberRepository(
       graduated_at: g.graduatedAt || null,
     }));
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await writable
       .from("orbit_member_groups")
       .insert(groupRows);
 
@@ -394,7 +397,8 @@ export function createMemberRepository(
     memberId: string,
     inputSns: { snsType: string; displayName: string; url: string; hashtag: string }[]
   ): Promise<void> {
-    const { error: deleteError } = await supabase
+    const writable = asWritableClient(supabase);
+    const { error: deleteError } = await writable
       .from("orbit_member_sns")
       .delete()
       .eq("member_id", memberId);
@@ -414,7 +418,7 @@ export function createMemberRepository(
       sort_order: index,
     }));
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await writable
       .from("orbit_member_sns")
       .insert(snsRows);
 
@@ -545,7 +549,8 @@ export function createMemberRepository(
     },
 
     async create(input) {
-      const { data: member, error: memberError } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data: member, error: memberError } = await writable
         .from("orbit_members")
         .insert({
           name_ja: input.nameJa,
@@ -578,7 +583,7 @@ export function createMemberRepository(
         await replaceMemberGroups(member.id, input.groups);
         await replaceMemberSns(member.id, input.sns);
       } catch (e) {
-        await supabase.from("orbit_members").delete().eq("id", member.id);
+        await writable.from("orbit_members").delete().eq("id", member.id);
         if (e instanceof RepositoryError) {
           throw e;
         }
@@ -593,7 +598,8 @@ export function createMemberRepository(
     },
 
     async update(id, input) {
-      const { error: rpcError } = await supabase.rpc("update_member_with_relations", {
+      const writable = asWritableClient(supabase);
+      const { error: rpcError } = await writable.rpc("update_member_with_relations", {
         p_member_id: id,
         p_name_ja: input.nameJa,
         p_name_kana: input.nameKana,
@@ -629,7 +635,8 @@ export function createMemberRepository(
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_members")
         .delete()
         .eq("id", id);

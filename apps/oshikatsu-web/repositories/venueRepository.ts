@@ -1,7 +1,8 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { VenueRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type { Venue, VenueOption } from "@/types/venue";
 import { RepositoryError } from "@/types/errors";
+import { asWritableClient } from "@/lib/asWritableClient";
 
 type VenueRow = {
   id: string;
@@ -28,7 +29,7 @@ function parseCapacity(value: string): number | null {
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
-export function createVenueRepository(supabase: SupabaseClient): VenueRepository {
+export function createVenueRepository(supabase: OrbitReadClient): VenueRepository {
   const selectFields =
     "id, name, prefecture, capacity, map_url, official_url, access, notes";
 
@@ -111,7 +112,8 @@ export function createVenueRepository(supabase: SupabaseClient): VenueRepository
     },
 
     async create(input) {
-      const { data, error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable
         .from("orbit_venues")
         .insert(toRow(input))
         .select(selectFields)
@@ -130,7 +132,8 @@ export function createVenueRepository(supabase: SupabaseClient): VenueRepository
         throw new RepositoryError("更新対象の会場が見つかりません", null);
       }
 
-      const { data, error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable
         .from("orbit_venues")
         .update(toRow(input))
         .eq("id", id)
@@ -145,7 +148,8 @@ export function createVenueRepository(supabase: SupabaseClient): VenueRepository
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_venues")
         .delete()
         .eq("id", id);

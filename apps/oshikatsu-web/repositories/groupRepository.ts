@@ -1,6 +1,6 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { Group } from "@/types/group";
 import type { GroupRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 
 type GroupPenlightColorRow = {
@@ -49,7 +49,7 @@ function mapToGroup(row: GroupRow): Group {
 }
 
 export function createGroupRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): GroupRepository {
   return {
     async findAll() {

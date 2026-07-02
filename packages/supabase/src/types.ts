@@ -1,4 +1,20 @@
 export type { SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+/** select チェーンのみ公開するクエリビルダー */
+type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;
+
+/**
+ * 型レベルで書き込みを禁止した Supabase クライアント。
+ * service role キーで RLS をバイパスする read path（ADR 0006）で、
+ * 誤って insert/update/delete/upsert を呼ぶとコンパイルエラーになる。
+ * rpc は生成型（Database型）が無い現状では読み書きを型で判別できないため
+ * そのまま公開する。アプリ側で関数名ユニオンに絞ることを推奨（oshikatsu-web の OrbitReadClient 参照）。
+ * schema() は書き込み可能なクライアントを返すため公開しない。
+ */
+export type ReadOnlySupabaseClient = Omit<SupabaseClient, "from" | "schema"> & {
+  from(relation: string): ReadOnlyQueryBuilder;
+};
 
 export type AuthRouteMergeMode = "merge" | "replace";
 

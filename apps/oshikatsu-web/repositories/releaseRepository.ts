@@ -1,4 +1,3 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type {
   Release,
   CreateReleaseInput,
@@ -10,7 +9,9 @@ import type {
   MemberSelectionPosition,
 } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
+import { asWritableClient } from "@/lib/asWritableClient";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
 import {
   SAKURAZAKA_EIGHT_FRONT_ROW_COUNT,
@@ -499,7 +500,7 @@ function toBonusVideoRpcInput(
 }
 
 export function createReleaseRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): ReleaseRepository {
   return {
     async findAll(filters) {
@@ -940,7 +941,8 @@ export function createReleaseRepository(
     async create(input) {
       const numbering = toNumbering(input.releaseType, input.numbering);
 
-      const { data: releaseId, error: rpcError } = await supabase.rpc("create_release_with_relations", {
+      const writable = asWritableClient(supabase);
+      const { data: releaseId, error: rpcError } = await writable.rpc("create_release_with_relations", {
         p_title: input.title.trim(),
         p_group_id: input.groupId,
         p_release_type: input.releaseType,
@@ -961,7 +963,7 @@ export function createReleaseRepository(
         throw new RepositoryError("作成したリリースIDの取得に失敗しました", null);
       }
 
-      const { error: positionsError } = await supabase.rpc(
+      const { error: positionsError } = await writable.rpc(
         "set_release_member_positions",
         {
           p_release_id: releaseId,
@@ -987,7 +989,8 @@ export function createReleaseRepository(
 
       const numbering = toNumbering(input.releaseType, input.numbering);
 
-      const { error: rpcError } = await supabase.rpc("update_release_with_relations", {
+      const writable = asWritableClient(supabase);
+      const { error: rpcError } = await writable.rpc("update_release_with_relations", {
         p_release_id: id,
         p_title: input.title.trim(),
         p_group_id: input.groupId,
@@ -1005,7 +1008,7 @@ export function createReleaseRepository(
         throw new RepositoryError("リリースの更新に失敗しました", rpcError);
       }
 
-      const { error: positionsError } = await supabase.rpc(
+      const { error: positionsError } = await writable.rpc(
         "set_release_member_positions",
         {
           p_release_id: id,
@@ -1024,7 +1027,8 @@ export function createReleaseRepository(
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_releases")
         .delete()
         .eq("id", id);
