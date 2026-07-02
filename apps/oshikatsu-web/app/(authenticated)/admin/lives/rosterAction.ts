@@ -1,6 +1,6 @@
 "use server";
 
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { computeLiveRoster } from "@/usecases/computeLiveRoster";
 
@@ -8,14 +8,7 @@ export async function computeLiveRosterAction(
   groupIds: string[],
   date: string
 ): Promise<{ memberIds: string[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return { memberIds: [] };
-  }
+  const supabase = await requireAdmin();
 
   const repo = createMemberRepository(supabase);
   const memberIds = await computeLiveRoster(repo, groupIds, date);
