@@ -330,7 +330,7 @@
 | Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
-| Orbit 認可が authenticated 一段階 | Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない | Issue #213 で対応予定。監査メモ: `docs/advisor/006-oshikatsu-web-current-state-audit.md` |
+| ~~Orbit 認可が authenticated 一段階~~ | ~~Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない~~ | ✅ Issue #213 で対応済み |
 | auth callback / public route 判定の軽微な緩さ | `next` のバックスラッシュ、public path の前方一致判定 | Issue #214 で対応予定 |
 | `createReadOnlyClient` が型レベルでは read-only でない | service role client のため、誤用時に書き込み API も呼べる | Issue #215 で型レベルの read-only 化を検討 |
 | Supabase 生成型未導入 | リレーション型を手書きし、`T | T[]` union / `as` キャストが残る | Issue #216 で段階導入予定 |

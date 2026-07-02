@@ -146,8 +146,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
 
 ### RLS 方針
-グローバルデータのため、現状は `auth.role() = 'authenticated'` で統一。
-Supabase Auth の新規サインアップは OFF を確認済みだが、RLS レイヤーのオーナー限定化は Issue #213 で多層防御として対応予定。
+グローバルデータのため、`app_metadata.role = 'admin'`（`public.is_orbit_admin()`）で判定する。ADR 0008 参照（Issue #213 対応済み）。
 将来の匿名公開時は、公開対象の SELECT ポリシーだけを広げる。
 
 ### 今後の予定
