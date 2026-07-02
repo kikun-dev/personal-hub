@@ -5,7 +5,12 @@ import type { ValidationError } from "@/types/errors";
 
 export type UseAdminFormOptions<TValues> = {
   initialValues: TValues | (() => TValues);
-  onSubmit: (values: TValues) => Promise<{ errors?: ValidationError[] }>;
+  /**
+   * SongForm/ReleaseForm/MemberForm のように、確認モーダルでの中断・再開や
+   * 画像アップロードを含む独自の handleSubmit を持つフォームでは hook の
+   * handleSubmit を使わず state 基盤のみ利用するため、onSubmit は省略できる。
+   */
+  onSubmit?: (values: TValues) => Promise<{ errors?: ValidationError[] }>;
   /** submit 前の UI 層バリデーション。エラーを返すと送信を中断してエラー表示する */
   validate?: (values: TValues) => Record<string, string> | null;
 };
@@ -73,7 +78,7 @@ export function useAdminForm<TValues>({
     setErrors({});
 
     try {
-      const result = await onSubmit(values);
+      const result = onSubmit ? await onSubmit(values) : {};
       if (result.errors) {
         setErrors(toErrorMap(result.errors));
       }
