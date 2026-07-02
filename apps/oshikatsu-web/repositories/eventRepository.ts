@@ -1,3 +1,8 @@
+import type {
+  Database,
+  SelectRows,
+  TypedSupabaseClient,
+} from "@personal-hub/supabase";
 import type { Event } from "@/types/event";
 import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
@@ -9,77 +14,46 @@ import {
   splitTrailingPunctuation,
 } from "@/lib/linkParser";
 
-type EventRow = {
-  id: string;
-  event_type_id: string;
-  orbit_event_types:
-    | {
-        name: string;
-        color: string;
-      }
-    | Array<{
-        name: string;
-        color: string;
-      }>;
-  is_member_history: boolean;
-  title: string;
-  description: string;
-  date: string;
-  end_date: string | null;
-  start_time: string | null;
-  venue: string | null;
-  url: string | null;
-  orbit_event_groups: {
-    group_id: string;
-    orbit_groups:
-      | { name_ja: string }
-      | Array<{ name_ja: string }>;
-  }[];
-  orbit_event_members: {
-    member_id: string;
-  }[];
-};
+const EVENT_SELECT = `
+  *,
+  orbit_event_types(name, color),
+  orbit_event_groups(group_id, orbit_groups(name_ja)),
+  orbit_event_members(member_id)
+` as const;
 
-type EventSummaryRow = {
-  id: string;
-  event_type_id: string;
-  orbit_event_types:
-    | {
-        name: string;
-        color: string;
-      }
-    | Array<{
-        name: string;
-        color: string;
-      }>;
-  is_member_history: boolean;
-  title: string;
-  date: string;
-  end_date: string | null;
-  start_time: string | null;
-  venue: string | null;
-  orbit_event_groups: {
-    group_id: string;
-    orbit_groups:
-      | { name_ja: string }
-      | Array<{ name_ja: string }>;
-  }[];
-};
+const EVENT_SUMMARY_SELECT = `
+  id,
+  event_type_id,
+  is_member_history,
+  title,
+  date,
+  end_date,
+  start_time,
+  venue,
+  orbit_event_types(name, color),
+  orbit_event_groups(group_id, orbit_groups(name_ja))
+` as const;
 
-type OnThisDayEventRow = {
-  id: string;
-  event_type_id: string;
-  event_type_name: string;
-  event_type_color: string;
-  is_member_history: boolean;
-  title: string;
-  date: string;
-  end_date: string | null;
-  start_time: string | null;
-  venue: string | null;
-  group_ids: string[] | null;
-  group_names: string[] | null;
-};
+const EVENT_HISTORY_SELECT = `
+  id,
+  date,
+  title,
+  description,
+  url,
+  orbit_event_members!inner(member_id)
+` as const;
+
+type EventRow = SelectRows<"orbit_events", typeof EVENT_SELECT>[number];
+type EventSummaryRow = SelectRows<
+  "orbit_events",
+  typeof EVENT_SUMMARY_SELECT
+>[number];
+type EventHistoryRow = SelectRows<
+  "orbit_events",
+  typeof EVENT_HISTORY_SELECT
+>[number];
+type OnThisDayEventRow =
+  Database["public"]["Functions"]["find_orbit_events_on_this_day"]["Returns"][number];
 
 function normalizeUrlForCompare(value: string): string {
   const trimmed = splitTrailingPunctuation(value.trim()).cleanUrl;
@@ -94,16 +68,9 @@ function normalizeUrlForCompare(value: string): string {
   }
 }
 
-function pickFirst<T>(value: T | T[]): T | null {
-  if (Array.isArray(value)) {
-    return value[0] ?? null;
-  }
-  return value;
-}
-
 function mapToEvent(row: EventRow): Event {
-  const eventType = pickFirst(row.orbit_event_types);
-  const eventGroups = row.orbit_event_groups ?? [];
+  const eventType = row.orbit_event_types;
+  const eventGroups = row.orbit_event_groups;
 
   return {
     id: row.id,
@@ -119,14 +86,12 @@ function mapToEvent(row: EventRow): Event {
     venue: row.venue,
     url: row.url,
     groupIds: eventGroups.map((group) => group.group_id),
-    groupNames: eventGroups.map(
-      (group) => pickFirst(group.orbit_groups)?.name_ja ?? ""
-    ),
-    memberIds: (row.orbit_event_members ?? []).map((m) => m.member_id),
+    groupNames: eventGroups.map((group) => group.orbit_groups?.name_ja ?? ""),
+    memberIds: row.orbit_event_members.map((m) => m.member_id),
   };
 }
 
-function mapToMemberHistory(row: Pick<EventRow, "id" | "date" | "title" | "description" | "url">): MemberHistory {
+function mapToMemberHistory(row: EventHistoryRow): MemberHistory {
   const description = row.description.trim();
   const noteParts = description ? [description] : [];
   const eventUrl = row.url?.trim() ?? "";
@@ -149,29 +114,9 @@ function mapToMemberHistory(row: Pick<EventRow, "id" | "date" | "title" | "descr
   };
 }
 
-const EVENT_SELECT = `
-  *,
-  orbit_event_types(name, color),
-  orbit_event_groups(group_id, orbit_groups(name_ja)),
-  orbit_event_members(member_id)
-`;
-
-const EVENT_SUMMARY_SELECT = `
-  id,
-  event_type_id,
-  is_member_history,
-  title,
-  date,
-  end_date,
-  start_time,
-  venue,
-  orbit_event_types(name, color),
-  orbit_event_groups(group_id, orbit_groups(name_ja))
-`;
-
 function mapToEventSummary(row: EventSummaryRow): Event {
-  const eventType = pickFirst(row.orbit_event_types);
-  const eventGroups = row.orbit_event_groups ?? [];
+  const eventType = row.orbit_event_types;
+  const eventGroups = row.orbit_event_groups;
 
   return {
     id: row.id,
@@ -187,9 +132,7 @@ function mapToEventSummary(row: EventSummaryRow): Event {
     venue: row.venue,
     url: null,
     groupIds: eventGroups.map((group) => group.group_id),
-    groupNames: eventGroups.map(
-      (group) => pickFirst(group.orbit_groups)?.name_ja ?? ""
-    ),
+    groupNames: eventGroups.map((group) => group.orbit_groups?.name_ja ?? ""),
     memberIds: [],
   };
 }
@@ -239,7 +182,7 @@ export function createEventRepository(
       if (error) {
         throw new RepositoryError("イベントの取得に失敗しました", error);
       }
-      return (data as EventSummaryRow[]).map(mapToEventSummary);
+      return data.map(mapToEventSummary);
     },
 
     async findByDate(year, month, day) {
@@ -254,7 +197,7 @@ export function createEventRepository(
       if (error) {
         throw new RepositoryError("イベントの取得に失敗しました", error);
       }
-      return (data as EventSummaryRow[]).map(mapToEventSummary);
+      return data.map(mapToEventSummary);
     },
 
     async findById(id) {
@@ -270,20 +213,13 @@ export function createEventRepository(
         }
         throw new RepositoryError("イベントの取得に失敗しました", error);
       }
-      return mapToEvent(data as EventRow);
+      return mapToEvent(data);
     },
 
     async findHistoryByMemberId(memberId) {
       const { data, error } = await supabase
         .from("orbit_events")
-        .select(`
-          id,
-          date,
-          title,
-          description,
-          url,
-          orbit_event_members!inner(member_id)
-        `)
+        .select(EVENT_HISTORY_SELECT)
         .eq("is_member_history", true)
         .eq("orbit_event_members.member_id", memberId)
         .order("date", { ascending: true })
@@ -293,12 +229,11 @@ export function createEventRepository(
         throw new RepositoryError("メンバー来歴イベントの取得に失敗しました", error);
       }
 
-      return (data as Array<Pick<EventRow, "id" | "date" | "title" | "description" | "url">>)
-        .map(mapToMemberHistory);
+      return data.map(mapToMemberHistory);
     },
 
     async create(input) {
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data: event, error: eventError } = await writable
         .from("orbit_events")
         .insert({
@@ -359,6 +294,11 @@ export function createEventRepository(
     },
 
     async update(id, input) {
+      // 生成型上 update_event_with_relations の p_end_date / p_start_time / p_venue /
+      // p_url は non-null な string になっているが、これは PostgREST の RPC スカラー引数の
+      // 型生成が NULL 許容を反映しない既知の制約であり、関数自体は null を受け付ける。
+      // ペイロード側の誤りではないため、ここでは TypedSupabaseClient にせず
+      // asWritableClient の返り値（未typed）のまま呼び出す。
       const writable = asWritableClient(supabase);
       const { error: rpcError } = await writable.rpc("update_event_with_relations", {
         p_event_id: id,
@@ -408,7 +348,7 @@ export function createEventRepository(
         throw new RepositoryError("過去のイベントの取得に失敗しました", error);
       }
 
-      return ((data as OnThisDayEventRow[] | null) ?? []).map(mapToOnThisDayEvent);
+      return data.map(mapToOnThisDayEvent);
     },
   };
 }

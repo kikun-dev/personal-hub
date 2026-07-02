@@ -1,16 +1,15 @@
+import type { SelectRows } from "@personal-hub/supabase";
 import type { EventType } from "@/types/eventType";
 import type { EventTypeRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 
-type EventTypeRow = {
-  id: string;
-  name: string;
-  color: string;
-  sort_order: number;
-};
+const EVENT_TYPE_SELECT = "id, name, color, sort_order" as const;
 
-const EVENT_TYPE_SELECT = "id, name, color, sort_order";
+type EventTypeRow = SelectRows<
+  "orbit_event_types",
+  typeof EVENT_TYPE_SELECT
+>[number];
 
 function mapToEventType(row: EventTypeRow): EventType {
   return {
@@ -34,7 +33,7 @@ export function createEventTypeRepository(
       if (error) {
         throw new RepositoryError("イベント種別の取得に失敗しました", error);
       }
-      return (data as EventTypeRow[]).map(mapToEventType);
+      return data.map(mapToEventType);
     },
   };
 }

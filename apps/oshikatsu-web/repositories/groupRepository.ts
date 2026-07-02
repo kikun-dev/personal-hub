@@ -1,31 +1,15 @@
+import type { SelectRows } from "@personal-hub/supabase";
 import type { Group } from "@/types/group";
 import type { GroupRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 
-type GroupPenlightColorRow = {
-  id: string;
-  name: string;
-  hex: string;
-  sort_order: number;
-};
-
-type GroupRow = {
-  id: string;
-  name_ja: string;
-  name_en: string | null;
-  color: string;
-  max_generation: number | null;
-  is_active: boolean;
-  successor_id: string | null;
-  sort_order: number;
-  orbit_group_penlight_colors?: GroupPenlightColorRow[];
-};
-
 const GROUP_SELECT = `
   id, name_ja, name_en, color, max_generation, is_active, successor_id, sort_order,
   orbit_group_penlight_colors(id, name, hex, sort_order)
-`;
+` as const;
+
+type GroupRow = SelectRows<"orbit_groups", typeof GROUP_SELECT>[number];
 
 function mapToGroup(row: GroupRow): Group {
   return {
@@ -61,7 +45,7 @@ export function createGroupRepository(
       if (error) {
         throw new RepositoryError("グループの取得に失敗しました", error);
       }
-      return (data as GroupRow[]).map(mapToGroup);
+      return data.map(mapToGroup);
     },
 
     async findById(id) {
@@ -77,7 +61,7 @@ export function createGroupRepository(
         }
         throw new RepositoryError("グループの取得に失敗しました", error);
       }
-      return mapToGroup(data as GroupRow);
+      return mapToGroup(data);
     },
   };
 }

@@ -1,3 +1,4 @@
+import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type { PersonRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
@@ -26,26 +27,23 @@ function isSongCreditRole(value: string): value is SongCreditRole {
   return (CREDIT_ROLE_ORDER as string[]).includes(value);
 }
 
-type CreditedTrackGroup = { id: string; name_ja: string; color: string };
+const PERSON_SELECT =
+  "id, display_name, date_of_birth, roles, biography" as const;
+const PERSON_OPTION_SELECT = "id, display_name, roles" as const;
+const CREDITED_SONGS_SELECT =
+  "credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color), orbit_release_tracks(track_number, orbit_releases(id, release_date)))" as const;
 
-type CreditedReleaseRow = { id: string; release_date: string | null };
-
-type CreditedReleaseLinkRow = {
-  track_number: number;
-  orbit_releases: CreditedReleaseRow | CreditedReleaseRow[] | null;
-};
-
-type CreditedTrackRel = {
-  id: string;
-  title: string;
-  orbit_groups: CreditedTrackGroup | CreditedTrackGroup[] | null;
-  orbit_release_tracks: CreditedReleaseLinkRow[] | null;
-};
-
-type CreditedSongRow = {
-  credit_role: string;
-  orbit_tracks: CreditedTrackRel | CreditedTrackRel[] | null;
-};
+type PersonRow = SelectRows<"orbit_people", typeof PERSON_SELECT>[number];
+type PersonOptionRow = SelectRows<
+  "orbit_people",
+  typeof PERSON_OPTION_SELECT
+>[number];
+type CreditedSongRow = SelectRows<
+  "orbit_track_credits",
+  typeof CREDITED_SONGS_SELECT
+>[number];
+type CreditedTrackRel = NonNullable<CreditedSongRow["orbit_tracks"]>;
+type CreditedReleaseLinkRow = CreditedTrackRel["orbit_release_tracks"][number];
 
 // 楽曲の初出（最古のリリース日）リリースと、そのリリースでの曲順を代表として選ぶ
 function pickRepresentativeReleaseLink(
@@ -57,9 +55,7 @@ function pickRepresentativeReleaseLink(
     trackNumber: number;
   } | null = null;
   for (const link of links ?? []) {
-    const release = Array.isArray(link.orbit_releases)
-      ? link.orbit_releases[0]
-      : link.orbit_releases;
+    const release = link.orbit_releases;
     if (!release?.release_date) continue;
     // 最古のリリース日を代表に。同一日付は release.id で決定的にタイブレークする
     // （楽曲一覧の並び替えと同じ方針）。
@@ -79,70 +75,55 @@ function pickRepresentativeReleaseLink(
   return best;
 }
 
-type PersonRow = {
-  id: string;
-  display_name: string;
-  date_of_birth: string | null;
-  roles: string[] | null;
-  biography: string | null;
-};
-
-type PersonOptionRow = {
-  id: string;
-  display_name: string;
-  roles: string[] | null;
-};
-
 export function createPersonRepository(supabase: OrbitReadClient): PersonRepository {
-  const selectFields = "id, display_name, date_of_birth, roles, biography";
-
   const mapPerson = (row: PersonRow): Person => ({
     id: row.id,
     displayName: row.display_name,
     dateOfBirth: row.date_of_birth,
-    roles: ((row.roles ?? []) as PersonRole[]),
+    // DB 上の roles 列は string[]（NOT NULL）。PersonRole のドメイン制約は
+    // アプリ側でのみ保証されるため、生成型から絞り込むには as が必要
+    // （ensurePeopleRoles で許可値を検証してから書き込んでいる）。
+    roles: row.roles as PersonRole[],
     biography: row.biography,
   });
 
   const mapPersonOption = (row: PersonOptionRow): PersonOption => ({
     id: row.id,
     displayName: row.display_name,
-    roles: (row.roles ?? []) as PersonRole[],
+    roles: row.roles as PersonRole[],
   });
 
   return {
     async findAll() {
       const { data, error } = await supabase
         .from("orbit_people")
-        .select(selectFields)
+        .select(PERSON_SELECT)
         .order("display_name");
 
       if (error) {
         throw new RepositoryError("制作陣一覧の取得に失敗しました", error);
       }
 
-      return ((data as PersonRow[]) ?? []).map(mapPerson);
+      return data.map(mapPerson);
     },
 
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_people")
-        .select("id, display_name, roles")
+        .select(PERSON_OPTION_SELECT)
         .order("display_name");
 
       if (error) {
         throw new RepositoryError("制作陣候補の取得に失敗しました", error);
       }
 
-      return ((data as PersonOptionRow[] | null) ?? []).map(mapPersonOption);
+      return data.map(mapPersonOption);
     },
 
     async findCreditedSongsByPersonId(personId: string) {
       const { data, error } = await supabase
         .from("orbit_track_credits")
-        .select(
-          "credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color), orbit_release_tracks(track_number, orbit_releases(id, release_date)))"
-        )
+        .select(CREDITED_SONGS_SELECT)
         .eq("person_id", personId);
       if (error) {
         throw new RepositoryError("担当楽曲の取得に失敗しました", error);
@@ -163,14 +144,10 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
           roles: Set<SongCreditRole>;
         }
       >();
-      for (const row of (data as CreditedSongRow[] | null) ?? []) {
-        const track = Array.isArray(row.orbit_tracks)
-          ? row.orbit_tracks[0]
-          : row.orbit_tracks;
+      for (const row of data) {
+        const track = row.orbit_tracks;
         if (!track) continue;
-        const trackGroup = Array.isArray(track.orbit_groups)
-          ? track.orbit_groups[0]
-          : track.orbit_groups;
+        const trackGroup = track.orbit_groups;
         const representative = pickRepresentativeReleaseLink(
           track.orbit_release_tracks
         );
@@ -231,22 +208,16 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
       const names = Array.from(rolesByName.keys());
       if (names.length === 0) return;
 
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable
         .from("orbit_people")
-        .select("id, display_name, roles")
+        .select(PERSON_OPTION_SELECT)
         .in("display_name", names);
       if (error) {
         throw new RepositoryError("制作陣の担当情報の取得に失敗しました", error);
       }
       const existing = new Map(
-        (
-          (data as Array<{
-            id: string;
-            display_name: string;
-            roles: string[] | null;
-          }>) ?? []
-        ).map((row) => [row.display_name, row] as const)
+        data.map((row) => [row.display_name, row] as const)
       );
 
       const toInsert: Array<{ display_name: string; roles: PersonRole[] }> = [];
@@ -257,7 +228,7 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
           continue;
         }
         // 名前一致は既存人物に不足 role を追加する（重複は付けない）
-        const merged = new Set<PersonRole>((person.roles ?? []) as PersonRole[]);
+        const merged = new Set<PersonRole>(person.roles as PersonRole[]);
         const before = merged.size;
         for (const role of roleSet) merged.add(role);
         if (merged.size === before) continue;
@@ -284,7 +255,7 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_people")
-        .select(selectFields)
+        .select(PERSON_SELECT)
         .eq("id", id)
         .single();
 
@@ -295,11 +266,11 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
         throw new RepositoryError("制作陣の取得に失敗しました", error);
       }
 
-      return mapPerson(data as PersonRow);
+      return mapPerson(data);
     },
 
     async create(input) {
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable
         .from("orbit_people")
         .insert({
@@ -308,14 +279,14 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
           roles: input.roles,
           biography: input.biography.trim() || null,
         })
-        .select(selectFields)
+        .select(PERSON_SELECT)
         .single();
 
       if (error) {
         throw new RepositoryError("制作陣の作成に失敗しました", error);
       }
 
-      return mapPerson(data as PersonRow);
+      return mapPerson(data);
     },
 
     async update(id, input) {
@@ -324,7 +295,7 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
         throw new RepositoryError("更新対象の制作陣が見つかりません", null);
       }
 
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable
         .from("orbit_people")
         .update({
@@ -334,14 +305,14 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
           biography: input.biography.trim() || null,
         })
         .eq("id", id)
-        .select(selectFields)
+        .select(PERSON_SELECT)
         .single();
 
       if (error) {
         throw new RepositoryError("制作陣の更新に失敗しました", error);
       }
 
-      return mapPerson(data as PersonRow);
+      return mapPerson(data);
     },
 
     async delete(id) {
