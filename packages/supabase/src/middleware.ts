@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import type { User } from "@supabase/supabase-js";
 import type { AuthMiddlewareConfig } from "./types";
 
 const DEFAULT_CONFIG: Required<AuthMiddlewareConfig> = {
@@ -7,7 +8,13 @@ const DEFAULT_CONFIG: Required<AuthMiddlewareConfig> = {
   publicRoutes: ["/login", "/auth"],
   publicExactPaths: ["/"],
   loginPath: "/login",
+  requiredRole: null,
 };
+
+function getAppMetadataRole(user: User): string | null {
+  const role: unknown = user.app_metadata.role;
+  return typeof role === "string" ? role : null;
+}
 
 function mergePaths(
   defaults: string[],
@@ -25,6 +32,7 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
     ...DEFAULT_CONFIG,
     ...config,
     routeMergeMode,
+    requiredRole: config.requiredRole ?? DEFAULT_CONFIG.requiredRole,
     publicRoutes: mergePaths(
       DEFAULT_CONFIG.publicRoutes,
       config.publicRoutes,
@@ -80,6 +88,22 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       const redirectTo = pathname + request.nextUrl.search;
       url.pathname = mergedConfig.loginPath;
       url.searchParams.set("next", redirectTo);
+      return NextResponse.redirect(url);
+    }
+
+    // 認可: requiredRole 指定時は app_metadata.role が一致するユーザーのみ許可する。
+    // service role を使う read path（ADR 0006）は RLS を通らないため、
+    // 認証済みでも許可外のユーザーはアプリ境界で遮断する必要がある。
+    if (
+      user &&
+      !isPublicRoute &&
+      mergedConfig.requiredRole !== null &&
+      getAppMetadataRole(user) !== mergedConfig.requiredRole
+    ) {
+      const url = request.nextUrl.clone();
+      url.pathname = mergedConfig.loginPath;
+      url.search = "";
+      url.searchParams.set("error", "forbidden");
       return NextResponse.redirect(url);
     }
 
