@@ -1,10 +1,10 @@
 import { unstable_cache } from "next/cache";
-import type { SupabaseClient } from "@personal-hub/supabase";
 import { createClient } from "@personal-hub/supabase/server";
 import {
   createReadOnlyClient,
   isReadOnlyServerClientAvailable,
 } from "@personal-hub/supabase/read-only-server";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
 import { createEventTypeRepository } from "@/repositories/eventTypeRepository";
 import { createGroupRepository } from "@/repositories/groupRepository";
@@ -23,7 +23,7 @@ import { listSongOptions } from "@/usecases/listSongOptions";
 const canUseSharedReadCache = isReadOnlyServerClientAvailable();
 
 async function withOrbitReadClient<T>(
-  loader: (supabase: SupabaseClient) => Promise<T>
+  loader: (supabase: OrbitReadClient) => Promise<T>
 ): Promise<T> {
   if (canUseSharedReadCache) {
     return loader(createReadOnlyClient());

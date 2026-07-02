@@ -1,5 +1,5 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { PersonRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
   Person,
   PersonOption,
@@ -10,6 +10,7 @@ import type {
 import { PERSON_ROLE_VALUES } from "@/types/person";
 import type { SongCreditRole } from "@/types/song";
 import { RepositoryError } from "@/types/errors";
+import { asWritableClient } from "@/lib/asWritableClient";
 
 const MAX_DISPLAY_NAME_LENGTH = 100;
 
@@ -92,7 +93,7 @@ type PersonOptionRow = {
   roles: string[] | null;
 };
 
-export function createPersonRepository(supabase: SupabaseClient): PersonRepository {
+export function createPersonRepository(supabase: OrbitReadClient): PersonRepository {
   const selectFields = "id, display_name, date_of_birth, roles, biography";
 
   const mapPerson = (row: PersonRow): Person => ({
@@ -230,7 +231,8 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       const names = Array.from(rolesByName.keys());
       if (names.length === 0) return;
 
-      const { data, error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable
         .from("orbit_people")
         .select("id, display_name, roles")
         .in("display_name", names);
@@ -260,7 +262,7 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
         for (const role of roleSet) merged.add(role);
         if (merged.size === before) continue;
 
-        const { error: updateError } = await supabase
+        const { error: updateError } = await writable
           .from("orbit_people")
           .update({ roles: Array.from(merged) })
           .eq("id", person.id);
@@ -270,7 +272,7 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
       }
 
       if (toInsert.length > 0) {
-        const { error: insertError } = await supabase
+        const { error: insertError } = await writable
           .from("orbit_people")
           .insert(toInsert);
         if (insertError) {
@@ -297,7 +299,8 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
     },
 
     async create(input) {
-      const { data, error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable
         .from("orbit_people")
         .insert({
           display_name: input.displayName.trim(),
@@ -321,7 +324,8 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
         throw new RepositoryError("更新対象の制作陣が見つかりません", null);
       }
 
-      const { data, error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable
         .from("orbit_people")
         .update({
           display_name: input.displayName.trim(),
@@ -341,7 +345,8 @@ export function createPersonRepository(supabase: SupabaseClient): PersonReposito
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_people")
         .delete()
         .eq("id", id);

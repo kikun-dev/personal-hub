@@ -1,6 +1,6 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { EventType } from "@/types/eventType";
 import type { EventTypeRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 
 type EventTypeRow = {
@@ -22,7 +22,7 @@ function mapToEventType(row: EventTypeRow): EventType {
 }
 
 export function createEventTypeRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): EventTypeRepository {
   return {
     async findAll() {

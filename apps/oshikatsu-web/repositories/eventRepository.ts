@@ -1,8 +1,9 @@
-import type { SupabaseClient } from "@personal-hub/supabase";
 import type { Event } from "@/types/event";
 import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
+import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
+import { asWritableClient } from "@/lib/asWritableClient";
 import {
   extractHttpUrlsFromText,
   splitTrailingPunctuation,
@@ -221,7 +222,7 @@ function getMonthRange(year: number, month: number) {
 }
 
 export function createEventRepository(
-  supabase: SupabaseClient
+  supabase: OrbitReadClient
 ): EventRepository {
   return {
     async findByMonth(year, month) {
@@ -297,7 +298,8 @@ export function createEventRepository(
     },
 
     async create(input) {
-      const { data: event, error: eventError } = await supabase
+      const writable = asWritableClient(supabase);
+      const { data: event, error: eventError } = await writable
         .from("orbit_events")
         .insert({
           event_type_id: input.eventTypeId,
@@ -318,7 +320,7 @@ export function createEventRepository(
       }
 
       if (input.groupIds.length > 0) {
-        const { error: groupError } = await supabase
+        const { error: groupError } = await writable
           .from("orbit_event_groups")
           .insert(
             input.groupIds.map((groupId) => ({
@@ -328,13 +330,13 @@ export function createEventRepository(
           );
         if (groupError) {
           // 補償処理: グループ登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
-          await supabase.from("orbit_events").delete().eq("id", event.id);
+          await writable.from("orbit_events").delete().eq("id", event.id);
           throw new RepositoryError("イベントのグループ登録に失敗しました", groupError);
         }
       }
 
       if (input.memberIds.length > 0) {
-        const { error: memberError } = await supabase
+        const { error: memberError } = await writable
           .from("orbit_event_members")
           .insert(
             input.memberIds.map((memberId) => ({
@@ -344,7 +346,7 @@ export function createEventRepository(
           );
         if (memberError) {
           // 補償処理: メンバー登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
-          await supabase.from("orbit_events").delete().eq("id", event.id);
+          await writable.from("orbit_events").delete().eq("id", event.id);
           throw new RepositoryError("イベントのメンバー登録に失敗しました", memberError);
         }
       }
@@ -357,7 +359,8 @@ export function createEventRepository(
     },
 
     async update(id, input) {
-      const { error: rpcError } = await supabase.rpc("update_event_with_relations", {
+      const writable = asWritableClient(supabase);
+      const { error: rpcError } = await writable.rpc("update_event_with_relations", {
         p_event_id: id,
         p_event_type_id: input.eventTypeId,
         p_title: input.title,
@@ -384,7 +387,8 @@ export function createEventRepository(
     },
 
     async delete(id) {
-      const { error } = await supabase
+      const writable = asWritableClient(supabase);
+      const { error } = await writable
         .from("orbit_events")
         .delete()
         .eq("id", id);
