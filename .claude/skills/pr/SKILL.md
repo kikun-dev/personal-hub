@@ -39,7 +39,8 @@ argument-hint: "[関連Issue番号] [--codex] [--draft]"
 - **Why / Background**: 関連 Issue の背景を要約
 - **What / Summary**: ユーザー視点の箇条書き
 - **Scope / Impact**: 影響する画面・API・データ / 影響しないもの / 破壊的変更の有無
-- **Related Issues**: `Closes #N`（必須。PR は必ず Issue を参照する — `rules/process.md`）
+- **Related Issues**: `Closes #N`（必須。PR は必ず Issue を参照する — `rules/process.md`。
+  例外は設計判断を含まない定期メンテナンス PR のみ。該当する場合はその旨を本文に書く）
 - **DB / Migration**: DB 変更があるときだけ記載。無ければセクションごと「変更なし」と明記
 - **Test Plan**: 実施した検証を正直に書く。未実施項目は理由付きで「未実施」とする
   （実行していないテストを「通った」と書かない）

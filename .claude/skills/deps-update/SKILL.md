@@ -57,7 +57,8 @@ argument-hint: "[--major]（メジャー更新も含める場合）"
 |---|---|---|
 ```
 
-- 関連 Issue が無い定期作業のため、`Closes #N` は不要（Related があれば書く）
+- 依存更新は `rules/process.md` の Issue 参照ルールの例外（設計判断を含まない定期メンテナンス PR）に
+  該当するため、`Closes #N` は不要（Related があれば書く）。PR 本文に例外に該当する旨を書く
 
 ## 完了条件
 
