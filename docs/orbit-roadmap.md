@@ -219,6 +219,7 @@
 - [x] 楽曲に単一ラベル（表題/選抜/アンダー/ソロ/ユニット/期別、任意）を追加し一覧で絞り込み
   - [x] アンダーはグループ別表示（乃木坂=アンダー/櫻坂=BACKS/日向坂=ひなた坂）、期別は「N期生曲」表示＋期サブ絞り込み（候補は group.maxGeneration）
   - [x] duration_seconds を廃止（列削除・入力/表示撤去）。migration 038、RPC は label/generation 対応に再生成
+- [x] ラベルに「全員」を追加し、期別曲表記を「N期生」に統一（PR #206）
 
 ### 選抜ポジション表示・一元管理（#177 / #178 / #179）
 
@@ -229,16 +230,37 @@
 - [x] 複数表題曲や期別曲の代表トラック方式を補正する（PR #181）
 - [x] 櫻坂46 1st〜5th Single の櫻エイト期を特別ルールとして表示する（PR #182）
 - [x] Issue #177 の Decision を ADR 0007 に昇格する（PR #183）
+- [x] 櫻エイト期でも期別曲参加メンバーを「N期生」で導出するよう補正（PR #210）
+- [x] 休業中は参加登録を保持しつつ、リリース詳細の表示・人数集計から除外する（PR #200 / #204）
+
+### 制作陣管理・担当楽曲表示
+
+- [x] 楽曲フォームの制作陣候補を担当 role で絞り込む（PR #186）
+- [x] 未登録の制作陣を楽曲フォーム内モーダルから担当付きで追加できるようにする。名前一致時は既存人物へ担当 role を追加（PR #187）
+- [x] 制作陣一覧に名前検索と担当 role 絞り込みを追加（PR #202）
+- [x] 制作陣詳細ページに担当楽曲数と担当楽曲一覧を追加（PR #203）
+- [x] 担当楽曲一覧の並びをリリース日昇順、曲順昇順に統一（PR #205）
+
+### 楽曲/リリース表示の改善
+
+- [x] リリース収録曲に楽曲ラベルを表示する（PR #191）
+- [x] 楽曲詳細のフォーメーションを楽曲情報の直下へ移動する（PR #199）
+- [x] メンバー詳細の参加楽曲をリリース日昇順・曲順昇順に並べ、リリース種別/楽曲ラベルバッジを表示する（PR #211）
 
 ### リリース種別にベスト/コンピレーションを追加（#129）
 
 - [x] `release_type` に `best` / `compilation` を追加（ナンバリング無し）。一覧フィルタ「アルバム」でアルバム系（album/best/compilation）をまとめて表示、ラベルは `BEST Album` / `Compilation Album`（migration 037）
 
-### カレンダーにライブ公演・リリース日を統合
+### 楽曲動画・カレンダーイベント
 
+- [x] 楽曲に関連動画（Dance Practice/ひなリハ、コール動画）を追加する。MV と同じく URL と配信日を持ち、監督は持たない（PR #192）
+- [x] リリース収録曲に MV / Dance Practice・ひなリハ / コール動画の有無をバッジ表示する（PR #193）
 - [x] トップのカレンダー/当日イベント/今日はなんの日に、ライブ公演日とリリース日を表示（読み取り側で集約、データ二重化なし）
   - [x] `liveRepository.findCalendarPerformances` / `releaseRepository.findCalendarItems` を追加し `getTopPageContent` で月/当日/OnThisDay にマージ
   - [x] 種別ごとに色ドット（ライブ/リリース）＋一覧・OnThisDay にバッジとリンク表示。top キャッシュを lives/releases タグに連動
+- [x] MV/関連動画の配信日を動画配信イベントとしてトップの月カレンダー/選択日/今日はなんの日に表示する（PR #212）
+  - [x] `songRepository.findCalendarVideoItems` を追加し、`orbit_track_mvs.published_on` / `orbit_track_videos.published_on` を `getTopPageContent` で合成
+  - [x] 表示は「曲名（種別）」、バッジは「動画」。リンクは動画URLへ外部リンクとして開く。top キャッシュを songs タグにも連動
 
 ### リリース/ライブ一覧の表示見直し
 
@@ -308,3 +330,10 @@
 | Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
+| Orbit 認可が authenticated 一段階 | Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない | Issue #213 で対応予定。監査メモ: `docs/advisor/006-oshikatsu-web-current-state-audit.md` |
+| auth callback / public route 判定の軽微な緩さ | `next` のバックスラッシュ、public path の前方一致判定 | Issue #214 で対応予定 |
+| `createReadOnlyClient` が型レベルでは read-only でない | service role client のため、誤用時に書き込み API も呼べる | Issue #215 で型レベルの read-only 化を検討 |
+| Supabase 生成型未導入 | リレーション型を手書きし、`T | T[]` union / `as` キャストが残る | Issue #216 で段階導入予定 |
+| song/release リポジトリ肥大化 | select 定義と mapper が CRUD 本体に同居している | Issue #217 で mapper 分割予定 |
+| 管理フォーム巨大化 | `SongForm` / `ReleaseForm` / `LiveForm` / `MemberForm` に submit・errors・keyed array 操作が重複 | Issue #218 で共通化・分割予定 |
+| ルート error / not-found 未整備 | `notFound()` は複数箇所で使うが、カスタム 404 とルートエラー画面がない | Issue #219 で対応予定 |
