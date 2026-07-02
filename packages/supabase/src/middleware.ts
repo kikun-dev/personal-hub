@@ -8,7 +8,8 @@ const DEFAULT_CONFIG: Required<AuthMiddlewareConfig> = {
   publicRoutes: ["/login", "/auth"],
   publicExactPaths: ["/"],
   loginPath: "/login",
-  requiredRole: null,
+  allowedRoles: null,
+  roleGuards: [],
 };
 
 function getAppMetadataRole(user: User): string | null {
@@ -32,7 +33,8 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
     ...DEFAULT_CONFIG,
     ...config,
     routeMergeMode,
-    requiredRole: config.requiredRole ?? DEFAULT_CONFIG.requiredRole,
+    allowedRoles: config.allowedRoles ?? DEFAULT_CONFIG.allowedRoles,
+    roleGuards: config.roleGuards ?? DEFAULT_CONFIG.roleGuards,
     publicRoutes: mergePaths(
       DEFAULT_CONFIG.publicRoutes,
       config.publicRoutes,
@@ -91,20 +93,40 @@ export function createAuthMiddleware(config: AuthMiddlewareConfig = {}) {
       return NextResponse.redirect(url);
     }
 
-    // 認可: requiredRole 指定時は app_metadata.role が一致するユーザーのみ許可する。
+    // 認可: allowedRoles 指定時は app_metadata.role がこの配列に含まれるユーザーのみ許可する。
     // service role を使う read path（ADR 0006）は RLS を通らないため、
     // 認証済みでも許可外のユーザーはアプリ境界で遮断する必要がある。
     if (
       user &&
       !isPublicRoute &&
-      mergedConfig.requiredRole !== null &&
-      getAppMetadataRole(user) !== mergedConfig.requiredRole
+      mergedConfig.allowedRoles !== null &&
+      !mergedConfig.allowedRoles.includes(getAppMetadataRole(user) ?? "")
     ) {
       const url = request.nextUrl.clone();
       url.pathname = mergedConfig.loginPath;
       url.search = "";
       url.searchParams.set("error", "forbidden");
       return NextResponse.redirect(url);
+    }
+
+    // 認可: allowedRoles を通過したユーザーに対し、roleGuards でパス単位のロール制限をさらに適用する。
+    if (user && !isPublicRoute) {
+      const matchedGuard = mergedConfig.roleGuards.find((guard) =>
+        guard.paths.some(
+          (path) => pathname === path || pathname.startsWith(`${path}/`)
+        )
+      );
+
+      if (
+        matchedGuard &&
+        !matchedGuard.allowedRoles.includes(getAppMetadataRole(user) ?? "")
+      ) {
+        const url = request.nextUrl.clone();
+        url.pathname = matchedGuard.redirectTo ?? mergedConfig.loginPath;
+        url.search = "";
+        url.searchParams.set("error", "forbidden");
+        return NextResponse.redirect(url);
+      }
     }
 
     return supabaseResponse;
