@@ -4,19 +4,24 @@ import { createPersonRepository } from "@/repositories/personRepository";
 import { listPeople } from "@/usecases/listPeople";
 import { Button } from "@/components/ui/Button";
 import { PeopleBrowser } from "@/components/people/PeopleBrowser";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 
 export default async function PeoplePage() {
   const supabase = await createClient();
   const repo = createPersonRepository(supabase);
   const people = await listPeople(repo);
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">制作陣マスタ</h1>
-        <Link href="/people/new">
-          <Button>新規追加</Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/people/new">
+            <Button>新規追加</Button>
+          </Link>
+        )}
       </div>
 
       <PeopleBrowser
@@ -26,6 +31,7 @@ export default async function PeoplePage() {
           dateOfBirth,
           roles,
         }))}
+        isAdmin={isAdmin}
       />
     </div>
   );

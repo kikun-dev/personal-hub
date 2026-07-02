@@ -1,5 +1,5 @@
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createVenueRepository } from "@/repositories/venueRepository";
 import { getVenue } from "@/usecases/getVenue";
 import { VenueForm } from "@/components/admin/VenueForm";
@@ -14,7 +14,7 @@ type EditVenuePageProps = {
 
 export default async function EditVenuePage({ params }: EditVenuePageProps) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = await requireAdmin();
   const venue = await getVenue(createVenueRepository(supabase), id);
 
   if (!venue) {

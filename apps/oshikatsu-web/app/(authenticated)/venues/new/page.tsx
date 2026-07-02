@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { VenueForm } from "@/components/admin/VenueForm";
 import { createVenueAction } from "./actions";
 import type { CreateVenueInput } from "@/types/venue";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewVenuePage() {
+  await requireAdmin();
+
   async function handleSubmit(
     values: CreateVenueInput
   ): Promise<{ errors?: ValidationError[] }> {

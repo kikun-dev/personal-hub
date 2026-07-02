@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createEventRepository } from "@/repositories/eventRepository";
 import { updateEvent } from "@/usecases/updateEvent";
 import { deleteEvent } from "@/usecases/deleteEvent";
@@ -14,14 +13,7 @@ export async function updateEventAction(
   id: string,
   input: UpdateEventInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createEventRepository(supabase);
 
@@ -46,14 +38,7 @@ export async function updateEventAction(
 export async function deleteEventAction(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createEventRepository(supabase);
 
