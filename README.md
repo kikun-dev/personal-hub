@@ -97,6 +97,7 @@ pnpm --filter oshikatsu-web lint
         supabase/            ← 認証・DB 共有パッケージ
       docs/
         ai/                  ← AI 向けドキュメント
+        advisor/             ← 全体レビュー・監査メモ
         decisions/           ← ADR（設計判断記録）
         orbit-roadmap.md     ← Orbit ロードマップ・残タスク
       rules/

@@ -33,7 +33,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - チャート：recharts（household-web で導入済み）
 - リポジトリ：GitHub（private）
 - CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build）
-- デプロイ：Vercel（household-web デプロイ済み）
+- デプロイ：Vercel（household-web / oshikatsu-web）
 - IDE：VS Code（Remote WSL）
 
 ---
@@ -50,6 +50,7 @@ personal-hub/
     supabase/             ← @personal-hub/supabase（認証・DB クライアント共有）
   docs/
     ai/                   ← AI向けドキュメント
+    advisor/              ← 外部/全体レビューと改善計画
     decisions/            ← ADR（設計判断記録）
   rules/                  ← プロジェクトルール
   .github/                ← Issue/PRテンプレート、CI
@@ -94,11 +95,13 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 
 ### 主な機能
 - **トップページ**（月間カレンダー + 今日のイベント + 今日はなんの日）
+  - 通常イベント、誕生日、ライブ公演日、リリース日、MV/関連動画の配信日を集約表示する
 - **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
-- **メンバー詳細**（プロフィール + グループ履歴 + 来歴）
-- **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、衣装）
+- **メンバー詳細**（プロフィール + グループ履歴 + 来歴 + 参加楽曲 + シングル別選抜ポジション）
+- **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、関連動画、衣装）
 - **ライブ/会場/セットリスト管理**（公演、出演メンバー、披露メンバー、披露タイプ）
-- **管理画面**（メンバー CRUD + イベント CRUD）
+- **制作陣管理**（人物マスタ、担当 role、担当楽曲一覧）
+- **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場 CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
   - 来歴はイベント管理で `is_member_history` を付与して管理（メンバー画面側での来歴入力は廃止）
 - **Google ログイン**
@@ -126,6 +129,8 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 選抜ポジションは ADR 0007 に従い、選抜/アンダー/期別、列、センターを楽曲ラベルとフォーメーションから導出する
 - リリース×メンバーで手動保持する選抜ポジション情報は、福神/休業中 overlay に限定する
 - 櫻坂46 1st〜5th Single の櫻エイト期は、`label = title` の代表トラックを基準に特別ルールで導出する
+- 休業中は参加登録を保持したまま、リリース詳細の表示・人数集計から除外する
+- 関連動画は `dance_practice` / `call` を保持する。`dance_practice` は櫻坂46では「Dance Practice」、日向坂46では「ひなリハ」と表示し、乃木坂46では表示対象外にする
 
 ### 主要DBテーブル（`orbit_` プレフィクス）
 - `orbit_groups` — グループ（successor_id で改名関係）
@@ -135,17 +140,19 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_people` — 制作陣マスタ
 - `orbit_releases` / `orbit_release_tracks` / `orbit_release_members` / `orbit_release_bonus_videos` — リリース本体、収録曲、参加メンバー、特典映像
 - `orbit_release_member_positions` — リリース×メンバーの選抜ポジション overlay（福神/休業中）
-- `orbit_tracks` / `orbit_track_credits` / `orbit_track_formations` / `orbit_track_formation_rows` / `orbit_track_formation_members` / `orbit_track_mvs` / `orbit_track_costumes` — 楽曲、クレジット、フォーメーション、MV、衣装
+- `orbit_tracks` / `orbit_track_credits` / `orbit_track_formations` / `orbit_track_formation_rows` / `orbit_track_formation_members` / `orbit_track_mvs` / `orbit_track_videos` / `orbit_track_costumes` — 楽曲、クレジット、フォーメーション、MV、関連動画、衣装
 - `orbit_venues` — 会場マスタ
 - `orbit_lives` / `orbit_live_performances` / `orbit_live_performer_groups` / `orbit_live_performer_members` / `orbit_live_performance_absences` — ライブ、公演、出演/休演情報
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
 
 ### RLS 方針
-グローバルデータのため `auth.role() = 'authenticated'` で統一。
-将来の公開時は SELECT を `true` に変更するだけ。
+グローバルデータのため、現状は `auth.role() = 'authenticated'` で統一。
+Supabase Auth の新規サインアップは OFF を確認済みだが、RLS レイヤーのオーナー限定化は Issue #213 で多層防御として対応予定。
+将来の匿名公開時は、公開対象の SELECT ポリシーだけを広げる。
 
 ### 今後の予定
 `docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0007。
+全体レビューと改善計画は `docs/advisor/006-oshikatsu-web-current-state-audit.md` を参照。
 
 ---
 
