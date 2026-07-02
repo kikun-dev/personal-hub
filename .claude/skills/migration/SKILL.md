@@ -37,8 +37,8 @@ argument-hint: "<DB変更の内容> [対象アプリ: oshikatsu-web(デフォル
 
 - ローカル適用: アプリディレクトリで `supabase db push`（または `supabase db reset` でシード込み再構築）
 - 適用後、影響するアプリの typecheck / lint と、関連画面の手動確認を行う
-- Issue #216（Supabase 生成型）導入後は、スキーマ変更のたびに型を再生成する
-  （導入時に定義されるコマンドに従う。導入前は不要）
+- スキーマ変更のたびに `pnpm --filter @personal-hub/supabase gen:types` で Database 型
+  （`packages/supabase/src/database.types.ts`）を再生成する（要 `npx supabase login` 済み）
 
 ### 4. 関連ドキュメントの更新（該当する場合のみ）
 

@@ -59,6 +59,8 @@ personal-hub/
 
 - 各アプリは独立した Next.js アプリとして存在する
 - `packages/supabase` は認証・DB クライアントの共有パッケージ（PR #26 で導入済み）
+- Supabase の生成型（Database型）は `packages/supabase/src/database.types.ts`。
+  スキーマ変更後は `npx supabase login` 済みの状態で `pnpm --filter @personal-hub/supabase gen:types` を実行して再生成する
 
 ---
 

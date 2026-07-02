@@ -1,5 +1,15 @@
 export type { SupabaseClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
+
+export type { Database };
+
+/**
+ * Database 型を適用済みの Supabase クライアント型。
+ * Database=any の素の SupabaseClient はこの型に代入可能なため、
+ * 既存の未typedな利用箇所はそのまま通る想定（packages/supabase/src/server.ts 等参照）。
+ */
+export type TypedSupabaseClient = SupabaseClient<Database>;
 
 /** select チェーンのみ公開するクエリビルダー */
 type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;

@@ -34,7 +34,8 @@
     }
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "gen:types": "npx supabase gen types typescript --project-id minuygaifguacritxbjh --schema public > src/database.types.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.9.0",
