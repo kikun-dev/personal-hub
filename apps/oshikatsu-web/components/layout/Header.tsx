@@ -7,13 +7,21 @@ import { PendingLink } from "@/components/ui/PendingLink";
 import {
   HEADER_NAV_ITEMS,
   TOP_NAV_ITEMS,
+  filterNavItemsForRole,
   isNavigationItemActive,
 } from "@/lib/navigation";
 
-export function Header() {
+type HeaderProps = {
+  isAdmin: boolean;
+};
+
+export function Header({ isAdmin }: HeaderProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const headerNavItems = filterNavItemsForRole(HEADER_NAV_ITEMS, isAdmin);
+  const mobileNavItems = filterNavItemsForRole(TOP_NAV_ITEMS, isAdmin);
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -36,7 +44,7 @@ export function Header() {
           </PendingLink>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">
-            {HEADER_NAV_ITEMS.map((item) => (
+            {headerNavItems.map((item) => (
               <PendingLink
                 key={item.href}
                 href={item.href}
@@ -84,7 +92,7 @@ export function Header() {
       {isMenuOpen && (
         <div className="border-t border-foreground/10 px-4 py-3 md:hidden">
           <nav className="flex flex-col gap-2">
-            {TOP_NAV_ITEMS.map((item) => (
+            {mobileNavItems.map((item) => (
               <PendingLink
                 key={item.href}
                 href={item.href}
