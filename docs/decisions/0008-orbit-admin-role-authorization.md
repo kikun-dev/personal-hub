@@ -87,8 +87,11 @@ oshikatsu-web の `proxy.ts` で `requiredRole: "admin"` を指定して非 admi
   `SUPABASE_SERVICE_ROLE_KEY` を使う read-only client は RLS をバイパスするため、
   閲覧系 shared cache の動作は変わらない。閲覧の認可は Decision 6 の proxy ロールガードが担い、
   書き込み系 Server Action は auth client を使うため RLS でも拒否される
-- **proxy ガードは JWT の claim を信頼する**: ロール剥奪後も JWT 失効（最大1時間）までは
-  閲覧できる余地がある。書き込みは RLS が即時反映のため実害は限定的
+- **proxy ガード・RLS とも JWT の claim を信頼する**: RLS も `auth.jwt()` の
+  `app_metadata.role` を参照するため、ロール剥奪は閲覧・書き込みとも JWT 再発行/失効
+  （access token の有効期限、既定1時間）まで反映にラグがある。
+  即時遮断が必要な場合は、対象ユーザーのセッション失効（refresh token 無効化）や
+  ユーザー削除などの追加の運用手順が必要
 
 ## Notes
 
