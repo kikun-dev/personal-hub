@@ -1,10 +1,13 @@
 import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { PersonForm } from "@/components/admin/PersonForm";
 import { createPersonAction } from "./actions";
 import type { CreatePersonInput } from "@/types/person";
 import type { ValidationError } from "@/types/errors";
 
 export default async function NewPersonPage() {
+  await requireAdmin();
+
   async function handleSubmit(
     values: CreatePersonInput
   ): Promise<{ errors?: ValidationError[] }> {

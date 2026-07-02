@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createVenueRepository } from "@/repositories/venueRepository";
 import { revalidateOrbitVenueData } from "@/lib/revalidateOrbit";
 import { updateVenue } from "@/usecases/updateVenue";
@@ -14,14 +13,7 @@ export async function updateVenueAction(
   id: string,
   input: UpdateVenueInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createVenueRepository(supabase);
 
@@ -46,14 +38,7 @@ export async function updateVenueAction(
 export async function deleteVenueAction(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createVenueRepository(supabase);
 

@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { revalidateOrbitPersonData } from "@/lib/revalidateOrbit";
 import { createPerson } from "@/usecases/createPerson";
@@ -12,14 +11,7 @@ import { RepositoryError } from "@/types/errors";
 export async function createPersonAction(
   input: CreatePersonInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createPersonRepository(supabase);
 

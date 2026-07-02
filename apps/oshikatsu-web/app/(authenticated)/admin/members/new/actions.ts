@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createMemberImageRepository } from "@/repositories/memberImageRepository";
 import { createMember } from "@/usecases/createMember";
@@ -28,14 +27,7 @@ export async function createMemberAction(
   input: CreateMemberInput,
   imageFile?: MemberImageUploadInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const memberRepo = createMemberRepository(supabase);
   const memberImageRepo = createMemberImageRepository(supabase);

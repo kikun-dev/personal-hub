@@ -7,6 +7,13 @@ const DEFAULT_CONFIG: Required<AuthCallbackConfig> = {
   errorRedirect: "/login",
 };
 
+// オープンリダイレクト防止: "/" で始まり "//" でなく、"\" を含まない相対パスのみ許可する。
+// ブラウザは "\" を "/" に正規化するため、"\" を許すと "/\evil.com" が
+// protocol-relative URL（"//evil.com" 相当）として扱われ、外部サイトへ遷移し得る。
+function isSafeRedirectPath(path: string): boolean {
+  return path.startsWith("/") && !path.startsWith("//") && !path.includes("\\");
+}
+
 export function createAuthCallbackHandler(config: AuthCallbackConfig = {}) {
   const mergedConfig: Required<AuthCallbackConfig> = {
     ...DEFAULT_CONFIG,
@@ -19,11 +26,9 @@ export function createAuthCallbackHandler(config: AuthCallbackConfig = {}) {
     const nextParam =
       searchParams.get("next") ?? mergedConfig.defaultRedirect;
 
-    // オープンリダイレクト防止: "/" で始まり "//" でない相対パスのみ許可
-    const next =
-      nextParam.startsWith("/") && !nextParam.startsWith("//")
-        ? nextParam
-        : mergedConfig.defaultRedirect;
+    const next = isSafeRedirectPath(nextParam)
+      ? nextParam
+      : mergedConfig.defaultRedirect;
 
     if (code) {
       const supabase = await createClient();
