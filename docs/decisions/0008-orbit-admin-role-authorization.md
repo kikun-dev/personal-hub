@@ -98,3 +98,79 @@ oshikatsu-web の `proxy.ts` で `requiredRole: "admin"` を指定して非 admi
 - 実装: migration 045、Issue #213
 - 将来の admin/viewer ロール体系（閲覧のみ共有）の拡張は Issue #221 で検討
   （SELECT ポリシーのみを admin OR viewer に拡張する中規模変更で対応可能）
+
+## 追記（2026-07-02, #221）
+
+### viewer ロールの導入
+
+`app_metadata.role` に `viewer` を追加し、admin/viewer の2ロール体系にする。
+
+- **viewer**: 閲覧（SELECT）のみ許可。書き込み（INSERT/UPDATE/DELETE）は不可
+- **admin**: 従来通り閲覧・書き込みともに許可
+- 上記以外（未設定・不正な値）は引き続きアクセス不可
+
+### `has_orbit_read_role()` の追加と使い分け
+
+`is_orbit_admin()` とは別に `public.has_orbit_read_role()` を新設し、
+`COALESCE(auth.jwt() -> 'app_metadata' ->> 'role', '') IN ('admin', 'viewer')` で判定する。
+形式（`LANGUAGE sql STABLE SET search_path = ''`、`(select ...)` subselect）は
+`is_orbit_admin()` と揃えている。
+
+役割分担:
+- `has_orbit_read_role()`: orbit_* テーブルの SELECT ポリシーでのみ使用
+- `is_orbit_admin()`: orbit_* テーブルの INSERT/UPDATE/DELETE ポリシー、および
+  proxy の `requiredRole` ガード（書き込み・管理操作の入口）で使用
+
+migration 046 では、045 で作成した `<table>_select` ポリシーのみを
+`has_orbit_read_role()` で DROP → CREATE し直し、`<table>_insert` /
+`<table>_update` / `<table>_delete` ポリシーには一切手を加えていない
+（`is_orbit_admin()` のまま据え置き）。
+
+storage.objects については、member-images / release-images /
+track-costume-images の3バケットがいずれも `public = true` で作成されており、
+045 の時点から SELECT ポリシー自体が存在しない（public バケットの読み取りは
+Storage の公開エンドポイント経由で RLS を通らないため）。
+そのため viewer 導入でも storage.objects への変更は発生しない。
+書き込み系ポリシーは 045 のまま `is_orbit_admin()` 限定を維持する。
+
+### ロール剥奪の反映ラグは viewer にも同様に適用される
+
+migration 045 の Consequences で述べた「ロール剥奪は JWT 再発行/失効まで
+反映にラグがある」という制約は、viewer ロールの剥奪（viewer → 無ロール、
+または viewer → admin への変更）にも同様に適用される。
+RLS・proxy ガードともに `auth.jwt()` の `app_metadata.role` を参照するため、
+即時遮断が必要な場合はセッション失効やユーザー削除などの追加運用が必要な点も変わらない。
+
+### ロール付与手順
+
+新規に viewer（または admin）ユーザーを追加する場合、以下のいずれかの方法で
+`app_metadata.role` を設定する。
+
+**方法1: Supabase ダッシュボード**
+
+1. Supabase ダッシュボードで対象プロジェクトを開く
+2. `Authentication` → `Users` → 対象ユーザーを選択
+3. `User Metadata` ではなく **`App Metadata`** を編集する
+   （User Metadata はユーザー自身が変更可能なため認可判定に使ってはならない）
+4. 以下を設定する
+
+   ```json
+   { "role": "viewer" }
+   ```
+
+   admin にする場合は `"role": "admin"` とする。
+
+**方法2: SQL（Supabase SQL Editor 等）**
+
+```sql
+UPDATE auth.users
+SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || '{"role": "viewer"}'::jsonb
+WHERE email = 'target-user@example.com';
+```
+
+いずれの方法でも、**設定後は対象ユーザーの再ログインが必要**
+（JWT の `app_metadata` はログイン時に発行されるため、既存セッションには反映されない）。
+
+### Notes 更新
+
+- 実装: migration 046、Issue #221
