@@ -147,10 +147,11 @@ household-web と同パターン。Repository に `userId` パラメータなし
 
 ### RLS 方針
 グローバルデータのため、`app_metadata.role = 'admin'`（`public.is_orbit_admin()`）で判定する。ADR 0008 参照（Issue #213 対応済み）。
+アプリ境界でも proxy の `requiredRole: "admin"` ガードで非 admin を遮断する（service role read path は RLS を通らないため）。
 将来の匿名公開時は、公開対象の SELECT ポリシーだけを広げる。
 
 ### 今後の予定
-`docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0007。
+`docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0008。
 全体レビューと改善計画は `docs/advisor/006-oshikatsu-web-current-state-audit.md` を参照。
 
 ---
@@ -176,6 +177,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 | 0005 | Orbit Phase 1 設計 | Accepted |
 | 0006 | Orbit 閲覧導線の read cache 戦略 | Accepted |
 | 0007 | Orbit 選抜ポジションのフォーメーション一元管理 | Accepted |
+| 0008 | Orbit 認可レイヤーのオーナー限定化（app_metadata.role） | Accepted |
 
 ---
 

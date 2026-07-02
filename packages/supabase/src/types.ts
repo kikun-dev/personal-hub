@@ -16,6 +16,12 @@ export type AuthMiddlewareConfig = {
   publicExactPaths?: string[];
   /** 未認証時のリダイレクト先 (default: "/login") */
   loginPath?: string;
+  /**
+   * 指定時、`app_metadata.role` がこの値と一致するユーザーのみ保護ルートを許可する。
+   * 不一致の場合は `loginPath?error=forbidden` へリダイレクトする。
+   * (default: null = ロール判定なし)
+   */
+  requiredRole?: string | null;
 };
 
 /** Auth callback ハンドラファクトリの設定 */
