@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { Group } from "@/types/group";
 import type { EventType } from "@/types/eventType";
 import type { MemberOption } from "@/types/member";
@@ -10,6 +9,8 @@ import { Input } from "@/components/ui/Input";
 import { Select } from "@/components/ui/Select";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { useAdminForm } from "@/hooks/useAdminForm";
 
 type EventFormProps = {
   mode: "create" | "edit";
@@ -46,23 +47,11 @@ export function EventForm({
   members,
   onSubmit,
 }: EventFormProps) {
-  const [values, setValues] = useState<CreateEventInput>(
-    () => initialValues ?? getDefaultValues()
-  );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const update = <K extends keyof CreateEventInput>(
-    field: K,
-    value: CreateEventInput[K]
-  ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
+  const { values, setValues, update, errors, setErrors, isSubmitting, handleSubmit } =
+    useAdminForm<CreateEventInput>({
+      initialValues: () => initialValues ?? getDefaultValues(),
+      onSubmit,
     });
-  };
 
   const toggleGroupId = (groupId: string) => {
     setValues((prev) => ({
@@ -92,32 +81,9 @@ export function EventForm({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      const result = await onSubmit(values);
-      if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {errors._form && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-          {errors._form}
-        </p>
-      )}
+      <FormErrorBanner message={errors._form} />
 
       <Input
         id="title"
