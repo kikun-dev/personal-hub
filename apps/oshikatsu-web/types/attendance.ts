@@ -58,6 +58,8 @@ export type MyAttendanceEntry = {
   liveId: string;
   liveName: string;
   liveType: LiveType;
+  // 会場訪問の集計（#250）用。venue_id は nullable FK のため未設定の公演もある。
+  venueId: string | null;
   venueName: string | null;
   venuePrefecture: string | null;
   // 出演グループ（#248の集計用）。対バン・フェスは複数件になる。

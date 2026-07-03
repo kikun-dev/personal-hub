@@ -17,13 +17,13 @@ type YearlyAttendanceChartProps = {
   undatedCount: number;
 };
 
-// 年別の参加数チャート（Issue #248）。年フィルタでは絞り込まず常に全期間を表示する
+// 年別の参戦数チャート（Issue #248）。年フィルタでは絞り込まず常に全期間を表示する
 // （usecases/getAttendanceStats.ts のコメント参照）。
 export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceChartProps) {
   if (data.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-foreground/40">
-        参加記録がありません
+        参戦記録がありません
       </p>
     );
   }
@@ -47,7 +47,7 @@ export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceCh
               width={32}
             />
             <Tooltip
-              formatter={(value: number | undefined) => [`${value ?? 0}件`, "参加数"]}
+              formatter={(value: number | undefined) => [`${value ?? 0}件`, "参戦数"]}
               labelFormatter={(year) => (year !== undefined ? `${year}年` : "")}
               contentStyle={{
                 backgroundColor: "var(--background)",

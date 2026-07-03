@@ -27,7 +27,7 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
   // グローバル部分（楽曲情報）は shared cache 経由の getSongDetailPageData のまま。
   // 遭遇記録はユーザー別データ（ADR 0009）のため shared cache に載せず、
   // 認証付きクライアントで都度取得してページ側で合成する
-  // （lives/[id]/page.tsx の参加記録合成と同じパターン）。未認証の場合は
+  // （lives/[id]/page.tsx の参戦記録合成と同じパターン）。未認証の場合は
   // RLS により空配列が返るため、ページ自体はログイン不要のまま扱える。
   const supabase = await createClient();
   const attendanceRepo = createAttendanceRepository(supabase);

@@ -7,7 +7,7 @@ type AttendedTypeBreakdownProps = {
   data: AttendedTypeCount[];
 };
 
-// 参加種別（現地 / LV / 配信）の内訳を件数バッジで表示する（Issue #248）。
+// 参戦種別（現地 / LV / 配信）の内訳を件数バッジで表示する（Issue #248）。
 // 0件・1件でも破綻しないよう、全種別を固定表示し件数のみ0で出す。
 export function AttendedTypeBreakdown({ data }: AttendedTypeBreakdownProps) {
   const total = data.reduce((sum, item) => sum + item.count, 0);
@@ -15,7 +15,7 @@ export function AttendedTypeBreakdown({ data }: AttendedTypeBreakdownProps) {
   if (total === 0) {
     return (
       <p className="py-4 text-center text-sm text-foreground/40">
-        参加記録がありません
+        参戦記録がありません
       </p>
     );
   }

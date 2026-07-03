@@ -13,7 +13,7 @@ import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
 type LiveDetailProps = {
   live: Live;
-  // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参加記録を持つ。未登録の公演は
+  // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参戦記録を持つ。未登録の公演は
   // キーが存在しない（page.tsx で Object.fromEntries した Map をそのまま渡す）。
   myAttendances: Record<string, LiveAttendance>;
 };

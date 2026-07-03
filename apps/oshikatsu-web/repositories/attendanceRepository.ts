@@ -42,11 +42,13 @@ function mapAttendance(row: AttendanceRow): LiveAttendance {
   };
 }
 
-// マイページ（#247）の一覧 + 参加記録の集計（#248）用。参加記録 + 公演 + ライブ + 会場 +
-// 出演グループを1クエリで取得する。performance_id / live_id は NOT NULL FK のため
-// 生成型上は埋め込みが非null単一オブジェクトになる（liveRepository の orbit_groups
-// 埋め込みと同様）。venue_id のみ nullable FK。orbit_live_performer_groups は
-// ライブに対する多対多（対バン・フェスは複数件）のため配列になる。
+// マイページ（#247）の一覧 + 参加記録の集計（#248）+ 会場訪問の集計（#250）用。
+// 参加記録 + 公演 + ライブ + 会場 + 出演グループを1クエリで取得する。
+// performance_id / live_id は NOT NULL FK のため生成型上は埋め込みが非null単一
+// オブジェクトになる（liveRepository の orbit_groups 埋め込みと同様）。venue_id
+// のみ nullable FK。orbit_live_performer_groups はライブに対する多対多
+// （対バン・フェスは複数件）のため配列になる。venues の id は会場訪問集計
+// （getVenueVisitStats）で会場ごとにグルーピングするためのキーとして使う。
 const MY_ATTENDANCE_SELECT = `
   id,
   attended_type,
@@ -62,7 +64,7 @@ const MY_ATTENDANCE_SELECT = `
       live_type,
       orbit_live_performer_groups(orbit_groups(id, name_ja, color))
     ),
-    orbit_venues(name, prefecture)
+    orbit_venues(id, name, prefecture)
   )
 ` as const;
 
@@ -88,6 +90,7 @@ function mapMyAttendanceEntry(row: MyAttendanceRow): MyAttendanceEntry {
     // live_type は DB 上 string 列（CHECK 制約で許容値を保証）。attendedType 同様、
     // 実行時ガードで想定外値のみ安全側 "other" にフォールバックする。
     liveType: isLiveType(live.live_type) ? live.live_type : "other",
+    venueId: venue?.id ?? null,
     venueName: venue?.name ?? null,
     venuePrefecture: venue?.prefecture ?? null,
     groups: live.orbit_live_performer_groups.map((pg) => ({
@@ -157,7 +160,7 @@ export function createAttendanceRepository(
         .in("performance_id", performanceIds);
 
       if (error) {
-        throw new RepositoryError("参加記録の取得に失敗しました", error);
+        throw new RepositoryError("参戦記録の取得に失敗しました", error);
       }
 
       return data.map(mapAttendance);
@@ -169,7 +172,7 @@ export function createAttendanceRepository(
         .select(MY_ATTENDANCE_SELECT);
 
       if (error) {
-        throw new RepositoryError("参加記録一覧の取得に失敗しました", error);
+        throw new RepositoryError("参戦記録一覧の取得に失敗しました", error);
       }
 
       // PostgREST は埋め込みリレーション（orbit_live_performances）の列で
@@ -210,7 +213,7 @@ export function createAttendanceRepository(
       );
 
       if (error) {
-        throw new RepositoryError("参加記録の保存に失敗しました", error);
+        throw new RepositoryError("参戦記録の保存に失敗しました", error);
       }
     },
 
@@ -221,7 +224,7 @@ export function createAttendanceRepository(
         .eq("performance_id", performanceId);
 
       if (error) {
-        throw new RepositoryError("参加記録の解除に失敗しました", error);
+        throw new RepositoryError("参戦記録の解除に失敗しました", error);
       }
     },
   };

@@ -44,7 +44,7 @@ export default async function MyPage() {
   const attendanceRepo = createAttendanceRepository(supabase);
   const { upcoming, past, undated } = await getMyAttendanceHistory(attendanceRepo);
 
-  // 「まだ参加記録がありません」は全体0件のときだけ表示する
+  // 「まだ参戦記録がありません」は全体0件のときだけ表示する
   // （未来の予定や日程未定の記録だけがある場合、過去セクションには専用の空文言を出す）
   const hasAnyAttendance =
     upcoming.length > 0 || past.length > 0 || undated.length > 0;
@@ -68,15 +68,22 @@ export default async function MyPage() {
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-foreground">過去の参加記録</h2>
+          <h2 className="text-sm font-semibold text-foreground">過去の参戦記録</h2>
           {hasAnyAttendance && (
-            <div className="flex items-center gap-3">
+            <div className="flex flex-wrap items-center gap-3">
               <PendingLink
                 href={APP_ROUTES.mypageSetlist}
                 feedback="global"
                 className="text-xs text-blue-500 hover:underline"
               >
                 セットリストを見る
+              </PendingLink>
+              <PendingLink
+                href={APP_ROUTES.mypageVenues}
+                feedback="global"
+                className="text-xs text-blue-500 hover:underline"
+              >
+                会場を見る
               </PendingLink>
               <PendingLink
                 href={APP_ROUTES.mypageStats}
@@ -90,10 +97,10 @@ export default async function MyPage() {
         </div>
         {past.length === 0 ? (
           hasAnyAttendance ? (
-            <p className="text-sm text-foreground/60">過去の参加記録はありません</p>
+            <p className="text-sm text-foreground/60">過去の参戦記録はありません</p>
           ) : (
             <p className="text-sm text-foreground/60">
-              まだ参加記録がありません。
+              まだ参戦記録がありません。
               <PendingLink
                 href={APP_ROUTES.lives}
                 feedback="global"
@@ -101,7 +108,7 @@ export default async function MyPage() {
               >
                 ライブ一覧
               </PendingLink>
-              から参加記録を登録しましょう。
+              から参戦記録を登録しましょう。
             </p>
           )
         ) : (

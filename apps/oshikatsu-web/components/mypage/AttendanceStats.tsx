@@ -15,7 +15,7 @@ type AttendanceStatsProps = {
   groupId: string | undefined;
 };
 
-// 参加記録の集計・ビジュアライズ画面（Issue #248）。年・グループの絞り込みは
+// 参戦記録の集計・ビジュアライズ画面（Issue #248）。年・グループの絞り込みは
 // URLパラメータ（?year=&group=）で表現し、router.replace でServer Component
 // （app/(authenticated)/mypage/stats/page.tsx）を再実行させて集計をやり直す
 // （既存の一覧ページの年月フィルタ = MonthSelector と同じ「URL params + Server
@@ -75,17 +75,17 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">年別の参加数</h2>
+        <h2 className="text-sm font-semibold text-foreground">年別の参戦数</h2>
         <YearlyAttendanceChart data={stats.yearlyCounts} undatedCount={stats.undatedCount} />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">グループ別の参加数</h2>
+        <h2 className="text-sm font-semibold text-foreground">グループ別の参戦数</h2>
         <GroupAttendanceChart data={stats.groupCounts} />
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">参加種別の内訳</h2>
+        <h2 className="text-sm font-semibold text-foreground">参戦種別の内訳</h2>
         <AttendedTypeBreakdown data={stats.attendedTypeCounts} />
       </section>
 
@@ -93,7 +93,7 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
         <h2 className="text-sm font-semibold text-foreground">記録一覧</h2>
         {stats.filteredEntries.length === 0 ? (
           <p className="text-sm text-foreground/60">
-            該当する参加記録がありません
+            該当する参戦記録がありません
           </p>
         ) : (
           <ul className="space-y-2">

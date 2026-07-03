@@ -18,7 +18,7 @@ export default async function LiveDetailPage({ params }: LiveDetailPageProps) {
   }
 
   // グローバル部分（公演・セトリ）は従来どおり shared cache 経由の getLiveDetailPageData
-  // を使い、ここには手を入れない。参加記録はユーザー別データ（ADR 0009）のため
+  // を使い、ここには手を入れない。参戦記録はユーザー別データ（ADR 0009）のため
   // shared cache に載せず、認証付きクライアントで都度取得してページ側で合成する。
   const supabase = await createClient();
   const attendanceRepo = createAttendanceRepository(supabase);

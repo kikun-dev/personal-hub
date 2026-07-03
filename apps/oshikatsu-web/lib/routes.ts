@@ -5,6 +5,7 @@ export const APP_ROUTES = {
   mypage: "/mypage",
   mypageSetlist: "/mypage/setlist",
   mypageStats: "/mypage/stats",
+  mypageVenues: "/mypage/venues",
   people: "/people",
   releases: "/releases",
   songs: "/songs",

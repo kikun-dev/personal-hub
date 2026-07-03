@@ -23,7 +23,7 @@ export function validateAttendance(
   if (!input.attendedType || !isAttendedType(input.attendedType)) {
     errors.push({
       field: "attendedType",
-      message: "参加種別を選択してください",
+      message: "参戦種別を選択してください",
     });
   }
 

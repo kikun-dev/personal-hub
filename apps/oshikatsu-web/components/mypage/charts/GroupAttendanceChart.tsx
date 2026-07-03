@@ -16,13 +16,13 @@ type GroupAttendanceChartProps = {
   data: GroupCount[];
 };
 
-// グループ別の延べ参加数チャート（Issue #248）。1公演に複数グループ出演の場合、
+// グループ別の延べ参戦数チャート（Issue #248）。1公演に複数グループ出演の場合、
 // 出演グループ全てに1カウントする「延べ」集計（Design notes 論点2の決定）。
 export function GroupAttendanceChart({ data }: GroupAttendanceChartProps) {
   if (data.length === 0) {
     return (
       <p className="py-8 text-center text-sm text-foreground/40">
-        参加記録がありません
+        参戦記録がありません
       </p>
     );
   }
@@ -56,7 +56,7 @@ export function GroupAttendanceChart({ data }: GroupAttendanceChartProps) {
               stroke="currentColor"
             />
             <Tooltip
-              formatter={(value: number | undefined) => [`${value ?? 0}件`, "参加数"]}
+              formatter={(value: number | undefined) => [`${value ?? 0}件`, "参戦数"]}
               contentStyle={{
                 backgroundColor: "var(--background)",
                 border: "1px solid rgba(0,0,0,0.1)",
