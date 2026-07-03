@@ -2,6 +2,7 @@ import { requireOrbitUser } from "@/lib/requireOrbitUser";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
 import { getMyAttendanceHistory } from "@/usecases/getMyAttendanceHistory";
 import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
+import { AttendanceListItem } from "@/components/mypage/AttendanceListItem";
 import { PendingLink } from "@/components/ui/PendingLink";
 import type { MyAttendanceEntry } from "@/types/attendance";
 import { LIVE_TYPE_LABELS } from "@/types/live";
@@ -36,28 +37,6 @@ function UpcomingCard({ entry }: { entry: MyAttendanceEntry }) {
   );
 }
 
-// 過去の参加記録 / 日程未定: 1行リストで表示（VenueDetailPage の公演一覧と同じトーン）
-function AttendanceListItem({ entry }: { entry: MyAttendanceEntry }) {
-  return (
-    <li className="rounded-lg border border-foreground/10 p-3">
-      <PendingLink
-        href={`/lives/${entry.liveId}`}
-        className="flex flex-wrap items-center gap-2 text-sm text-foreground hover:underline"
-        listBackFallbackHref={APP_ROUTES.mypage}
-      >
-        <span className="text-xs text-foreground/50">
-          {entry.performanceDate ? formatDate(entry.performanceDate) : "日付未定"}
-        </span>
-        <span>{entry.liveName}</span>
-        {entry.venueName && (
-          <span className="text-xs text-foreground/60">{entry.venueName}</span>
-        )}
-        <AttendedTypeBadge attendedType={entry.attendedType} />
-      </PendingLink>
-    </li>
-  );
-}
-
 export default async function MyPage() {
   // ユーザー別データ（ADR 0009）の入口。admin / viewer 以外は requireOrbitUser 内で
   // リダイレクトされる。以降の read は認証付きクライアント + RLS（本人分のみ）に委ねる。
@@ -88,7 +67,18 @@ export default async function MyPage() {
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-foreground">過去の参加記録</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-semibold text-foreground">過去の参加記録</h2>
+          {hasAnyAttendance && (
+            <PendingLink
+              href={APP_ROUTES.mypageStats}
+              feedback="global"
+              className="text-xs text-blue-500 hover:underline"
+            >
+              記録を見る
+            </PendingLink>
+          )}
+        </div>
         {past.length === 0 ? (
           hasAnyAttendance ? (
             <p className="text-sm text-foreground/60">過去の参加記録はありません</p>
