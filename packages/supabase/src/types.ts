@@ -117,11 +117,27 @@ export type AuthMiddlewareConfig = {
   /** 未認証時のリダイレクト先 (default: "/login") */
   loginPath?: string;
   /**
-   * 指定時、`app_metadata.role` がこの値と一致するユーザーのみ保護ルートを許可する。
-   * 不一致の場合は `loginPath?error=forbidden` へリダイレクトする。
+   * 指定時、`app_metadata.role` がこの配列に含まれるユーザーのみ保護ルートを許可する。
+   * 含まれない場合は `loginPath?error=forbidden` へリダイレクトする。
    * (default: null = ロール判定なし)
    */
-  requiredRole?: string | null;
+  allowedRoles?: string[] | null;
+  /**
+   * パス単位で追加のロール制限をかけるガードのリスト。
+   * allowedRoles を通過したユーザーに対してさらに適用される。
+   * (default: [])
+   */
+  roleGuards?: RoleGuard[];
+};
+
+/** パスプレフィックス単位のロールガード */
+export type RoleGuard = {
+  /** ガード対象のパス（完全一致 or セグメント境界の前方一致） */
+  paths: string[];
+  /** このパスへのアクセスを許可するロール */
+  allowedRoles: string[];
+  /** 不許可時のリダイレクト先 (default: loginPath) */
+  redirectTo?: string;
 };
 
 /** Auth callback ハンドラファクトリの設定 */

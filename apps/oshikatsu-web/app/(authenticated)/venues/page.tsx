@@ -2,17 +2,22 @@ import Link from "next/link";
 import { getVenuesPageData } from "@/usecases/readOrbitData";
 import { VenueTable } from "@/components/venues/VenueTable";
 import { Button } from "@/components/ui/Button";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 
 export default async function VenuesPage() {
   const venues = await getVenuesPageData();
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">会場</h1>
-        <Link href="/venues/new">
-          <Button>新規追加</Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/venues/new">
+            <Button>新規追加</Button>
+          </Link>
+        )}
       </div>
 
       {venues.length === 0 ? (
@@ -20,7 +25,7 @@ export default async function VenuesPage() {
           会場が登録されていません
         </p>
       ) : (
-        <VenueTable venues={venues} />
+        <VenueTable venues={venues} isAdmin={isAdmin} />
       )}
     </div>
   );
