@@ -120,10 +120,13 @@ export function SetlistCountBrowser({
     replaceListFilterParams({ types: next.join(",") });
   };
 
+  // encounters は「参加記録 × セットリスト登録曲」の展開結果。
+  // 参加記録があってもセットリスト未登録・テキスト曲のみの場合は0件になるため、
+  // 「参加記録がない」とは断定せず、遭遇記録が無い旨の文言にする。
   if (!hasAnyEncounter) {
     return (
       <p className="py-12 text-center text-sm text-foreground/60">
-        まだ参加記録がありません。
+        セットリストが登録された参加記録がまだありません。
         <PendingLink
           href={APP_ROUTES.lives}
           feedback="global"
@@ -131,7 +134,7 @@ export function SetlistCountBrowser({
         >
           ライブ一覧
         </PendingLink>
-        から参加記録を登録しましょう。
+        から参加記録を登録するか、公演のセットリストを登録すると集計されます。
       </p>
     );
   }
