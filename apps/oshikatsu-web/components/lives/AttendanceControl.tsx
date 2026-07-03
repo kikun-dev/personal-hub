@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import {
   upsertAttendanceAction,
@@ -164,9 +165,7 @@ export function AttendanceControl({
   return (
     <div className="space-y-1.5 rounded-lg border border-foreground/10 p-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground">
-          {ATTENDED_TYPE_LABELS[attendance.attendedType]}
-        </span>
+        <AttendedTypeBadge attendedType={attendance.attendedType} />
         {attendance.seatNote && (
           <span className="text-xs text-foreground/70">
             座席: {attendance.seatNote}

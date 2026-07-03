@@ -12,6 +12,13 @@ const ADMIN_NAV_ITEM: AppNavigationItem = {
   adminOnly: true,
 };
 
+// マイページはユーザー別データ（ADR 0009）で admin / viewer 共通のため adminOnly なし。
+// 閲覧系ナビの最後・管理の直前に置く。
+const MYPAGE_NAV_ITEM: AppNavigationItem = {
+  href: APP_ROUTES.mypage,
+  label: "マイページ",
+};
+
 // 管理を除いた閲覧系ナビ（管理は常に末尾に置く）
 const CONTENT_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.members, label: "メンバー" },
@@ -22,6 +29,7 @@ const CONTENT_NAV_ITEMS: AppNavigationItem[] = [
 
 export const HEADER_NAV_ITEMS: AppNavigationItem[] = [
   ...CONTENT_NAV_ITEMS,
+  MYPAGE_NAV_ITEM,
   ADMIN_NAV_ITEM,
 ];
 
@@ -29,6 +37,7 @@ export const TOP_NAV_ITEMS: AppNavigationItem[] = [
   ...CONTENT_NAV_ITEMS,
   { href: APP_ROUTES.people, label: "制作陣" },
   { href: APP_ROUTES.venues, label: "会場" },
+  MYPAGE_NAV_ITEM,
   ADMIN_NAV_ITEM,
 ];
 
