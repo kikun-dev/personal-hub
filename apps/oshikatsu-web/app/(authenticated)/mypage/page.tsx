@@ -65,6 +65,11 @@ export default async function MyPage() {
   const attendanceRepo = createAttendanceRepository(supabase);
   const { upcoming, past, undated } = await getMyAttendanceHistory(attendanceRepo);
 
+  // 「まだ参加記録がありません」は全体0件のときだけ表示する
+  // （未来の予定や日程未定の記録だけがある場合、過去セクションには専用の空文言を出す）
+  const hasAnyAttendance =
+    upcoming.length > 0 || past.length > 0 || undated.length > 0;
+
   return (
     <div className="space-y-8">
       <h1 className="text-xl font-bold text-foreground">マイページ</h1>
@@ -85,17 +90,21 @@ export default async function MyPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">過去の参加記録</h2>
         {past.length === 0 ? (
-          <p className="text-sm text-foreground/60">
-            まだ参加記録がありません。
-            <PendingLink
-              href={APP_ROUTES.lives}
-              feedback="global"
-              className="ml-1 text-blue-500 hover:underline"
-            >
-              ライブ一覧
-            </PendingLink>
-            から参加記録を登録しましょう。
-          </p>
+          hasAnyAttendance ? (
+            <p className="text-sm text-foreground/60">過去の参加記録はありません</p>
+          ) : (
+            <p className="text-sm text-foreground/60">
+              まだ参加記録がありません。
+              <PendingLink
+                href={APP_ROUTES.lives}
+                feedback="global"
+                className="ml-1 text-blue-500 hover:underline"
+              >
+                ライブ一覧
+              </PendingLink>
+              から参加記録を登録しましょう。
+            </p>
+          )
         ) : (
           <ul className="space-y-2">
             {past.map((entry) => (
