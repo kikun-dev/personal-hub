@@ -1,5 +1,5 @@
 export type { SupabaseClient } from "@supabase/supabase-js";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { QueryData, SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./database.types";
 
 export type { Database };
@@ -11,13 +11,53 @@ export type { Database };
  */
 export type TypedSupabaseClient = SupabaseClient<Database>;
 
-/** select チェーンのみ公開するクエリビルダー */
-type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;
+/** public スキーマの実テーブル名 */
+type PublicTableName = string & keyof Database["public"]["Tables"];
+
+/**
+ * `TypedSupabaseClient["from"]` は Tables 用 / Views 用の2つのオーバーロードを持つ
+ * ジェネリックメソッドで、`Database` に Views が定義されていない現状 `Views` は空。
+ * 条件型（`Foo extends (...) => infer R`）や generic instantiation expression で
+ * オーバーロードから戻り値型を取り出そうとすると、TypeScript は最後のオーバーロード
+ * （＝ Views 用）にしかマッチできず `never` になってしまう既知の制約がある。
+ * そのため、実際に `from()` を呼び出す関数でラップし、通常の呼び出し時型推論
+ * （オーバーロード解決）に委ねることでテーブルごとの正しい戻り値型を得る。
+ * `typedClientForInference` は `declare const`（値を持たない）なので、この関数を
+ * 実際に呼び出すとランタイムエラーになるが、`typeof` で戻り値型を取り出す目的でしか
+ * 使わないため呼び出されることはない。
+ */
+declare const typedClientForInference: TypedSupabaseClient;
+function selectableFrom<TableName extends PublicTableName>(relation: TableName) {
+  return typedClientForInference.from(relation);
+}
+
+/** select チェーンのみ公開するクエリビルダー（テーブルごとに戻り値型が絞り込まれる） */
+type ReadOnlyQueryBuilder<TableName extends PublicTableName> = Pick<
+  ReturnType<typeof selectableFrom<TableName>>,
+  "select"
+>;
+
+/** public スキーマの RPC 関数名 */
+export type RpcFunctionName = string & keyof Database["public"]["Functions"];
+
+/**
+ * `rpc()` もオーバーロード付きジェネリックのため、`selectableFrom` と同様に
+ * 実際に呼び出す関数でラップし、関数名ごとの Args / Returns を
+ * 呼び出し時型推論で取り出す（この関数が実際に呼び出されることはない）。
+ */
+function rpcForInference<FnName extends RpcFunctionName>(
+  fn: FnName,
+  args: Database["public"]["Functions"][FnName]["Args"]
+) {
+  return typedClientForInference.rpc(fn, args);
+}
 
 /**
  * 型レベルで書き込みを禁止した Supabase クライアント。
  * service role キーで RLS をバイパスする read path（ADR 0006）で、
  * 誤って insert/update/delete/upsert を呼ぶとコンパイルエラーになる。
+ * `from()` は select チェーンのみを公開し、`Database` 生成型からテーブルごとの
+ * 行型が推論される。
  * rpc は Database 生成型があっても読み取り専用か更新系かを型からは判別できないため、
  * 許可する関数名ユニオンを型パラメータ TAllowedRpc で明示的に渡す設計にする
  * （default: never = 何も呼べない。raw な createReadOnlyClient() の返り値で
@@ -26,16 +66,39 @@ type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;
  * （oshikatsu-web の OrbitReadClient 参照）。
  * schema() は書き込み可能なクライアントを返すため公開しない。
  */
-export type ReadOnlySupabaseClient<TAllowedRpc extends string = never> = Omit<
-  SupabaseClient,
-  "from" | "schema" | "rpc"
-> & {
-  from(relation: string): ReadOnlyQueryBuilder;
-  rpc(
-    fn: TAllowedRpc,
-    args?: Record<string, unknown>
-  ): ReturnType<SupabaseClient["rpc"]>;
+export type ReadOnlySupabaseClient<
+  TAllowedRpc extends RpcFunctionName = never,
+> = Omit<TypedSupabaseClient, "from" | "schema" | "rpc"> & {
+  from<TableName extends PublicTableName>(
+    relation: TableName
+  ): ReadOnlyQueryBuilder<TableName>;
+  rpc<FnName extends TAllowedRpc>(
+    fn: FnName,
+    args: Database["public"]["Functions"][FnName]["Args"]
+  ): ReturnType<typeof rpcForInference<FnName>>;
 };
+
+/**
+ * `from(table).select(columns)` の select 文字列リテラルから、結果行配列の型を
+ * 導出するヘルパー。リポジトリ層で「行型を手書きして `as` でキャストする」代わりに使う。
+ * `QueryData` は `@supabase/supabase-js` が公開する、クエリのビルダー型から
+ * `data` の型を取り出すためのヘルパー型。
+ *
+ * @example
+ * const MEMBER_SELECT = "id, name_ja" as const;
+ * type MemberRow = SelectRows<"orbit_members", typeof MEMBER_SELECT>[number];
+ */
+function selectRowsHelper<TableName extends PublicTableName, Query extends string>(
+  table: TableName,
+  columns: Query
+) {
+  return typedClientForInference.from(table).select(columns);
+}
+
+export type SelectRows<
+  TableName extends PublicTableName,
+  Query extends string,
+> = QueryData<ReturnType<typeof selectRowsHelper<TableName, Query>>>;
 
 export type AuthRouteMergeMode = "merge" | "replace";
 

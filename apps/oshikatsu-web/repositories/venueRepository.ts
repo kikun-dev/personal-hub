@@ -1,24 +1,19 @@
+import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type { VenueRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type { Venue, VenueOption } from "@/types/venue";
 import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
 
-type VenueRow = {
-  id: string;
-  name: string;
-  prefecture: string | null;
-  capacity: number | null;
-  map_url: string | null;
-  official_url: string | null;
-  access: string | null;
-  notes: string | null;
-};
+const VENUE_SELECT =
+  "id, name, prefecture, capacity, map_url, official_url, access, notes" as const;
+const VENUE_OPTION_SELECT = "id, name" as const;
 
-type VenueOptionRow = {
-  id: string;
-  name: string;
-};
+type VenueRow = SelectRows<"orbit_venues", typeof VENUE_SELECT>[number];
+type VenueOptionRow = SelectRows<
+  "orbit_venues",
+  typeof VENUE_OPTION_SELECT
+>[number];
 
 function parseCapacity(value: string): number | null {
   const trimmed = value.trim();
@@ -30,9 +25,6 @@ function parseCapacity(value: string): number | null {
 }
 
 export function createVenueRepository(supabase: OrbitReadClient): VenueRepository {
-  const selectFields =
-    "id, name, prefecture, capacity, map_url, official_url, access, notes";
-
   const mapVenue = (row: VenueRow): Venue => ({
     id: row.id,
     name: row.name,
@@ -71,33 +63,33 @@ export function createVenueRepository(supabase: OrbitReadClient): VenueRepositor
     async findAll() {
       const { data, error } = await supabase
         .from("orbit_venues")
-        .select(selectFields)
+        .select(VENUE_SELECT)
         .order("name");
 
       if (error) {
         throw new RepositoryError("会場一覧の取得に失敗しました", error);
       }
 
-      return ((data as VenueRow[]) ?? []).map(mapVenue);
+      return data.map(mapVenue);
     },
 
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_venues")
-        .select("id, name")
+        .select(VENUE_OPTION_SELECT)
         .order("name");
 
       if (error) {
         throw new RepositoryError("会場候補の取得に失敗しました", error);
       }
 
-      return ((data as VenueOptionRow[] | null) ?? []).map(mapVenueOption);
+      return data.map(mapVenueOption);
     },
 
     async findById(id) {
       const { data, error } = await supabase
         .from("orbit_venues")
-        .select(selectFields)
+        .select(VENUE_SELECT)
         .eq("id", id)
         .single();
 
@@ -108,22 +100,22 @@ export function createVenueRepository(supabase: OrbitReadClient): VenueRepositor
         throw new RepositoryError("会場の取得に失敗しました", error);
       }
 
-      return mapVenue(data as VenueRow);
+      return mapVenue(data);
     },
 
     async create(input) {
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable
         .from("orbit_venues")
         .insert(toRow(input))
-        .select(selectFields)
+        .select(VENUE_SELECT)
         .single();
 
       if (error) {
         throw new RepositoryError("会場の作成に失敗しました", error);
       }
 
-      return mapVenue(data as VenueRow);
+      return mapVenue(data);
     },
 
     async update(id, input) {
@@ -132,19 +124,19 @@ export function createVenueRepository(supabase: OrbitReadClient): VenueRepositor
         throw new RepositoryError("更新対象の会場が見つかりません", null);
       }
 
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data, error } = await writable
         .from("orbit_venues")
         .update(toRow(input))
         .eq("id", id)
-        .select(selectFields)
+        .select(VENUE_SELECT)
         .single();
 
       if (error) {
         throw new RepositoryError("会場の更新に失敗しました", error);
       }
 
-      return mapVenue(data as VenueRow);
+      return mapVenue(data);
     },
 
     async delete(id) {

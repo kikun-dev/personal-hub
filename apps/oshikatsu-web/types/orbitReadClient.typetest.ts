@@ -22,6 +22,21 @@ export function orbitReadClientTypeTest(
     .eq("id", "member-id")
     .single();
 
+  // --- 正常系: select した列だけが行の型に現れる（生成型からの推論が効いている） ---
+  async function checkSelectInference() {
+    const { data } = await client.from("orbit_groups").select("id, name_ja");
+    const row = data?.[0];
+    if (row) {
+      const id: string = row.id;
+      const nameJa: string = row.name_ja;
+      void id;
+      void nameJa;
+      // @ts-expect-error select していない列は行の型に存在しない
+      void row.color;
+    }
+  }
+  void checkSelectInference;
+
   // --- 正常系: 許可された読み取り専用 rpc は呼べる ---
   void client.rpc("find_orbit_events_on_this_day", {
     target_month: 1,

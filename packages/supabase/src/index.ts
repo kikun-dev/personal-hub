@@ -4,6 +4,7 @@ export type {
   Database,
   TypedSupabaseClient,
   ReadOnlySupabaseClient,
+  SelectRows,
   AuthRouteMergeMode,
   AuthMiddlewareConfig,
   AuthCallbackConfig,

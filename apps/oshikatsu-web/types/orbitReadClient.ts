@@ -16,7 +16,8 @@ export type OrbitReadRpcFunction = Extract<
 
 /**
  * Orbit の read path 用クライアント型。
- * 書き込みメソッドと更新系 RPC の呼び出しをコンパイルエラーにする
- * （rpc は ReadOnlySupabaseClient の型パラメータで許可関数名だけに絞る）。
+ * 書き込みメソッドと更新系 RPC の呼び出しをコンパイルエラーにする。
+ * rpc は ReadOnlySupabaseClient の型パラメータで許可関数名だけに絞り、
+ * 関数ごとの Args / Returns はパッケージ側の推論ラッパーで型付けされる。
  */
 export type OrbitReadClient = ReadOnlySupabaseClient<OrbitReadRpcFunction>;

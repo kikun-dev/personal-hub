@@ -1,3 +1,4 @@
+import type { Database, SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type {
   BirthdayMember,
   MemberGroup,
@@ -11,96 +12,111 @@ import { RepositoryError } from "@/types/errors";
 import type { SnsType } from "@/lib/constants";
 import { asWritableClient } from "@/lib/asWritableClient";
 
-type MemberGroupRow = {
-  id: string;
-  group_id: string;
-  generation: string | null;
-  joined_at: string | null;
-  graduated_at: string | null;
-  orbit_groups:
-    | {
-        name_ja: string;
-        color: string;
-      }
-    | Array<{
-        name_ja: string;
-        color: string;
-      }>;
-};
+const MEMBER_BASE_SELECT = `
+  id,
+  name_ja,
+  name_kana,
+  name_en,
+  date_of_birth,
+  zodiac,
+  blood_type,
+  call_name,
+  penlight_color_1,
+  penlight_color_2,
+  height_cm,
+  hometown,
+  memo,
+  image_url,
+  blog_url,
+  blog_hashtag,
+  talk_app_name,
+  talk_app_url,
+  talk_app_hashtag
+` as const;
 
-type MemberSnsRow = {
-  id: string;
-  sns_type: string;
-  display_name: string;
-  url: string;
-  hashtag: string | null;
-  sort_order: number;
-};
+const MEMBER_GROUPS_SELECT = `
+  orbit_member_groups(
+    id,
+    group_id,
+    generation,
+    joined_at,
+    graduated_at,
+    orbit_groups(name_ja, color)
+  )
+` as const;
 
-type MemberRow = {
-  id: string;
-  name_ja: string;
-  name_kana: string;
-  name_en: string | null;
-  date_of_birth: string | null;
-  zodiac: string | null;
-  blood_type: string | null;
-  call_name: string | null;
-  penlight_color_1: string | null;
-  penlight_color_2: string | null;
-  height_cm: number | null;
-  hometown: string | null;
-  memo: string | null;
-  image_url: string | null;
-  blog_url: string | null;
-  blog_hashtag: string | null;
-  talk_app_name: string | null;
-  talk_app_url: string | null;
-  talk_app_hashtag: string | null;
-  orbit_member_groups: MemberGroupRow[];
-  orbit_member_sns?: MemberSnsRow[];
-};
+const MEMBER_SNS_SELECT = `
+  orbit_member_sns(
+    id,
+    sns_type,
+    display_name,
+    url,
+    hashtag,
+    sort_order
+  )
+` as const;
 
-type BirthdayMemberRow = {
-  id: string;
-  name_ja: string;
-  date_of_birth: string;
-  group_names: string[] | null;
-};
+const MEMBER_LIST_SELECT = `
+  ${MEMBER_BASE_SELECT},
+  ${MEMBER_GROUPS_SELECT}
+` as const;
 
-type MemberOptionGroupRow = {
-  group_id: string;
-  generation: string | null;
-  graduated_at: string | null;
-  orbit_groups:
-    | {
-        name_ja: string;
-      }
-    | Array<{
-        name_ja: string;
-      }>;
-};
+const MEMBER_DETAIL_SELECT = `
+  ${MEMBER_BASE_SELECT},
+  ${MEMBER_GROUPS_SELECT},
+  ${MEMBER_SNS_SELECT}
+` as const;
 
-type MemberOptionRow = {
-  id: string;
-  name_ja: string;
-  orbit_member_groups: MemberOptionGroupRow[];
-};
+const MEMBER_PUBLIC_LIST_SELECT = `
+  id,
+  name_ja,
+  name_kana,
+  image_url,
+  ${MEMBER_GROUPS_SELECT},
+  member_filter_groups:orbit_member_groups!inner(
+    group_id,
+    generation,
+    graduated_at
+  )
+` as const;
 
-type MemberFilterGroupRow = {
-  group_id: string;
-  generation: string | null;
-  graduated_at: string | null;
-};
+const MEMBER_OPTION_SELECT = `
+  id,
+  name_ja,
+  orbit_member_groups(
+    group_id,
+    generation,
+    graduated_at,
+    orbit_groups(name_ja)
+  )
+` as const;
 
-type MemberListRow = {
-  id: string;
-  name_ja: string;
-  name_kana: string;
-  image_url: string | null;
-  orbit_member_groups: MemberGroupRow[];
-  member_filter_groups?: MemberFilterGroupRow[];
+const MEMBER_ACTIVE_IDS_SELECT = "member_id, joined_at, graduated_at" as const;
+
+// findAll は MEMBER_LIST_SELECT（sns embed なし）、findById/create/update は
+// MEMBER_DETAIL_SELECT（sns embed あり）の行を同じ mapToMemberWithGroups に渡すため、
+// orbit_member_sns はオプショナルにして両方の select 結果を受け付けられるようにする。
+type MemberDetailRow = SelectRows<
+  "orbit_members",
+  typeof MEMBER_DETAIL_SELECT
+>[number];
+type MemberRow = Omit<MemberDetailRow, "orbit_member_sns"> & {
+  orbit_member_sns?: MemberDetailRow["orbit_member_sns"];
 };
+type MemberGroupRow = MemberRow["orbit_member_groups"][number];
+
+type BirthdayMemberRow =
+  Database["public"]["Functions"]["find_orbit_birthdays_by_month"]["Returns"][number];
+
+type MemberOptionRow = SelectRows<
+  "orbit_members",
+  typeof MEMBER_OPTION_SELECT
+>[number];
+
+type MemberListRow = SelectRows<
+  "orbit_members",
+  typeof MEMBER_PUBLIC_LIST_SELECT
+>[number];
 
 type MemberGroupRpcInput = {
   group_id: string;
@@ -141,9 +157,7 @@ function toMemberSnsRpcInput(
 }
 
 function mapToMemberGroup(row: MemberGroupRow): MemberGroup {
-  const orbitGroup = Array.isArray(row.orbit_groups)
-    ? row.orbit_groups[0]
-    : row.orbit_groups;
+  const orbitGroup = row.orbit_groups;
 
   return {
     id: row.id,
@@ -177,10 +191,12 @@ function mapToMemberWithGroups(row: MemberRow): MemberWithGroups {
     talkAppName: row.talk_app_name,
     talkAppUrl: row.talk_app_url,
     talkAppHashtag: row.talk_app_hashtag,
-    groups: (row.orbit_member_groups ?? []).map(mapToMemberGroup),
+    groups: row.orbit_member_groups.map(mapToMemberGroup),
     sns: (row.orbit_member_sns ?? [])
       .map((sns) => ({
         id: sns.id,
+        // DB 上の sns_type 列は string。SnsType のドメイン制約は入力境界
+        //（フォームの選択肢と validateMember）でのみ保証されるため as で絞り込む。
         snsType: sns.sns_type as SnsType,
         displayName: sns.display_name,
         url: sns.url,
@@ -226,7 +242,7 @@ function mapToMemberListItem(
   }
 ): MemberListItem {
   const groups = filterDisplayGroups(
-    (row.orbit_member_groups ?? []).map(mapToMemberGroup),
+    row.orbit_member_groups.map(mapToMemberGroup),
     filters
   );
 
@@ -253,15 +269,10 @@ function uniqueStrings(values: string[]): string[] {
 }
 
 function mapToMemberOption(row: MemberOptionRow): MemberOption {
-  const groups = row.orbit_member_groups ?? [];
+  const groups = row.orbit_member_groups;
   const groupIds = uniqueStrings(groups.map((group) => group.group_id));
   const groupNames = uniqueStrings(
-    groups.map((group) => {
-      const orbitGroup = Array.isArray(group.orbit_groups)
-        ? group.orbit_groups[0]
-        : group.orbit_groups;
-      return orbitGroup?.name_ja ?? "";
-    }).filter(Boolean)
+    groups.map((group) => group.orbit_groups?.name_ja ?? "").filter(Boolean)
   );
 
   return {
@@ -277,85 +288,6 @@ function mapToMemberOption(row: MemberOptionRow): MemberOption {
   };
 }
 
-const MEMBER_BASE_SELECT = `
-  id,
-  name_ja,
-  name_kana,
-  name_en,
-  date_of_birth,
-  zodiac,
-  blood_type,
-  call_name,
-  penlight_color_1,
-  penlight_color_2,
-  height_cm,
-  hometown,
-  memo,
-  image_url,
-  blog_url,
-  blog_hashtag,
-  talk_app_name,
-  talk_app_url,
-  talk_app_hashtag
-`;
-
-const MEMBER_GROUPS_SELECT = `
-  orbit_member_groups(
-    id,
-    group_id,
-    generation,
-    joined_at,
-    graduated_at,
-    orbit_groups(name_ja, color)
-  )
-`;
-
-const MEMBER_SNS_SELECT = `
-  orbit_member_sns(
-    id,
-    sns_type,
-    display_name,
-    url,
-    hashtag,
-    sort_order
-  )
-`;
-
-const MEMBER_LIST_SELECT = `
-  ${MEMBER_BASE_SELECT},
-  ${MEMBER_GROUPS_SELECT}
-`;
-
-const MEMBER_DETAIL_SELECT = `
-  ${MEMBER_BASE_SELECT},
-  ${MEMBER_GROUPS_SELECT},
-  ${MEMBER_SNS_SELECT}
-`;
-
-const MEMBER_PUBLIC_LIST_SELECT = `
-  id,
-  name_ja,
-  name_kana,
-  image_url,
-  ${MEMBER_GROUPS_SELECT},
-  member_filter_groups:orbit_member_groups!inner(
-    group_id,
-    generation,
-    graduated_at
-  )
-`;
-
-const MEMBER_OPTION_SELECT = `
-  id,
-  name_ja,
-  orbit_member_groups(
-    group_id,
-    generation,
-    graduated_at,
-    orbit_groups(name_ja)
-  )
-`;
-
 export function createMemberRepository(
   supabase: OrbitReadClient
 ): MemberRepository {
@@ -364,7 +296,7 @@ export function createMemberRepository(
     memberId: string,
     inputGroups: { groupId: string; generation: string; joinedAt: string; graduatedAt: string }[]
   ): Promise<void> {
-    const writable = asWritableClient(supabase);
+    const writable: TypedSupabaseClient = asWritableClient(supabase);
     const { error: deleteError } = await writable
       .from("orbit_member_groups")
       .delete()
@@ -397,7 +329,7 @@ export function createMemberRepository(
     memberId: string,
     inputSns: { snsType: string; displayName: string; url: string; hashtag: string }[]
   ): Promise<void> {
-    const writable = asWritableClient(supabase);
+    const writable: TypedSupabaseClient = asWritableClient(supabase);
     const { error: deleteError } = await writable
       .from("orbit_member_sns")
       .delete()
@@ -448,7 +380,7 @@ export function createMemberRepository(
         throw new RepositoryError("メンバーの取得に失敗しました", error);
       }
 
-      let members = (data as MemberRow[]).map(mapToMemberWithGroups);
+      let members = data.map(mapToMemberWithGroups);
 
       // グループフィルタの場合、そのグループに属するメンバーのみ
       if (filters?.groupId) {
@@ -500,7 +432,7 @@ export function createMemberRepository(
         throw new RepositoryError("公開向けメンバー一覧の取得に失敗しました", error);
       }
 
-      let members = (data as MemberListRow[]).map((row) =>
+      let members = data.map((row) =>
         mapToMemberListItem(row, {
           groupId: filters?.groupId,
         })
@@ -529,7 +461,7 @@ export function createMemberRepository(
         throw new RepositoryError("メンバー候補の取得に失敗しました", error);
       }
 
-      return ((data as MemberOptionRow[] | null) ?? []).map(mapToMemberOption);
+      return data.map(mapToMemberOption);
     },
 
     async findById(id) {
@@ -545,11 +477,11 @@ export function createMemberRepository(
         }
         throw new RepositoryError("メンバーの取得に失敗しました", error);
       }
-      return mapToMemberWithGroups(data as MemberRow);
+      return mapToMemberWithGroups(data);
     },
 
     async create(input) {
-      const writable = asWritableClient(supabase);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
       const { data: member, error: memberError } = await writable
         .from("orbit_members")
         .insert({
@@ -598,6 +530,11 @@ export function createMemberRepository(
     },
 
     async update(id, input) {
+      // 生成型上 update_member_with_relations のスカラー引数（p_name_en 等）は
+      // non-null な string/number になっているが、これは PostgREST の RPC スカラー
+      // 引数の型生成が NULL 許容を反映しない既知の制約であり、関数自体は null を
+      // 受け付ける。ペイロード側の誤りではないため、ここでは TypedSupabaseClient に
+      // せず asWritableClient の返り値（未typed）のまま呼び出す。
       const writable = asWritableClient(supabase);
       const { error: rpcError } = await writable.rpc("update_member_with_relations", {
         p_member_id: id,
@@ -655,7 +592,7 @@ export function createMemberRepository(
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return ((data as BirthdayMemberRow[] | null) ?? []).map(mapToBirthdayMember);
+      return data.map(mapToBirthdayMember);
     },
 
     async findBirthdaysByDate(month, day) {
@@ -668,7 +605,7 @@ export function createMemberRepository(
         throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
       }
 
-      return ((data as BirthdayMemberRow[] | null) ?? []).map(mapToBirthdayMember);
+      return data.map(mapToBirthdayMember);
     },
 
     async findActiveMemberIdsByGroups(groupIds, date) {
@@ -678,21 +615,15 @@ export function createMemberRepository(
 
       const { data, error } = await supabase
         .from("orbit_member_groups")
-        .select("member_id, joined_at, graduated_at")
+        .select(MEMBER_ACTIVE_IDS_SELECT)
         .in("group_id", groupIds);
 
       if (error) {
         throw new RepositoryError("在籍メンバーの取得に失敗しました", error);
       }
 
-      type Row = {
-        member_id: string;
-        joined_at: string | null;
-        graduated_at: string | null;
-      };
-
       const activeIds = new Set<string>();
-      for (const row of (data as Row[] | null) ?? []) {
+      for (const row of data) {
         const joinedOk = !row.joined_at || row.joined_at <= date;
         const notGraduated = !row.graduated_at || row.graduated_at >= date;
         if (joinedOk && notGraduated) {
