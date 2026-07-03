@@ -51,7 +51,11 @@ import type {
   ReleaseOption,
   MemberSelectionPosition,
 } from "./release";
-import type { LiveAttendance, UpsertAttendanceInput } from "./attendance";
+import type {
+  LiveAttendance,
+  MyAttendanceEntry,
+  UpsertAttendanceInput,
+} from "./attendance";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -163,6 +167,9 @@ export type SongRepository = {
 // asWritableClient は使わない（attendanceRepository.ts 冒頭コメント参照）。
 export type AttendanceRepository = {
   findByPerformanceIds(performanceIds: string[]): Promise<LiveAttendance[]>;
+  // マイページ（#247）用。自分の参加記録全件を、公演・ライブ・会場を合成した
+  // read model として取得する（対象は RLS が本人分のみに絞る）。
+  findAllForUser(): Promise<MyAttendanceEntry[]>;
   upsert(userId: string, input: UpsertAttendanceInput): Promise<void>;
   delete(performanceId: string): Promise<void>;
 };

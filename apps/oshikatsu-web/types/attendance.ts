@@ -1,3 +1,5 @@
+import type { LiveType } from "@/types/live";
+
 export const ATTENDED_TYPE_VALUES = ["onsite", "live_viewing", "streaming"] as const;
 
 export type AttendedType = (typeof ATTENDED_TYPE_VALUES)[number];
@@ -27,4 +29,22 @@ export type UpsertAttendanceInput = {
   attendedType: AttendedType | "";
   seatNote: string;
   note: string;
+};
+
+// マイページ（#247）の一覧用read model。参加記録 + 公演 + ライブ + 会場を
+// 1件のエントリに合成したもの。LiveAttendance 同様 user_id は持たない
+// （RLSで本人分のみに絞られる、ADR 0009）。
+export type MyAttendanceEntry = {
+  id: string;
+  attendedType: AttendedType;
+  seatNote: string | null;
+  note: string | null;
+  performanceId: string;
+  performanceDate: string | null;
+  startsAt: string | null;
+  liveId: string;
+  liveName: string;
+  liveType: LiveType;
+  venueName: string | null;
+  venuePrefecture: string | null;
 };
