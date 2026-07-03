@@ -42,9 +42,11 @@ function mapAttendance(row: AttendanceRow): LiveAttendance {
   };
 }
 
-// マイページ（#247）の一覧用。参加記録 + 公演 + ライブ + 会場を1クエリで取得する。
-// performance_id / live_id は NOT NULL FK のため生成型上は埋め込みが非null単一オブジェクト
-// になる（liveRepository の orbit_groups 埋め込みと同様）。venue_id のみ nullable FK。
+// マイページ（#247）の一覧 + 参加記録の集計（#248）用。参加記録 + 公演 + ライブ + 会場 +
+// 出演グループを1クエリで取得する。performance_id / live_id は NOT NULL FK のため
+// 生成型上は埋め込みが非null単一オブジェクトになる（liveRepository の orbit_groups
+// 埋め込みと同様）。venue_id のみ nullable FK。orbit_live_performer_groups は
+// ライブに対する多対多（対バン・フェスは複数件）のため配列になる。
 const MY_ATTENDANCE_SELECT = `
   id,
   attended_type,
@@ -54,7 +56,12 @@ const MY_ATTENDANCE_SELECT = `
     id,
     performance_date,
     starts_at,
-    orbit_lives(id, name, live_type),
+    orbit_lives(
+      id,
+      name,
+      live_type,
+      orbit_live_performer_groups(orbit_groups(id, name_ja, color))
+    ),
     orbit_venues(name, prefecture)
   )
 ` as const;
@@ -83,6 +90,11 @@ function mapMyAttendanceEntry(row: MyAttendanceRow): MyAttendanceEntry {
     liveType: isLiveType(live.live_type) ? live.live_type : "other",
     venueName: venue?.name ?? null,
     venuePrefecture: venue?.prefecture ?? null,
+    groups: live.orbit_live_performer_groups.map((pg) => ({
+      id: pg.orbit_groups.id,
+      nameJa: pg.orbit_groups.name_ja,
+      color: pg.orbit_groups.color,
+    })),
   };
 }
 

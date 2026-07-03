@@ -47,4 +47,7 @@ export type MyAttendanceEntry = {
   liveType: LiveType;
   venueName: string | null;
   venuePrefecture: string | null;
+  // 出演グループ（#248の集計用）。対バン・フェスは複数件になる。
+  // color は orbit_groups.color（生成型上 NOT NULL）をそのまま持つ。
+  groups: Array<{ id: string; nameJa: string; color: string }>;
 };

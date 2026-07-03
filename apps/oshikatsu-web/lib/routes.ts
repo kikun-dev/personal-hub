@@ -3,6 +3,7 @@ export const APP_ROUTES = {
   lives: "/lives",
   members: "/members",
   mypage: "/mypage",
+  mypageStats: "/mypage/stats",
   people: "/people",
   releases: "/releases",
   songs: "/songs",
