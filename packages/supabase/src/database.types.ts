@@ -269,6 +269,47 @@ export type Database = {
           },
         ]
       }
+      orbit_live_attendances: {
+        Row: {
+          attended_type: string
+          created_at: string
+          id: string
+          note: string | null
+          performance_id: string
+          seat_note: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          attended_type: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          performance_id: string
+          seat_note?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          attended_type?: string
+          created_at?: string
+          id?: string
+          note?: string | null
+          performance_id?: string
+          seat_note?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_live_attendances_performance_id_fkey"
+            columns: ["performance_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_live_performances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orbit_live_performance_absences: {
         Row: {
           id: string
@@ -1482,6 +1523,7 @@ export type Database = {
           venue: string
         }[]
       }
+      has_orbit_read_role: { Args: never; Returns: boolean }
       is_orbit_admin: { Args: never; Returns: boolean }
       set_release_member_positions: {
         Args: { p_positions: Json; p_release_id: string }
