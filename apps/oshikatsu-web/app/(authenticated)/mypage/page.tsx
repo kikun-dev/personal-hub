@@ -70,13 +70,22 @@ export default async function MyPage() {
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">過去の参加記録</h2>
           {hasAnyAttendance && (
-            <PendingLink
-              href={APP_ROUTES.mypageStats}
-              feedback="global"
-              className="text-xs text-blue-500 hover:underline"
-            >
-              記録を見る
-            </PendingLink>
+            <div className="flex items-center gap-3">
+              <PendingLink
+                href={APP_ROUTES.mypageSetlist}
+                feedback="global"
+                className="text-xs text-blue-500 hover:underline"
+              >
+                セットリストを見る
+              </PendingLink>
+              <PendingLink
+                href={APP_ROUTES.mypageStats}
+                feedback="global"
+                className="text-xs text-blue-500 hover:underline"
+              >
+                記録を見る
+              </PendingLink>
+            </div>
           )}
         </div>
         {past.length === 0 ? (

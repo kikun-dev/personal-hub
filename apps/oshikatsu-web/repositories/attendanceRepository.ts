@@ -1,6 +1,6 @@
 import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type { AttendanceRepository } from "@/types/repositories";
-import type { LiveAttendance, MyAttendanceEntry } from "@/types/attendance";
+import type { LiveAttendance, MyAttendanceEntry, SongEncounter } from "@/types/attendance";
 import { isAttendedType } from "@/types/attendance";
 import { isLiveType } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
@@ -98,6 +98,50 @@ function mapMyAttendanceEntry(row: MyAttendanceRow): MyAttendanceEntry {
   };
 }
 
+// セットリストカウント（#249）用。参加記録 + 公演 + ライブ + セトリを1クエリで取得する
+// （Issue #249 最新コメントの決定：専用 RPC ではなくネスト select + アプリ側集計）。
+// performance_id は NOT NULL FK のため埋め込みは非null単一オブジェクト（MY_ATTENDANCE_SELECT
+// と同様）。orbit_setlist_items は公演に対する1対多のため配列になる。
+const SONG_ENCOUNTER_SELECT = `
+  attended_type,
+  orbit_live_performances(
+    id,
+    performance_date,
+    orbit_lives(id, name),
+    orbit_setlist_items(item_type, track_id)
+  )
+` as const;
+
+type SongEncounterRow = SelectRows<
+  "orbit_live_attendances",
+  typeof SONG_ENCOUNTER_SELECT
+>[number];
+
+// 1参加記録（1公演）から、セトリの登録曲（item_type='song' かつ track_id 非null）
+// の分だけ SongEncounter を展開する。未登録曲（テキスト曲）は Non-goals のため除外する。
+// 1公演で同じ曲を複数回披露していれば、その回数分このリストに複数件並ぶ。
+function mapSongEncounters(row: SongEncounterRow): SongEncounter[] {
+  const performance = row.orbit_live_performances;
+  const live = performance.orbit_lives;
+  const attendedType = isAttendedType(row.attended_type) ? row.attended_type : "onsite";
+
+  const encounters: SongEncounter[] = [];
+  for (const item of performance.orbit_setlist_items) {
+    if (item.item_type !== "song" || item.track_id === null) {
+      continue;
+    }
+    encounters.push({
+      trackId: item.track_id,
+      attendedType,
+      performanceId: performance.id,
+      performanceDate: performance.performance_date,
+      liveId: live.id,
+      liveName: live.name,
+    });
+  }
+  return encounters;
+}
+
 export function createAttendanceRepository(
   supabase: TypedSupabaseClient
 ): AttendanceRepository {
@@ -139,6 +183,18 @@ export function createAttendanceRepository(
         if (!b.performanceDate) return -1;
         return b.performanceDate.localeCompare(a.performanceDate);
       });
+    },
+
+    async findSongEncounters() {
+      const { data, error } = await supabase
+        .from("orbit_live_attendances")
+        .select(SONG_ENCOUNTER_SELECT);
+
+      if (error) {
+        throw new RepositoryError("遭遇記録の取得に失敗しました", error);
+      }
+
+      return data.flatMap(mapSongEncounters);
     },
 
     async upsert(userId, input) {

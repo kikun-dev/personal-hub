@@ -31,6 +31,19 @@ export type UpsertAttendanceInput = {
   note: string;
 };
 
+// セットリストカウント（#249）用read model。参加記録 × 公演 × セトリの登録曲
+// （item_type='song' かつ track_id 非null）を1行=1遭遇として展開したもの。
+// 未登録曲（テキスト曲）は Non-goals のため対象外（repository 側でフィルタ済み）。
+// 1公演で同じ曲を複数回披露していれば、その回数分このリストに複数件並ぶ。
+export type SongEncounter = {
+  trackId: string;
+  attendedType: AttendedType;
+  performanceId: string;
+  performanceDate: string | null;
+  liveId: string;
+  liveName: string;
+};
+
 // マイページ（#247）の一覧用read model。参加記録 + 公演 + ライブ + 会場を
 // 1件のエントリに合成したもの。LiveAttendance 同様 user_id は持たない
 // （RLSで本人分のみに絞られる、ADR 0009）。
