@@ -182,7 +182,7 @@ export function SetlistCountBrowser({
         <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
           <span className="text-xs text-foreground/50">参戦種別</span>
           <span className="rounded-full bg-foreground/10 px-2.5 py-1 text-xs text-foreground">
-            {ATTENDED_TYPE_LABELS.onsite}（常時）
+            {ATTENDED_TYPE_LABELS.onsite}
           </span>
           {OPTIONAL_ATTENDED_TYPES.map((type) => (
             <label key={type} className="flex items-center gap-1.5 text-xs">

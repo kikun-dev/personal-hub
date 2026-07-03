@@ -66,7 +66,7 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
       </div>
 
       <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">リリース紐づけ</h2>
+        <h2 className="mb-3 text-sm font-medium text-foreground/70">収録リリース</h2>
         <ul className="space-y-2 text-sm">
           {song.releases.map((release) => (
             <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-foreground/10 p-3">
@@ -197,7 +197,7 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
             feedback="global"
             className="text-xs text-blue-500 hover:underline"
           >
-            ランキングを見る
+            セトリログを見る
           </PendingLink>
         </div>
         {encounterSummary.count === 0 ? (

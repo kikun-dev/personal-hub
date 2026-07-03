@@ -99,24 +99,6 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
         </div>
       </div>
 
-      {artworkSrc && (
-        <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録曲アートワーク</h2>
-          <Image
-            src={artworkSrc}
-            alt={`${release.title} artwork`}
-            width={640}
-            height={640}
-            className="h-auto w-full rounded-lg border border-foreground/10 object-cover"
-          />
-          {release.artworkPersonName && (
-            <p className="mt-2 text-xs text-foreground/60">
-              担当: {release.artworkPersonName}
-            </p>
-          )}
-        </Card>
-      )}
-
       <Card>
         <h2 className="mb-3 text-sm font-medium text-foreground/70">基本情報</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
@@ -130,6 +112,18 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
           )}
         </dl>
       </Card>
+
+      {activeParticipantNames.length > 0 && (
+        <Card>
+          <div className="mb-3 flex items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium text-foreground/70">参加メンバー</h2>
+            <span className="text-xs text-foreground/60">
+              {formatMemberCountSummary(activeParticipantGenerations)}
+            </span>
+          </div>
+          <p className="text-sm text-foreground">{activeParticipantNames.join(" / ")}</p>
+        </Card>
+      )}
 
       {release.tracks.length > 0 && (
         <Card>
@@ -192,15 +186,21 @@ export function ReleaseDetail({ release }: ReleaseDetailProps) {
         </Card>
       )}
 
-      {activeParticipantNames.length > 0 && (
+      {artworkSrc && (
         <Card>
-          <div className="mb-3 flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-medium text-foreground/70">参加メンバー</h2>
-            <span className="text-xs text-foreground/60">
-              {formatMemberCountSummary(activeParticipantGenerations)}
-            </span>
-          </div>
-          <p className="text-sm text-foreground">{activeParticipantNames.join(" / ")}</p>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録曲アートワーク</h2>
+          <Image
+            src={artworkSrc}
+            alt={`${release.title} artwork`}
+            width={640}
+            height={640}
+            className="h-auto w-full rounded-lg border border-foreground/10 object-cover"
+          />
+          {release.artworkPersonName && (
+            <p className="mt-2 text-xs text-foreground/60">
+              担当: {release.artworkPersonName}
+            </p>
+          )}
         </Card>
       )}
     </div>
