@@ -27,12 +27,6 @@ export async function updateLiveAction(
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
-      // 23503（FK RESTRICT）はrepositoryが既にユーザー向け文言に変換済みなので、
-      // その文言をそのまま使う。それ以外は従来どおり汎用メッセージにフォールバックする。
-      const cause = e.cause as { code?: string } | null;
-      if (cause?.code === "23503") {
-        return { errors: [{ field: "_form", message: e.message }] };
-      }
       return {
         errors: [{ field: "_form", message: "ライブが見つからないか、更新に失敗しました" }],
       };

@@ -31,4 +31,5 @@ coverage/
 .next/
 
 # Supabase CLI local state
-/supabase/.temp/
+# monorepo配下のどこで CLI を実行しても除外されるよう ** で先頭を許容する
+**/supabase/.temp/

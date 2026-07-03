@@ -348,16 +348,6 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
       });
 
       if (error) {
-        // 23503: FK RESTRICT違反。参加記録（orbit_live_attendances, 047）が紐づく
-        // 公演をpayloadから外して削除しようとした場合に発生する（048で公演IDを維持する
-        // 方式に変更済みだが、公演自体を削除する編集ではこの制約に当たり得る）。
-        // ユーザーが対処できる文言に変換する。
-        if (error.code === "23503") {
-          throw new RepositoryError(
-            "参加記録が登録されている公演は削除できません。該当公演の参加記録を解除してから編集してください",
-            error
-          );
-        }
         throw new RepositoryError("ライブの更新に失敗しました", error);
       }
 
