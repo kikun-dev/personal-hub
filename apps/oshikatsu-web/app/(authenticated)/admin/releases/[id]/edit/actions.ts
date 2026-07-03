@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createReleaseImageRepository } from "@/repositories/releaseImageRepository";
 import { updateRelease } from "@/usecases/updateRelease";
@@ -40,14 +39,7 @@ export async function updateReleaseAction(
   input: UpdateReleaseInput,
   imageFile?: ReleaseImageUploadInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createReleaseRepository(supabase);
   const releaseImageRepo = createReleaseImageRepository(supabase);
@@ -106,14 +98,7 @@ export async function updateReleaseAction(
 export async function deleteReleaseAction(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createReleaseRepository(supabase);
   const releaseImageRepo = createReleaseImageRepository(supabase);

@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createSongRepository } from "@/repositories/songRepository";
 import { updateSong } from "@/usecases/updateSong";
 import { deleteSong } from "@/usecases/deleteSong";
@@ -18,14 +17,7 @@ export async function updateSongAction(
   id: string,
   input: UpdateSongInput
 ): Promise<{ errors?: ValidationError[] }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createSongRepository(supabase);
 
@@ -60,14 +52,7 @@ export async function updateSongAction(
 export async function deleteSongAction(
   id: string
 ): Promise<{ error?: string }> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createSongRepository(supabase);
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import type { ValidationError } from "@/types/errors";
 import {
   PERSON_ROLE_LABELS,
@@ -11,6 +10,8 @@ import {
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { useAdminForm } from "@/hooks/useAdminForm";
 
 type PersonFormProps = {
   mode: "create" | "edit";
@@ -34,23 +35,11 @@ export function PersonForm({
   initialValues,
   onSubmit,
 }: PersonFormProps) {
-  const [values, setValues] = useState<CreatePersonInput>(
-    () => initialValues ?? getDefaultValues()
-  );
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const update = <K extends keyof CreatePersonInput>(
-    field: K,
-    value: CreatePersonInput[K]
-  ) => {
-    setValues((prev) => ({ ...prev, [field]: value }));
-    setErrors((prev) => {
-      const next = { ...prev };
-      delete next[field];
-      return next;
+  const { values, setValues, update, errors, setErrors, isSubmitting, handleSubmit } =
+    useAdminForm<CreatePersonInput>({
+      initialValues: () => initialValues ?? getDefaultValues(),
+      onSubmit,
     });
-  };
 
   const toggleRole = (role: PersonRole) => {
     setValues((prev) => ({
@@ -66,32 +55,9 @@ export function PersonForm({
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      const result = await onSubmit(values);
-      if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {errors._form && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-          {errors._form}
-        </p>
-      )}
+      <FormErrorBanner message={errors._form} />
 
       <Input
         id="displayName"

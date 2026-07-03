@@ -1,7 +1,6 @@
 "use server";
 
-import { redirect } from "next/navigation";
-import { createClient } from "@personal-hub/supabase/server";
+import { requireAdmin } from "@/lib/requireAdmin";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { revalidateOrbitPersonData } from "@/lib/revalidateOrbit";
 import type { EnsurePersonRoleEntry } from "@/types/person";
@@ -11,14 +10,7 @@ import type { EnsurePersonRoleEntry } from "@/types/person";
 export async function ensureStaffRolesAction(
   entries: EnsurePersonRoleEntry[]
 ): Promise<void> {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
+  const supabase = await requireAdmin();
 
   const repo = createPersonRepository(supabase);
   await repo.ensurePeopleRoles(entries);
