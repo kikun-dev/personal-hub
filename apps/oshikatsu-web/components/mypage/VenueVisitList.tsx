@@ -10,7 +10,7 @@ type VenueVisitListProps = {
   entries: VenueVisitEntry[];
 };
 
-// 訪問会場の一覧。1行=1会場、展開ボタンで訪問公演の内訳をインライン表示する
+// 参戦した会場の一覧。1行=1会場、展開ボタンで参戦した公演の内訳をインライン表示する
 // （Issue #250。#249 の SetlistRankingList の展開実装を踏襲）。
 export function VenueVisitList({ entries }: VenueVisitListProps) {
   // 展開は複数同時展開を許容する（SetlistRankingList と同じ仕様）。

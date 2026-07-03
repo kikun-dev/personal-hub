@@ -31,7 +31,7 @@ export async function upsertAttendanceAction(
   } catch (e) {
     if (e instanceof RepositoryError) {
       return {
-        errors: [{ field: "_form", message: "参加記録の保存に失敗しました" }],
+        errors: [{ field: "_form", message: "参戦記録の保存に失敗しました" }],
       };
     }
     throw e;
@@ -46,7 +46,7 @@ export async function deleteAttendanceAction(
   // performanceId はクライアント入力の境界値（PR #253 レビュー指摘）。
   // repo呼び出し前に検証し、不正な値をDBまで到達させない。
   if (!performanceId || !isValidUuid(performanceId)) {
-    return { error: "参加記録の解除に失敗しました" };
+    return { error: "参戦記録の解除に失敗しました" };
   }
 
   const repo = createAttendanceRepository(supabase);
@@ -56,7 +56,7 @@ export async function deleteAttendanceAction(
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
-      return { error: "参加記録の解除に失敗しました" };
+      return { error: "参戦記録の解除に失敗しました" };
     }
     throw e;
   }

@@ -75,7 +75,7 @@ export function AttendanceControl({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("参加記録を解除しますか？")) return;
+    if (!window.confirm("参戦記録を解除しますか？")) return;
 
     setIsDeleting(true);
     setDeleteError(undefined);
@@ -102,7 +102,7 @@ export function AttendanceControl({
 
         <Select
           id={`attendedType-${performanceId}`}
-          label="参加種別"
+          label="参戦種別"
           placeholder="選択してください"
           options={ATTENDED_TYPE_OPTIONS}
           value={values.attendedType}
@@ -157,7 +157,7 @@ export function AttendanceControl({
         onClick={openForm}
         className="text-xs"
       >
-        参加を記録
+        参戦を記録
       </Button>
     );
   }

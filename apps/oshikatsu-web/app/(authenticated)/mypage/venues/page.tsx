@@ -25,15 +25,15 @@ export default async function MyPageVenuesPage() {
           ← マイページ
         </PendingLink>
       </div>
-      <h1 className="text-xl font-bold text-foreground">訪問会場</h1>
+      <h1 className="text-xl font-bold text-foreground">参戦した会場</h1>
 
       {stats.totalVenues === 0 ? (
-        // totalVenues は「会場IDがある現地参加」から作れた会場数。
-        // 現地参加はあるが全件会場未設定のケースがあるため、unknownVenueCount で出し分ける。
+        // totalVenues は「会場IDがある現地参戦」から作れた会場数。
+        // 現地参戦はあるが全件会場未設定のケースがあるため、unknownVenueCount で出し分ける。
         stats.unknownVenueCount > 0 ? (
           <div className="space-y-1">
             <p className="text-sm text-foreground/60">
-              会場が設定された現地参加の記録がありません。
+              会場が設定された現地参戦の記録がありません。
             </p>
             <p className="text-xs text-foreground/40">
               会場未設定の記録{stats.unknownVenueCount}件は集計に含まれていません
@@ -41,7 +41,7 @@ export default async function MyPageVenuesPage() {
           </div>
         ) : (
           <p className="text-sm text-foreground/60">
-            現地参加の記録がありません。
+            現地参戦の記録がありません。
             <PendingLink
               href={APP_ROUTES.lives}
               feedback="global"
@@ -49,7 +49,7 @@ export default async function MyPageVenuesPage() {
             >
               ライブ一覧
             </PendingLink>
-            から参加記録を登録しましょう。
+            から参戦記録を登録しましょう。
           </p>
         )
       ) : (
@@ -57,10 +57,10 @@ export default async function MyPageVenuesPage() {
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <span className="font-semibold text-foreground">
-                {stats.totalVenues}会場 / 延べ{stats.totalVisits}回
+                {stats.totalVenues}会場 {stats.totalVisits}回
               </span>
               <span className="text-xs text-foreground/50">
-                現地参加のみを集計しています
+                現地参戦のみを集計しています
               </span>
             </div>
             {stats.unknownVenueCount > 0 && (

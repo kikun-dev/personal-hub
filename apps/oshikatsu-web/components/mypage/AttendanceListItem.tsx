@@ -10,8 +10,8 @@ type AttendanceListItemProps = {
   backHref?: string;
 };
 
-// 参加記録の1行リスト表示（VenueDetailPage の公演一覧と同じトーン）。
-// マイページ（#247）と参加記録の集計（#248 /mypage/stats）の一覧で共通利用する。
+// 参戦記録の1行リスト表示（VenueDetailPage の公演一覧と同じトーン）。
+// マイページ（#247）と参戦記録の集計（#248 /mypage/stats）の一覧で共通利用する。
 export function AttendanceListItem({
   entry,
   backHref = APP_ROUTES.mypage,

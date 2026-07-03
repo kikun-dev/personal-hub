@@ -17,7 +17,7 @@ import { SONG_LABELS, SONG_LABEL_LABELS, isSongLabel } from "@/types/song";
 type SetlistView = "ranking" | "unencountered";
 
 // 「現地」は常時カウント対象（Issue #249 Decision）。LV / 配信はチェックで追加する
-// 任意の参加種別。
+// 任意の参戦種別。
 const OPTIONAL_ATTENDED_TYPES = ["live_viewing", "streaming"] as const satisfies readonly AttendedType[];
 type OptionalAttendedType = (typeof OPTIONAL_ATTENDED_TYPES)[number];
 
@@ -120,13 +120,13 @@ export function SetlistCountBrowser({
     replaceListFilterParams({ types: next.join(",") });
   };
 
-  // encounters は「参加記録 × セットリスト登録曲」の展開結果。
-  // 参加記録があってもセットリスト未登録・テキスト曲のみの場合は0件になるため、
-  // 「参加記録がない」とは断定せず、遭遇記録が無い旨の文言にする。
+  // encounters は「参戦記録 × セットリスト登録曲」の展開結果。
+  // 参戦記録があってもセットリスト未登録・テキスト曲のみの場合は0件になるため、
+  // 「参戦記録がない」とは断定せず、遭遇記録が無い旨の文言にする。
   if (!hasAnyEncounter) {
     return (
       <p className="py-12 text-center text-sm text-foreground/60">
-        セットリストが登録された参加記録がまだありません。
+        セットリストが登録された参戦記録がまだありません。
         <PendingLink
           href={APP_ROUTES.lives}
           feedback="global"
@@ -134,7 +134,7 @@ export function SetlistCountBrowser({
         >
           ライブ一覧
         </PendingLink>
-        から参加記録を登録するか、公演のセットリストを登録すると集計されます。
+        から参戦記録を登録するか、公演のセットリストを登録すると集計されます。
       </p>
     );
   }
@@ -180,7 +180,7 @@ export function SetlistCountBrowser({
 
       <div className="flex flex-wrap items-center gap-4">
         <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
-          <span className="text-xs text-foreground/50">参加種別</span>
+          <span className="text-xs text-foreground/50">参戦種別</span>
           <span className="rounded-full bg-foreground/10 px-2.5 py-1 text-xs text-foreground">
             {ATTENDED_TYPE_LABELS.onsite}（常時）
           </span>

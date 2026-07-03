@@ -25,9 +25,9 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
   const { venue, performances } = data;
 
   // グローバル部分（会場情報・公演一覧）は shared cache 経由の getVenueDetailPageData
-  // のまま。訪問記録はユーザー別データ（ADR 0009）のため shared cache に載せず、
+  // のまま。参戦記録はユーザー別データ（ADR 0009）のため shared cache に載せず、
   // 認証付きクライアントで都度取得してページ側で合成する
-  // （lives/[id]/page.tsx の参加記録合成、songs/[id]/page.tsx の遭遇記録合成と同じ
+  // （lives/[id]/page.tsx の参戦記録合成、songs/[id]/page.tsx の遭遇記録合成と同じ
   // パターン）。未認証の場合は RLS により空配列が返る。
   // getVenueVisitStats は会場横断の集計 usecase だが、この会場分だけを
   // findAllForUser() の結果から抽出すれば十分（アプリ側絞り込み、専用集計は作らない）。
@@ -130,13 +130,13 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       </section>
 
       <section className="space-y-2">
-        <h2 className="text-sm font-semibold text-foreground">あなたの訪問記録</h2>
+        <h2 className="text-sm font-semibold text-foreground">あなたの参戦記録</h2>
         {!myVisit || myVisit.count === 0 ? (
-          <p className="text-sm text-foreground/50">まだ訪問記録がありません</p>
+          <p className="text-sm text-foreground/50">まだ参戦記録がありません</p>
         ) : (
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">
-              {myVisit.count}回訪問
+              {myVisit.count}回参戦
             </p>
             <ul className="space-y-1">
               {myVisit.visits.map((visit, index) => (

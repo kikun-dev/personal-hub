@@ -160,7 +160,7 @@ export function createAttendanceRepository(
         .in("performance_id", performanceIds);
 
       if (error) {
-        throw new RepositoryError("参加記録の取得に失敗しました", error);
+        throw new RepositoryError("参戦記録の取得に失敗しました", error);
       }
 
       return data.map(mapAttendance);
@@ -172,7 +172,7 @@ export function createAttendanceRepository(
         .select(MY_ATTENDANCE_SELECT);
 
       if (error) {
-        throw new RepositoryError("参加記録一覧の取得に失敗しました", error);
+        throw new RepositoryError("参戦記録一覧の取得に失敗しました", error);
       }
 
       // PostgREST は埋め込みリレーション（orbit_live_performances）の列で
@@ -213,7 +213,7 @@ export function createAttendanceRepository(
       );
 
       if (error) {
-        throw new RepositoryError("参加記録の保存に失敗しました", error);
+        throw new RepositoryError("参戦記録の保存に失敗しました", error);
       }
     },
 
@@ -224,7 +224,7 @@ export function createAttendanceRepository(
         .eq("performance_id", performanceId);
 
       if (error) {
-        throw new RepositoryError("参加記録の解除に失敗しました", error);
+        throw new RepositoryError("参戦記録の解除に失敗しました", error);
       }
     },
   };
