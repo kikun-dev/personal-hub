@@ -51,6 +51,7 @@ import type {
   ReleaseOption,
   MemberSelectionPosition,
 } from "./release";
+import type { LiveAttendance, UpsertAttendanceInput } from "./attendance";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -153,6 +154,17 @@ export type SongRepository = {
   findByMemberId(memberId: string): Promise<Song[]>;
   findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
   findCalendarVideoItems(): Promise<CalendarVideoItem[]>;
+};
+
+// ユーザー別データ（ADR 0009）。findByPerformanceIds / upsert / delete はいずれも
+// 「自分の行のみ」が対象だが、それは呼び出し側で user_id を絞るのではなく RLS
+// （migration 047: 本人限定 + ロール判定）が担保する。リポジトリの実装は
+// TypedSupabaseClient を直接受け取り、グローバルデータ用の OrbitReadClient /
+// asWritableClient は使わない（attendanceRepository.ts 冒頭コメント参照）。
+export type AttendanceRepository = {
+  findByPerformanceIds(performanceIds: string[]): Promise<LiveAttendance[]>;
+  upsert(userId: string, input: UpsertAttendanceInput): Promise<void>;
+  delete(performanceId: string): Promise<void>;
 };
 
 export type MemberImageRepository = {

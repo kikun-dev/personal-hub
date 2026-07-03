@@ -5,12 +5,17 @@ import {
   PERFORMANCE_STYLE_LABELS,
   SETLIST_ITEM_TYPE_LABELS,
 } from "@/types/live";
+import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
+import { AttendanceControl } from "@/components/lives/AttendanceControl";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
 type LiveDetailProps = {
   live: Live;
+  // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参加記録を持つ。未登録の公演は
+  // キーが存在しない（page.tsx で Object.fromEntries した Map をそのまま渡す）。
+  myAttendances: Record<string, LiveAttendance>;
 };
 
 // 種別ごとに時間ラベルを出し分ける（フェス=出演時刻、配信=配信時刻、開場は出さない）
@@ -101,7 +106,7 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
   );
 }
 
-export function LiveDetail({ live }: LiveDetailProps) {
+export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
   const venueGroups = groupByVenue(live.performances);
   // ツアー、または会場が複数ある場合は会場ごとのカードで表示する
   const useVenueGrid = live.liveType === "tour" || venueGroups.length > 1;
@@ -308,6 +313,11 @@ export function LiveDetail({ live }: LiveDetailProps) {
                     </ol>
                   </div>
                 )}
+
+                <AttendanceControl
+                  performanceId={performance.id}
+                  attendance={myAttendances[performance.id] ?? null}
+                />
               </div>
             ))}
           </div>
