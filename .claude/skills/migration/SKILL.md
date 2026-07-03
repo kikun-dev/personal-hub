@@ -22,9 +22,13 @@ argument-hint: "<DB変更の内容> [対象アプリ: oshikatsu-web(デフォル
 
 - **新規テーブル**:
   - `ALTER TABLE ... ENABLE ROW LEVEL SECURITY` + 4操作分のポリシーを必ず付ける
-  - ポリシーは既存パターンに合わせる（現状は `002_orbit_rls_policies.sql` の authenticated 統一。
-    Issue #213 のオーナー限定化以降は、その時点の最新ポリシーパターンに合わせる）
+  - ポリシーは既存パターンに合わせる（グローバルデータ: SELECT は `has_orbit_read_role()` /
+    書き込みは `is_orbit_admin()`（045/046 パターン）。
+    **ユーザー別データ**（`user_id` 列を持つ本人専用テーブル）: 4操作とも
+    `has_orbit_read_role() AND user_id = (select auth.uid())`（`047` のパターン、ADR 0009））
   - `auth.*` 関数は `(select auth.role())` 形式で書く（`008_optimize_rls_auth_calls.sql` の最適化に合わせる）
+- **ポリシーの動的一括置換**（`045`/`046` の DO ブロックパターン）を行う場合:
+  ユーザー別テーブル（`orbit_live_attendances` 等、ADR 0009）を対象から**必ず除外**する
 - **外部キー追加**: FK 列にインデックスを付ける（`009` / `024` で欠落を後追い修正した経緯あり）
 - **RPC 関数**: `SECURITY INVOKER` を基本とし、`set search_path = ''` を必ず指定する
   （`005_fix_rpc_search_path.sql` で後追い修正した経緯あり）

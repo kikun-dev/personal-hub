@@ -146,9 +146,10 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_venues` — 会場マスタ
 - `orbit_lives` / `orbit_live_performances` / `orbit_live_performer_groups` / `orbit_live_performer_members` / `orbit_live_performance_absences` — ライブ、公演、出演/休演情報
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
+- `orbit_live_attendances` — ライブ参加記録（**ユーザー別データ**。本人のみ読み書き、ADR 0009）
 
 ### RLS 方針
-グローバルデータのため、`app_metadata.role ∈ {"admin", "viewer"}` で判定する。
+グローバルデータは `app_metadata.role ∈ {"admin", "viewer"}` で判定する。
 閲覧（SELECT）は admin/viewer 双方に許可（`public.has_orbit_read_role()`）、
 書き込み（INSERT/UPDATE/DELETE）は admin のみ（`public.is_orbit_admin()`）。
 ADR 0008 参照（Issue #213 / #221 対応済み）。
@@ -156,10 +157,12 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 アプリ全体は `allowedRoles: ["admin", "viewer"]`、`/admin` 配下は roleGuards で admin のみ、
 `people` / `venues` の new・edit ページは `requireAdmin()` によるページガード、
 書き込み系 Server Actions も `requireAdmin()` で admin のみ（Issue #221）。
+ユーザー別データ（参加記録）は例外で、admin / viewer とも本人の行のみ読み書き可
+（`has_orbit_read_role() AND user_id = auth.uid()`、shared cache 非対象、ADR 0009）。
 将来の匿名公開時は、公開対象の SELECT ポリシーだけを広げる。
 
 ### 今後の予定
-`docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0008。
+`docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0009。
 全体レビューと改善計画は `docs/advisor/006-oshikatsu-web-current-state-audit.md` を参照。
 
 ---
@@ -186,6 +189,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0006 | Orbit 閲覧導線の read cache 戦略 | Accepted |
 | 0007 | Orbit 選抜ポジションのフォーメーション一元管理 | Accepted |
 | 0008 | Orbit 認可レイヤーのオーナー限定化（app_metadata.role） | Accepted |
+| 0009 | Orbit ユーザー別データ（参加記録）の導入方針 | Accepted |
 
 ---
 

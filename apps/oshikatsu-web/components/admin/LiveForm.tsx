@@ -52,6 +52,9 @@ type SetlistItemField = {
 };
 type PerformanceField = {
   key: number;
+  // 既存公演の編集時のみ設定（048で公演IDを維持するupsertに使う）。keyはUI内部の
+  // React key用の識別子であり、idはDBの公演IDを表す別物。新規追加の公演はid無し。
+  id?: string;
   venueId: string;
   performanceDate: string;
   doorsOpenAt: string;
@@ -96,6 +99,7 @@ export function LiveForm({
   const [performances, setPerformances] = useState<PerformanceField[]>(() =>
     (initialValues?.performances ?? []).map((performance) => ({
       key: nextKey(),
+      id: performance.id,
       venueId: performance.venueId,
       performanceDate: performance.performanceDate,
       doorsOpenAt: performance.doorsOpenAt,
@@ -348,6 +352,7 @@ export function LiveForm({
       performerGroupIds,
       performerMemberIds,
       performances: performances.map((performance) => ({
+        id: performance.id,
         venueId: performance.venueId,
         performanceDate: performance.performanceDate,
         // 開場を出さない種別（フェス/配信）では送信時にクリアする
