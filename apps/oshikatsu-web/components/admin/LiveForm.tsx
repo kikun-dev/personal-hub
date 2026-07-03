@@ -340,8 +340,38 @@ export function LiveForm({
         ? "出演時刻 (HH:MM)"
         : "開演 (HH:MM)";
 
+  // 編集モードで、初期値に存在した公演（id あり = 既存公演）が現在の state から
+  // 削除されている場合のみ確認する。049 で FK を CASCADE に変更したため、
+  // その公演に参加記録があれば送信時に一緒に削除される（048の「公演IDを維持する
+  // upsert」により、idを維持したまま残す通常編集ではこの分岐に入らない）。
+  // admin は RLS 上、他ユーザー（viewer 等）の参加記録の有無を確認できないため、
+  // 「登録されている場合」という汎用的な文言で注意喚起する。
+  const willDeletePerformanceWithAttendance = (): boolean => {
+    if (mode !== "edit") return false;
+    const initialIds = new Set(
+      (initialValues?.performances ?? [])
+        .map((performance) => performance.id)
+        .filter((id): id is string => Boolean(id))
+    );
+    const currentIds = new Set(
+      performances.map((performance) => performance.id).filter((id): id is string => Boolean(id))
+    );
+    for (const id of initialIds) {
+      if (!currentIds.has(id)) return true;
+    }
+    return false;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (willDeletePerformanceWithAttendance()) {
+      const confirmed = window.confirm(
+        "削除される公演に参加記録が登録されている場合、参加記録も一緒に削除されます。公演を削除してよろしいですか？"
+      );
+      if (!confirmed) return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
 

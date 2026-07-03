@@ -29,3 +29,13 @@ export function isValidDateString(value: string): boolean {
 export function isValidHashtag(value: string): boolean {
   return value.startsWith("#") && value.length > 1;
 }
+
+// DB側の UUID PK/FK（performance_id 等）を入力境界で検証する共通ヘルパー。
+// RLS/FK はDBレベルで不正な操作を防ぐが、境界での早期検証（rules/implementation.md）
+// のため、フォーマット不正はDBまで到達させずusecase側で弾く。
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function isValidUuid(value: string): boolean {
+  return UUID_PATTERN.test(value);
+}

@@ -83,7 +83,7 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">ライブを編集</h1>
         <DeleteButton
-          confirmMessage={`${live.name} を削除しますか？`}
+          confirmMessage={`${live.name} を削除しますか？（登録されている参加記録も削除されます）`}
           onDelete={handleDelete}
         />
       </div>

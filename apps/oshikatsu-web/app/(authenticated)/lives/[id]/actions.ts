@@ -7,6 +7,7 @@ import { deleteAttendance } from "@/usecases/deleteAttendance";
 import type { UpsertAttendanceInput } from "@/types/attendance";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
+import { isValidUuid } from "@/lib/validation";
 
 // 参加記録はユーザー別データ（ADR 0009）で shared cache の対象外のため、
 // admin 配下の他アクションのような revalidateOrbit* の呼び出しは不要
@@ -41,6 +42,12 @@ export async function deleteAttendanceAction(
   performanceId: string
 ): Promise<{ error?: string }> {
   const { supabase } = await requireOrbitUser();
+
+  // performanceId はクライアント入力の境界値（PR #253 レビュー指摘）。
+  // repo呼び出し前に検証し、不正な値をDBまで到達させない。
+  if (!performanceId || !isValidUuid(performanceId)) {
+    return { error: "参加記録の解除に失敗しました" };
+  }
 
   const repo = createAttendanceRepository(supabase);
 
