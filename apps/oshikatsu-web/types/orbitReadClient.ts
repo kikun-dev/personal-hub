@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import type { Database, ReadOnlySupabaseClient } from "@personal-hub/supabase";
 
 /**
@@ -14,15 +13,6 @@ export type OrbitReadRpcFunction = Extract<
   | "find_orbit_birthdays_by_month"
   | "find_orbit_birthdays_by_date"
 >;
-=======
-import type { ReadOnlySupabaseClient } from "@personal-hub/supabase";
-
-/** read path で使用を許可する読み取り専用 RPC 関数名 */
-export type OrbitReadRpcFunction =
-  | "find_orbit_events_on_this_day"
-  | "find_orbit_birthdays_by_month"
-  | "find_orbit_birthdays_by_date";
->>>>>>> origin/main
 
 /**
  * Orbit の read path 用クライアント型。
