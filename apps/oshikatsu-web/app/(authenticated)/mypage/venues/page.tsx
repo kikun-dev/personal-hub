@@ -28,17 +28,30 @@ export default async function MyPageVenuesPage() {
       <h1 className="text-xl font-bold text-foreground">訪問会場</h1>
 
       {stats.totalVenues === 0 ? (
-        <p className="text-sm text-foreground/60">
-          現地参加の記録がありません。
-          <PendingLink
-            href={APP_ROUTES.lives}
-            feedback="global"
-            className="ml-1 text-blue-500 hover:underline"
-          >
-            ライブ一覧
-          </PendingLink>
-          から参加記録を登録しましょう。
-        </p>
+        // totalVenues は「会場IDがある現地参加」から作れた会場数。
+        // 現地参加はあるが全件会場未設定のケースがあるため、unknownVenueCount で出し分ける。
+        stats.unknownVenueCount > 0 ? (
+          <div className="space-y-1">
+            <p className="text-sm text-foreground/60">
+              会場が設定された現地参加の記録がありません。
+            </p>
+            <p className="text-xs text-foreground/40">
+              会場未設定の記録{stats.unknownVenueCount}件は集計に含まれていません
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-foreground/60">
+            現地参加の記録がありません。
+            <PendingLink
+              href={APP_ROUTES.lives}
+              feedback="global"
+              className="ml-1 text-blue-500 hover:underline"
+            >
+              ライブ一覧
+            </PendingLink>
+            から参加記録を登録しましょう。
+          </p>
+        )
       ) : (
         <>
           <div className="space-y-1">
