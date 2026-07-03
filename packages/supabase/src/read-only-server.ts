@@ -29,6 +29,9 @@ export function createReadOnlyClient(): ReadOnlySupabaseClient {
   // service role キーで RLS をバイパスするため、返り値は型レベルで書き込みを禁止した
   // ReadOnlySupabaseClient に絞る（フル SupabaseClient は構造的に代入可能なため
   // アサーションは不要）。実行時の権限はキー自体で決まり、実装は不変。
+  // 生成は未typedのまま行う: 返り値は select のみを公開する ReadOnlySupabaseClient に
+  // 絞られるため <Database> 指定の実益が無く、typed クライアントの rpc は
+  // ジェネリック版 rpc(fn: never) と深い型比較で非互換になるため。
   return createSupabaseClient(getSupabaseUrl(), getServiceRoleKey(), {
     auth: {
       autoRefreshToken: false,

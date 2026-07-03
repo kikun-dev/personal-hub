@@ -1,5 +1,15 @@
 export type { SupabaseClient } from "@supabase/supabase-js";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "./database.types";
+
+export type { Database };
+
+/**
+ * Database 型を適用済みの Supabase クライアント型。
+ * Database=any の素の SupabaseClient はこの型に代入可能なため、
+ * 既存の未typedな利用箇所はそのまま通る想定（packages/supabase/src/server.ts 等参照）。
+ */
+export type TypedSupabaseClient = SupabaseClient<Database>;
 
 /** select チェーンのみ公開するクエリビルダー */
 type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;
@@ -8,7 +18,7 @@ type ReadOnlyQueryBuilder = Pick<ReturnType<SupabaseClient["from"]>, "select">;
  * 型レベルで書き込みを禁止した Supabase クライアント。
  * service role キーで RLS をバイパスする read path（ADR 0006）で、
  * 誤って insert/update/delete/upsert を呼ぶとコンパイルエラーになる。
- * rpc は生成型（Database型）が無い現状では読み書きを型で判別できないため、
+ * rpc は Database 生成型があっても読み取り専用か更新系かを型からは判別できないため、
  * 許可する関数名ユニオンを型パラメータ TAllowedRpc で明示的に渡す設計にする
  * （default: never = 何も呼べない。raw な createReadOnlyClient() の返り値で
  * 更新系 rpc を呼ぶコードもコンパイルエラーになる）。
