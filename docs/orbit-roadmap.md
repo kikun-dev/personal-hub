@@ -290,7 +290,7 @@
   - [x] `orbit_setlist_item_members`（is_center）＋ `orbit_setlist_items.performance_style` を追加、RPC 拡張
   - [x] 披露タイプ（フル/ワンハーフ/間奏ロング/その他）＝ enum＋その他
   - [x] LiveForm に披露タイプ・披露メンバー（センター）編集、LiveDetail に表示
-- [ ] E（将来/バックログ）: 参加記録＋現地カウント/ランキング（Issue #103）
+- [ ] E（実装中）: 参加記録＋現地カウント/ランキング（アンブレラ #103。分割: 基盤 #246 / マイページ #247 / ビジュアライズ #248 / セトリカウント #249 / 会場集計 #250 / 座席記録(Backlog) #251）
 
 #### 入力UX改善（A/B/C）
 
