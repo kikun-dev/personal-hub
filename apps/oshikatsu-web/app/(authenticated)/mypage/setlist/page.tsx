@@ -31,7 +31,7 @@ export default async function SetlistCountPage() {
           ← マイページ
         </PendingLink>
       </div>
-      <h1 className="text-xl font-bold text-foreground">セットリストカウント</h1>
+      <h1 className="text-xl font-bold text-foreground">セトリログ</h1>
       <Suspense fallback={<div className="h-10" />}>
         <SetlistCountBrowser groups={groups} songs={songs} encounters={encounters} />
       </Suspense>

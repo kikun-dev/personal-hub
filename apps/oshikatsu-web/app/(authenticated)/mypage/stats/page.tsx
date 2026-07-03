@@ -42,13 +42,13 @@ export default async function MyPageStatsPage({ searchParams }: MyPageStatsProps
         </PendingLink>
       </div>
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-foreground">参戦記録</h1>
+        <h1 className="text-xl font-bold text-foreground">ライブ記録</h1>
         <PendingLink
           href={APP_ROUTES.mypageSetlist}
           feedback="global"
           className="text-xs text-blue-500 hover:underline"
         >
-          セットリストを見る
+          セトリログ
         </PendingLink>
       </div>
 

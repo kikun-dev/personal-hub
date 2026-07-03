@@ -76,21 +76,21 @@ export default async function MyPage() {
                 feedback="global"
                 className="text-xs text-blue-500 hover:underline"
               >
-                セットリストを見る
+                セトリログ
               </PendingLink>
               <PendingLink
                 href={APP_ROUTES.mypageVenues}
                 feedback="global"
                 className="text-xs text-blue-500 hover:underline"
               >
-                会場を見る
+                参戦会場
               </PendingLink>
               <PendingLink
                 href={APP_ROUTES.mypageStats}
                 feedback="global"
                 className="text-xs text-blue-500 hover:underline"
               >
-                記録を見る
+                ライブ記録
               </PendingLink>
             </div>
           )}
@@ -108,7 +108,7 @@ export default async function MyPage() {
               >
                 ライブ一覧
               </PendingLink>
-              から参戦記録を登録しましょう。
+              から登録しましょう。
             </p>
           )
         ) : (

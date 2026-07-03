@@ -25,7 +25,7 @@ export default async function MyPageVenuesPage() {
           ← マイページ
         </PendingLink>
       </div>
-      <h1 className="text-xl font-bold text-foreground">参戦した会場</h1>
+      <h1 className="text-xl font-bold text-foreground">参戦会場</h1>
 
       {stats.totalVenues === 0 ? (
         // totalVenues は「会場IDがある現地参戦」から作れた会場数。
