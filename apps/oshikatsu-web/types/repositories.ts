@@ -54,6 +54,7 @@ import type {
 import type {
   LiveAttendance,
   MyAttendanceEntry,
+  SongEncounter,
   UpsertAttendanceInput,
 } from "./attendance";
 
@@ -170,6 +171,9 @@ export type AttendanceRepository = {
   // マイページ（#247）用。自分の参加記録全件を、公演・ライブ・会場を合成した
   // read model として取得する（対象は RLS が本人分のみに絞る）。
   findAllForUser(): Promise<MyAttendanceEntry[]>;
+  // セットリストカウント（#249）用。自分の参加記録から、セトリの登録曲を
+  // 1遭遇=1件に展開した read model を全件取得する（対象は RLS が本人分のみに絞る）。
+  findSongEncounters(): Promise<SongEncounter[]>;
   upsert(userId: string, input: UpsertAttendanceInput): Promise<void>;
   delete(performanceId: string): Promise<void>;
 };

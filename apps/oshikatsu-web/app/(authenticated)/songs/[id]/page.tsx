@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { createClient } from "@personal-hub/supabase/server";
 import { SongDetail } from "@/components/songs/SongDetail";
 import { Button } from "@/components/ui/Button";
 import { ListBackButton } from "@/components/ui/ListBackButton";
@@ -6,6 +7,8 @@ import { PendingLink } from "@/components/ui/PendingLink";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { APP_ROUTES } from "@/lib/routes";
 import { getSongDetailPageData } from "@/usecases/readOrbitData";
+import { createAttendanceRepository } from "@/repositories/attendanceRepository";
+import { getSongEncounterSummary } from "@/usecases/getSongEncounterSummary";
 
 type SongDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -20,6 +23,16 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
   if (!song) {
     notFound();
   }
+
+  // グローバル部分（楽曲情報）は shared cache 経由の getSongDetailPageData のまま。
+  // 遭遇記録はユーザー別データ（ADR 0009）のため shared cache に載せず、
+  // 認証付きクライアントで都度取得してページ側で合成する
+  // （lives/[id]/page.tsx の参加記録合成と同じパターン）。未認証の場合は
+  // RLS により空配列が返るため、ページ自体はログイン不要のまま扱える。
+  const supabase = await createClient();
+  const attendanceRepo = createAttendanceRepository(supabase);
+  const encounters = await attendanceRepo.findSongEncounters();
+  const encounterSummary = getSongEncounterSummary(encounters, song.id);
 
   return (
     <div className="space-y-4">
@@ -36,7 +49,7 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
           </PendingLink>
         )}
       </div>
-      <SongDetail song={song} />
+      <SongDetail song={song} encounterSummary={encounterSummary} />
     </div>
   );
 }

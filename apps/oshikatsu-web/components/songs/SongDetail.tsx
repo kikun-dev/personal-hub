@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
+import { PendingLink } from "@/components/ui/PendingLink";
+import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
 import {
@@ -11,6 +13,9 @@ import {
   formatSongLabel,
   formatSongVideoTypeLabel,
 } from "@/types/song";
+import { APP_ROUTES } from "@/lib/routes";
+import { ATTENDED_TYPE_LABELS } from "@/types/attendance";
+import type { SongEncounterSummary } from "@/usecases/getSongEncounterSummary";
 
 const CREDIT_LABELS: Record<string, string> = {
   lyrics: "作詞",
@@ -19,7 +24,13 @@ const CREDIT_LABELS: Record<string, string> = {
   choreography: "振付",
 };
 
-export function SongDetail({ song }: { song: Song }) {
+type SongDetailProps = {
+  song: Song;
+  // 自分の遭遇記録（Issue #249、ADR 0009: ユーザー別データはページ側で合成して渡す）
+  encounterSummary: SongEncounterSummary;
+};
+
+export function SongDetail({ song, encounterSummary }: SongDetailProps) {
   const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
   const releaseLabelText = song.representativeReleaseType
     ? formatReleaseTypeLabel(song.representativeReleaseType, song.representativeNumbering)
@@ -177,6 +188,55 @@ export function SongDetail({ song }: { song: Song }) {
           </ul>
         </Card>
       )}
+
+      <Card>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-medium text-foreground/70">あなたの遭遇記録</h2>
+          <PendingLink
+            href={APP_ROUTES.mypageSetlist}
+            feedback="global"
+            className="text-xs text-blue-500 hover:underline"
+          >
+            ランキングを見る
+          </PendingLink>
+        </div>
+        {encounterSummary.count === 0 ? (
+          <p className="text-sm text-foreground/60">まだ聴いたことがありません</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-sm font-semibold text-foreground">
+                合計{encounterSummary.count}回
+              </span>
+              {encounterSummary.countsByType
+                .filter((item) => item.count > 0)
+                .map((item) => (
+                  <span key={item.attendedType} className="text-xs text-foreground/50">
+                    {ATTENDED_TYPE_LABELS[item.attendedType]}{item.count}回
+                  </span>
+                ))}
+            </div>
+            <ul className="space-y-2 text-sm">
+              {encounterSummary.encounters.map((encounter, index) => (
+                <li
+                  key={`${encounter.performanceId}-${index}`}
+                  className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-3"
+                >
+                  <span className="text-xs text-foreground/50">
+                    {encounter.performanceDate
+                      ? formatDate(encounter.performanceDate)
+                      : "日付未定"}
+                  </span>
+                  <Link href={`/lives/${encounter.liveId}`} className="text-foreground hover:underline">
+                    {encounter.liveName}
+                  </Link>
+                  <AttendedTypeBadge attendedType={encounter.attendedType} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </Card>
     </div>
   );
 }
