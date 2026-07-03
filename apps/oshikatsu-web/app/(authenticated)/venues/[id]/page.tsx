@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getVenueDetailPageData } from "@/usecases/readOrbitData";
 import { Button } from "@/components/ui/Button";
+import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 
 type VenueDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -10,6 +11,8 @@ type VenueDetailPageProps = {
 export default async function VenueDetailPage({ params }: VenueDetailPageProps) {
   const { id } = await params;
   const data = await getVenueDetailPageData(id);
+  const role = await getSessionRole();
+  const isAdmin = isAdminRole(role);
 
   if (!data) {
     notFound();
@@ -34,9 +37,11 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-bold text-foreground">{venue.name}</h1>
-        <Link href={`/venues/${venue.id}/edit`}>
-          <Button variant="secondary">編集</Button>
-        </Link>
+        {isAdmin && (
+          <Link href={`/venues/${venue.id}/edit`}>
+            <Button variant="secondary">編集</Button>
+          </Link>
+        )}
       </div>
 
       <dl className="space-y-3">

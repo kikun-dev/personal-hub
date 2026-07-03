@@ -6,8 +6,10 @@ const updateSession = createAuthProxy({
   publicRoutes: ["/login", "/auth"],
   routeMergeMode: "replace",
   // service role read path（ADR 0006）は RLS を通らないため、
-  // アプリ境界でも admin ロールを要求する（ADR 0008 / #213）
-  requiredRole: "admin",
+  // アプリ境界で admin/viewer ロールを要求する（ADR 0008 / #213 / #221）
+  allowedRoles: ["admin", "viewer"],
+  // 管理配下は admin のみ。認証済み viewer は login ではなくトップへ返す
+  roleGuards: [{ paths: ["/admin"], allowedRoles: ["admin"], redirectTo: "/" }],
 });
 
 export async function proxy(request: NextRequest) {

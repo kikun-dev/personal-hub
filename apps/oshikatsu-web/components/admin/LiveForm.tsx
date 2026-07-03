@@ -24,6 +24,9 @@ import { computeLiveRosterAction } from "@/app/(authenticated)/admin/lives/roste
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
+import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
+import { toErrorMap } from "@/hooks/useAdminForm";
 
 type LiveFormProps = {
   mode: "create" | "edit";
@@ -129,9 +132,8 @@ export function LiveForm({
   };
 
   const addPerformance = () => {
-    setPerformances((prev) => [
-      ...prev,
-      {
+    setPerformances((prev) =>
+      addKeyedItem(prev, {
         key: nextKey(),
         venueId: "",
         performanceDate: "",
@@ -143,33 +145,27 @@ export function LiveForm({
         seatInfo: "",
         absences: [],
         setlistItems: [],
-      },
-    ]);
+      })
+    );
   };
 
   const updatePerformance = (
     key: number,
     patch: Partial<PerformanceField>
   ) => {
-    setPerformances((prev) =>
-      prev.map((p) => (p.key === key ? { ...p, ...patch } : p))
-    );
+    setPerformances((prev) => updateKeyedItem(prev, (p) => p.key, key, patch));
   };
 
   const removePerformance = (key: number) => {
-    setPerformances((prev) => prev.filter((p) => p.key !== key));
+    setPerformances((prev) => removeKeyedItem(prev, (p) => p.key, key));
   };
 
   const addAbsence = (performanceKey: number) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? {
-              ...p,
-              absences: [...p.absences, { key: nextKey(), memberId: "", note: "" }],
-            }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        absences: addKeyedItem(p.absences, { key: nextKey(), memberId: "", note: "" }),
+      }))
     );
   };
 
@@ -179,50 +175,36 @@ export function LiveForm({
     patch: Partial<AbsenceField>
   ) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? {
-              ...p,
-              absences: p.absences.map((a) =>
-                a.key === absenceKey ? { ...a, ...patch } : a
-              ),
-            }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        absences: updateKeyedItem(p.absences, (a) => a.key, absenceKey, patch),
+      }))
     );
   };
 
   const removeAbsence = (performanceKey: number, absenceKey: number) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? { ...p, absences: p.absences.filter((a) => a.key !== absenceKey) }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        absences: removeKeyedItem(p.absences, (a) => a.key, absenceKey),
+      }))
     );
   };
 
   const addSetlistItem = (performanceKey: number) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? {
-              ...p,
-              setlistItems: [
-                ...p.setlistItems,
-                {
-                  key: nextKey(),
-                  itemType: "song",
-                  trackId: "",
-                  songTitle: "",
-                  note: "",
-                  performanceStyle: "",
-                  members: [],
-                },
-              ],
-            }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        setlistItems: addKeyedItem(p.setlistItems, {
+          key: nextKey(),
+          itemType: "song",
+          trackId: "",
+          songTitle: "",
+          note: "",
+          performanceStyle: "",
+          members: [],
+        }),
+      }))
     );
   };
 
@@ -232,16 +214,10 @@ export function LiveForm({
     patch: Partial<SetlistItemField>
   ) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? {
-              ...p,
-              setlistItems: p.setlistItems.map((item) =>
-                item.key === itemKey ? { ...item, ...patch } : item
-              ),
-            }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        setlistItems: updateKeyedItem(p.setlistItems, (item) => item.key, itemKey, patch),
+      }))
     );
   };
 
@@ -251,8 +227,7 @@ export function LiveForm({
     direction: -1 | 1
   ) => {
     setPerformances((prev) =>
-      prev.map((p) => {
-        if (p.key !== performanceKey) return p;
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => {
         const index = p.setlistItems.findIndex((item) => item.key === itemKey);
         const target = index + direction;
         if (index < 0 || target < 0 || target >= p.setlistItems.length) return p;
@@ -265,11 +240,10 @@ export function LiveForm({
 
   const removeSetlistItem = (performanceKey: number, itemKey: number) => {
     setPerformances((prev) =>
-      prev.map((p) =>
-        p.key === performanceKey
-          ? { ...p, setlistItems: p.setlistItems.filter((item) => item.key !== itemKey) }
-          : p
-      )
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        setlistItems: removeKeyedItem(p.setlistItems, (item) => item.key, itemKey),
+      }))
     );
   };
 
@@ -279,22 +253,18 @@ export function LiveForm({
     memberId: string
   ) => {
     setPerformances((prev) =>
-      prev.map((p) => {
-        if (p.key !== performanceKey) return p;
-        return {
-          ...p,
-          setlistItems: p.setlistItems.map((item) => {
-            if (item.key !== itemKey) return item;
-            const exists = item.members.some((m) => m.memberId === memberId);
-            return {
-              ...item,
-              members: exists
-                ? item.members.filter((m) => m.memberId !== memberId)
-                : [...item.members, { memberId, isCenter: false }],
-            };
-          }),
-        };
-      })
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        setlistItems: updateKeyedItem(p.setlistItems, (item) => item.key, itemKey, (item) => {
+          const exists = item.members.some((m) => m.memberId === memberId);
+          return {
+            ...item,
+            members: exists
+              ? item.members.filter((m) => m.memberId !== memberId)
+              : [...item.members, { memberId, isCenter: false }],
+          };
+        }),
+      }))
     );
   };
 
@@ -304,21 +274,15 @@ export function LiveForm({
     memberId: string
   ) => {
     setPerformances((prev) =>
-      prev.map((p) => {
-        if (p.key !== performanceKey) return p;
-        return {
-          ...p,
-          setlistItems: p.setlistItems.map((item) => {
-            if (item.key !== itemKey) return item;
-            return {
-              ...item,
-              members: item.members.map((m) =>
-                m.memberId === memberId ? { ...m, isCenter: !m.isCenter } : m
-              ),
-            };
-          }),
-        };
-      })
+      updateKeyedItem(prev, (p) => p.key, performanceKey, (p) => ({
+        ...p,
+        setlistItems: updateKeyedItem(p.setlistItems, (item) => item.key, itemKey, (item) => ({
+          ...item,
+          members: item.members.map((m) =>
+            m.memberId === memberId ? { ...m, isCenter: !m.isCenter } : m
+          ),
+        })),
+      }))
     );
   };
 
@@ -410,11 +374,7 @@ export function LiveForm({
     try {
       const result = await onSubmit(values);
       if (result.errors) {
-        const errorMap: Record<string, string> = {};
-        for (const err of result.errors) {
-          errorMap[err.field] = err.message;
-        }
-        setErrors(errorMap);
+        setErrors(toErrorMap(result.errors));
       }
     } finally {
       setIsSubmitting(false);
@@ -423,11 +383,7 @@ export function LiveForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {errors._form && (
-        <p className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400">
-          {errors._form}
-        </p>
-      )}
+      <FormErrorBanner message={errors._form} />
 
       <Input
         id="name"
