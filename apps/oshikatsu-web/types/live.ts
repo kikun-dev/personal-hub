@@ -166,6 +166,8 @@ export type CreateSetlistItemInput = {
 };
 
 export type CreateLivePerformanceInput = {
+  // 既存公演の編集時のみ設定する（048で公演IDを維持するupsertに使う）。新規公演は未設定。
+  id?: string;
   venueId: string;
   performanceDate: string;
   doorsOpenAt: string;

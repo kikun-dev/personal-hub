@@ -31,6 +31,7 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
     performerGroupIds: live.performerGroups.map((group) => group.groupId),
     performerMemberIds: live.performerMembers.map((member) => member.memberId),
     performances: live.performances.map((performance) => ({
+      id: performance.id,
       venueId: performance.venueId ?? "",
       performanceDate: performance.performanceDate ?? "",
       doorsOpenAt: performance.doorsOpenAt ?? "",

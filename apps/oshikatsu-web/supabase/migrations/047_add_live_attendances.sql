@@ -11,7 +11,12 @@
 CREATE TABLE orbit_live_attendances (
   id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id        UUID NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
-  performance_id UUID NOT NULL REFERENCES orbit_live_performances (id) ON DELETE CASCADE,
+  -- RESTRICT: 参加記録が紐づく公演の削除を DB レベルで拒否する。
+  -- upsert_orbit_live は 048 で公演IDを維持する方式に変更しており、
+  -- 通常のライブ編集ではこの制約に当たらない。公演を明示的に削除する場合のみ
+  -- エラーになり、アプリ側で「参加記録がある公演は削除できない」旨を案内する
+  -- （ユーザー別データのサイレント消失を防ぐ。Issue #246 レビュー指摘）。
+  performance_id UUID NOT NULL REFERENCES orbit_live_performances (id) ON DELETE RESTRICT,
   -- 参加種別: 現地 / ライブビューイング / 配信
   attended_type  TEXT NOT NULL CHECK (attended_type IN ('onsite', 'live_viewing', 'streaming')),
   -- 座席の自由記述メモ（構造化・会場図マッピングは Issue #251 で検討）
