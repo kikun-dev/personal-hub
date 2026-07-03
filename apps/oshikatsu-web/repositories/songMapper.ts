@@ -1,3 +1,4 @@
+import type { SelectRows } from "@personal-hub/supabase";
 import type {
   Song,
   SongCredit,
@@ -17,160 +18,131 @@ import { SONG_VIDEO_TYPES, isSongLabel, isSongVideoType } from "@/types/song";
 import type { ReleaseType } from "@/types/release";
 import { splitCreditNames } from "@/lib/songCredits";
 
-type ReleaseGroupRel =
-  | {
-      name_ja: string;
-      color: string;
-    }
-  | Array<{
-      name_ja: string;
-      color: string;
-    }>;
+// SelectRows は select 定数の typeof を必要とするため、リポジトリ側の SELECT 定数を
+// ここへ移動し、行型と一緒に export する（リポジトリは本ファイルから import する片方向依存）。
+export const SONG_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  orbit_groups(name_ja, color),
+  label,
+  generation,
+  orbit_release_tracks(
+    release_id,
+    track_number,
+    orbit_releases(
+      id,
+      title,
+      release_type,
+      numbering,
+      group_id,
+      release_date,
+      orbit_groups(name_ja, color)
+    )
+  )
+` as const;
 
-type SongGroupRel =
-  | {
-      name_ja: string;
-      color: string;
-    }
-  | Array<{
-      name_ja: string;
-      color: string;
-    }>;
+export const SONG_DETAIL_SELECT = `
+  id,
+  title,
+  group_id,
+  orbit_groups(name_ja, color),
+  label,
+  generation,
+  orbit_release_tracks(
+    release_id,
+    track_number,
+    orbit_releases(
+      id,
+      title,
+      release_type,
+      numbering,
+      group_id,
+      release_date,
+      orbit_groups(name_ja, color)
+    )
+  ),
+  orbit_track_credits(
+    credit_role,
+    sort_order,
+    orbit_people(display_name)
+  ),
+  orbit_track_formations(
+    id,
+    column_count,
+    orbit_track_formation_rows(
+      id,
+      row_number,
+      member_count,
+      orbit_track_formation_members(
+        member_id,
+        slot_order,
+        is_center,
+        orbit_members(name_ja)
+      )
+    )
+  ),
+  orbit_track_mvs(
+    mv_url,
+    location,
+    published_on,
+    memo,
+    orbit_people(display_name)
+  ),
+  orbit_track_videos(
+    video_type,
+    video_url,
+    published_on,
+    memo
+  ),
+  orbit_track_costumes(
+    id,
+    image_path,
+    note,
+    sort_order,
+    orbit_people(display_name)
+  )
+` as const;
 
-type ReleaseRel =
-  | {
-      id: string;
-      title: string;
-      release_type: SongReleaseLink["releaseType"];
-      numbering: number | null;
-      group_id: string;
-      release_date: string | null;
-      orbit_groups: ReleaseGroupRel;
-    }
-  | Array<{
-      id: string;
-      title: string;
-      release_type: SongReleaseLink["releaseType"];
-      numbering: number | null;
-      group_id: string;
-      release_date: string | null;
-      orbit_groups: ReleaseGroupRel;
-    }>;
+export const SONG_PUBLIC_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  orbit_groups(name_ja, color),
+  label,
+  generation,
+  orbit_release_tracks(
+    release_id,
+    track_number,
+    orbit_releases(release_date, release_type, numbering)
+  )
+` as const;
 
-type TrackReleaseRow = {
-  release_id: string;
-  track_number: number;
-  orbit_releases: ReleaseRel;
+type SongDetailRow = SelectRows<"orbit_tracks", typeof SONG_DETAIL_SELECT>[number];
+
+// findAll は SONG_LIST_SELECT（詳細リレーション無し）、findById/create/update は
+// SONG_DETAIL_SELECT（詳細リレーションあり）の行を同じ mapSong に渡すため、詳細側にのみ
+// 存在する関連をオプショナルにして両方の select 結果を受け付けられるようにする
+// （memberRepository の MemberRow と同じ方針）。
+export type SongRow = Omit<
+  SongDetailRow,
+  | "orbit_track_credits"
+  | "orbit_track_formations"
+  | "orbit_track_mvs"
+  | "orbit_track_videos"
+  | "orbit_track_costumes"
+> & {
+  orbit_track_credits?: SongDetailRow["orbit_track_credits"];
+  orbit_track_formations?: SongDetailRow["orbit_track_formations"];
+  orbit_track_mvs?: SongDetailRow["orbit_track_mvs"];
+  orbit_track_videos?: SongDetailRow["orbit_track_videos"];
+  orbit_track_costumes?: SongDetailRow["orbit_track_costumes"];
 };
 
-type PersonRel =
-  | {
-      id?: string;
-      display_name: string;
-    }
-  | Array<{
-      id?: string;
-      display_name: string;
-    }>;
+export type SongListRow = SelectRows<"orbit_tracks", typeof SONG_PUBLIC_LIST_SELECT>[number];
 
-type TrackCreditRow = {
-  credit_role: SongCreditRole;
-  sort_order: number;
-  orbit_people: PersonRel;
-};
-
-type FormationMemberRow = {
-  member_id: string;
-  slot_order: number;
-  is_center: boolean;
-  orbit_members:
-    | {
-        name_ja: string;
-      }
-    | Array<{
-        name_ja: string;
-      }>;
-};
-
-type FormationRowRow = {
-  id: string;
-  row_number: number;
-  member_count: number;
-  orbit_track_formation_members?: FormationMemberRow[];
-};
-
-type FormationRel =
-  | {
-      id: string;
-      column_count: number;
-      orbit_track_formation_rows?: FormationRowRow[];
-    }
-  | Array<{
-      id: string;
-      column_count: number;
-      orbit_track_formation_rows?: FormationRowRow[];
-    }>;
-
-type MvRow = {
-  mv_url: string;
-  location: string | null;
-  published_on: string | null;
-  memo: string | null;
-  orbit_people: PersonRel | null;
-};
-
-// orbit_track_mvs は track_id が UNIQUE のため to-one として
-// 単一オブジェクト（リレーションが無ければ null）で返る。配列で返る場合にも備える。
-type MvRel = MvRow | MvRow[] | null;
-
-type VideoRow = {
-  video_type: string;
-  video_url: string;
-  published_on: string | null;
-  memo: string | null;
-};
-
-type CostumeRow = {
-  id: string;
-  image_path: string;
-  note: string | null;
-  sort_order: number;
-  orbit_people: PersonRel;
-};
-
-export type SongRow = {
-  id: string;
-  title: string;
-  group_id: string;
-  orbit_groups: SongGroupRel;
-  label: string | null;
-  generation: string | null;
-  orbit_release_tracks?: TrackReleaseRow[];
-  orbit_track_credits?: TrackCreditRow[];
-  orbit_track_formations?: FormationRel;
-  orbit_track_mvs?: MvRel;
-  orbit_track_videos?: VideoRow[];
-  orbit_track_costumes?: CostumeRow[];
-};
-
-type SongListReleaseDateRel =
-  | {
-      release_date: string | null;
-      release_type: ReleaseType;
-      numbering: number | null;
-    }
-  | Array<{
-      release_date: string | null;
-      release_type: ReleaseType;
-      numbering: number | null;
-    }>
-  | null;
-
-type SongListReleaseRow = {
-  release_id: string;
-  track_number: number;
-  orbit_releases: SongListReleaseDateRel;
-};
+type SongTrackReleaseRow = SongRow["orbit_release_tracks"][number];
+type SongListTrackReleaseRow = SongListRow["orbit_release_tracks"][number];
 
 type RepresentativeReleaseCandidate = {
   releaseId: string;
@@ -179,24 +151,6 @@ type RepresentativeReleaseCandidate = {
   releaseType: ReleaseType | null;
   numbering: number | null;
 };
-
-export type SongListRow = {
-  id: string;
-  title: string;
-  group_id: string;
-  orbit_groups: SongGroupRel;
-  label: string | null;
-  generation: string | null;
-  orbit_release_tracks?: SongListReleaseRow[];
-};
-
-function pickFirst<T>(value: T | T[] | null | undefined): T | null {
-  if (!value) return null;
-  if (Array.isArray(value)) {
-    return value.length > 0 ? value[0] : null;
-  }
-  return value;
-}
 
 function pickFirstDatedRelease<T extends RepresentativeReleaseCandidate>(
   links: T[]
@@ -217,20 +171,22 @@ function pickRepresentativeReleaseLabelSource<T extends RepresentativeReleaseCan
   return pickFirstDatedRelease(links) ?? links[0] ?? null;
 }
 
-function mapRelease(row: TrackReleaseRow): SongReleaseLink | null {
-  const release = pickFirst(row.orbit_releases);
-  if (!release) return null;
-
-  const group = pickFirst(release.orbit_groups);
+// release_type は DB 上 string 列（CHECK 制約で許容値を保証）。ReleaseType は null を
+// 持たないドメイン型のため、実行時ガード（isReleaseType）を導入するとフォールバック
+// 分岐が新たに必要になりロジックが変わってしまう。移行前も無条件 cast だったため、
+// 同じ挙動を保つ cast として残す（本関数内で2箇所）。
+function mapRelease(row: SongTrackReleaseRow): SongReleaseLink {
+  const release = row.orbit_releases;
+  const group = release.orbit_groups;
 
   return {
     releaseId: release.id,
     releaseTitle: release.title,
-    releaseType: release.release_type,
+    releaseType: release.release_type as ReleaseType,
     numbering: release.numbering,
     groupId: release.group_id,
-    groupNameJa: group?.name_ja ?? "",
-    groupColor: group?.color ?? "#6B7280",
+    groupNameJa: group.name_ja,
+    groupColor: group.color,
     releaseDate: release.release_date,
     trackNumber: row.track_number,
   };
@@ -249,43 +205,38 @@ function creditRoleRank(role: SongCreditRole): number {
   return index === -1 ? CREDIT_ROLE_ORDER.length : index;
 }
 
-function mapCredits(rows: TrackCreditRow[] | undefined): SongCredit[] {
+function mapCredits(rows: SongRow["orbit_track_credits"]): SongCredit[] {
   if (!rows) return [];
 
   return rows
-    .map((row) => {
-      const person = pickFirst(row.orbit_people);
-      if (!person) return null;
-
-      return {
-        role: row.credit_role,
-        personName: person.display_name,
-        sortOrder: row.sort_order,
-      } satisfies SongCredit;
-    })
-    .filter((credit): credit is SongCredit => Boolean(credit))
+    .map(
+      (row) =>
+        ({
+          // credit_role は DB 上 string 列。実行時ガード関数が無いため、移行前と同じ
+          // 無条件 cast として残す。
+          role: row.credit_role as SongCreditRole,
+          personName: row.orbit_people.display_name,
+          sortOrder: row.sort_order,
+        }) satisfies SongCredit
+    )
     .sort((a, b) => {
       if (a.role !== b.role) return creditRoleRank(a.role) - creditRoleRank(b.role);
       return a.sortOrder - b.sortOrder;
     });
 }
 
-function mapFormation(formationRel: FormationRel | undefined): SongFormationRow[] {
-  const formation = pickFirst(formationRel);
+function mapFormation(formation: SongRow["orbit_track_formations"]): SongFormationRow[] {
   if (!formation) return [];
 
-  return (formation.orbit_track_formation_rows ?? [])
+  return formation.orbit_track_formation_rows
     .map((row) => {
-      const members: SongFormationMember[] = (row.orbit_track_formation_members ?? [])
-        .map((member) => {
-          const orbitMember = pickFirst(member.orbit_members);
-          return {
-            memberId: member.member_id,
-            memberNameJa: orbitMember?.name_ja ?? "",
-            slotOrder: member.slot_order,
-            isCenter: member.is_center ?? false,
-          };
-        })
+      const members: SongFormationMember[] = row.orbit_track_formation_members
+        .map((member) => ({
+          memberId: member.member_id,
+          memberNameJa: member.orbit_members.name_ja,
+          slotOrder: member.slot_order,
+          isCenter: member.is_center,
+        }))
         .sort((a, b) => a.slotOrder - b.slotOrder);
 
       return {
@@ -297,17 +248,15 @@ function mapFormation(formationRel: FormationRel | undefined): SongFormationRow[
     .sort((a, b) => a.rowNumber - b.rowNumber);
 }
 
-function mapMv(mvRel: MvRel | undefined): SongMv | null {
-  const row = pickFirst(mvRel);
-  if (!row) return null;
-  const director = pickFirst(row.orbit_people);
+function mapMv(mv: SongRow["orbit_track_mvs"]): SongMv | null {
+  if (!mv) return null;
 
   return {
-    url: row.mv_url,
-    directorName: director?.display_name ?? null,
-    location: row.location,
-    publishedOn: row.published_on,
-    memo: row.memo,
+    url: mv.mv_url,
+    directorName: mv.orbit_people?.display_name ?? null,
+    location: mv.location,
+    publishedOn: mv.published_on,
+    memo: mv.memo,
   };
 }
 
@@ -316,7 +265,7 @@ function videoTypeRank(type: SongVideoType): number {
   return index === -1 ? SONG_VIDEO_TYPES.length : index;
 }
 
-function mapVideos(rows: VideoRow[] | undefined): SongVideo[] {
+function mapVideos(rows: SongRow["orbit_track_videos"]): SongVideo[] {
   if (!rows) return [];
 
   return rows
@@ -333,28 +282,23 @@ function mapVideos(rows: VideoRow[] | undefined): SongVideo[] {
     .sort((a, b) => videoTypeRank(a.type) - videoTypeRank(b.type));
 }
 
-function mapCostumes(rows: CostumeRow[] | undefined): SongCostume[] {
+function mapCostumes(rows: SongRow["orbit_track_costumes"]): SongCostume[] {
   if (!rows) return [];
 
   return rows
-    .map((row) => {
-      const person = pickFirst(row.orbit_people);
-      return {
-        id: row.id,
-        stylistName: person?.display_name ?? "",
-        imagePath: row.image_path,
-        note: row.note,
-        sortOrder: row.sort_order,
-      } satisfies SongCostume;
-    })
+    .map((row) => ({
+      id: row.id,
+      stylistName: row.orbit_people.display_name,
+      imagePath: row.image_path,
+      note: row.note,
+      sortOrder: row.sort_order,
+    }))
     .sort((a, b) => a.sortOrder - b.sortOrder);
 }
 
 export function mapSong(row: SongRow): Song {
-  const songGroup = pickFirst(row.orbit_groups);
-  const mappedReleases = (row.orbit_release_tracks ?? [])
-    .map(mapRelease)
-    .filter((release): release is SongReleaseLink => Boolean(release));
+  const songGroup = row.orbit_groups;
+  const mappedReleases = row.orbit_release_tracks.map(mapRelease);
 
   const representative = pickFirstDatedRelease(mappedReleases);
   const labelRepresentative = pickRepresentativeReleaseLabelSource(mappedReleases);
@@ -377,8 +321,8 @@ export function mapSong(row: SongRow): Song {
     id: row.id,
     title: row.title,
     groupId: row.group_id,
-    groupNameJa: songGroup?.name_ja ?? "",
-    groupColor: songGroup?.color ?? "#6B7280",
+    groupNameJa: songGroup.name_ja,
+    groupColor: songGroup.color,
     label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
     generation: row.generation,
     releaseDate: representative?.releaseDate ?? null,
@@ -394,18 +338,18 @@ export function mapSong(row: SongRow): Song {
 }
 
 export function mapToSongListItem(row: SongListRow): SongListItem {
-  const group = pickFirst(row.orbit_groups);
-  const releaseTracks = row.orbit_release_tracks ?? [];
+  const group = row.orbit_groups;
+  const releaseTracks = row.orbit_release_tracks;
 
   // 全紐づけ（種別・ナンバリング含む）。
-  const allLinks = releaseTracks.map((releaseTrack) => {
-    const release = pickFirst(releaseTrack.orbit_releases);
+  const allLinks = releaseTracks.map((releaseTrack: SongListTrackReleaseRow) => {
+    const release = releaseTrack.orbit_releases;
     return {
       releaseId: releaseTrack.release_id,
       trackNumber: releaseTrack.track_number,
-      releaseDate: release?.release_date ?? null,
-      releaseType: release?.release_type ?? null,
-      numbering: release?.numbering ?? null,
+      releaseDate: release.release_date,
+      releaseType: release.release_type as ReleaseType,
+      numbering: release.numbering,
     };
   });
 
@@ -418,8 +362,8 @@ export function mapToSongListItem(row: SongListRow): SongListItem {
     id: row.id,
     title: row.title,
     groupId: row.group_id,
-    groupNameJa: group?.name_ja ?? "",
-    groupColor: group?.color ?? "#6B7280",
+    groupNameJa: group.name_ja,
+    groupColor: group.color,
     label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
     generation: row.generation,
     releaseCount: releaseTracks.length,

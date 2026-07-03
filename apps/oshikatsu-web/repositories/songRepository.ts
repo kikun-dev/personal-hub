@@ -1,10 +1,11 @@
+import type { TypedSupabaseClient } from "@personal-hub/supabase";
 import type { Song, SongOption, CalendarVideoItem } from "@/types/song";
 import { isSongVideoType } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
-import type { SongRow, SongListRow } from "./songMapper";
+import { SONG_LIST_SELECT, SONG_DETAIL_SELECT, SONG_PUBLIC_LIST_SELECT } from "./songMapper";
 import {
   mapSong,
   mapToSongListItem,
@@ -18,103 +19,24 @@ import {
   parseCostumes,
 } from "./songMapper";
 
-const SONG_LIST_SELECT = `
-  id,
-  title,
-  group_id,
-  orbit_groups(name_ja, color),
-  label,
-  generation,
-  orbit_release_tracks(
-    release_id,
-    track_number,
-    orbit_releases(
-      id,
-      title,
-      release_type,
-      numbering,
-      group_id,
-      release_date,
-      orbit_groups(name_ja, color)
-    )
-  )
-`;
+const SONG_OPTION_SELECT = "id, title" as const;
+const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
+const FORMATION_ROW_ID_SELECT = "formation_row_id" as const;
+const FORMATION_ID_SELECT = "formation_id" as const;
+const TRACK_ID_SELECT = "track_id" as const;
 
-const SONG_DETAIL_SELECT = `
-  id,
-  title,
-  group_id,
-  orbit_groups(name_ja, color),
-  label,
-  generation,
-  orbit_release_tracks(
-    release_id,
-    track_number,
-    orbit_releases(
-      id,
-      title,
-      release_type,
-      numbering,
-      group_id,
-      release_date,
-      orbit_groups(name_ja, color)
-    )
-  ),
-  orbit_track_credits(
-    credit_role,
-    sort_order,
-    orbit_people(display_name)
-  ),
-  orbit_track_formations(
-    id,
-    column_count,
-    orbit_track_formation_rows(
-      id,
-      row_number,
-      member_count,
-      orbit_track_formation_members(
-        member_id,
-        slot_order,
-        is_center,
-        orbit_members(name_ja)
-      )
-    )
-  ),
-  orbit_track_mvs(
-    mv_url,
-    location,
-    published_on,
-    memo,
-    orbit_people(display_name)
-  ),
-  orbit_track_videos(
-    video_type,
-    video_url,
-    published_on,
-    memo
-  ),
-  orbit_track_costumes(
-    id,
-    image_path,
-    note,
-    sort_order,
-    orbit_people(display_name)
-  )
-`;
+const MV_CALENDAR_SELECT = `
+  mv_url,
+  published_on,
+  orbit_tracks(id, title, orbit_groups(name_ja))
+` as const;
 
-const SONG_PUBLIC_LIST_SELECT = `
-  id,
-  title,
-  group_id,
-  orbit_groups(name_ja, color),
-  label,
-  generation,
-  orbit_release_tracks(
-    release_id,
-    track_number,
-    orbit_releases(release_date, release_type, numbering)
-  )
-`;
+const VIDEO_CALENDAR_SELECT = `
+  video_url,
+  video_type,
+  published_on,
+  orbit_tracks(id, title, orbit_groups(name_ja))
+` as const;
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -135,7 +57,7 @@ async function resolveReleaseLinkTrackNumbers(
     }
     let query = supabase
       .from("orbit_release_tracks")
-      .select("track_number")
+      .select(RELEASE_TRACK_NUMBER_SELECT)
       .eq("release_id", link.releaseId)
       .order("track_number", { ascending: false })
       .limit(1);
@@ -146,8 +68,7 @@ async function resolveReleaseLinkTrackNumbers(
     if (error) {
       throw new RepositoryError("曲順の自動採番に失敗しました", error);
     }
-    const maxNumber =
-      data && data.length > 0 ? (data[0] as { track_number: number }).track_number : 0;
+    const maxNumber = data.length > 0 ? data[0].track_number : 0;
     resolved.push({ releaseId: link.releaseId, trackNumber: maxNumber + 1 });
   }
   return resolved;
@@ -156,12 +77,12 @@ async function resolveReleaseLinkTrackNumbers(
 export function createSongRepository(
   supabase: OrbitReadClient
 ): SongRepository {
-  async function findManyByIds(ids: string[], select: string): Promise<Song[]> {
+  async function findManyByIds(ids: string[]): Promise<Song[]> {
     if (ids.length === 0) return [];
 
     const { data, error } = await supabase
       .from("orbit_tracks")
-      .select(select)
+      .select(SONG_LIST_SELECT)
       .in("id", ids)
       .order("title");
 
@@ -169,7 +90,7 @@ export function createSongRepository(
       throw new RepositoryError("楽曲情報の取得に失敗しました", error);
     }
 
-    return (data as unknown as SongRow[]).map(mapSong);
+    return data.map(mapSong);
   }
 
   // フォーメーション列(formation_row)の集合から、所属する楽曲(track)IDを解決する
@@ -178,33 +99,27 @@ export function createSongRepository(
 
     const { data: formationRows, error: formationRowsError } = await supabase
       .from("orbit_track_formation_rows")
-      .select("formation_id")
+      .select(FORMATION_ID_SELECT)
       .in("id", rowIds);
 
     if (formationRowsError) {
       throw new RepositoryError("参加楽曲の取得に失敗しました", formationRowsError);
     }
 
-    const formationIds = uniqueStrings(
-      ((formationRows as Array<{ formation_id: string }>) ?? []).map(
-        (row) => row.formation_id
-      )
-    );
+    const formationIds = uniqueStrings(formationRows.map((row) => row.formation_id));
 
     if (formationIds.length === 0) return [];
 
     const { data: formations, error: formationsError } = await supabase
       .from("orbit_track_formations")
-      .select("track_id")
+      .select(TRACK_ID_SELECT)
       .in("id", formationIds);
 
     if (formationsError) {
       throw new RepositoryError("参加楽曲の取得に失敗しました", formationsError);
     }
 
-    return uniqueStrings(
-      ((formations as Array<{ track_id: string }>) ?? []).map((row) => row.track_id)
-    );
+    return uniqueStrings(formations.map((row) => row.track_id));
   }
 
   return {
@@ -224,7 +139,7 @@ export function createSongRepository(
         throw new RepositoryError("楽曲一覧の取得に失敗しました", error);
       }
 
-      return (data as unknown as SongRow[]).map(mapSong);
+      return data.map(mapSong);
     },
 
     async findPublicList(filters) {
@@ -243,20 +158,20 @@ export function createSongRepository(
         throw new RepositoryError("公開向け楽曲一覧の取得に失敗しました", error);
       }
 
-      return (data as unknown as SongListRow[]).map(mapToSongListItem);
+      return data.map(mapToSongListItem);
     },
 
     async findOptions() {
       const { data, error } = await supabase
         .from("orbit_tracks")
-        .select("id, title")
+        .select(SONG_OPTION_SELECT)
         .order("title");
 
       if (error) {
         throw new RepositoryError("楽曲候補の取得に失敗しました", error);
       }
 
-      return ((data as Array<{ id: string; title: string }>) ?? []).map((row) => ({
+      return data.map((row) => ({
         id: row.id,
         title: row.title,
       })) satisfies SongOption[];
@@ -276,7 +191,7 @@ export function createSongRepository(
         throw new RepositoryError("楽曲の取得に失敗しました", error);
       }
 
-      return mapSong(data as unknown as SongRow);
+      return mapSong(data);
     },
 
     async create(input) {
@@ -292,6 +207,11 @@ export function createSongRepository(
       const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
+      // 生成型上 create_track_with_relations_v2 の p_label / p_generation は non-null な
+      // string になっているが、これは PostgREST の RPC スカラー引数の型生成が NULL 許容を
+      // 反映しない既知の制約であり、関数自体は null を受け付ける（label/generation は
+      // どちらも未指定なら null で送る想定）。ペイロード側の誤りではないため、ここでは
+      // TypedSupabaseClient にせず asWritableClient の返り値（未typed）のまま呼び出す。
       const writable = asWritableClient(supabase);
       const { data: trackId, error: rpcError } = await writable.rpc("create_track_with_relations_v2", {
         p_title: input.title.trim(),
@@ -314,7 +234,10 @@ export function createSongRepository(
         throw new RepositoryError("作成した楽曲IDの取得に失敗しました", null);
       }
 
-      const { error: centerError } = await writable.rpc("set_track_centers", {
+      // set_track_centers は p_track_id（非null文字列）/ p_center_member_ids（Json）とも
+      // 実ペイロードと不一致が無いため、typed client で呼び出す。
+      const centerClient: TypedSupabaseClient = asWritableClient(supabase);
+      const { error: centerError } = await centerClient.rpc("set_track_centers", {
         p_track_id: trackId,
         p_center_member_ids: input.centerMemberIds,
       });
@@ -348,6 +271,8 @@ export function createSongRepository(
       const videos = parseVideos(input.videos);
       const costumes = parseCostumes(input.costumes);
 
+      // update_track_with_relations_v2 も create 同様、p_label / p_generation の
+      // NULL 許容が生成型に反映されない既知の制約があるため未typedのまま呼び出す。
       const writable = asWritableClient(supabase);
       const { error: rpcError } = await writable.rpc("update_track_with_relations_v2", {
         p_track_id: id,
@@ -367,7 +292,8 @@ export function createSongRepository(
         throw new RepositoryError("楽曲の更新に失敗しました", rpcError);
       }
 
-      const { error: centerError } = await writable.rpc("set_track_centers", {
+      const centerClient: TypedSupabaseClient = asWritableClient(supabase);
+      const { error: centerError } = await centerClient.rpc("set_track_centers", {
         p_track_id: id,
         p_center_member_ids: input.centerMemberIds,
       });
@@ -397,7 +323,7 @@ export function createSongRepository(
     async findByMemberId(memberId) {
       const { data: memberRows, error: memberRowsError } = await supabase
         .from("orbit_track_formation_members")
-        .select("formation_row_id")
+        .select(FORMATION_ROW_ID_SELECT)
         .eq("member_id", memberId);
 
       if (memberRowsError) {
@@ -405,18 +331,18 @@ export function createSongRepository(
       }
 
       const formationRowIds = uniqueStrings(
-        ((memberRows as Array<{ formation_row_id: string }>) ?? []).map((row) => row.formation_row_id)
+        memberRows.map((row) => row.formation_row_id)
       );
 
       const trackIds = await resolveTrackIdsFromRowIds(formationRowIds);
 
-      return findManyByIds(trackIds, SONG_LIST_SELECT);
+      return findManyByIds(trackIds);
     },
 
     async findCenterTrackIdsByMemberId(memberId) {
       const { data: centerRows, error: centerRowsError } = await supabase
         .from("orbit_track_formation_members")
-        .select("formation_row_id")
+        .select(FORMATION_ROW_ID_SELECT)
         .eq("member_id", memberId)
         .eq("is_center", true);
 
@@ -425,33 +351,17 @@ export function createSongRepository(
       }
 
       const centerRowIds = uniqueStrings(
-        ((centerRows as Array<{ formation_row_id: string }>) ?? []).map((row) => row.formation_row_id)
+        centerRows.map((row) => row.formation_row_id)
       );
 
       return resolveTrackIdsFromRowIds(centerRowIds);
     },
 
     async findCalendarVideoItems() {
-      type TrackRel = {
-        id: string;
-        title: string;
-        orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
-      };
-      const pickTrack = (rel: TrackRel | TrackRel[] | null): TrackRel | null =>
-        Array.isArray(rel) ? (rel[0] ?? null) : rel;
-      const groupNameOf = (track: TrackRel): string => {
-        const group = Array.isArray(track.orbit_groups)
-          ? track.orbit_groups[0]
-          : track.orbit_groups;
-        return group?.name_ja ?? "";
-      };
-
       // MV配信日
       const { data: mvData, error: mvError } = await supabase
         .from("orbit_track_mvs")
-        .select(
-          "mv_url, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
-        )
+        .select(MV_CALENDAR_SELECT)
         .not("published_on", "is", null);
       if (mvError) {
         throw new RepositoryError("カレンダー用MVの取得に失敗しました", mvError);
@@ -460,51 +370,35 @@ export function createSongRepository(
       // 関連動画の配信日
       const { data: videoData, error: videoError } = await supabase
         .from("orbit_track_videos")
-        .select(
-          "video_url, video_type, published_on, orbit_tracks(id, title, orbit_groups(name_ja))"
-        )
+        .select(VIDEO_CALENDAR_SELECT)
         .not("published_on", "is", null);
       if (videoError) {
         throw new RepositoryError("カレンダー用動画の取得に失敗しました", videoError);
       }
 
       const items: CalendarVideoItem[] = [];
-      for (const row of (mvData as
-        | Array<{
-            mv_url: string;
-            published_on: string;
-            orbit_tracks: TrackRel | TrackRel[] | null;
-          }>
-        | null) ?? []) {
-        const track = pickTrack(row.orbit_tracks);
-        if (!track) continue;
+      for (const row of mvData) {
+        // published_on は .not(..., "is", null) で非null行のみに絞っているが、
+        // 生成型は列自体のnull許容（string | null）をそのまま反映するため、
+        // クエリによる絞り込みを反映した cast として残す。
         items.push({
-          trackId: track.id,
-          trackTitle: track.title,
-          groupNameJa: groupNameOf(track),
+          trackId: row.orbit_tracks.id,
+          trackTitle: row.orbit_tracks.title,
+          groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
           videoType: "mv",
           url: row.mv_url,
-          date: row.published_on,
+          date: row.published_on as string,
         });
       }
-      for (const row of (videoData as
-        | Array<{
-            video_url: string;
-            video_type: string;
-            published_on: string;
-            orbit_tracks: TrackRel | TrackRel[] | null;
-          }>
-        | null) ?? []) {
+      for (const row of videoData) {
         if (!isSongVideoType(row.video_type)) continue;
-        const track = pickTrack(row.orbit_tracks);
-        if (!track) continue;
         items.push({
-          trackId: track.id,
-          trackTitle: track.title,
-          groupNameJa: groupNameOf(track),
+          trackId: row.orbit_tracks.id,
+          trackTitle: row.orbit_tracks.title,
+          groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
           videoType: row.video_type,
           url: row.video_url,
-          date: row.published_on,
+          date: row.published_on as string,
         });
       }
       return items;

@@ -1,3 +1,4 @@
+import type { TypedSupabaseClient } from "@personal-hub/supabase";
 import type { SelectionTier, MemberSelectionPosition } from "@/types/release";
 import type { ReleaseRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
@@ -8,8 +9,11 @@ import {
   getManualFrontSpecialSelectionLabel,
   isSakurazakaEightEra,
 } from "@/lib/selectionPositionRules";
-import type { ReleaseRow, ReleaseListRow, ReleaseOptionRow } from "./releaseMapper";
 import {
+  RELEASE_LIST_SELECT,
+  RELEASE_DETAIL_SELECT,
+  RELEASE_PUBLIC_LIST_SELECT,
+  RELEASE_OPTION_SELECT,
   mapToRelease,
   mapToReleaseListItem,
   mapToReleaseOption,
@@ -19,65 +23,19 @@ import {
   toBonusVideoRpcInput,
 } from "./releaseMapper";
 
-const RELEASE_LIST_SELECT = `
-  id,
-  title,
-  group_id,
-  release_type,
-  numbering,
-  release_date,
-  artwork_path,
-  orbit_people(display_name),
-  orbit_groups(name_ja, color),
-  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
-  orbit_release_tracks(track_number)
-`;
+const RELEASE_CALENDAR_SELECT = "id, title, release_date" as const;
 
-const RELEASE_DETAIL_SELECT = `
-  id,
-  title,
-  group_id,
-  release_type,
-  numbering,
-  release_date,
-  artwork_path,
-  orbit_people(display_name),
-  orbit_groups(name_ja, color),
-  orbit_release_bonus_videos(id, edition, title, description, sort_order),
-  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
-  orbit_release_member_positions(member_id, is_front_special, is_hiatus),
-  orbit_release_tracks(
-    track_number,
-    orbit_tracks(
-      id,
-      title,
-      label,
-      generation,
-      orbit_groups(name_ja, color),
-      orbit_track_mvs(id),
-      orbit_track_videos(video_type)
-    )
-  )
-`;
-
-const RELEASE_PUBLIC_LIST_SELECT = `
-  id,
-  title,
-  group_id,
-  release_type,
-  numbering,
-  release_date,
-  orbit_groups(name_ja, color),
-  orbit_release_tracks(track_number)
-`;
-
-const RELEASE_OPTION_SELECT = `
-  id,
-  title,
-  release_type,
-  group_id,
-  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
-`;
+// findSelectionPositionsByMemberId 内のアドホックなクエリ用 select 定数
+const FORMATION_MEMBER_SELECT = "formation_row_id, is_center" as const;
+const FORMATION_ROW_SELECT = "id, row_number, formation_id" as const;
+const FORMATION_TRACK_SELECT = "id, track_id" as const;
+const TRACK_LABEL_SELECT = "id, label" as const;
+const RELEASE_ID_SELECT = "release_id" as const;
+const RELEASE_MEMBER_POSITION_SELECT = "release_id, is_front_special, is_hiatus" as const;
+const SINGLE_RELEASE_INFO_SELECT =
+  "id, title, numbering, release_type, group_id, orbit_groups(name_ja)" as const;
+const RELEASE_TRACK_LINK_SELECT = "track_id, track_number, release_id" as const;
+const TRACK_LABEL_GENERATION_SELECT = "id, label, generation" as const;
 
 // 楽曲ラベル → 導出tier。配列の並び順がそのまま導出の優先順位（上ほど優先）。
 // 表題(title)と選抜(senbatsu)はどちらも「選抜」。表題を先に評価する。
@@ -187,7 +145,7 @@ export function createReleaseRepository(
         throw new RepositoryError("リリース一覧の取得に失敗しました", error);
       }
 
-      return (data as ReleaseRow[]).map(mapToRelease);
+      return data.map(mapToRelease);
     },
 
     async findPublicList(filters) {
@@ -209,7 +167,7 @@ export function createReleaseRepository(
         throw new RepositoryError("公開向けリリース一覧の取得に失敗しました", error);
       }
 
-      return (data as ReleaseListRow[]).map(mapToReleaseListItem);
+      return data.map(mapToReleaseListItem);
     },
 
     async findOptions() {
@@ -223,25 +181,26 @@ export function createReleaseRepository(
         throw new RepositoryError("リリース候補の取得に失敗しました", error);
       }
 
-      return ((data as ReleaseOptionRow[] | null) ?? []).map(mapToReleaseOption);
+      return data.map(mapToReleaseOption);
     },
 
     async findCalendarItems() {
       const { data, error } = await supabase
         .from("orbit_releases")
-        .select("id, title, release_date")
+        .select(RELEASE_CALENDAR_SELECT)
         .not("release_date", "is", null);
 
       if (error) {
         throw new RepositoryError("カレンダー用リリースの取得に失敗しました", error);
       }
 
-      type Row = { id: string; title: string; release_date: string };
-
-      return ((data as Row[] | null) ?? []).map((row) => ({
+      return data.map((row) => ({
         releaseId: row.id,
         title: row.title,
-        date: row.release_date,
+        // release_date は .not(..., "is", null) で非null行のみに絞っているが、生成型は
+        // 列自体のnull許容（string | null）をそのまま反映するため、クエリによる絞り込みを
+        // 反映した cast として残す。
+        date: row.release_date as string,
       }));
     },
 
@@ -259,7 +218,7 @@ export function createReleaseRepository(
         throw new RepositoryError("リリースの取得に失敗しました", error);
       }
 
-      return mapToRelease(data as ReleaseRow);
+      return mapToRelease(data);
     },
 
     async findSelectionPositionsByMemberId(memberId) {
@@ -270,25 +229,20 @@ export function createReleaseRepository(
       // 1) メンバーのフォーメーション所属（track別の列・センター）を解決
       const { data: fmMembers, error: fmErr } = await supabase
         .from("orbit_track_formation_members")
-        .select("formation_row_id, is_center")
+        .select(FORMATION_MEMBER_SELECT)
         .eq("member_id", memberId);
       if (fmErr) throw fail(fmErr);
-      const memberRows =
-        (fmMembers as Array<{ formation_row_id: string; is_center: boolean }>) ?? [];
+      const memberRows = fmMembers;
 
       const rowInfo = new Map<string, { rowNumber: number; formationId: string }>();
       const rowIds = unique(memberRows.map((r) => r.formation_row_id));
       if (rowIds.length > 0) {
         const { data: rows, error: rowsErr } = await supabase
           .from("orbit_track_formation_rows")
-          .select("id, row_number, formation_id")
+          .select(FORMATION_ROW_SELECT)
           .in("id", rowIds);
         if (rowsErr) throw fail(rowsErr);
-        for (const r of (rows as Array<{
-          id: string;
-          row_number: number;
-          formation_id: string;
-        }>) ?? []) {
+        for (const r of rows) {
           rowInfo.set(r.id, { rowNumber: r.row_number, formationId: r.formation_id });
         }
       }
@@ -300,10 +254,10 @@ export function createReleaseRepository(
       if (formationIds.length > 0) {
         const { data: formations, error: fErr } = await supabase
           .from("orbit_track_formations")
-          .select("id, track_id")
+          .select(FORMATION_TRACK_SELECT)
           .in("id", formationIds);
         if (fErr) throw fail(fErr);
-        for (const f of (formations as Array<{ id: string; track_id: string }>) ?? []) {
+        for (const f of formations) {
           trackByFormation.set(f.id, f.track_id);
         }
       }
@@ -327,10 +281,10 @@ export function createReleaseRepository(
       if (trackIds.length > 0) {
         const { data: tracks, error: tErr } = await supabase
           .from("orbit_tracks")
-          .select("id, label")
+          .select(TRACK_LABEL_SELECT)
           .in("id", trackIds);
         if (tErr) throw fail(tErr);
-        for (const t of (tracks as Array<{ id: string; label: string | null }>) ?? []) {
+        for (const t of tracks) {
           if (t.label && labelDerivation(t.label)) {
             labelByTrack.set(t.id, t.label);
           }
@@ -343,39 +297,31 @@ export function createReleaseRepository(
       if (labeledMemberTrackIds.length > 0) {
         const { data: rt, error: rtErr } = await supabase
           .from("orbit_release_tracks")
-          .select("release_id")
+          .select(RELEASE_ID_SELECT)
           .in("track_id", labeledMemberTrackIds);
         if (rtErr) throw fail(rtErr);
-        candidateReleaseIds = ((rt as Array<{ release_id: string }>) ?? []).map(
-          (x) => x.release_id
-        );
+        candidateReleaseIds = rt.map((x) => x.release_id);
       }
 
       // 3.5) メンバーが参加（出演）するリリース（櫻エイト期のBACKS判定に使う）
       const { data: pm, error: pmErr } = await supabase
         .from("orbit_release_members")
-        .select("release_id")
+        .select(RELEASE_ID_SELECT)
         .eq("member_id", memberId);
       if (pmErr) throw fail(pmErr);
-      const participationReleaseIds = (
-        (pm as Array<{ release_id: string }>) ?? []
-      ).map((x) => x.release_id);
+      const participationReleaseIds = pm.map((x) => x.release_id);
 
       // 4) overlay（福神・休業中）
       const { data: overlayData, error: ovErr } = await supabase
         .from("orbit_release_member_positions")
-        .select("release_id, is_front_special, is_hiatus")
+        .select(RELEASE_MEMBER_POSITION_SELECT)
         .eq("member_id", memberId);
       if (ovErr) throw fail(ovErr);
       const overlayByRelease = new Map<
         string,
         { isFrontSpecial: boolean; isHiatus: boolean }
       >();
-      for (const o of (overlayData as Array<{
-        release_id: string;
-        is_front_special: boolean;
-        is_hiatus: boolean;
-      }>) ?? []) {
+      for (const o of overlayData) {
         overlayByRelease.set(o.release_id, {
           isFrontSpecial: o.is_front_special,
           isHiatus: o.is_hiatus,
@@ -400,25 +346,16 @@ export function createReleaseRepository(
       if (releaseIds.length > 0) {
         const { data: releases, error: relErr } = await supabase
           .from("orbit_releases")
-          .select("id, title, numbering, release_type, group_id, orbit_groups(name_ja)")
+          .select(SINGLE_RELEASE_INFO_SELECT)
           .in("id", releaseIds)
           .eq("release_type", "single");
         if (relErr) throw fail(relErr);
-        for (const r of (releases as Array<{
-          id: string;
-          title: string;
-          numbering: number | null;
-          group_id: string;
-          orbit_groups: { name_ja: string } | { name_ja: string }[] | null;
-        }>) ?? []) {
-          const group = Array.isArray(r.orbit_groups)
-            ? r.orbit_groups[0]
-            : r.orbit_groups;
+        for (const r of releases) {
           releaseInfo.set(r.id, {
             title: r.title,
             numbering: r.numbering,
             groupId: r.group_id,
-            groupNameJa: group?.name_ja ?? "",
+            groupNameJa: r.orbit_groups.name_ja,
           });
         }
       }
@@ -434,15 +371,10 @@ export function createReleaseRepository(
       if (formationCandidateSingleIds.length > 0) {
         const { data: allRt, error: allRtErr } = await supabase
           .from("orbit_release_tracks")
-          .select("track_id, track_number, release_id")
+          .select(RELEASE_TRACK_LINK_SELECT)
           .in("release_id", formationCandidateSingleIds);
         if (allRtErr) throw fail(allRtErr);
-        const allLinks =
-          (allRt as Array<{
-            track_id: string;
-            track_number: number;
-            release_id: string;
-          }>) ?? [];
+        const allLinks = allRt;
 
         const labelInfoByTrack = new Map<
           string,
@@ -452,14 +384,10 @@ export function createReleaseRepository(
         if (allTrackIds.length > 0) {
           const { data: tracks2, error: t2Err } = await supabase
             .from("orbit_tracks")
-            .select("id, label, generation")
+            .select(TRACK_LABEL_GENERATION_SELECT)
             .in("id", allTrackIds);
           if (t2Err) throw fail(t2Err);
-          for (const t of (tracks2 as Array<{
-            id: string;
-            label: string | null;
-            generation: string | null;
-          }>) ?? []) {
+          for (const t of tracks2) {
             if (t.label && labelDerivation(t.label)) {
               labelInfoByTrack.set(t.id, {
                 label: t.label,
@@ -606,6 +534,11 @@ export function createReleaseRepository(
     async create(input) {
       const numbering = toNumbering(input.releaseType, input.numbering);
 
+      // 生成型上 create_release_with_relations の p_artwork_path / p_release_date /
+      // p_numbering は non-null な string/number になっているが、これは PostgREST の RPC
+      // スカラー引数の型生成が NULL 許容を反映しない既知の制約であり、関数自体は null を
+      // 受け付ける（未入力時は null で送る想定）。ペイロード側の誤りではないため、ここでは
+      // TypedSupabaseClient にせず asWritableClient の返り値（未typed）のまま呼び出す。
       const writable = asWritableClient(supabase);
       const { data: releaseId, error: rpcError } = await writable.rpc("create_release_with_relations", {
         p_title: input.title.trim(),
@@ -628,7 +561,10 @@ export function createReleaseRepository(
         throw new RepositoryError("作成したリリースIDの取得に失敗しました", null);
       }
 
-      const { error: positionsError } = await writable.rpc(
+      // set_release_member_positions は p_release_id（非null文字列）/ p_positions（Json）
+      // とも実ペイロードと不一致が無いため、typed client で呼び出す。
+      const positionsClient: TypedSupabaseClient = asWritableClient(supabase);
+      const { error: positionsError } = await positionsClient.rpc(
         "set_release_member_positions",
         {
           p_release_id: releaseId,
@@ -654,6 +590,9 @@ export function createReleaseRepository(
 
       const numbering = toNumbering(input.releaseType, input.numbering);
 
+      // update_release_with_relations も create 同様、p_artwork_path / p_release_date /
+      // p_numbering の NULL 許容が生成型に反映されない既知の制約があるため未typedのまま
+      // 呼び出す。
       const writable = asWritableClient(supabase);
       const { error: rpcError } = await writable.rpc("update_release_with_relations", {
         p_release_id: id,
@@ -673,7 +612,8 @@ export function createReleaseRepository(
         throw new RepositoryError("リリースの更新に失敗しました", rpcError);
       }
 
-      const { error: positionsError } = await writable.rpc(
+      const positionsClient: TypedSupabaseClient = asWritableClient(supabase);
+      const { error: positionsError } = await positionsClient.rpc(
         "set_release_member_positions",
         {
           p_release_id: id,

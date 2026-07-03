@@ -1,3 +1,4 @@
+import type { SelectRows } from "@personal-hub/supabase";
 import type {
   Release,
   CreateReleaseInput,
@@ -9,141 +10,104 @@ import type {
 import { compareByGenerationThenName } from "@/lib/memberOrder";
 import { isSongLabel, isSongVideoType, type SongLabel } from "@/types/song";
 
-type ReleaseGroupRow =
-  | {
-      name_ja: string;
-      color: string;
+// SelectRows は select 定数の typeof を必要とするため、リポジトリ側の SELECT 定数を
+// ここへ移動し、行型と一緒に export する（リポジトリは本ファイルから import する片方向依存）。
+export const RELEASE_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  release_type,
+  numbering,
+  release_date,
+  artwork_path,
+  orbit_people(display_name),
+  orbit_groups(name_ja, color),
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
+  orbit_release_tracks(track_number)
+` as const;
+
+export const RELEASE_DETAIL_SELECT = `
+  id,
+  title,
+  group_id,
+  release_type,
+  numbering,
+  release_date,
+  artwork_path,
+  orbit_people(display_name),
+  orbit_groups(name_ja, color),
+  orbit_release_bonus_videos(id, edition, title, description, sort_order),
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation))),
+  orbit_release_member_positions(member_id, is_front_special, is_hiatus),
+  orbit_release_tracks(
+    track_number,
+    orbit_tracks(
+      id,
+      title,
+      label,
+      generation,
+      orbit_groups(name_ja, color),
+      orbit_track_mvs(id),
+      orbit_track_videos(video_type)
+    )
+  )
+` as const;
+
+export const RELEASE_PUBLIC_LIST_SELECT = `
+  id,
+  title,
+  group_id,
+  release_type,
+  numbering,
+  release_date,
+  orbit_groups(name_ja, color),
+  orbit_release_tracks(track_number)
+` as const;
+
+export const RELEASE_OPTION_SELECT = `
+  id,
+  title,
+  release_type,
+  group_id,
+  orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
+` as const;
+
+type ReleaseDetailRow = SelectRows<"orbit_releases", typeof RELEASE_DETAIL_SELECT>[number];
+
+// findAll は RELEASE_LIST_SELECT（bonus_videos / member_positions 無し、release_tracks は
+// track_number のみ）、findById は RELEASE_DETAIL_SELECT（全リレーションあり）の行を同じ
+// mapToRelease に渡すため、詳細側にのみ存在する関連をオプショナルにして両方の select 結果を
+// 受け付けられるようにする（memberRepository の MemberRow と同じ方針）。
+// release_tracks[].orbit_tracks も LIST 側には無いため、要素単位で optional にする。
+export type ReleaseRow = Omit<
+  ReleaseDetailRow,
+  "orbit_release_bonus_videos" | "orbit_release_member_positions" | "orbit_release_tracks"
+> & {
+  orbit_release_bonus_videos?: ReleaseDetailRow["orbit_release_bonus_videos"];
+  orbit_release_member_positions?: ReleaseDetailRow["orbit_release_member_positions"];
+  orbit_release_tracks?: Array<
+    Omit<ReleaseDetailRow["orbit_release_tracks"][number], "orbit_tracks"> & {
+      orbit_tracks?: ReleaseDetailRow["orbit_release_tracks"][number]["orbit_tracks"];
     }
-  | Array<{
-      name_ja: string;
-      color: string;
-    }>;
-
-type ReleasePersonRow =
-  | {
-      display_name: string;
-    }
-  | Array<{
-      display_name: string;
-    }>;
-
-type ReleaseBonusVideoRow = {
-  id: string;
-  edition: string;
-  title: string;
-  description: string | null;
-  sort_order: number;
+  >;
 };
 
-type ReleaseMemberGroupRow = {
-  group_id: string;
-  generation: string | null;
-};
+export type ReleaseListRow = SelectRows<
+  "orbit_releases",
+  typeof RELEASE_PUBLIC_LIST_SELECT
+>[number];
 
-type ReleaseMemberNameRow =
-  | {
-      name_ja: string;
-      name_kana: string;
-      orbit_member_groups: ReleaseMemberGroupRow[] | null;
-    }
-  | Array<{
-      name_ja: string;
-      name_kana: string;
-      orbit_member_groups: ReleaseMemberGroupRow[] | null;
-    }>;
+export type ReleaseOptionRow = SelectRows<
+  "orbit_releases",
+  typeof RELEASE_OPTION_SELECT
+>[number];
 
-type ReleaseMemberRow = {
-  member_id: string;
-  orbit_members: ReleaseMemberNameRow;
-};
-
-type ReleaseMemberPositionRow = {
-  member_id: string;
-  is_front_special: boolean;
-  is_hiatus: boolean;
-};
-
-type TrackMvRow = {
-  id: string;
-};
-
-type TrackVideoRow = {
-  video_type: string;
-};
-
-type ReleaseTrackRel = {
-  id: string;
-  title: string;
-  label: string | null;
-  generation: string | null;
-  orbit_groups: ReleaseGroupRow;
-  orbit_track_mvs?: TrackMvRow | TrackMvRow[] | null;
-  orbit_track_videos?: TrackVideoRow[] | null;
-};
-
-type ReleaseTrackRow = {
-  track_number: number;
-  orbit_tracks?: ReleaseTrackRel | ReleaseTrackRel[] | null;
-};
-
-export type ReleaseRow = {
-  id: string;
-  title: string;
-  group_id: string;
-  release_type: ReleaseType;
-  numbering: number | null;
-  release_date: string | null;
-  artwork_path: string | null;
-  orbit_people?: ReleasePersonRow | null;
-  orbit_groups: ReleaseGroupRow;
-  orbit_release_bonus_videos?: ReleaseBonusVideoRow[];
-  orbit_release_members?: ReleaseMemberRow[];
-  orbit_release_member_positions?: ReleaseMemberPositionRow[];
-  orbit_release_tracks?: ReleaseTrackRow[];
-};
-
-export type ReleaseListRow = {
-  id: string;
-  title: string;
-  group_id: string;
-  release_type: ReleaseType;
-  numbering: number | null;
-  release_date: string | null;
-  orbit_groups: ReleaseGroupRow;
-  orbit_release_tracks?: Array<{ track_number: number }>;
-};
-
-type ReleaseOptionMemberRow = {
-  member_id: string;
-  orbit_members:
-    | {
-        name_ja: string;
-        name_kana: string;
-        orbit_member_groups: ReleaseMemberGroupRow[] | null;
-      }
-    | {
-        name_ja: string;
-        name_kana: string;
-        orbit_member_groups: ReleaseMemberGroupRow[] | null;
-      }[]
-    | null;
-};
-
-export type ReleaseOptionRow = {
-  id: string;
-  title: string;
-  release_type: ReleaseType;
-  group_id: string;
-  orbit_release_members?: ReleaseOptionMemberRow[];
-};
-
-function hasMv(mvRel: TrackMvRow | TrackMvRow[] | null | undefined): boolean {
-  if (!mvRel) return false;
-  return Array.isArray(mvRel) ? mvRel.length > 0 : true;
-}
+type ReleaseDetailTrackRow = NonNullable<
+  ReleaseDetailRow["orbit_release_tracks"][number]["orbit_tracks"]
+>;
 
 function hasTrackVideoType(
-  videos: TrackVideoRow[] | null | undefined,
+  videos: ReleaseDetailTrackRow["orbit_track_videos"],
   type: "dance_practice" | "call"
 ): boolean {
   return (videos ?? []).some(
@@ -151,29 +115,25 @@ function hasTrackVideoType(
   );
 }
 
+// release_type は DB 上 string 列（CHECK 制約で許容値を保証）。ReleaseType は null を
+// 持たないドメイン型のため、実行時ガード（isReleaseType）を導入するとフォールバック分岐が
+// 新たに必要になりロジックが変わってしまう。移行前も無条件 cast だったため、同じ挙動を
+// 保つ cast として残す。
 export function mapToRelease(row: ReleaseRow): Release {
-  const artworkPerson = row.orbit_people
-    ? Array.isArray(row.orbit_people)
-      ? row.orbit_people[0]
-      : row.orbit_people
-    : null;
-  const group = Array.isArray(row.orbit_groups)
-    ? row.orbit_groups[0]
-    : row.orbit_groups;
+  const artworkPerson = row.orbit_people;
+  const group = row.orbit_groups;
 
   const participants = (row.orbit_release_members ?? [])
     .map((member) => {
-      const orbitMember = Array.isArray(member.orbit_members)
-        ? member.orbit_members[0]
-        : member.orbit_members;
+      const orbitMember = member.orbit_members;
       // リリースのグループでの期を採用（無ければ null）
-      const membership = (orbitMember?.orbit_member_groups ?? []).find(
+      const membership = (orbitMember.orbit_member_groups ?? []).find(
         (mg) => mg.group_id === row.group_id
       );
       return {
         memberId: member.member_id,
-        memberNameJa: orbitMember?.name_ja ?? "",
-        memberNameKana: orbitMember?.name_kana ?? "",
+        memberNameJa: orbitMember.name_ja,
+        memberNameKana: orbitMember.name_kana,
         generation: membership?.generation ?? null,
       };
     })
@@ -188,9 +148,9 @@ export function mapToRelease(row: ReleaseRow): Release {
     id: row.id,
     title: row.title,
     groupId: row.group_id,
-    groupNameJa: group?.name_ja ?? "",
-    groupColor: group?.color ?? "#6B7280",
-    releaseType: row.release_type,
+    groupNameJa: group.name_ja,
+    groupColor: group.color,
+    releaseType: row.release_type as ReleaseType,
     numbering: row.numbering,
     releaseDate: row.release_date,
     artworkPath: row.artwork_path,
@@ -215,21 +175,17 @@ export function mapToRelease(row: ReleaseRow): Release {
       .sort((a, b) => a.sortOrder - b.sortOrder),
     tracks: (row.orbit_release_tracks ?? [])
       .map((item) => {
-        const track = Array.isArray(item.orbit_tracks)
-          ? item.orbit_tracks[0]
-          : item.orbit_tracks;
+        const track = item.orbit_tracks;
         if (!track) return null;
-        const trackGroup = Array.isArray(track.orbit_groups)
-          ? track.orbit_groups[0]
-          : track.orbit_groups;
+        const trackGroup = track.orbit_groups;
         return {
           trackId: track.id,
           trackTitle: track.title,
           trackNumber: item.track_number,
-          groupNameJa: trackGroup?.name_ja ?? "",
+          groupNameJa: trackGroup.name_ja,
           label: isSongLabel(track.label ?? "") ? (track.label as SongLabel) : null,
           generation: track.generation,
-          hasMv: hasMv(track.orbit_track_mvs),
+          hasMv: Boolean(track.orbit_track_mvs),
           hasDancePracticeVideo: hasTrackVideoType(
             track.orbit_track_videos,
             "dance_practice"
@@ -243,37 +199,33 @@ export function mapToRelease(row: ReleaseRow): Release {
 }
 
 export function mapToReleaseListItem(row: ReleaseListRow): ReleaseListItem {
-  const group = Array.isArray(row.orbit_groups)
-    ? row.orbit_groups[0]
-    : row.orbit_groups;
+  const group = row.orbit_groups;
 
   return {
     id: row.id,
     title: row.title,
     groupId: row.group_id,
-    groupNameJa: group?.name_ja ?? "",
-    groupColor: group?.color ?? "#6B7280",
-    releaseType: row.release_type,
+    groupNameJa: group.name_ja,
+    groupColor: group.color,
+    releaseType: row.release_type as ReleaseType,
     numbering: row.numbering,
     releaseDate: row.release_date,
-    trackCount: row.orbit_release_tracks?.length ?? 0,
+    trackCount: row.orbit_release_tracks.length,
   };
 }
 
 export function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
-  const participants = (row.orbit_release_members ?? []).map((member) => {
-    const orbitMember = Array.isArray(member.orbit_members)
-      ? member.orbit_members[0]
-      : member.orbit_members;
+  const participants = row.orbit_release_members.map((member) => {
+    const orbitMember = member.orbit_members;
     // リリースのグループでの期を採用（無ければ null）
-    const membership = (orbitMember?.orbit_member_groups ?? []).find(
+    const membership = (orbitMember.orbit_member_groups ?? []).find(
       (mg) => mg.group_id === row.group_id
     );
 
     return {
       memberId: member.member_id,
-      memberNameJa: orbitMember?.name_ja ?? "",
-      memberNameKana: orbitMember?.name_kana ?? "",
+      memberNameJa: orbitMember.name_ja,
+      memberNameKana: orbitMember.name_kana,
       generation: membership?.generation ?? null,
     };
   });
@@ -281,7 +233,7 @@ export function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
   return {
     id: row.id,
     title: row.title,
-    releaseType: row.release_type,
+    releaseType: row.release_type as ReleaseType,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     participantMemberKanas: participants.map((member) => member.memberNameKana),
