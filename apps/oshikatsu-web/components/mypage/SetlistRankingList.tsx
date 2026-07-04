@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { Badge } from "@/components/ui/Badge";
+import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
 import type { SetlistRankingEntry } from "@/usecases/getSetlistCount";
 import { SONG_LABEL_BADGE_COLOR, formatSongLabel } from "@/types/song";
@@ -113,6 +114,9 @@ export function SetlistRankingList({ entries }: SetlistRankingListProps) {
                     >
                       {encounter.liveName}
                     </PendingLink>
+                    {encounter.groups.map((g) => (
+                      <GroupBadge key={g.id} groupName={g.nameJa} groupColor={g.color} />
+                    ))}
                     <AttendedTypeBadge attendedType={encounter.attendedType} />
                   </li>
                 ))}

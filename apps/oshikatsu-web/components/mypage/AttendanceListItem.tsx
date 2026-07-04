@@ -1,4 +1,5 @@
 import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
+import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
 import type { MyAttendanceEntry } from "@/types/attendance";
 import { formatDate } from "@/lib/formatters";
@@ -30,6 +31,9 @@ export function AttendanceListItem({
         {entry.venueName && (
           <span className="text-xs text-foreground/60">{entry.venueName}</span>
         )}
+        {entry.groups.map((g) => (
+          <GroupBadge key={g.id} groupName={g.nameJa} groupColor={g.color} />
+        ))}
         <AttendedTypeBadge attendedType={entry.attendedType} />
       </PendingLink>
     </li>

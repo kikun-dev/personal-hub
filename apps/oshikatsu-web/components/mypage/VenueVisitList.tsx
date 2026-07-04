@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
 import type { VenueVisitEntry } from "@/usecases/getVenueVisitStats";
 import { formatDate } from "@/lib/formatters";
@@ -97,6 +98,9 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
                     >
                       {visit.liveName}
                     </PendingLink>
+                    {visit.groups.map((g) => (
+                      <GroupBadge key={g.id} groupName={g.nameJa} groupColor={g.color} />
+                    ))}
                   </li>
                 ))}
               </ul>

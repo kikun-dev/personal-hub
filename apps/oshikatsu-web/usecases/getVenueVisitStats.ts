@@ -5,6 +5,7 @@ export type VenueVisit = {
   performanceDate: string | null;
   liveId: string;
   liveName: string;
+  groups: Array<{ id: string; nameJa: string; color: string }>;
 };
 
 export type VenueVisitEntry = {
@@ -64,6 +65,7 @@ export function getVenueVisitStats(entries: MyAttendanceEntry[]): VenueVisitStat
       performanceDate: entry.performanceDate,
       liveId: entry.liveId,
       liveName: entry.liveName,
+      groups: entry.groups,
     };
 
     const existing = byVenue.get(entry.venueId);

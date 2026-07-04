@@ -25,6 +25,7 @@ export type SetlistCountEncounter = {
   liveId: string;
   liveName: string;
   attendedType: AttendedType;
+  groups: Array<{ id: string; nameJa: string; color: string }>;
 };
 
 export type SetlistRankingEntry = {
@@ -98,6 +99,7 @@ export function getSetlistCount(
       liveId: encounter.liveId,
       liveName: encounter.liveName,
       attendedType: encounter.attendedType,
+      groups: encounter.groups,
     });
     encountersBySongId.set(encounter.trackId, list);
   }
