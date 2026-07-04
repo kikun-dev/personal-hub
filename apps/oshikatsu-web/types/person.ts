@@ -39,6 +39,14 @@ export type PersonOption = {
   roles: PersonRole[];
 };
 
+// 制作陣マスタ一覧用（#279）。生年月日は詳細ページのみで表示するため含まない。
+export type PersonListItem = {
+  id: string;
+  displayName: string;
+  roles: PersonRole[];
+  songCount: number; // #279: クレジットされた楽曲(track)の異なり数
+};
+
 export type CreatePersonInput = {
   displayName: string;
   dateOfBirth: string;

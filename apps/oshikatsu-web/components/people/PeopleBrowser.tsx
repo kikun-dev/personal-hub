@@ -3,14 +3,24 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { TextLink } from "@/components/ui/TextLink";
-import type { Person, PersonRole } from "@/types/person";
+import { SortableTh } from "@/components/ui/SortableTh";
+import { useTableSort, type SortableColumn } from "@/lib/useTableSort";
+import type { PersonListItem, PersonRole } from "@/types/person";
 import { PERSON_ROLE_LABELS, PERSON_ROLE_VALUES } from "@/types/person";
 
-// 一覧表示・検索に必要なフィールドのみ（biography 等はクライアントへ渡さない）
-type PersonListRow = Pick<Person, "id" | "displayName" | "dateOfBirth" | "roles">;
+type SortKey = "name" | "songCount";
+
+const PEOPLE_COLUMNS: readonly SortableColumn<PersonListItem, SortKey>[] = [
+  { key: "name", label: "名前", sortValue: (p) => p.displayName },
+  { key: "songCount", label: "担当曲数", sortValue: (p) => p.songCount },
+];
+
+function peopleTiebreak(a: PersonListItem, b: PersonListItem): number {
+  return a.displayName.localeCompare(b.displayName, "ja");
+}
 
 type PeopleBrowserProps = {
-  people: PersonListRow[];
+  people: PersonListItem[];
   isAdmin: boolean;
 };
 
@@ -27,6 +37,12 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
       return matchesQuery && matchesRole;
     });
   }, [people, query, role]);
+
+  const { sorted, sortKey, sortDir, handleSort, ariaSort } = useTableSort(
+    filtered,
+    PEOPLE_COLUMNS,
+    { initialKey: "songCount", initialDir: "desc", tiebreak: peopleTiebreak }
+  );
 
   return (
     <div className="space-y-4">
@@ -53,7 +69,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
           ))}
         </select>
         <span className="ml-auto shrink-0 text-sm text-foreground/50">
-          {filtered.length}人
+          {sorted.length}人
         </span>
       </div>
 
@@ -61,16 +77,28 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-foreground/10 text-left">
-              <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">生年月日</th>
+              <SortableTh
+                label="名前"
+                active={sortKey === "name"}
+                dir={sortDir}
+                ariaSort={ariaSort("name")}
+                onSort={() => handleSort("name")}
+              />
               <th className="pb-2 pr-4 font-medium text-foreground/70">担当</th>
+              <SortableTh
+                label="担当曲数"
+                active={sortKey === "songCount"}
+                dir={sortDir}
+                ariaSort={ariaSort("songCount")}
+                onSort={() => handleSort("songCount")}
+              />
               {isAdmin && (
                 <th className="pb-2 font-medium text-foreground/70">操作</th>
               )}
             </tr>
           </thead>
           <tbody>
-            {filtered.map((person) => (
+            {sorted.map((person) => (
               <tr key={person.id} className="border-b border-foreground/5">
                 <td className="py-2 pr-4">
                   <Link
@@ -79,9 +107,6 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                   >
                     {person.displayName}
                   </Link>
-                </td>
-                <td className="py-2 pr-4 text-foreground/70">
-                  {person.dateOfBirth ?? "—"}
                 </td>
                 <td className="py-2 pr-4">
                   <div className="flex flex-wrap gap-1">
@@ -99,6 +124,9 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                     )}
                   </div>
                 </td>
+                <td className="py-2 pr-4 text-foreground/70">
+                  {person.songCount}
+                </td>
                 {isAdmin && (
                   <td className="py-2">
                     <TextLink
@@ -115,7 +143,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
         </table>
       </div>
 
-      {filtered.length === 0 && (
+      {sorted.length === 0 && (
         <p className="py-12 text-center text-sm text-foreground/50">
           該当する制作陣がいません
         </p>

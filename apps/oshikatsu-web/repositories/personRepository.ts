@@ -4,6 +4,7 @@ import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
   Person,
   PersonOption,
+  PersonListItem,
   PersonRole,
   EnsurePersonRoleEntry,
   PersonCreditedSong,
@@ -30,6 +31,9 @@ function isSongCreditRole(value: string): value is SongCreditRole {
 const PERSON_SELECT =
   "id, display_name, date_of_birth, roles, biography" as const;
 const PERSON_OPTION_SELECT = "id, display_name, roles" as const;
+// 一覧用。担当曲数（distinct な track の数）を集計するため track_id を埋め込む。
+const PERSON_LIST_SELECT =
+  "id, display_name, roles, orbit_track_credits(track_id)" as const;
 const CREDITED_SONGS_SELECT =
   "credit_role, orbit_tracks(id, title, orbit_groups(id, name_ja, color), orbit_release_tracks(track_number, orbit_releases(id, release_date)))" as const;
 
@@ -37,6 +41,10 @@ type PersonRow = SelectRows<"orbit_people", typeof PERSON_SELECT>[number];
 type PersonOptionRow = SelectRows<
   "orbit_people",
   typeof PERSON_OPTION_SELECT
+>[number];
+type PersonListRow = SelectRows<
+  "orbit_people",
+  typeof PERSON_LIST_SELECT
 >[number];
 type CreditedSongRow = SelectRows<
   "orbit_track_credits",
@@ -93,18 +101,30 @@ export function createPersonRepository(supabase: OrbitReadClient): PersonReposit
     roles: row.roles as PersonRole[],
   });
 
+  const mapPersonListItem = (row: PersonListRow): PersonListItem => {
+    // 同一曲を複数ロールでクレジットされていても1曲として数えるため、
+    // track_id の異なり数を Set で集計する。
+    const trackIds = new Set(row.orbit_track_credits.map((c) => c.track_id));
+    return {
+      id: row.id,
+      displayName: row.display_name,
+      roles: row.roles as PersonRole[],
+      songCount: trackIds.size,
+    };
+  };
+
   return {
     async findAll() {
       const { data, error } = await supabase
         .from("orbit_people")
-        .select(PERSON_SELECT)
+        .select(PERSON_LIST_SELECT)
         .order("display_name");
 
       if (error) {
         throw new RepositoryError("制作陣一覧の取得に失敗しました", error);
       }
 
-      return data.map(mapPerson);
+      return data.map(mapPersonListItem);
     },
 
     async findOptions() {

@@ -24,15 +24,7 @@ export default async function PeoplePage() {
         )}
       </div>
 
-      <PeopleBrowser
-        people={people.map(({ id, displayName, dateOfBirth, roles }) => ({
-          id,
-          displayName,
-          dateOfBirth,
-          roles,
-        }))}
-        isAdmin={isAdmin}
-      />
+      <PeopleBrowser people={people} isAdmin={isAdmin} />
     </div>
   );
 }
