@@ -5,6 +5,7 @@ import { getVenueDetailPageData } from "@/usecases/readOrbitData";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
 import { getVenueVisitStats } from "@/usecases/getVenueVisitStats";
 import { Button } from "@/components/ui/Button";
+import { TEXT_LINK_CLASS } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 
@@ -81,7 +82,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
                 href={link.url ?? undefined}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-blue-500 hover:underline"
+                className={TEXT_LINK_CLASS}
               >
                 {link.label}
               </a>

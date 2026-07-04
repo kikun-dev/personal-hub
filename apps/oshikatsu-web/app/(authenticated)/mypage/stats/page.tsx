@@ -4,6 +4,7 @@ import { createAttendanceRepository } from "@/repositories/attendanceRepository"
 import { getAttendanceStats } from "@/usecases/getAttendanceStats";
 import { AttendanceStats } from "@/components/mypage/AttendanceStats";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { APP_ROUTES } from "@/lib/routes";
 
 type MyPageStatsProps = {
@@ -43,13 +44,13 @@ export default async function MyPageStatsPage({ searchParams }: MyPageStatsProps
       </div>
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-foreground">ライブ記録</h1>
-        <PendingLink
+        <TextLink
           href={APP_ROUTES.mypageSetlist}
           feedback="global"
-          className="text-xs text-blue-500 hover:underline"
+          className="text-xs"
         >
           セトリログ
-        </PendingLink>
+        </TextLink>
       </div>
 
       <Suspense fallback={<div className="h-10" />}>

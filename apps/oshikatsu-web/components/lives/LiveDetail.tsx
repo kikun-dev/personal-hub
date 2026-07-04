@@ -4,7 +4,7 @@ import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
-import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { numberSetlistItems } from "@/usecases/setlistNumbering";
@@ -93,12 +93,9 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
     return null;
   }
   return (
-    <Link
-      href={`/venues/${performance.venueId}`}
-      className="text-blue-500 hover:underline"
-    >
+    <TextLink href={`/venues/${performance.venueId}`}>
       {performance.venueName}
-    </Link>
+    </TextLink>
   );
 }
 
@@ -193,12 +190,12 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                         : "公演"}
                     </p>
                     {group.venueId && group.venueName ? (
-                      <Link
+                      <TextLink
                         href={`/venues/${group.venueId}`}
-                        className="block text-sm text-blue-500 hover:underline"
+                        className="block text-sm"
                       >
                         {group.venueName}
-                      </Link>
+                      </TextLink>
                     ) : (
                       <p className="text-sm text-foreground/50">会場未定</p>
                     )}
@@ -309,12 +306,12 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                     {/* #261: セトリ詳細の参照ビューへの導線。セトリ0件でも空状態の
                         参照ページへ辿れるよう、導線は常に表示する（レビュー指摘）。
                         既存のセトリ表示自体は変更しない（簡素化は#262） */}
-                    <PendingLink
+                    <TextLink
                       href={`/lives/${live.id}/performances/${performance.id}/setlist`}
-                      className="text-xs text-blue-500 hover:underline"
+                      className="text-xs"
                     >
                       詳細を見る →
-                    </PendingLink>
+                    </TextLink>
                   </div>
                   {/* #262: セトリ簡易表示は楽曲のみ。非楽曲（MC等）は省き、
                       詳細はセトリ詳細画面（#261）で見る */}

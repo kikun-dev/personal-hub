@@ -4,6 +4,7 @@ import { createAttendanceRepository } from "@/repositories/attendanceRepository"
 import { getVenueVisitStats } from "@/usecases/getVenueVisitStats";
 import { VenueVisitList } from "@/components/mypage/VenueVisitList";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { APP_ROUTES } from "@/lib/routes";
 
 export default async function MyPageVenuesPage() {
@@ -42,13 +43,13 @@ export default async function MyPageVenuesPage() {
         ) : (
           <p className="text-sm text-foreground/60">
             現地参戦の記録がありません。
-            <PendingLink
+            <TextLink
               href={APP_ROUTES.lives}
               feedback="global"
-              className="ml-1 text-blue-500 hover:underline"
+              className="ml-1"
             >
               ライブ一覧
-            </PendingLink>
+            </TextLink>
             から参戦記録を登録しましょう。
           </p>
         )

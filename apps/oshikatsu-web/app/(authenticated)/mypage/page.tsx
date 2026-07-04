@@ -4,7 +4,7 @@ import { getMyAttendanceHistory } from "@/usecases/getMyAttendanceHistory";
 import { AttendanceListItem } from "@/components/mypage/AttendanceListItem";
 import { LaterLivesToggle } from "@/components/mypage/LaterLivesToggle";
 import { UpcomingCard } from "@/components/mypage/UpcomingCard";
-import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { APP_ROUTES } from "@/lib/routes";
 
 export default async function MyPage() {
@@ -46,27 +46,27 @@ export default async function MyPage() {
           <h2 className="text-sm font-semibold text-foreground">今年の参戦記録</h2>
           {hasAnyAttendance && (
             <div className="flex flex-wrap items-center gap-3">
-              <PendingLink
+              <TextLink
                 href={APP_ROUTES.mypageSetlist}
                 feedback="global"
-                className="text-xs text-blue-500 hover:underline"
+                className="text-xs"
               >
                 セトリログ
-              </PendingLink>
-              <PendingLink
+              </TextLink>
+              <TextLink
                 href={APP_ROUTES.mypageVenues}
                 feedback="global"
-                className="text-xs text-blue-500 hover:underline"
+                className="text-xs"
               >
                 参戦会場
-              </PendingLink>
-              <PendingLink
+              </TextLink>
+              <TextLink
                 href={APP_ROUTES.mypageStats}
                 feedback="global"
-                className="text-xs text-blue-500 hover:underline"
+                className="text-xs"
               >
                 ライブ記録
-              </PendingLink>
+              </TextLink>
             </div>
           )}
         </div>
@@ -74,25 +74,25 @@ export default async function MyPage() {
           hasAnyAttendance ? (
             <p className="text-sm text-foreground/60">
               今年の参戦記録はありません。
-              <PendingLink
+              <TextLink
                 href={APP_ROUTES.mypageStats}
                 feedback="global"
-                className="ml-1 text-blue-500 hover:underline"
+                className="ml-1"
               >
                 昨年以前の記録はライブ記録
-              </PendingLink>
+              </TextLink>
               で確認できます。
             </p>
           ) : (
             <p className="text-sm text-foreground/60">
               まだ参戦記録がありません。
-              <PendingLink
+              <TextLink
                 href={APP_ROUTES.lives}
                 feedback="global"
-                className="ml-1 text-blue-500 hover:underline"
+                className="ml-1"
               >
                 ライブ一覧
-              </PendingLink>
+              </TextLink>
               から登録しましょう。
             </p>
           )

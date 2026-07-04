@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
-import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink, TEXT_LINK_CLASS } from "@/components/ui/TextLink";
 import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
@@ -122,8 +122,8 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
           <h2 className="mb-3 text-sm font-medium text-foreground/70">MV</h2>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-foreground/50">リンク</dt>
-            <dd className="break-all text-blue-500">
-              <a href={song.mv.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+            <dd className="break-all">
+              <a href={song.mv.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
                 {song.mv.url}
               </a>
             </dd>
@@ -167,8 +167,8 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
                 <dt className="text-foreground/50">種別</dt>
                 <dd className="text-foreground">{label}</dd>
                 <dt className="text-foreground/50">リンク</dt>
-                <dd className="break-all text-blue-500">
-                  <a href={video.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                <dd className="break-all">
+                  <a href={video.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
                     {video.url}
                   </a>
                 </dd>
@@ -210,13 +210,13 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
       <Card>
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-medium text-foreground/70">あなたの遭遇記録</h2>
-          <PendingLink
+          <TextLink
             href={APP_ROUTES.mypageSetlist}
             feedback="global"
-            className="text-xs text-blue-500 hover:underline"
+            className="text-xs"
           >
             セトリログを見る
-          </PendingLink>
+          </TextLink>
         </div>
         {encounterSummary.count === 0 ? (
           <p className="text-sm text-foreground/60">まだ聴いたことがありません</p>

@@ -4,6 +4,7 @@ import { listReleases } from "@/usecases/listReleases";
 import { Button } from "@/components/ui/Button";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 import { RELEASE_TYPE_LABELS } from "@/types/release";
 
@@ -52,13 +53,13 @@ export default async function AdminReleasesPage() {
                   {release.releaseDate ? formatDate(release.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
-                  <PendingLink
+                  <TextLink
                     href={`/admin/releases/${release.id}/edit`}
                     feedback="global"
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm"
                   >
                     編集
-                  </PendingLink>
+                  </TextLink>
                 </td>
               </tr>
             ))}

@@ -3,6 +3,7 @@ import { createSongRepository } from "@/repositories/songRepository";
 import { listSongs } from "@/usecases/listSongs";
 import { Button } from "@/components/ui/Button";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 
 export default async function AdminSongsPage() {
@@ -45,13 +46,13 @@ export default async function AdminSongsPage() {
                   {song.releaseDate ? formatDate(song.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
-                  <PendingLink
+                  <TextLink
                     href={`/admin/songs/${song.id}/edit`}
                     feedback="global"
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm"
                   >
                     編集
-                  </PendingLink>
+                  </TextLink>
                 </td>
               </tr>
             ))}
