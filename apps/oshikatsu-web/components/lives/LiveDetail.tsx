@@ -287,8 +287,10 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                               key={`${performance.id}-${index}`}
                               className="flex gap-2 text-xs text-foreground/80"
                             >
+                              {/* #262: 非楽曲は番号を持たない（numberLabel は null）。
+                                  幅は確保して曲名の左端をそろえる */}
                               <span className="w-5 shrink-0 text-right text-foreground/40">
-                                {numberLabel ?? "-"}
+                                {numberLabel}
                               </span>
                               {item.itemType === "song" ? (
                                 <span>
