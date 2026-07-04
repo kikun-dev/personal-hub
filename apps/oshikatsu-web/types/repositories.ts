@@ -23,6 +23,7 @@ import type {
 import type {
   Person,
   PersonOption,
+  PersonListItem,
   PersonCreditedSong,
   CreatePersonInput,
   UpdatePersonInput,
@@ -93,7 +94,7 @@ export type EventTypeRepository = {
 };
 
 export type PersonRepository = {
-  findAll(): Promise<Person[]>;
+  findAll(): Promise<PersonListItem[]>;
   findOptions(): Promise<PersonOption[]>;
   ensurePeopleRoles(entries: EnsurePersonRoleEntry[]): Promise<void>;
   findCreditedSongsByPersonId(personId: string): Promise<PersonCreditedSong[]>;
