@@ -99,21 +99,21 @@ export function MonthSelector({
   };
 
   const navigationControls = (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2 sm:gap-4">
       <button
         onClick={handlePrev}
         disabled={isAtMin}
-        className="rounded-md px-3 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
       >
         ← 前月
       </button>
-      <span className="min-w-[8rem] text-center text-lg font-bold text-foreground">
+      <span className="min-w-[6rem] whitespace-nowrap text-center text-lg font-bold text-foreground sm:min-w-[8rem]">
         {formatMonthLabel(year, month)}
       </span>
       <button
         onClick={handleNext}
         disabled={isAtMax}
-        className="rounded-md px-3 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
       >
         翌月 →
       </button>
@@ -122,7 +122,7 @@ export function MonthSelector({
 
   if (showTodayButton && splitTodayButton) {
     return (
-      <div className="flex w-full items-center justify-between gap-4">
+      <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
         <button
           onClick={handleToday}
           className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
@@ -135,7 +135,7 @@ export function MonthSelector({
   }
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2 sm:gap-4">
       {showTodayButton && (
         <button
           onClick={handleToday}
