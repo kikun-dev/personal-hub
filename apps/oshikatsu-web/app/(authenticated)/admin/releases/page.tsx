@@ -2,11 +2,8 @@ import { createClient } from "@personal-hub/supabase/server";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { listReleases } from "@/usecases/listReleases";
 import { Button } from "@/components/ui/Button";
-import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { TextLink } from "@/components/ui/TextLink";
-import { formatDate } from "@/lib/formatters";
-import { RELEASE_TYPE_LABELS } from "@/types/release";
+import { AdminReleasesTable } from "@/components/admin/AdminReleasesTable";
 
 export default async function AdminReleasesPage() {
   const supabase = await createClient();
@@ -21,57 +18,7 @@ export default async function AdminReleasesPage() {
         </PendingLink>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-foreground/10 text-left">
-              <th className="pb-2 pr-4 font-medium text-foreground/70">タイトル</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">グループ</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">タイプ</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">No.</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">リリース日</th>
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {releases.map((release) => (
-              <tr key={release.id} className="border-b border-foreground/5">
-                <td className="py-2 pr-4 text-foreground">{release.title}</td>
-                <td className="py-2 pr-4">
-                  <GroupBadge
-                    groupName={release.groupNameJa}
-                    groupColor={release.groupColor}
-                  />
-                </td>
-                <td className="py-2 pr-4 text-foreground/70">
-                  {RELEASE_TYPE_LABELS[release.releaseType]}
-                </td>
-                <td className="py-2 pr-4 text-foreground/70">
-                  {release.numbering ?? "—"}
-                </td>
-                <td className="py-2 pr-4 text-foreground/70">
-                  {release.releaseDate ? formatDate(release.releaseDate) : "—"}
-                </td>
-                <td className="py-2">
-                  <TextLink
-                    href={`/admin/releases/${release.id}/edit`}
-                    feedback="global"
-                    className="text-sm"
-                  >
-                    編集
-                  </TextLink>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {releases.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
-          リリースが登録されていません
-        </p>
-      )}
+      <AdminReleasesTable releases={releases} />
     </div>
   );
 }
