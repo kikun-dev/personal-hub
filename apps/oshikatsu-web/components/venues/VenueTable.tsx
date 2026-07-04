@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { Venue } from "@/types/venue";
+import { TextLink } from "@/components/ui/TextLink";
 import { PREFECTURES } from "@/lib/prefectures";
 
 type SortKey = "name" | "prefecture" | "capacity";
@@ -140,12 +141,12 @@ export function VenueTable({ venues, isAdmin }: VenueTableProps) {
               </td>
               {isAdmin && (
                 <td className="py-2">
-                  <Link
+                  <TextLink
                     href={`/venues/${venue.id}/edit`}
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm"
                   >
                     編集
-                  </Link>
+                  </TextLink>
                 </td>
               )}
             </tr>

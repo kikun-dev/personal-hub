@@ -4,6 +4,7 @@ import { createEventRepository } from "@/repositories/eventRepository";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { parseMonthParams } from "@/lib/dateParams";
 import { formatDate } from "@/lib/formatters";
@@ -73,13 +74,13 @@ export default async function AdminEventsPage({
                   </span>
                 </td>
                 <td className="py-2">
-                  <PendingLink
+                  <TextLink
                     href={`/admin/events/${event.id}/edit`}
                     feedback="global"
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm"
                   >
                     編集
-                  </PendingLink>
+                  </TextLink>
                 </td>
               </tr>
             ))}

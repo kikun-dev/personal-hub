@@ -3,6 +3,7 @@ import { getLivesPageData } from "@/usecases/readOrbitData";
 import { LIVE_TYPE_LABELS } from "@/types/live";
 import { formatDate } from "@/lib/formatters";
 import { Button } from "@/components/ui/Button";
+import { TextLink } from "@/components/ui/TextLink";
 
 export default async function AdminLivesPage() {
   const { lives } = await getLivesPageData();
@@ -41,12 +42,13 @@ export default async function AdminLivesPage() {
                   {live.firstDate ? formatDate(live.firstDate) : "—"}
                 </td>
                 <td className="py-2">
-                  <Link
+                  <TextLink
                     href={`/admin/lives/${live.id}/edit`}
-                    className="text-sm text-blue-500 hover:underline"
+                    feedback="global"
+                    className="text-sm"
                   >
                     編集
-                  </Link>
+                  </TextLink>
                 </td>
               </tr>
             ))}

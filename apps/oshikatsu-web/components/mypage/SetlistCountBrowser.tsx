@@ -6,7 +6,7 @@ import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import { getSetlistCount } from "@/usecases/getSetlistCount";
 import { SetlistRankingList } from "@/components/mypage/SetlistRankingList";
 import { SetlistUnencounteredList } from "@/components/mypage/SetlistUnencounteredList";
-import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { APP_ROUTES } from "@/lib/routes";
 import type { AttendedType, SongEncounter } from "@/types/attendance";
 import { ATTENDED_TYPE_LABELS } from "@/types/attendance";
@@ -147,13 +147,13 @@ export function SetlistCountBrowser({
     return (
       <p className="py-12 text-center text-sm text-foreground/60">
         セットリストが登録された参戦記録がまだありません。
-        <PendingLink
+        <TextLink
           href={APP_ROUTES.lives}
           feedback="global"
-          className="ml-1 text-blue-500 hover:underline"
+          className="ml-1"
         >
           ライブ一覧
-        </PendingLink>
+        </TextLink>
         から参戦記録を登録するか、公演のセットリストを登録すると集計されます。
       </p>
     );

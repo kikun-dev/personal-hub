@@ -11,6 +11,7 @@ import {
   SETLIST_SECTION_LABELS,
 } from "@/types/live";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 import { SetlistFormationDisplay } from "@/components/lives/SetlistFormationDisplay";
 import { groupBySection, numberSetlistItems } from "@/usecases/setlistNumbering";
 import type { SetlistSectionGroup } from "@/usecases/setlistNumbering";
@@ -104,12 +105,9 @@ function SongItemRow({
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           {item.trackId ? (
-            <PendingLink
-              href={`${APP_ROUTES.songs}/${item.trackId}`}
-              className="font-medium text-blue-500 hover:underline"
-            >
+            <TextLink href={`${APP_ROUTES.songs}/${item.trackId}`}>
               {title}
-            </PendingLink>
+            </TextLink>
           ) : (
             <span className="font-medium text-foreground">{title}</span>
           )}
@@ -184,12 +182,9 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-foreground">セットリスト</h1>
           {isAdmin && (
-            <PendingLink
-              href={editHref}
-              className="text-sm text-blue-500 hover:underline"
-            >
+            <TextLink href={editHref} className="text-sm">
               編集
-            </PendingLink>
+            </TextLink>
           )}
         </div>
         <p className="text-sm text-foreground/70">
@@ -202,12 +197,9 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <div className="rounded-lg border border-foreground/10 p-6 text-center text-sm text-foreground/60">
           <p>この公演のセットリストはまだ登録されていません。</p>
           {isAdmin && (
-            <PendingLink
-              href={editHref}
-              className="mt-1 inline-block text-xs text-blue-500 hover:underline"
-            >
+            <TextLink href={editHref} className="mt-1 inline-block text-xs">
               セットリストを編集
-            </PendingLink>
+            </TextLink>
           )}
         </div>
       ) : (

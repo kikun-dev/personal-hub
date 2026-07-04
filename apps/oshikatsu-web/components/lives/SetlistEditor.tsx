@@ -20,6 +20,7 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
 import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
 
@@ -512,7 +513,7 @@ export function SetlistEditor({
                     <button
                       type="button"
                       onClick={() => setAllMembers(item.key)}
-                      className="text-xs text-blue-500 hover:underline"
+                      className={`text-xs ${TEXT_ACTION_CLASS}`}
                     >
                       全員
                     </button>
@@ -565,14 +566,14 @@ export function SetlistEditor({
                         type="button"
                         onClick={() => copyFormationFromTrack(item.key, item.trackId)}
                         disabled={!item.trackId || copyingFormationKeys.has(item.key)}
-                        className="text-xs text-blue-500 hover:underline disabled:cursor-not-allowed disabled:text-foreground/30 disabled:no-underline"
+                        className={`text-xs ${TEXT_ACTION_CLASS} disabled:cursor-not-allowed disabled:text-foreground/30`}
                       >
                         楽曲マスタからコピー
                       </button>
                       <button
                         type="button"
                         onClick={() => addFormationRow(item.key)}
-                        className="text-xs text-blue-500 hover:underline"
+                        className={`text-xs ${TEXT_ACTION_CLASS}`}
                       >
                         列を追加
                       </button>
@@ -663,7 +664,7 @@ export function SetlistEditor({
                 <button
                   type="button"
                   onClick={() => copyCostumeFromPrevious(index)}
-                  className="shrink-0 text-xs text-blue-500 hover:underline"
+                  className={`shrink-0 text-xs ${TEXT_ACTION_CLASS}`}
                 >
                   上と同じ
                 </button>

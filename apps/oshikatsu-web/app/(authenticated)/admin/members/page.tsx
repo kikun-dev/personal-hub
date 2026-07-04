@@ -4,6 +4,7 @@ import { listMembers } from "@/usecases/listMembers";
 import { Button } from "@/components/ui/Button";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { PendingLink } from "@/components/ui/PendingLink";
+import { TextLink } from "@/components/ui/TextLink";
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -55,13 +56,13 @@ export default async function AdminMembersPage() {
                   </div>
                 </td>
                 <td className="py-2">
-                  <PendingLink
+                  <TextLink
                     href={`/admin/members/${member.id}/edit`}
                     feedback="global"
-                    className="text-sm text-blue-500 hover:underline"
+                    className="text-sm"
                   >
                     編集
-                  </PendingLink>
+                  </TextLink>
                 </td>
               </tr>
             ))}

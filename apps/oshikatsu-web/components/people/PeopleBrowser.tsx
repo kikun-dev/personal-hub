@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { TextLink } from "@/components/ui/TextLink";
 import type { Person, PersonRole } from "@/types/person";
 import { PERSON_ROLE_LABELS, PERSON_ROLE_VALUES } from "@/types/person";
 
@@ -100,12 +101,12 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                 </td>
                 {isAdmin && (
                   <td className="py-2">
-                    <Link
+                    <TextLink
                       href={`/people/${person.id}/edit`}
-                      className="text-sm text-blue-500 hover:underline"
+                      className="text-sm"
                     >
                       編集
-                    </Link>
+                    </TextLink>
                   </td>
                 )}
               </tr>
