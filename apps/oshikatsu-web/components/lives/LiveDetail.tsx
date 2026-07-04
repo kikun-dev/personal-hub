@@ -203,7 +203,7 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
       {live.performerMembers.length > 0 && (
         <section className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-foreground">参加メンバー</h2>
+            <h2 className="text-sm font-semibold text-foreground">出演メンバー</h2>
             <span className="text-xs text-foreground/60">
               {formatMemberCountSummary(
                 live.performerMembers.map((member) => member.generation)
