@@ -3,7 +3,7 @@
 -- ============================================================
 -- Scope:
 -- - 2026年に確認できた 乃木坂46 / 櫻坂46 / 日向坂46 の主要ライブ初期データ。
--- - チケット情報は空欄（ticket_info NULL）で投入する。
+-- - チケット情報・座席情報は保持しない（#262 で ticket_info / seat_info 列を撤去）。
 -- - セットリストは、完全かつ信頼できる公開情報を確認できたものだけ後続 seed で追加する。
 --
 -- Notes:
@@ -63,7 +63,6 @@ CREATE TEMP TABLE orbit_seed_2026_performances (
   starts_at TEXT,
   has_streaming BOOLEAN NOT NULL DEFAULT false,
   has_live_viewing BOOLEAN NOT NULL DEFAULT false,
-  seat_info TEXT,
   sort_order INT NOT NULL
 ) ON COMMIT PRESERVE ROWS;
 
@@ -263,71 +262,70 @@ INSERT INTO orbit_seed_2026_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  seat_info,
   sort_order
 )
 VALUES
-  ('LAWSON 50th Anniversary presents Special LIVE ～ 櫻坂46 / 日向坂46 ～', 'Kアリーナ横浜', '2026-01-25', '15:00', '17:00', false, false, NULL, 0),
+  ('LAWSON 50th Anniversary presents Special LIVE ～ 櫻坂46 / 日向坂46 ～', 'Kアリーナ横浜', '2026-01-25', '15:00', '17:00', false, false, 0),
 
-  ('乃木坂46 Coupling Collection 2022-2025', '有明アリーナ', '2026-02-20', NULL, NULL, false, false, NULL, 0),
-  ('乃木坂46 Coupling Collection 2022-2025', '有明アリーナ', '2026-02-21', NULL, NULL, false, false, NULL, 1),
+  ('乃木坂46 Coupling Collection 2022-2025', '有明アリーナ', '2026-02-20', NULL, NULL, false, false, 0),
+  ('乃木坂46 Coupling Collection 2022-2025', '有明アリーナ', '2026-02-21', NULL, NULL, false, false, 1),
 
-  ('乃木坂46 5th ALBUM MEMORIAL LIVE「My respect」', '有明アリーナ', '2026-02-22', NULL, NULL, false, false, NULL, 0),
-  ('乃木坂46 5th ALBUM MEMORIAL LIVE「My respect」', '有明アリーナ', '2026-02-23', NULL, NULL, false, false, NULL, 1),
+  ('乃木坂46 5th ALBUM MEMORIAL LIVE「My respect」', '有明アリーナ', '2026-02-22', NULL, NULL, false, false, 0),
+  ('乃木坂46 5th ALBUM MEMORIAL LIVE「My respect」', '有明アリーナ', '2026-02-23', NULL, NULL, false, false, 1),
 
-  ('16th Single ひなた坂46 LIVE', 'TOYOTA ARENA TOKYO', '2026-02-17', '17:00', '18:30', false, false, NULL, 0),
-  ('16th Single ひなた坂46 LIVE', 'TOYOTA ARENA TOKYO', '2026-02-18', '17:00', '18:30', false, false, NULL, 1),
+  ('16th Single ひなた坂46 LIVE', 'TOYOTA ARENA TOKYO', '2026-02-17', '17:00', '18:30', false, false, 0),
+  ('16th Single ひなた坂46 LIVE', 'TOYOTA ARENA TOKYO', '2026-02-18', '17:00', '18:30', false, false, 1),
 
-  ('櫻坂46 5th YEAR ANNIVERSARY LIVE', 'MUFGスタジアム（国立競技場）', '2026-04-11', '15:00', '17:30', true, false, NULL, 0),
-  ('櫻坂46 5th YEAR ANNIVERSARY LIVE', 'MUFGスタジアム（国立競技場）', '2026-04-12', '15:00', '17:30', true, false, NULL, 1),
+  ('櫻坂46 5th YEAR ANNIVERSARY LIVE', 'MUFGスタジアム（国立競技場）', '2026-04-11', '15:00', '17:30', true, false, 0),
+  ('櫻坂46 5th YEAR ANNIVERSARY LIVE', 'MUFGスタジアム（国立競技場）', '2026-04-12', '15:00', '17:30', true, false, 1),
 
-  ('7回目のひな誕祭', '横浜スタジアム', '2026-04-04', '15:00', '17:00', false, false, NULL, 0),
-  ('7回目のひな誕祭', '横浜スタジアム', '2026-04-05', '15:00', '17:00', false, false, NULL, 1),
+  ('7回目のひな誕祭', '横浜スタジアム', '2026-04-04', '15:00', '17:00', false, false, 0),
+  ('7回目のひな誕祭', '横浜スタジアム', '2026-04-05', '15:00', '17:00', false, false, 1),
 
-  ('14th Single BACKS LIVE!!', '幕張イベントホール', '2026-05-12', '17:00', '18:30', false, false, NULL, 0),
-  ('14th Single BACKS LIVE!!', '幕張イベントホール', '2026-05-13', '17:00', '18:30', false, false, NULL, 1),
+  ('14th Single BACKS LIVE!!', '幕張イベントホール', '2026-05-12', '17:00', '18:30', false, false, 0),
+  ('14th Single BACKS LIVE!!', '幕張イベントホール', '2026-05-13', '17:00', '18:30', false, false, 1),
 
-  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-19', '16:00', '18:30', true, false, NULL, 0),
-  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-20', '16:00', '18:30', true, false, NULL, 1),
-  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-21', '15:30', '18:00', true, false, NULL, 2),
+  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-19', '16:00', '18:30', true, false, 0),
+  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-20', '16:00', '18:30', true, false, 1),
+  ('乃木坂46 14th YEAR BIRTHDAY LIVE', '東京ドーム', '2026-05-21', '15:30', '18:00', true, false, 2),
 
-  ('櫻坂46 四期生LIVE', 'LaLa arena TOKYO-BAY', '2026-06-02', '17:30', '19:00', false, false, NULL, 0),
-  ('櫻坂46 四期生LIVE', 'LaLa arena TOKYO-BAY', '2026-06-03', '17:30', '19:00', false, false, NULL, 1),
+  ('櫻坂46 四期生LIVE', 'LaLa arena TOKYO-BAY', '2026-06-02', '17:30', '19:00', false, false, 0),
+  ('櫻坂46 四期生LIVE', 'LaLa arena TOKYO-BAY', '2026-06-03', '17:30', '19:00', false, false, 1),
 
-  ('乃木坂46 真夏の全国ツアー2026', 'サンドーム福井', '2026-06-13', '15:00', '16:30', false, false, NULL, 0),
-  ('乃木坂46 真夏の全国ツアー2026', 'サンドーム福井', '2026-06-14', '15:00', '16:30', false, false, NULL, 1),
-  ('乃木坂46 真夏の全国ツアー2026', '横浜アリーナ', '2026-06-24', '17:00', '18:30', false, false, NULL, 2),
-  ('乃木坂46 真夏の全国ツアー2026', '横浜アリーナ', '2026-06-25', '17:00', '18:30', false, false, NULL, 3),
-  ('乃木坂46 真夏の全国ツアー2026', '真駒内セキスイハイムアイスアリーナ', '2026-07-04', '16:00', '17:30', false, false, NULL, 4),
-  ('乃木坂46 真夏の全国ツアー2026', '真駒内セキスイハイムアイスアリーナ', '2026-07-05', '15:00', '16:30', false, false, NULL, 5),
-  ('乃木坂46 真夏の全国ツアー2026', '広島グリーンアリーナ', '2026-07-11', '16:00', '17:30', false, false, NULL, 6),
-  ('乃木坂46 真夏の全国ツアー2026', '広島グリーンアリーナ', '2026-07-12', '15:00', '16:30', false, false, NULL, 7),
-  ('乃木坂46 真夏の全国ツアー2026', '大阪城ホール', '2026-07-15', '16:30', '18:00', false, false, NULL, 8),
-  ('乃木坂46 真夏の全国ツアー2026', '大阪城ホール', '2026-07-16', '16:30', '18:00', false, false, NULL, 9),
-  ('乃木坂46 真夏の全国ツアー2026', 'セキスイハイムスーパーアリーナ', '2026-07-25', '16:00', '17:30', false, false, NULL, 10),
-  ('乃木坂46 真夏の全国ツアー2026', 'セキスイハイムスーパーアリーナ', '2026-07-26', '15:00', '16:30', false, false, NULL, 11),
-  ('乃木坂46 真夏の全国ツアー2026', 'マリンメッセ福岡Ａ館', '2026-08-08', '16:00', '17:30', false, false, NULL, 12),
-  ('乃木坂46 真夏の全国ツアー2026', 'マリンメッセ福岡Ａ館', '2026-08-09', '15:00', '16:30', false, false, NULL, 13),
-  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-20', '15:30', '18:00', false, false, NULL, 14),
-  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-21', '15:30', '18:00', false, false, NULL, 15),
-  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-22', '15:30', '18:00', false, false, NULL, 16),
-  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-23', '15:30', '18:00', false, false, NULL, 17),
+  ('乃木坂46 真夏の全国ツアー2026', 'サンドーム福井', '2026-06-13', '15:00', '16:30', false, false, 0),
+  ('乃木坂46 真夏の全国ツアー2026', 'サンドーム福井', '2026-06-14', '15:00', '16:30', false, false, 1),
+  ('乃木坂46 真夏の全国ツアー2026', '横浜アリーナ', '2026-06-24', '17:00', '18:30', false, false, 2),
+  ('乃木坂46 真夏の全国ツアー2026', '横浜アリーナ', '2026-06-25', '17:00', '18:30', false, false, 3),
+  ('乃木坂46 真夏の全国ツアー2026', '真駒内セキスイハイムアイスアリーナ', '2026-07-04', '16:00', '17:30', false, false, 4),
+  ('乃木坂46 真夏の全国ツアー2026', '真駒内セキスイハイムアイスアリーナ', '2026-07-05', '15:00', '16:30', false, false, 5),
+  ('乃木坂46 真夏の全国ツアー2026', '広島グリーンアリーナ', '2026-07-11', '16:00', '17:30', false, false, 6),
+  ('乃木坂46 真夏の全国ツアー2026', '広島グリーンアリーナ', '2026-07-12', '15:00', '16:30', false, false, 7),
+  ('乃木坂46 真夏の全国ツアー2026', '大阪城ホール', '2026-07-15', '16:30', '18:00', false, false, 8),
+  ('乃木坂46 真夏の全国ツアー2026', '大阪城ホール', '2026-07-16', '16:30', '18:00', false, false, 9),
+  ('乃木坂46 真夏の全国ツアー2026', 'セキスイハイムスーパーアリーナ', '2026-07-25', '16:00', '17:30', false, false, 10),
+  ('乃木坂46 真夏の全国ツアー2026', 'セキスイハイムスーパーアリーナ', '2026-07-26', '15:00', '16:30', false, false, 11),
+  ('乃木坂46 真夏の全国ツアー2026', 'マリンメッセ福岡Ａ館', '2026-08-08', '16:00', '17:30', false, false, 12),
+  ('乃木坂46 真夏の全国ツアー2026', 'マリンメッセ福岡Ａ館', '2026-08-09', '15:00', '16:30', false, false, 13),
+  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-20', '15:30', '18:00', false, false, 14),
+  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-21', '15:30', '18:00', false, false, 15),
+  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-22', '15:30', '18:00', false, false, 16),
+  ('乃木坂46 真夏の全国ツアー2026', '明治神宮野球場', '2026-08-23', '15:30', '18:00', false, false, 17),
 
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'エコパアリーナ', '2026-07-23', '17:00', '18:30', false, false, NULL, 0),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'エコパアリーナ', '2026-07-24', '17:00', '18:30', false, false, NULL, 1),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '神戸ワールド記念ホール', '2026-07-28', '17:00', '18:30', false, false, NULL, 2),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '神戸ワールド記念ホール', '2026-07-29', '17:00', '18:30', false, false, NULL, 3),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '広島グリーンアリーナ', '2026-08-08', '16:00', '17:30', false, false, NULL, 4),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '広島グリーンアリーナ', '2026-08-09', '16:00', '17:30', false, false, NULL, 5),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'LaLa arena TOKYO-BAY', '2026-08-15', '16:00', '17:30', false, false, NULL, 6),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'LaLa arena TOKYO-BAY', '2026-08-16', '16:00', '17:30', false, false, NULL, 7),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'セキスイハイムスーパーアリーナ', '2026-08-22', '16:00', '17:30', false, false, NULL, 8),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'セキスイハイムスーパーアリーナ', '2026-08-23', '16:00', '17:30', false, false, NULL, 9),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'あなぶきアリーナ香川', '2026-08-29', '16:00', '17:30', false, false, NULL, 10),
-  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'あなぶきアリーナ香川', '2026-08-30', '16:00', '17:30', false, false, NULL, 11),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'エコパアリーナ', '2026-07-23', '17:00', '18:30', false, false, 0),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'エコパアリーナ', '2026-07-24', '17:00', '18:30', false, false, 1),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '神戸ワールド記念ホール', '2026-07-28', '17:00', '18:30', false, false, 2),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '神戸ワールド記念ホール', '2026-07-29', '17:00', '18:30', false, false, 3),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '広島グリーンアリーナ', '2026-08-08', '16:00', '17:30', false, false, 4),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', '広島グリーンアリーナ', '2026-08-09', '16:00', '17:30', false, false, 5),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'LaLa arena TOKYO-BAY', '2026-08-15', '16:00', '17:30', false, false, 6),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'LaLa arena TOKYO-BAY', '2026-08-16', '16:00', '17:30', false, false, 7),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'セキスイハイムスーパーアリーナ', '2026-08-22', '16:00', '17:30', false, false, 8),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'セキスイハイムスーパーアリーナ', '2026-08-23', '16:00', '17:30', false, false, 9),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'あなぶきアリーナ香川', '2026-08-29', '16:00', '17:30', false, false, 10),
+  ('Sakurazaka46 ARENA TOUR 2026 -What''s lonesome?-', 'あなぶきアリーナ香川', '2026-08-30', '16:00', '17:30', false, false, 11),
 
-  ('ひなたフェス2026', 'ひなたサンマリンスタジアム宮崎', '2026-09-05', NULL, NULL, false, false, NULL, 0),
-  ('ひなたフェス2026', 'ひなたサンマリンスタジアム宮崎', '2026-09-06', NULL, NULL, false, false, NULL, 1);
+  ('ひなたフェス2026', 'ひなたサンマリンスタジアム宮崎', '2026-09-05', NULL, NULL, false, false, 0),
+  ('ひなたフェス2026', 'ひなたサンマリンスタジアム宮崎', '2026-09-06', NULL, NULL, false, false, 1);
 
 UPDATE public.orbit_live_performances AS performance
 SET
@@ -335,7 +333,6 @@ SET
   starts_at = NULLIF(seed.starts_at, ''),
   has_streaming = seed.has_streaming,
   has_live_viewing = seed.has_live_viewing,
-  seat_info = COALESCE(NULLIF(performance.seat_info, ''), NULLIF(seed.seat_info, '')),
   sort_order = seed.sort_order
 FROM orbit_seed_2026_performances seed
 JOIN public.orbit_lives live
@@ -355,8 +352,6 @@ INSERT INTO public.orbit_live_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  ticket_info,
-  seat_info,
   sort_order
 )
 SELECT
@@ -367,8 +362,6 @@ SELECT
   NULLIF(seed.starts_at, ''),
   seed.has_streaming,
   seed.has_live_viewing,
-  NULL,
-  NULLIF(seed.seat_info, ''),
   seed.sort_order
 FROM orbit_seed_2026_performances seed
 JOIN public.orbit_lives live
