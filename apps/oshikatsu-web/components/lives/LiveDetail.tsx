@@ -8,6 +8,7 @@ import {
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
@@ -276,9 +277,19 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
 
                 {performance.setlistItems.length > 0 && (
                   <div className="space-y-1">
-                    <p className="text-xs font-medium text-foreground/70">
-                      セットリスト
-                    </p>
+                    <div className="flex items-baseline justify-between gap-2">
+                      <p className="text-xs font-medium text-foreground/70">
+                        セットリスト
+                      </p>
+                      {/* #261: セトリ詳細の参照ビューへの導線。既存のセトリ表示自体は
+                          変更しない（簡素化は#262） */}
+                      <PendingLink
+                        href={`/lives/${live.id}/performances/${performance.id}/setlist`}
+                        className="text-xs text-blue-500 hover:underline"
+                      >
+                        詳細を見る →
+                      </PendingLink>
+                    </div>
                     <ol className="space-y-0.5">
                       {performance.setlistItems.map((item, index) => (
                         <li
