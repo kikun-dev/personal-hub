@@ -8,6 +8,7 @@ import {
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 
@@ -274,11 +275,22 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                   </p>
                 )}
 
-                {performance.setlistItems.length > 0 && (
-                  <div className="space-y-1">
+                <div className="space-y-1">
+                  <div className="flex items-baseline justify-between gap-2">
                     <p className="text-xs font-medium text-foreground/70">
                       セットリスト
                     </p>
+                    {/* #261: セトリ詳細の参照ビューへの導線。セトリ0件でも空状態の
+                        参照ページへ辿れるよう、導線は常に表示する（レビュー指摘）。
+                        既存のセトリ表示自体は変更しない（簡素化は#262） */}
+                    <PendingLink
+                      href={`/lives/${live.id}/performances/${performance.id}/setlist`}
+                      className="text-xs text-blue-500 hover:underline"
+                    >
+                      詳細を見る →
+                    </PendingLink>
+                  </div>
+                  {performance.setlistItems.length > 0 && (
                     <ol className="space-y-0.5">
                       {performance.setlistItems.map((item, index) => (
                         <li
@@ -321,8 +333,8 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                         </li>
                       ))}
                     </ol>
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <AttendanceControl
                   performanceId={performance.id}
