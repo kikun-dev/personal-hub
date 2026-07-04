@@ -899,6 +899,77 @@ export type Database = {
           },
         ]
       }
+      orbit_setlist_item_formation_members: {
+        Row: {
+          created_at: string
+          formation_row_id: string
+          id: string
+          member_id: string
+          slot_order: number
+        }
+        Insert: {
+          created_at?: string
+          formation_row_id: string
+          id?: string
+          member_id: string
+          slot_order: number
+        }
+        Update: {
+          created_at?: string
+          formation_row_id?: string
+          id?: string
+          member_id?: string
+          slot_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_setlist_item_formation_members_formation_row_id_fkey"
+            columns: ["formation_row_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_setlist_item_formation_rows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_setlist_item_formation_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orbit_setlist_item_formation_rows: {
+        Row: {
+          created_at: string
+          id: string
+          member_count: number
+          row_number: number
+          setlist_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          member_count: number
+          row_number: number
+          setlist_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          member_count?: number
+          row_number?: number
+          setlist_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_setlist_item_formation_rows_setlist_item_id_fkey"
+            columns: ["setlist_item_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_setlist_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orbit_setlist_item_members: {
         Row: {
           id: string
@@ -940,35 +1011,44 @@ export type Database = {
       }
       orbit_setlist_items: {
         Row: {
+          costume_note: string | null
           created_at: string
           id: string
           item_type: string
           note: string | null
           performance_id: string
           performance_style: string | null
+          performance_styles: string[]
           position: number
+          section: string
           song_title: string | null
           track_id: string | null
         }
         Insert: {
+          costume_note?: string | null
           created_at?: string
           id?: string
           item_type: string
           note?: string | null
           performance_id: string
           performance_style?: string | null
+          performance_styles?: string[]
           position: number
+          section?: string
           song_title?: string | null
           track_id?: string | null
         }
         Update: {
+          costume_note?: string | null
           created_at?: string
           id?: string
           item_type?: string
           note?: string | null
           performance_id?: string
           performance_style?: string | null
+          performance_styles?: string[]
           position?: number
+          section?: string
           song_title?: string | null
           track_id?: string | null
         }
