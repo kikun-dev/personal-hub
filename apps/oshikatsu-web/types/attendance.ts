@@ -42,6 +42,8 @@ export type SongEncounter = {
   performanceDate: string | null;
   liveId: string;
   liveName: string;
+  // 出演グループ（#263のグループバッジ表示用）。対バン・フェスは複数件になる。
+  groups: Array<{ id: string; nameJa: string; color: string }>;
 };
 
 // マイページ（#247）の一覧用read model。参加記録 + 公演 + ライブ + 会場を

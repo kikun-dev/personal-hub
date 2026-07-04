@@ -110,7 +110,11 @@ const SONG_ENCOUNTER_SELECT = `
   orbit_live_performances(
     id,
     performance_date,
-    orbit_lives(id, name),
+    orbit_lives(
+      id,
+      name,
+      orbit_live_performer_groups(orbit_groups(id, name_ja, color))
+    ),
     orbit_setlist_items(item_type, track_id)
   )
 ` as const;
@@ -127,6 +131,11 @@ function mapSongEncounters(row: SongEncounterRow): SongEncounter[] {
   const performance = row.orbit_live_performances;
   const live = performance.orbit_lives;
   const attendedType = isAttendedType(row.attended_type) ? row.attended_type : "onsite";
+  const groups = live.orbit_live_performer_groups.map((pg) => ({
+    id: pg.orbit_groups.id,
+    nameJa: pg.orbit_groups.name_ja,
+    color: pg.orbit_groups.color,
+  }));
 
   const encounters: SongEncounter[] = [];
   for (const item of performance.orbit_setlist_items) {
@@ -140,6 +149,7 @@ function mapSongEncounters(row: SongEncounterRow): SongEncounter[] {
       performanceDate: performance.performance_date,
       liveId: live.id,
       liveName: live.name,
+      groups,
     });
   }
   return encounters;
