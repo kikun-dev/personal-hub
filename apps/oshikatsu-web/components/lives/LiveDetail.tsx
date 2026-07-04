@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Live, LivePerformance, LiveType, SetlistItem } from "@/types/live";
-import { LIVE_TYPE_LABELS, SETLIST_ITEM_TYPE_LABELS } from "@/types/live";
+import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
@@ -83,11 +83,9 @@ function performanceAreaLabel(prefecture: string): string {
   return `${prefecture.replace(/[都府県]$/, "")}公演`;
 }
 
-function setlistItemLabel(item: SetlistItem): string {
-  if (item.itemType === "song") {
-    return item.trackTitle ?? item.songTitle ?? "（曲名未設定）";
-  }
-  return SETLIST_ITEM_TYPE_LABELS[item.itemType];
+// #262: 簡易表示は楽曲のみ描画するため、曲名の解決だけを担う（非楽曲ラベルは持たない）
+function songTitleLabel(item: SetlistItem): string {
+  return item.trackTitle ?? item.songTitle ?? "（曲名未設定）";
 }
 
 function VenueLink({ performance }: { performance: LivePerformance }) {
@@ -101,6 +99,48 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
     >
       {performance.venueName}
     </Link>
+  );
+}
+
+// #262: ライブ詳細のセトリ簡易表示。楽曲のみを「番号 曲名 C:センター」で出す。
+// 非楽曲（MC等）は簡易表示では省き、詳細はセトリ詳細画面（#261）で参照する。
+// 番号は numberSetlistItems を全件に対して算出してから楽曲だけ描画するため、
+// 本編 1,2… / EN1… / WEN1… / TEN1… のセクション番号はそのまま維持される。
+function PerformanceSetlistSummary({
+  performance,
+}: {
+  performance: LivePerformance;
+}) {
+  const songs = numberSetlistItems(performance.setlistItems).filter(
+    ({ item }) => item.itemType === "song"
+  );
+  if (songs.length === 0) {
+    return null;
+  }
+  return (
+    <ol className="space-y-0.5">
+      {songs.map(({ item, numberLabel }, index) => {
+        const centers = item.members.filter((member) => member.isCenter);
+        return (
+          <li
+            key={`${performance.id}-${index}`}
+            className="flex gap-2 text-xs text-foreground/80"
+          >
+            <span className="w-5 shrink-0 text-right text-foreground/40">
+              {numberLabel}
+            </span>
+            <span>
+              {songTitleLabel(item)}
+              {centers.length > 0 && (
+                <span className="ml-1 text-foreground/50">
+                  C:{centers.map((member) => member.memberNameJa).join("・")}
+                </span>
+              )}
+            </span>
+          </li>
+        );
+      })}
+    </ol>
   );
 }
 
@@ -276,43 +316,9 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                       詳細を見る →
                     </PendingLink>
                   </div>
-                  {/* #262: セトリは番号+曲名+C:センターの簡素表示。詳細はセトリ詳細画面へ */}
-                  {performance.setlistItems.length > 0 && (
-                    <ol className="space-y-0.5">
-                      {numberSetlistItems(performance.setlistItems).map(
-                        ({ item, numberLabel }, index) => {
-                          const centers = item.members.filter((m) => m.isCenter);
-                          return (
-                            <li
-                              key={`${performance.id}-${index}`}
-                              className="flex gap-2 text-xs text-foreground/80"
-                            >
-                              {/* #262: 非楽曲は番号を持たない（numberLabel は null）。
-                                  幅は確保して曲名の左端をそろえる */}
-                              <span className="w-5 shrink-0 text-right text-foreground/40">
-                                {numberLabel}
-                              </span>
-                              {item.itemType === "song" ? (
-                                <span>
-                                  {setlistItemLabel(item)}
-                                  {centers.length > 0 && (
-                                    <span className="ml-1 text-foreground/50">
-                                      C:
-                                      {centers
-                                        .map((member) => member.memberNameJa)
-                                        .join("・")}
-                                    </span>
-                                  )}
-                                </span>
-                              ) : (
-                                <span>{SETLIST_ITEM_TYPE_LABELS[item.itemType]}</span>
-                              )}
-                            </li>
-                          );
-                        }
-                      )}
-                    </ol>
-                  )}
+                  {/* #262: セトリ簡易表示は楽曲のみ。非楽曲（MC等）は省き、
+                      詳細はセトリ詳細画面（#261）で見る */}
+                  <PerformanceSetlistSummary performance={performance} />
                 </div>
 
                 <AttendanceControl
