@@ -49,6 +49,8 @@ export const SONG_DETAIL_SELECT = `
   orbit_groups(name_ja, color),
   label,
   generation,
+  artist_name,
+  note,
   orbit_release_tracks(
     release_id,
     track_number,
@@ -108,7 +110,7 @@ export const SONG_PUBLIC_LIST_SELECT = `
   id,
   title,
   group_id,
-  orbit_groups(name_ja, color),
+  orbit_groups(name_ja, color, is_catchall),
   label,
   generation,
   orbit_release_tracks(
@@ -131,12 +133,19 @@ export type SongRow = Omit<
   | "orbit_track_mvs"
   | "orbit_track_videos"
   | "orbit_track_costumes"
+  | "artist_name"
+  | "note"
 > & {
   orbit_track_credits?: SongDetailRow["orbit_track_credits"];
   orbit_track_formations?: SongDetailRow["orbit_track_formations"];
   orbit_track_mvs?: SongDetailRow["orbit_track_mvs"];
   orbit_track_videos?: SongDetailRow["orbit_track_videos"];
   orbit_track_costumes?: SongDetailRow["orbit_track_costumes"];
+  // artist_name / note は SONG_LIST_SELECT（admin一覧用、詳細リレーション無し）には
+  // 含まれないため、他の詳細専用リレーションと同じくオプショナルにして両方の select
+  // 結果を受け付けられるようにする。
+  artist_name?: SongDetailRow["artist_name"];
+  note?: SongDetailRow["note"];
 };
 
 export type SongListRow = SelectRows<"orbit_tracks", typeof SONG_PUBLIC_LIST_SELECT>[number];
@@ -334,6 +343,8 @@ export function mapSong(row: SongRow): Song {
     mv: mapMv(row.orbit_track_mvs),
     videos: mapVideos(row.orbit_track_videos),
     costumes: mapCostumes(row.orbit_track_costumes),
+    artistName: row.artist_name ?? null,
+    note: row.note ?? null,
   };
 }
 
@@ -366,6 +377,7 @@ export function mapToSongListItem(row: SongListRow): SongListItem {
     groupColor: group.color,
     label: isSongLabel(row.label ?? "") ? (row.label as SongLabel) : null,
     generation: row.generation,
+    isCatchall: group.is_catchall,
     releaseCount: releaseTracks.length,
     firstReleaseDate: representative?.releaseDate ?? null,
     representativeReleaseId: representative?.releaseId ?? null,

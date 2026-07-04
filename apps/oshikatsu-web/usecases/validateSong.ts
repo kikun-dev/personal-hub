@@ -57,7 +57,13 @@ function validateRelatedVideo(
   }
 }
 
-export function validateSong(input: CreateSongInput): ValidationError[] {
+// isCatchallGroup: 選択中グループが「その他」受け皿グループ（is_catchall）かどうか。
+// true のときはタイトル・グループのみ検証し、通常楽曲固有の必須・整合チェック
+// （紐づけリリース等）をスキップする（#264、フォーム側で該当項目を非表示にするのに合わせる）。
+export function validateSong(
+  input: CreateSongInput,
+  isCatchallGroup = false
+): ValidationError[] {
   const errors: ValidationError[] = [];
 
   if (!input.title.trim()) {
@@ -68,6 +74,21 @@ export function validateSong(input: CreateSongInput): ValidationError[] {
 
   if (!input.groupId) {
     errors.push({ field: "groupId", message: "楽曲グループを選択してください" });
+  }
+
+  if (input.artistName.length > 200) {
+    errors.push({
+      field: "artistName",
+      message: "誰の歌か（アーティスト名）は200文字以内で入力してください",
+    });
+  }
+
+  if (input.note.length > 1000) {
+    errors.push({ field: "note", message: "メモは1000文字以内で入力してください" });
+  }
+
+  if (isCatchallGroup) {
+    return errors;
   }
 
   // ラベルは任意。値が許容外ならエラー。期別のときは期（正の整数）が必須。

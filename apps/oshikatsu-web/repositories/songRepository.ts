@@ -195,6 +195,40 @@ export function createSongRepository(
     },
 
     async create(input) {
+      // 対象グループが「その他」受け皿グループ（is_catchall）かを DB で権威的に判定する
+      // （クライアント入力を信用しない）。catch-all 楽曲はリレーションを一切持たず、
+      // release-link 必須の v2 RPC を通せないため、orbit_tracks へ直接 insert する（#264）。
+      const { data: groupRow, error: groupError } = await supabase
+        .from("orbit_groups")
+        .select("is_catchall")
+        .eq("id", input.groupId)
+        .single();
+      if (groupError) {
+        throw new RepositoryError("グループの取得に失敗しました", groupError);
+      }
+      const isCatchall = groupRow.is_catchall;
+
+      if (isCatchall) {
+        const { data: inserted, error: insertError } = await asWritableClient(supabase)
+          .from("orbit_tracks")
+          .insert({
+            title: input.title.trim(),
+            group_id: input.groupId,
+            artist_name: input.artistName.trim() || null,
+            note: input.note.trim() || null,
+          })
+          .select("id")
+          .single();
+        if (insertError) {
+          throw new RepositoryError("楽曲の作成に失敗しました", insertError);
+        }
+        const created = await this.findById(inserted.id);
+        if (!created) {
+          throw new RepositoryError("作成した楽曲の取得に失敗しました", null);
+        }
+        return created;
+      }
+
       const label = parseLabel(input.label);
       const generation = parseGeneration(input.label, input.generation);
       const releaseLinks = await resolveReleaseLinkTrackNumbers(
@@ -256,6 +290,39 @@ export function createSongRepository(
       const existing = await this.findById(id);
       if (!existing) {
         throw new RepositoryError("更新対象の楽曲が見つかりません", null);
+      }
+
+      // create と同様、対象グループが catch-all かを DB で権威的に判定する。
+      // catch-all 楽曲はリレーションを持たず v2 RPC を通せないため直接 update する。
+      // なお通常楽曲↔catch-all のグループ変換は DB トリガ制約上できないため対象外（#264）。
+      const { data: groupRow, error: groupError } = await supabase
+        .from("orbit_groups")
+        .select("is_catchall")
+        .eq("id", input.groupId)
+        .single();
+      if (groupError) {
+        throw new RepositoryError("グループの取得に失敗しました", groupError);
+      }
+      const isCatchall = groupRow.is_catchall;
+
+      if (isCatchall) {
+        const { error: updateError } = await asWritableClient(supabase)
+          .from("orbit_tracks")
+          .update({
+            title: input.title.trim(),
+            group_id: input.groupId,
+            artist_name: input.artistName.trim() || null,
+            note: input.note.trim() || null,
+          })
+          .eq("id", id);
+        if (updateError) {
+          throw new RepositoryError("楽曲の更新に失敗しました", updateError);
+        }
+        const updated = await this.findById(id);
+        if (!updated) {
+          throw new RepositoryError("更新後の楽曲取得に失敗しました", null);
+        }
+        return updated;
       }
 
       const label = parseLabel(input.label);

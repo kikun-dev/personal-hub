@@ -33,9 +33,12 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
   const urlGroupId = searchParams.get("groupId") ?? "";
   const urlLabel = toLabel(searchParams.get("label"));
   const urlGeneration = searchParams.get("generation") ?? "";
+  const urlIncludeOther = searchParams.get("includeOther") === "1";
   const [groupId, setGroupId] = useState(urlGroupId);
   const [label, setLabel] = useState<SongLabel | "">(urlLabel);
   const [generation, setGeneration] = useState(urlGeneration);
+  // 「その他」楽曲を含めるかどうか（既定off、#264）
+  const [includeOther, setIncludeOther] = useState(urlIncludeOther);
   // タイトル検索は URL 非同期の一時状態
   const [query, setQuery] = useState("");
 
@@ -48,6 +51,9 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
   useEffect(() => {
     setGeneration(urlGeneration);
   }, [urlGeneration]);
+  useEffect(() => {
+    setIncludeOther(urlIncludeOther);
+  }, [urlIncludeOther]);
 
   const isGroupFiltered = groupId !== "";
   // 期サブ絞り込みはグループ選択かつラベル=期別のときのみ
@@ -70,17 +76,33 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
 
   const effectiveGeneration = showGenerationFilter ? generation : "";
 
+  // 全グループ表示かつトグルoffのときのみ「その他」楽曲を除外する。
+  // 特定グループ選択時（その他を選択している場合を含む）は filterSongsByGroup が
+  // 絞り込むのでそのまま扱う。
+  const base = useMemo(
+    () => (includeOther || isGroupFiltered ? songs : songs.filter((song) => !song.isCatchall)),
+    [songs, includeOther, isGroupFiltered]
+  );
+  // セクション表示（全グループ時）も同様に、トグルoffのとき「その他」セクションを除外する
+  const baseSections = useMemo(
+    () =>
+      includeOther
+        ? songSections
+        : songSections.filter((section) => !section.group?.isCatchall),
+    [songSections, includeOther]
+  );
+
   // 件数表示・フラット表示用（グループ＋ラベル＋期＋タイトル）
   const filteredSongs = useMemo(
     () =>
       filterSongsByTitle(
         filterSongsByGeneration(
-          filterSongsByLabel(filterSongsByGroup(songs, groupId), label),
+          filterSongsByLabel(filterSongsByGroup(base, groupId), label),
           effectiveGeneration
         ),
         query
       ),
-    [songs, groupId, label, effectiveGeneration, query]
+    [base, groupId, label, effectiveGeneration, query]
   );
   // セクション表示はグループ未選択時のみ（ラベル＋タイトル）
   const filteredSections = useMemo(
@@ -88,10 +110,10 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
       isGroupFiltered
         ? []
         : filterSongSectionsByTitle(
-            filterSongSectionsByLabel(songSections, label),
+            filterSongSectionsByLabel(baseSections, label),
             query
           ),
-    [isGroupFiltered, songSections, label, query]
+    [isGroupFiltered, baseSections, label, query]
   );
 
   const handleGroupChange = (nextGroupId: string) => {
@@ -110,6 +132,11 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
   const handleGenerationChange = (nextGeneration: string) => {
     setGeneration(nextGeneration);
     replaceListFilterParams({ generation: nextGeneration });
+  };
+
+  const handleIncludeOtherChange = (nextIncludeOther: boolean) => {
+    setIncludeOther(nextIncludeOther);
+    replaceListFilterParams({ includeOther: nextIncludeOther ? "1" : "" });
   };
 
   return (
@@ -166,6 +193,14 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           aria-label="楽曲タイトルで検索"
           className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
         />
+        <label className="flex items-center gap-1.5 text-sm text-foreground/70">
+          <input
+            type="checkbox"
+            checked={includeOther}
+            onChange={(event) => handleIncludeOtherChange(event.target.checked)}
+          />
+          その他も含む
+        </label>
         <span className="ml-auto shrink-0 text-sm text-foreground/50">
           {filteredSongs.length}曲
         </span>

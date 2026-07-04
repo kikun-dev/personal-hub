@@ -228,6 +228,7 @@ export type Database = {
           created_at: string
           id: string
           is_active: boolean
+          is_catchall: boolean
           max_generation: number
           name_en: string | null
           name_ja: string
@@ -240,6 +241,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_catchall?: boolean
           max_generation?: number
           name_en?: string | null
           name_ja: string
@@ -252,6 +254,7 @@ export type Database = {
           created_at?: string
           id?: string
           is_active?: boolean
+          is_catchall?: boolean
           max_generation?: number
           name_en?: string | null
           name_ja?: string
@@ -1350,29 +1353,35 @@ export type Database = {
       }
       orbit_tracks: {
         Row: {
+          artist_name: string | null
           created_at: string
           generation: string | null
           group_id: string
           id: string
           label: string | null
+          note: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          artist_name?: string | null
           created_at?: string
           generation?: string | null
           group_id: string
           id?: string
           label?: string | null
+          note?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          artist_name?: string | null
           created_at?: string
           generation?: string | null
           group_id?: string
           id?: string
           label?: string | null
+          note?: string | null
           title?: string
           updated_at?: string
         }
