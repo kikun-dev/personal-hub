@@ -37,6 +37,8 @@ export const SETLIST_ITEM_TYPE_VALUES = [
   "mc",
   "shadow_announcement",
   "vtr",
+  "dance_track",
+  "overture",
   "other",
 ] as const;
 
@@ -47,11 +49,34 @@ export const SETLIST_ITEM_TYPE_LABELS: Record<SetlistItemType, string> = {
   mc: "MC",
   shadow_announcement: "影アナ",
   vtr: "VTR",
+  dance_track: "Dance Track",
+  overture: "OVERTURE",
   other: "その他",
 };
 
 export function isSetlistItemType(value: string): value is SetlistItemType {
   return (SETLIST_ITEM_TYPE_VALUES as readonly string[]).includes(value);
+}
+
+// #260: アンコール区分。既存データは全て 'main'（migration 050 でデフォルト付与）。
+export const SETLIST_SECTION_VALUES = [
+  "main",
+  "encore",
+  "double_encore",
+  "triple_encore",
+] as const;
+
+export type SetlistSection = (typeof SETLIST_SECTION_VALUES)[number];
+
+export const SETLIST_SECTION_LABELS: Record<SetlistSection, string> = {
+  main: "本編",
+  encore: "アンコール",
+  double_encore: "Wアンコール",
+  triple_encore: "トリプルアンコール",
+};
+
+export function isSetlistSection(value: string): value is SetlistSection {
+  return (SETLIST_SECTION_VALUES as readonly string[]).includes(value);
 }
 
 export const PERFORMANCE_STYLE_VALUES = [
@@ -80,13 +105,32 @@ export type SetlistMember = {
   isCenter: boolean;
 };
 
+// #260: セトリ楽曲のフォーメーション（表示用）。orbit_track_formations 系
+// （types/song.ts の SongFormationRow）に近い形だが、列数（column_count）を
+// 持つ中間テーブルが無いため memberCount は持たない（行のメンバー数で足りる）。
+export type SetlistFormationMember = {
+  memberId: string;
+  memberNameJa: string;
+};
+
+export type SetlistFormationRow = {
+  rowNumber: number;
+  members: SetlistFormationMember[];
+};
+
 export type SetlistItem = {
   itemType: SetlistItemType;
   trackId: string | null;
   trackTitle: string | null;
   songTitle: string | null;
   note: string | null;
+  // 既存の単一値。LiveForm / LiveDetail が単一値のまま動いているため残す（#260）。
   performanceStyle: PerformanceStyle | null;
+  // #260: 複数披露タイプ（新配列）。新規参照はこちらを使う。
+  performanceStyles: PerformanceStyle[];
+  section: SetlistSection;
+  costumeNote: string | null;
+  formationRows: SetlistFormationRow[];
   members: SetlistMember[];
   position: number;
 };

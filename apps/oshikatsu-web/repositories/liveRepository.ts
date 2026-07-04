@@ -8,8 +8,9 @@ import type {
   LiveListItem,
   LiveOption,
   LiveType,
+  PerformanceStyle,
 } from "@/types/live";
-import { isSetlistItemType, isPerformanceStyle } from "@/types/live";
+import { isSetlistItemType, isPerformanceStyle, isSetlistSection } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
 import {
   compareByGenerationThenName,
@@ -43,8 +44,15 @@ const DETAIL_SELECT = `
       song_title,
       note,
       performance_style,
+      section,
+      performance_styles,
+      costume_note,
       orbit_tracks(title),
-      orbit_setlist_item_members(member_id, is_center, sort_order, orbit_members(name_ja))
+      orbit_setlist_item_members(member_id, is_center, sort_order, orbit_members(name_ja)),
+      orbit_setlist_item_formation_rows(
+        row_number,
+        orbit_setlist_item_formation_members(slot_order, member_id, orbit_members(name_ja))
+      )
     )
   )
 ` as const;
@@ -71,6 +79,39 @@ const VENUE_PERFORMANCE_SELECT = `
 
 type LiveRow = SelectRows<"orbit_lives", typeof DETAIL_SELECT>[number];
 type PerformanceRow = LiveRow["orbit_live_performances"][number];
+type SetlistItemRow = PerformanceRow["orbit_setlist_items"][number];
+
+// #260: セトリ楽曲のフォーメーション。行は row_number 順、行内メンバーは slot_order 順。
+function mapFormationRows(
+  rows: SetlistItemRow["orbit_setlist_item_formation_rows"]
+): Live["performances"][number]["setlistItems"][number]["formationRows"] {
+  return rows
+    .map((row) => ({
+      rowNumber: row.row_number,
+      members: row.orbit_setlist_item_formation_members
+        .slice()
+        .sort((a, b) => a.slot_order - b.slot_order)
+        .map((member) => ({
+          memberId: member.member_id,
+          memberNameJa: member.orbit_members.name_ja,
+        })),
+    }))
+    .sort((a, b) => a.rowNumber - b.rowNumber);
+}
+
+// #260: performance_styles（新配列）を基本とし、実行時ガードで PerformanceStyle 以外を除外する。
+// 空配列かつ旧 performance_style が非nullの場合のみ、backfill 済みだが防御的に
+// [旧値] へフォールバックする（新旧コード混在デプロイ期間の保険）。
+function mapPerformanceStyles(item: SetlistItemRow): PerformanceStyle[] {
+  const fromArray = item.performance_styles.filter(isPerformanceStyle);
+  if (fromArray.length > 0) {
+    return fromArray;
+  }
+  if (item.performance_style && isPerformanceStyle(item.performance_style)) {
+    return [item.performance_style];
+  }
+  return [];
+}
 
 function mapPerformance(row: PerformanceRow): Live["performances"][number] {
   const venue = row.orbit_venues;
@@ -103,6 +144,10 @@ function mapPerformance(row: PerformanceRow): Live["performances"][number] {
           item.performance_style && isPerformanceStyle(item.performance_style)
             ? item.performance_style
             : null,
+        performanceStyles: mapPerformanceStyles(item),
+        section: isSetlistSection(item.section) ? item.section : "main",
+        costumeNote: item.costume_note,
+        formationRows: mapFormationRows(item.orbit_setlist_item_formation_rows),
         members: item.orbit_setlist_item_members
           .slice()
           .sort((a, b) => a.sort_order - b.sort_order)
