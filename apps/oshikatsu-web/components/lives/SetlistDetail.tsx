@@ -13,6 +13,7 @@ import {
 import { PendingLink } from "@/components/ui/PendingLink";
 import { SetlistFormationDisplay } from "@/components/lives/SetlistFormationDisplay";
 import { groupBySection, numberSetlistItems } from "@/usecases/setlistNumbering";
+import type { SetlistSectionGroup } from "@/usecases/setlistNumbering";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { APP_ROUTES } from "@/lib/routes";
 
@@ -52,10 +53,11 @@ function formatScheduleLabel(
   return time ? `${date} ${time}` : date;
 }
 
-function shouldShowSectionHeading(groupCount: number): boolean {
-  // セクションが1つ（本編のみ）しかない場合は見出し自体を出さない。
+function shouldShowSectionHeading(groups: readonly SetlistSectionGroup[]): boolean {
+  // 「本編のみ」の場合だけ見出しを出さない。単一セクションでもそれがアンコール系なら
+  // 見出しを出す（本編なしでENだけのセトリで区分が分かるように）。
   // 複数セクションがある場合は本編にも「本編」見出しを出し、切り替わりを明確にする
-  return groupCount > 1;
+  return groups.length > 1 || (groups.length === 1 && groups[0].section !== "main");
 }
 
 function SectionHeading({ section }: { section: SetlistSection }) {
@@ -166,7 +168,7 @@ function NonSongItemRow({ item }: { item: SetlistItem }) {
 export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps) {
   const numbered = numberSetlistItems(performance.setlistItems);
   const groups = groupBySection(numbered);
-  const showHeading = shouldShowSectionHeading(groups.length);
+  const showHeading = shouldShowSectionHeading(groups);
 
   return (
     <div className="space-y-6">
