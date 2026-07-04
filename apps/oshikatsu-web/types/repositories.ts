@@ -155,6 +155,9 @@ export type SongRepository = {
   findPublicList(filters?: SongFilters): Promise<SongListItem[]>;
   findOptions(): Promise<SongOption[]>;
   findById(id: string): Promise<Song | null>;
+  // #264: グループが「その他」受け皿（is_catchall）かをDBで権威的に判定する。
+  // 検証（validateSong の分岐）と作成/更新の分岐の両方で使う。
+  isGroupCatchall(groupId: string): Promise<boolean>;
   create(input: CreateSongInput): Promise<Song>;
   update(id: string, input: UpdateSongInput): Promise<Song>;
   delete(id: string): Promise<void>;
