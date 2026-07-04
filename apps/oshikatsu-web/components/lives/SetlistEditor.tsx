@@ -274,11 +274,19 @@ export function SetlistEditor({
     setCopyingFormationKeys((prev) => new Set(prev).add(itemKey));
     try {
       const result = await getTrackFormation(trackId);
+      // 楽曲マスタにはこの公演のロスター外メンバー（卒業生等）が含まれ得るため、
+      // ロスター内のみに絞って取り込む（保存時の境界検証と整合させる）。
+      // ロスターが空（未設定）の場合は絞り込めないためそのまま取り込む。
+      const filterToRoster = rosterIds.size > 0;
       updateItem(itemKey, {
-        formationRows: result.rows.map((row) => ({
-          key: nextKey(),
-          memberIds: row.memberIds,
-        })),
+        formationRows: result.rows
+          .map((row) => ({
+            key: nextKey(),
+            memberIds: filterToRoster
+              ? row.memberIds.filter((id) => rosterIds.has(id))
+              : row.memberIds,
+          }))
+          .filter((row) => row.memberIds.length > 0),
       });
     } finally {
       setCopyingFormationKeys((prev) => {

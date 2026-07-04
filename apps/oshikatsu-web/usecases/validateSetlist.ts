@@ -48,6 +48,37 @@ export function validateSetlist(
       }
       seen.add(member.memberId);
     }
+
+    // フォーメーションのメンバーも披露メンバーと同じ境界で検証する。
+    // 楽曲マスタからのコピーや action 直呼びでロスター外・重複が混入しても
+    // ここで弾く（DB の UNIQUE 制約に頼らず汎用エラーを避ける）。
+    // 同一メンバーは楽曲内で1箇所のみ（複数行にまたがる重複も不正）。
+    const seenFormationMembers = new Set<string>();
+    let formationInvalid = false;
+    for (const row of item.formationRows) {
+      if (formationInvalid) break;
+      for (const memberId of row.memberIds) {
+        if (!memberId) {
+          errors.push({ field, message: "フォーメーションのメンバー指定が不正です" });
+          formationInvalid = true;
+          break;
+        }
+        if (seenFormationMembers.has(memberId)) {
+          errors.push({ field, message: "フォーメーションで同じメンバーが重複しています" });
+          formationInvalid = true;
+          break;
+        }
+        if (rosterIds.size > 0 && !rosterIds.has(memberId)) {
+          errors.push({
+            field,
+            message: "フォーメーションのメンバーは出演メンバーから選択してください",
+          });
+          formationInvalid = true;
+          break;
+        }
+        seenFormationMembers.add(memberId);
+      }
+    }
   });
   return errors;
 }
