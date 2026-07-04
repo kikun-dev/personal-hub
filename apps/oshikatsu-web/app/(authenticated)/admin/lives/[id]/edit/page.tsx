@@ -38,8 +38,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
       startsAt: performance.startsAt ?? "",
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
-      ticketInfo: performance.ticketInfo ?? "",
-      seatInfo: performance.seatInfo ?? "",
       absences: performance.absences.map((absence) => ({
         memberId: absence.memberId,
         note: absence.note ?? "",

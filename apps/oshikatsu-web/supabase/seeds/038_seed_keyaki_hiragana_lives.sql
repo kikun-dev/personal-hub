@@ -4,7 +4,7 @@
 -- Scope:
 -- - 欅坂46 / けやき坂46 の主要ライブ初期データ。
 -- - 旧公式サイト・公式特設ページ・公式ディスコグラフィーで確認できる代表公演を登録する。
--- - チケット情報は空欄（ticket_info NULL）で投入する。
+-- - チケット情報・座席情報は保持しない（#262 で ticket_info / seat_info 列を撤去）。
 -- - セットリストは、完全かつ信頼できる公開情報を確認できたものだけ後続 seed で追加する。
 --
 -- Notes:
@@ -57,7 +57,6 @@ CREATE TEMP TABLE orbit_seed_keyaki_performances (
   starts_at TEXT,
   has_streaming BOOLEAN NOT NULL DEFAULT false,
   has_live_viewing BOOLEAN NOT NULL DEFAULT false,
-  seat_info TEXT,
   sort_order INT NOT NULL
 ) ON COMMIT PRESERVE ROWS;
 
@@ -224,36 +223,35 @@ INSERT INTO orbit_seed_keyaki_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  seat_info,
   sort_order
 )
 VALUES
-  ('欅共和国2017', '富士急ハイランドコニファーフォレスト', '2017-07-22', NULL, NULL, false, false, NULL, 0),
-  ('欅共和国2017', '富士急ハイランドコニファーフォレスト', '2017-07-23', NULL, NULL, false, false, NULL, 1),
+  ('欅共和国2017', '富士急ハイランドコニファーフォレスト', '2017-07-22', NULL, NULL, false, false, 0),
+  ('欅共和国2017', '富士急ハイランドコニファーフォレスト', '2017-07-23', NULL, NULL, false, false, 1),
 
-  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-20', NULL, NULL, false, false, NULL, 0),
-  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-21', NULL, NULL, false, false, NULL, 1),
-  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-22', NULL, NULL, false, false, NULL, 2),
+  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-20', NULL, NULL, false, false, 0),
+  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-21', NULL, NULL, false, false, 1),
+  ('欅共和国2018', '富士急ハイランドコニファーフォレスト', '2018-07-22', NULL, NULL, false, false, 2),
 
-  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-05', NULL, NULL, false, false, NULL, 0),
-  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-06', NULL, NULL, false, false, NULL, 1),
-  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-07', NULL, NULL, false, false, NULL, 2),
+  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-05', NULL, NULL, false, false, 0),
+  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-06', NULL, NULL, false, false, 1),
+  ('欅共和国2019', '富士急ハイランドコニファーフォレスト', '2019-07-07', NULL, NULL, false, false, 2),
 
-  ('欅坂46 ARENA TOUR 2019 in TOKYO DOME', '東京ドーム', '2019-09-18', NULL, NULL, false, false, NULL, 0),
-  ('欅坂46 ARENA TOUR 2019 in TOKYO DOME', '東京ドーム', '2019-09-19', NULL, NULL, false, false, NULL, 1),
+  ('欅坂46 ARENA TOUR 2019 in TOKYO DOME', '東京ドーム', '2019-09-18', NULL, NULL, false, false, 0),
+  ('欅坂46 ARENA TOUR 2019 in TOKYO DOME', '東京ドーム', '2019-09-19', NULL, NULL, false, false, 1),
 
-  ('KEYAKIZAKA46 Live Online, but with YOU!', 'オンライン配信', '2020-07-16', NULL, NULL, true, false, NULL, 0),
+  ('KEYAKIZAKA46 Live Online, but with YOU!', 'オンライン配信', '2020-07-16', NULL, NULL, true, false, 0),
 
-  ('欅坂46 THE LAST LIVE', 'オンライン配信', '2020-10-12', NULL, NULL, true, false, NULL, 0),
-  ('欅坂46 THE LAST LIVE', 'オンライン配信', '2020-10-13', NULL, NULL, true, false, NULL, 1),
+  ('欅坂46 THE LAST LIVE', 'オンライン配信', '2020-10-12', NULL, NULL, true, false, 0),
+  ('欅坂46 THE LAST LIVE', 'オンライン配信', '2020-10-13', NULL, NULL, true, false, 1),
 
-  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-01-30', NULL, NULL, false, false, NULL, 0),
-  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-01-31', NULL, NULL, false, false, NULL, 1),
-  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-02-01', NULL, NULL, false, false, NULL, 2),
+  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-01-30', NULL, NULL, false, false, 0),
+  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-01-31', NULL, NULL, false, false, 1),
+  ('けやき坂46 日本武道館3DAYS!!', '日本武道館', '2018-02-01', NULL, NULL, false, false, 2),
 
-  ('ひらがなくりすます2018', '日本武道館', '2018-12-11', NULL, NULL, false, false, NULL, 0),
-  ('ひらがなくりすます2018', '日本武道館', '2018-12-12', NULL, NULL, false, false, NULL, 1),
-  ('ひらがなくりすます2018', '日本武道館', '2018-12-13', NULL, NULL, false, false, NULL, 2);
+  ('ひらがなくりすます2018', '日本武道館', '2018-12-11', NULL, NULL, false, false, 0),
+  ('ひらがなくりすます2018', '日本武道館', '2018-12-12', NULL, NULL, false, false, 1),
+  ('ひらがなくりすます2018', '日本武道館', '2018-12-13', NULL, NULL, false, false, 2);
 
 UPDATE public.orbit_live_performances AS performance
 SET
@@ -261,7 +259,6 @@ SET
   starts_at = NULLIF(seed.starts_at, ''),
   has_streaming = seed.has_streaming,
   has_live_viewing = seed.has_live_viewing,
-  seat_info = COALESCE(NULLIF(performance.seat_info, ''), NULLIF(seed.seat_info, '')),
   sort_order = seed.sort_order
 FROM orbit_seed_keyaki_performances seed
 JOIN public.orbit_lives live
@@ -281,8 +278,6 @@ INSERT INTO public.orbit_live_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  ticket_info,
-  seat_info,
   sort_order
 )
 SELECT
@@ -293,8 +288,6 @@ SELECT
   NULLIF(seed.starts_at, ''),
   seed.has_streaming,
   seed.has_live_viewing,
-  NULL,
-  NULLIF(seed.seat_info, ''),
   seed.sort_order
 FROM orbit_seed_keyaki_performances seed
 JOIN public.orbit_lives live

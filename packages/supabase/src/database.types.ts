@@ -355,10 +355,8 @@ export type Database = {
           id: string
           live_id: string
           performance_date: string | null
-          seat_info: string | null
           sort_order: number
           starts_at: string | null
-          ticket_info: string | null
           updated_at: string
           venue_id: string | null
         }
@@ -370,10 +368,8 @@ export type Database = {
           id?: string
           live_id: string
           performance_date?: string | null
-          seat_info?: string | null
           sort_order?: number
           starts_at?: string | null
-          ticket_info?: string | null
           updated_at?: string
           venue_id?: string | null
         }
@@ -385,10 +381,8 @@ export type Database = {
           id?: string
           live_id?: string
           performance_date?: string | null
-          seat_info?: string | null
           sort_order?: number
           starts_at?: string | null
-          ticket_info?: string | null
           updated_at?: string
           venue_id?: string | null
         }

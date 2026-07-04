@@ -4,7 +4,7 @@
 -- Scope:
 -- - 2022年以前の 乃木坂46 / 櫻坂46 / 日向坂46 の主要ライブ初期データ。
 -- - 公式特設ページ・公式ニュースで公演日程・会場を確認できたものを登録する。
--- - チケット情報は空欄（ticket_info NULL）で投入する。
+-- - チケット情報・座席情報は保持しない（#262 で ticket_info / seat_info 列を撤去）。
 -- - セットリストは、完全かつ信頼できる公開情報を確認できたものだけ後続 seed で追加する。
 --
 -- Notes:
@@ -60,7 +60,6 @@ CREATE TEMP TABLE orbit_seed_2022_performances (
   starts_at TEXT,
   has_streaming BOOLEAN NOT NULL DEFAULT false,
   has_live_viewing BOOLEAN NOT NULL DEFAULT false,
-  seat_info TEXT,
   sort_order INT NOT NULL
 ) ON COMMIT PRESERVE ROWS;
 
@@ -221,53 +220,52 @@ INSERT INTO orbit_seed_2022_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  seat_info,
   sort_order
 )
 VALUES
-  ('乃木坂46 10th YEAR BIRTHDAY LIVE', '日産スタジアム', '2022-05-14', '14:30', '17:00', true, false, NULL, 0),
-  ('乃木坂46 10th YEAR BIRTHDAY LIVE', '日産スタジアム', '2022-05-15', '14:30', '17:00', true, false, NULL, 1),
+  ('乃木坂46 10th YEAR BIRTHDAY LIVE', '日産スタジアム', '2022-05-14', '14:30', '17:00', true, false, 0),
+  ('乃木坂46 10th YEAR BIRTHDAY LIVE', '日産スタジアム', '2022-05-15', '14:30', '17:00', true, false, 1),
 
-  ('乃木坂46 真夏の全国ツアー2022', '明治神宮野球場', '2022-08-30', '17:00', '18:00', true, false, NULL, 0),
-  ('乃木坂46 真夏の全国ツアー2022', '明治神宮野球場', '2022-08-31', '17:00', '18:00', true, false, NULL, 1),
+  ('乃木坂46 真夏の全国ツアー2022', '明治神宮野球場', '2022-08-30', '17:00', '18:00', true, false, 0),
+  ('乃木坂46 真夏の全国ツアー2022', '明治神宮野球場', '2022-08-31', '17:00', '18:00', true, false, 1),
 
-  ('櫻坂46 1st TOUR 2021', '西日本総合展示場 新館', '2021-09-11', '17:00', '18:30', false, false, NULL, 0),
-  ('櫻坂46 1st TOUR 2021', '西日本総合展示場 新館', '2021-09-12', '16:00', '17:30', false, false, NULL, 1),
-  ('櫻坂46 1st TOUR 2021', 'Aichi Sky Expo ホールA', '2021-09-19', '16:00', '17:30', false, false, NULL, 2),
-  ('櫻坂46 1st TOUR 2021', 'Aichi Sky Expo ホールA', '2021-09-20', '16:00', '17:30', false, false, NULL, 3),
-  ('櫻坂46 1st TOUR 2021', '丸善インテックアリーナ大阪', '2021-10-09', '16:00', '17:30', false, false, NULL, 4),
-  ('櫻坂46 1st TOUR 2021', '丸善インテックアリーナ大阪', '2021-10-10', '16:00', '17:30', false, false, NULL, 5),
-  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-29', '17:00', '18:30', false, false, NULL, 6),
-  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-30', '16:00', '17:30', false, false, NULL, 7),
-  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-31', '16:00', '17:30', false, false, NULL, 8),
+  ('櫻坂46 1st TOUR 2021', '西日本総合展示場 新館', '2021-09-11', '17:00', '18:30', false, false, 0),
+  ('櫻坂46 1st TOUR 2021', '西日本総合展示場 新館', '2021-09-12', '16:00', '17:30', false, false, 1),
+  ('櫻坂46 1st TOUR 2021', 'Aichi Sky Expo ホールA', '2021-09-19', '16:00', '17:30', false, false, 2),
+  ('櫻坂46 1st TOUR 2021', 'Aichi Sky Expo ホールA', '2021-09-20', '16:00', '17:30', false, false, 3),
+  ('櫻坂46 1st TOUR 2021', '丸善インテックアリーナ大阪', '2021-10-09', '16:00', '17:30', false, false, 4),
+  ('櫻坂46 1st TOUR 2021', '丸善インテックアリーナ大阪', '2021-10-10', '16:00', '17:30', false, false, 5),
+  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-29', '17:00', '18:30', false, false, 6),
+  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-30', '16:00', '17:30', false, false, 7),
+  ('櫻坂46 1st TOUR 2021', 'さいたまスーパーアリーナ', '2021-10-31', '16:00', '17:30', false, false, 8),
 
-  ('櫻坂46 1st YEAR ANNIVERSARY LIVE', '日本武道館', '2021-12-09', '17:30', '18:30', false, false, NULL, 0),
-  ('櫻坂46 1st YEAR ANNIVERSARY LIVE', '日本武道館', '2021-12-10', '17:30', '18:30', true, false, NULL, 1),
+  ('櫻坂46 1st YEAR ANNIVERSARY LIVE', '日本武道館', '2021-12-09', '17:30', '18:30', false, false, 0),
+  ('櫻坂46 1st YEAR ANNIVERSARY LIVE', '日本武道館', '2021-12-10', '17:30', '18:30', true, false, 1),
 
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '丸善インテックアリーナ大阪', '2022-09-29', '16:30', '18:00', false, false, NULL, 0),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '丸善インテックアリーナ大阪', '2022-09-30', '16:30', '18:00', false, false, NULL, 1),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '広島サンプラザホール', '2022-10-05', '16:30', '18:00', false, false, NULL, 2),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '広島サンプラザホール', '2022-10-06', '16:30', '18:00', false, false, NULL, 3),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', 'セキスイハイムスーパーアリーナ', '2022-10-15', '16:00', '17:30', false, false, NULL, 4),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', 'セキスイハイムスーパーアリーナ', '2022-10-16', '16:00', '17:30', false, false, NULL, 5),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '日本ガイシホール', '2022-10-21', '16:30', '18:00', false, false, NULL, 6),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '日本ガイシホール', '2022-10-22', '16:00', '17:30', false, false, NULL, 7),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '西日本総合展示場 新館', '2022-10-25', '16:30', '18:00', false, false, NULL, 8),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '西日本総合展示場 新館', '2022-10-26', '16:30', '18:00', false, false, NULL, 9),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '東京ドーム', '2022-11-08', '15:00', '18:00', false, false, NULL, 10),
-  ('櫻坂46 2nd TOUR 2022 "As you know?"', '東京ドーム', '2022-11-09', '15:00', '18:00', true, false, NULL, 11),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '丸善インテックアリーナ大阪', '2022-09-29', '16:30', '18:00', false, false, 0),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '丸善インテックアリーナ大阪', '2022-09-30', '16:30', '18:00', false, false, 1),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '広島サンプラザホール', '2022-10-05', '16:30', '18:00', false, false, 2),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '広島サンプラザホール', '2022-10-06', '16:30', '18:00', false, false, 3),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', 'セキスイハイムスーパーアリーナ', '2022-10-15', '16:00', '17:30', false, false, 4),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', 'セキスイハイムスーパーアリーナ', '2022-10-16', '16:00', '17:30', false, false, 5),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '日本ガイシホール', '2022-10-21', '16:30', '18:00', false, false, 6),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '日本ガイシホール', '2022-10-22', '16:00', '17:30', false, false, 7),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '西日本総合展示場 新館', '2022-10-25', '16:30', '18:00', false, false, 8),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '西日本総合展示場 新館', '2022-10-26', '16:30', '18:00', false, false, 9),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '東京ドーム', '2022-11-08', '15:00', '18:00', false, false, 10),
+  ('櫻坂46 2nd TOUR 2022 "As you know?"', '東京ドーム', '2022-11-09', '15:00', '18:00', true, false, 11),
 
-  ('日向坂46 3周年記念MEMORIAL LIVE ～3回目のひな誕祭～', '東京ドーム', '2022-03-30', '14:30', '17:30', true, false, NULL, 0),
-  ('日向坂46 3周年記念MEMORIAL LIVE ～3回目のひな誕祭～', '東京ドーム', '2022-03-31', '14:30', '17:30', true, false, NULL, 1),
+  ('日向坂46 3周年記念MEMORIAL LIVE ～3回目のひな誕祭～', '東京ドーム', '2022-03-30', '14:30', '17:30', true, false, 0),
+  ('日向坂46 3周年記念MEMORIAL LIVE ～3回目のひな誕祭～', '東京ドーム', '2022-03-31', '14:30', '17:30', true, false, 1),
 
-  ('日向坂46 Happy Smile Tour 2022', 'Aichi Sky Expo ホールA', '2022-09-10', '16:00', '17:30', false, false, NULL, 0),
-  ('日向坂46 Happy Smile Tour 2022', 'Aichi Sky Expo ホールA', '2022-09-11', '16:00', '17:30', false, false, NULL, 1),
-  ('日向坂46 Happy Smile Tour 2022', '神戸ワールド記念ホール', '2022-09-17', '16:00', '17:30', false, false, NULL, 2),
-  ('日向坂46 Happy Smile Tour 2022', '神戸ワールド記念ホール', '2022-09-18', '16:00', '17:30', false, false, NULL, 3),
-  ('日向坂46 Happy Smile Tour 2022', 'ぴあアリーナMM', '2022-10-17', '16:30', '18:00', false, false, NULL, 4),
-  ('日向坂46 Happy Smile Tour 2022', 'ぴあアリーナMM', '2022-10-18', '16:30', '18:00', false, false, NULL, 5),
-  ('日向坂46 Happy Smile Tour 2022', '国立代々木競技場第一体育館', '2022-11-12', '16:00', '17:30', false, false, NULL, 6),
-  ('日向坂46 Happy Smile Tour 2022', '国立代々木競技場第一体育館', '2022-11-13', '16:00', '17:30', true, false, NULL, 7);
+  ('日向坂46 Happy Smile Tour 2022', 'Aichi Sky Expo ホールA', '2022-09-10', '16:00', '17:30', false, false, 0),
+  ('日向坂46 Happy Smile Tour 2022', 'Aichi Sky Expo ホールA', '2022-09-11', '16:00', '17:30', false, false, 1),
+  ('日向坂46 Happy Smile Tour 2022', '神戸ワールド記念ホール', '2022-09-17', '16:00', '17:30', false, false, 2),
+  ('日向坂46 Happy Smile Tour 2022', '神戸ワールド記念ホール', '2022-09-18', '16:00', '17:30', false, false, 3),
+  ('日向坂46 Happy Smile Tour 2022', 'ぴあアリーナMM', '2022-10-17', '16:30', '18:00', false, false, 4),
+  ('日向坂46 Happy Smile Tour 2022', 'ぴあアリーナMM', '2022-10-18', '16:30', '18:00', false, false, 5),
+  ('日向坂46 Happy Smile Tour 2022', '国立代々木競技場第一体育館', '2022-11-12', '16:00', '17:30', false, false, 6),
+  ('日向坂46 Happy Smile Tour 2022', '国立代々木競技場第一体育館', '2022-11-13', '16:00', '17:30', true, false, 7);
 
 UPDATE public.orbit_live_performances AS performance
 SET
@@ -275,7 +273,6 @@ SET
   starts_at = NULLIF(seed.starts_at, ''),
   has_streaming = seed.has_streaming,
   has_live_viewing = seed.has_live_viewing,
-  seat_info = COALESCE(NULLIF(performance.seat_info, ''), NULLIF(seed.seat_info, '')),
   sort_order = seed.sort_order
 FROM orbit_seed_2022_performances seed
 JOIN public.orbit_lives live
@@ -295,8 +292,6 @@ INSERT INTO public.orbit_live_performances (
   starts_at,
   has_streaming,
   has_live_viewing,
-  ticket_info,
-  seat_info,
   sort_order
 )
 SELECT
@@ -307,8 +302,6 @@ SELECT
   NULLIF(seed.starts_at, ''),
   seed.has_streaming,
   seed.has_live_viewing,
-  NULL,
-  NULLIF(seed.seat_info, ''),
   seed.sort_order
 FROM orbit_seed_2022_performances seed
 JOIN public.orbit_lives live

@@ -43,8 +43,6 @@ type PerformanceField = {
   startsAt: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
-  ticketInfo: string;
-  seatInfo: string;
   absences: AbsenceField[];
 };
 
@@ -86,8 +84,6 @@ export function LiveForm({
       startsAt: performance.startsAt,
       hasStreaming: performance.hasStreaming,
       hasLiveViewing: performance.hasLiveViewing,
-      ticketInfo: performance.ticketInfo,
-      seatInfo: performance.seatInfo,
       absences: performance.absences.map((absence) => ({
         key: nextKey(),
         memberId: absence.memberId,
@@ -116,8 +112,6 @@ export function LiveForm({
         startsAt: "",
         hasStreaming: false,
         hasLiveViewing: false,
-        ticketInfo: "",
-        seatInfo: "",
         absences: [],
       })
     );
@@ -254,8 +248,6 @@ export function LiveForm({
         startsAt: performance.startsAt,
         hasStreaming: performance.hasStreaming,
         hasLiveViewing: performance.hasLiveViewing,
-        ticketInfo: performance.ticketInfo,
-        seatInfo: performance.seatInfo,
         absences: performance.absences
           .filter((absence) => absence.memberId)
           .map((absence) => ({ memberId: absence.memberId, note: absence.note })),
@@ -490,23 +482,6 @@ export function LiveForm({
                 <span className="text-foreground">ライブビューイングあり</span>
               </label>
             </div>
-
-            <Textarea
-              id={`performance-${performance.key}-ticket`}
-              label="チケット情報"
-              value={performance.ticketInfo}
-              onChange={(e) =>
-                updatePerformance(performance.key, { ticketInfo: e.target.value })
-              }
-            />
-            <Textarea
-              id={`performance-${performance.key}-seat`}
-              label="座席情報"
-              value={performance.seatInfo}
-              onChange={(e) =>
-                updatePerformance(performance.key, { seatInfo: e.target.value })
-              }
-            />
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">

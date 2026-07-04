@@ -33,8 +33,6 @@ const DETAIL_SELECT = `
     starts_at,
     has_streaming,
     has_live_viewing,
-    ticket_info,
-    seat_info,
     sort_order,
     orbit_venues(name, prefecture),
     orbit_live_performance_absences(member_id, note, orbit_members(name_ja)),
@@ -126,8 +124,6 @@ function mapPerformance(row: PerformanceRow): Live["performances"][number] {
     startsAt: row.starts_at,
     hasStreaming: row.has_streaming,
     hasLiveViewing: row.has_live_viewing,
-    ticketInfo: row.ticket_info,
-    seatInfo: row.seat_info,
     sortOrder: row.sort_order,
     absences: row.orbit_live_performance_absences.map((absence) => ({
       memberId: absence.member_id,
@@ -229,8 +225,6 @@ function toLivePayload(input: CreateLiveInput) {
       starts_at: performance.startsAt.trim(),
       has_streaming: performance.hasStreaming,
       has_live_viewing: performance.hasLiveViewing,
-      ticket_info: performance.ticketInfo.trim(),
-      seat_info: performance.seatInfo.trim(),
       absences: performance.absences
         .filter((absence) => absence.memberId)
         .map((absence) => ({
