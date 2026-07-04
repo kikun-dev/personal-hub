@@ -151,8 +151,6 @@ export type LivePerformance = {
   startsAt: string | null;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
-  ticketInfo: string | null;
-  seatInfo: string | null;
   sortOrder: number;
   absences: LivePerformanceAbsence[];
   setlistItems: SetlistItem[];
@@ -204,8 +202,6 @@ export type CreateLivePerformanceInput = {
   startsAt: string;
   hasStreaming: boolean;
   hasLiveViewing: boolean;
-  ticketInfo: string;
-  seatInfo: string;
   absences: CreateLivePerformanceAbsenceInput[];
 };
 

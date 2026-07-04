@@ -1,16 +1,13 @@
 import Link from "next/link";
 import type { Live, LivePerformance, LiveType, SetlistItem } from "@/types/live";
-import {
-  LIVE_TYPE_LABELS,
-  PERFORMANCE_STYLE_LABELS,
-  SETLIST_ITEM_TYPE_LABELS,
-} from "@/types/live";
+import { LIVE_TYPE_LABELS, SETLIST_ITEM_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
+import { numberSetlistItems } from "@/usecases/setlistNumbering";
 
 type LiveDetailProps = {
   live: Live;
@@ -251,17 +248,6 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                   )}
                 </div>
 
-                {performance.ticketInfo && (
-                  <p className="whitespace-pre-wrap text-xs text-foreground/70">
-                    チケット: {performance.ticketInfo}
-                  </p>
-                )}
-                {performance.seatInfo && (
-                  <p className="whitespace-pre-wrap text-xs text-foreground/70">
-                    座席: {performance.seatInfo}
-                  </p>
-                )}
-
                 {performance.absences.length > 0 && (
                   <p className="text-xs text-foreground/70">
                     休演:{" "}
@@ -290,48 +276,39 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                       詳細を見る →
                     </PendingLink>
                   </div>
+                  {/* #262: セトリは番号+曲名+C:センターの簡素表示。詳細はセトリ詳細画面へ */}
                   {performance.setlistItems.length > 0 && (
                     <ol className="space-y-0.5">
-                      {performance.setlistItems.map((item, index) => (
-                        <li
-                          key={`${performance.id}-${index}`}
-                          className="flex gap-2 text-xs text-foreground/80"
-                        >
-                          <span className="w-5 shrink-0 text-right text-foreground/40">
-                            {item.itemType === "song" ? index + 1 : "-"}
-                          </span>
-                          {item.itemType === "song" ? (
-                            <span>
-                              {setlistItemLabel(item)}
-                              {item.performanceStyle && (
-                                <span className="ml-1 rounded bg-foreground/10 px-1 text-[10px] text-foreground/60">
-                                  {PERFORMANCE_STYLE_LABELS[item.performanceStyle]}
-                                </span>
-                              )}
-                              {item.note ? `（${item.note}）` : ""}
-                              {item.members.length > 0 && (
-                                <span className="ml-1 text-foreground/50">
-                                  {" / "}
-                                  {item.members
-                                    .map((member) =>
-                                      member.isCenter
-                                        ? `${member.memberNameJa}（C）`
-                                        : member.memberNameJa
-                                    )
-                                    .join("、")}
-                                </span>
-                              )}
-                            </span>
-                          ) : (
-                            <span>
-                              <span className="mr-1 rounded bg-foreground/10 px-1 text-foreground/60">
-                                {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
+                      {numberSetlistItems(performance.setlistItems).map(
+                        ({ item, numberLabel }, index) => {
+                          const centers = item.members.filter((m) => m.isCenter);
+                          return (
+                            <li
+                              key={`${performance.id}-${index}`}
+                              className="flex gap-2 text-xs text-foreground/80"
+                            >
+                              <span className="w-5 shrink-0 text-right text-foreground/40">
+                                {numberLabel ?? "-"}
                               </span>
-                              {item.note}
-                            </span>
-                          )}
-                        </li>
-                      ))}
+                              {item.itemType === "song" ? (
+                                <span>
+                                  {setlistItemLabel(item)}
+                                  {centers.length > 0 && (
+                                    <span className="ml-1 text-foreground/50">
+                                      C:
+                                      {centers
+                                        .map((member) => member.memberNameJa)
+                                        .join("・")}
+                                    </span>
+                                  )}
+                                </span>
+                              ) : (
+                                <span>{SETLIST_ITEM_TYPE_LABELS[item.itemType]}</span>
+                              )}
+                            </li>
+                          );
+                        }
+                      )}
                     </ol>
                   )}
                 </div>
