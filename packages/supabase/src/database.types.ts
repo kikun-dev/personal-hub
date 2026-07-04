@@ -1605,6 +1605,10 @@ export type Database = {
       }
       has_orbit_read_role: { Args: never; Returns: boolean }
       is_orbit_admin: { Args: never; Returns: boolean }
+      replace_performance_setlist: {
+        Args: { p_payload: Json; p_performance_id: string }
+        Returns: undefined
+      }
       set_release_member_positions: {
         Args: { p_positions: Json; p_release_id: string }
         Returns: undefined

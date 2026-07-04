@@ -41,6 +41,7 @@ import type {
   VenuePerformanceSummary,
   CreateLiveInput,
   UpdateLiveInput,
+  ReplaceSetlistInput,
 } from "./live";
 import type {
   Release,
@@ -132,6 +133,7 @@ export type LiveRepository = {
   create(input: CreateLiveInput): Promise<Live>;
   update(id: string, input: UpdateLiveInput): Promise<Live>;
   delete(id: string): Promise<void>;
+  replaceSetlist(performanceId: string, input: ReplaceSetlistInput): Promise<void>;
 };
 
 export type ReleaseRepository = {

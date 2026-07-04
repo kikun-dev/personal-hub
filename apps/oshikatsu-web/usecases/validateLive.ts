@@ -1,10 +1,6 @@
 import type { CreateLiveInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
-import {
-  isLiveType,
-  isSetlistItemType,
-  isPerformanceStyle,
-} from "@/types/live";
+import { isLiveType } from "@/types/live";
 import { isValidDateString } from "@/lib/validation";
 
 function isValidTimeString(value: string): boolean {
@@ -82,44 +78,6 @@ export function validateLive(input: CreateLiveInput): ValidationError[] {
 
     const rosterIds = new Set(input.performerMemberIds);
 
-    performance.setlistItems.forEach((item, itemIndex) => {
-      const field = `performances.${index}.setlistItems.${itemIndex}`;
-      if (!isSetlistItemType(item.itemType)) {
-        errors.push({ field, message: "無効な項目種別です" });
-        return;
-      }
-      if (item.itemType === "song" && !item.trackId && !item.songTitle.trim()) {
-        errors.push({
-          field,
-          message: "楽曲は登録曲の選択か曲名の入力が必要です",
-        });
-      }
-      if (item.note.length > 500) {
-        errors.push({ field, message: "メモは500文字以内で入力してください" });
-      }
-
-      // 披露タイプ・披露メンバーは楽曲項目のみ対象（非楽曲は保存時に破棄される）
-      if (item.itemType !== "song") {
-        return;
-      }
-
-      if (item.performanceStyle && !isPerformanceStyle(item.performanceStyle)) {
-        errors.push({ field, message: "無効な披露タイプです" });
-      }
-      const seenMembers = new Set<string>();
-      for (const member of item.members) {
-        if (!member.memberId) continue;
-        if (seenMembers.has(member.memberId)) {
-          errors.push({ field, message: "同じ披露メンバーが重複しています" });
-          break;
-        }
-        if (rosterIds.size > 0 && !rosterIds.has(member.memberId)) {
-          errors.push({ field, message: "披露メンバーは出演メンバーから選択してください" });
-          break;
-        }
-        seenMembers.add(member.memberId);
-      }
-    });
     const seenAbsentMembers = new Set<string>();
     for (const absence of performance.absences) {
       if (!absence.memberId) continue;

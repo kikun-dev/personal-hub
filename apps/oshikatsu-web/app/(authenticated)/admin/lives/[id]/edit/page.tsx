@@ -22,7 +22,7 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
     notFound();
   }
 
-  const { groups, members, venues, songOptions } = await getLiveFormMasterData();
+  const { groups, members, venues } = await getLiveFormMasterData();
 
   const initialValues: CreateLiveInput = {
     name: live.name,
@@ -43,17 +43,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
       absences: performance.absences.map((absence) => ({
         memberId: absence.memberId,
         note: absence.note ?? "",
-      })),
-      setlistItems: performance.setlistItems.map((item) => ({
-        itemType: item.itemType,
-        trackId: item.trackId ?? "",
-        songTitle: item.songTitle ?? "",
-        note: item.note ?? "",
-        performanceStyle: item.performanceStyle ?? "",
-        members: item.members.map((member) => ({
-          memberId: member.memberId,
-          isCenter: member.isCenter,
-        })),
       })),
     })),
   };
@@ -92,7 +81,6 @@ export default async function EditLivePage({ params }: EditLivePageProps) {
         groups={groups}
         members={members}
         venues={venues}
-        tracks={songOptions}
         initialValues={initialValues}
         onSubmit={handleSubmit}
       />
