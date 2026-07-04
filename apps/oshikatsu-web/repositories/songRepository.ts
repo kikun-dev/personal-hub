@@ -194,7 +194,46 @@ export function createSongRepository(
       return mapSong(data);
     },
 
+    async isGroupCatchall(groupId) {
+      // クライアント入力を信用せず、グループの is_catchall を DB で確定する（#264）。
+      const { data, error } = await supabase
+        .from("orbit_groups")
+        .select("is_catchall")
+        .eq("id", groupId)
+        .single();
+      if (error) {
+        throw new RepositoryError("グループの取得に失敗しました", error);
+      }
+      return data.is_catchall;
+    },
+
     async create(input) {
+      // 対象グループが「その他」受け皿グループ（is_catchall）かを DB で権威的に判定する。
+      // catch-all 楽曲はリレーションを一切持たず、release-link 必須の v2 RPC を通せない
+      // ため、orbit_tracks へ直接 insert する（#264）。
+      const isCatchall = await this.isGroupCatchall(input.groupId);
+
+      if (isCatchall) {
+        const { data: inserted, error: insertError } = await asWritableClient(supabase)
+          .from("orbit_tracks")
+          .insert({
+            title: input.title.trim(),
+            group_id: input.groupId,
+            artist_name: input.artistName.trim() || null,
+            note: input.note.trim() || null,
+          })
+          .select("id")
+          .single();
+        if (insertError) {
+          throw new RepositoryError("楽曲の作成に失敗しました", insertError);
+        }
+        const created = await this.findById(inserted.id);
+        if (!created) {
+          throw new RepositoryError("作成した楽曲の取得に失敗しました", null);
+        }
+        return created;
+      }
+
       const label = parseLabel(input.label);
       const generation = parseGeneration(input.label, input.generation);
       const releaseLinks = await resolveReleaseLinkTrackNumbers(
@@ -256,6 +295,49 @@ export function createSongRepository(
       const existing = await this.findById(id);
       if (!existing) {
         throw new RepositoryError("更新対象の楽曲が見つかりません", null);
+      }
+
+      // create と同様、対象グループが catch-all かを DB で権威的に判定する。
+      // catch-all 楽曲はリレーションを持たず v2 RPC を通せないため直接 update する（#264）。
+      const isCatchall = await this.isGroupCatchall(input.groupId);
+
+      if (isCatchall) {
+        // 通常楽曲→その他への変換は禁止する（#264）。orbit_tracks の直接 update は
+        // 既存の orbit_release_tracks / credits / formation を消さず、
+        // ensure_track_has_release_link トリガ（022）も orbit_tracks 更新では発火しないため、
+        // 放置するとリリースを持つ「その他」楽曲という不整合が生じる。リリース紐づけが
+        // 1件でもある楽曲は catch-all へ変更できないものとして弾く。
+        const { count, error: linkError } = await supabase
+          .from("orbit_release_tracks")
+          .select("id", { count: "exact", head: true })
+          .eq("track_id", id);
+        if (linkError) {
+          throw new RepositoryError("リリース紐づけの確認に失敗しました", linkError);
+        }
+        if ((count ?? 0) > 0) {
+          throw new RepositoryError(
+            "リリースが紐づく楽曲は「その他」グループに変更できません",
+            null
+          );
+        }
+
+        const { error: updateError } = await asWritableClient(supabase)
+          .from("orbit_tracks")
+          .update({
+            title: input.title.trim(),
+            group_id: input.groupId,
+            artist_name: input.artistName.trim() || null,
+            note: input.note.trim() || null,
+          })
+          .eq("id", id);
+        if (updateError) {
+          throw new RepositoryError("楽曲の更新に失敗しました", updateError);
+        }
+        const updated = await this.findById(id);
+        if (!updated) {
+          throw new RepositoryError("更新後の楽曲取得に失敗しました", null);
+        }
+        return updated;
       }
 
       const label = parseLabel(input.label);

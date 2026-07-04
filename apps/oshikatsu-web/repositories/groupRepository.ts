@@ -5,7 +5,7 @@ import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { RepositoryError } from "@/types/errors";
 
 const GROUP_SELECT = `
-  id, name_ja, name_en, color, max_generation, is_active, successor_id, sort_order,
+  id, name_ja, name_en, color, max_generation, is_active, successor_id, sort_order, is_catchall,
   orbit_group_penlight_colors(id, name, hex, sort_order)
 ` as const;
 
@@ -21,6 +21,7 @@ function mapToGroup(row: GroupRow): Group {
     isActive: row.is_active,
     successorId: row.successor_id,
     sortOrder: row.sort_order,
+    isCatchall: row.is_catchall,
     penlightColors: (row.orbit_group_penlight_colors ?? [])
       .map((color) => ({
         id: color.id,

@@ -74,6 +74,8 @@ export function getDefaultValues(): FormValues {
     },
     videos: createEmptyVideos(),
     costumes: [],
+    artistName: "",
+    note: "",
   };
 }
 
@@ -98,7 +100,42 @@ export function normalizeVideosForGroup(
   };
 }
 
-export function toSubmitValues(values: FormValues, groupNameJa: string): CreateSongInput {
+// isCatchallGroup: 選択中グループが「その他」受け皿グループのとき、フォーム上非表示の
+// 通常楽曲固有項目（ラベル・期・リリース紐づけ・クレジット・フォーメーション・
+// センター・MV・関連動画・衣装）は編集不可のため、古い/意図しない値を送らないよう
+// 空の状態に正規化して送信する（誰の歌か/メモのみそのまま送る）。
+export function toSubmitValues(
+  values: FormValues,
+  groupNameJa: string,
+  isCatchallGroup: boolean
+): CreateSongInput {
+  if (isCatchallGroup) {
+    return {
+      title: values.title,
+      groupId: values.groupId,
+      label: "",
+      generation: "",
+      releaseLinks: [],
+      lyricsPeople: "",
+      musicPeople: "",
+      arrangementPeople: "",
+      choreographyPeople: "",
+      formationRows: [],
+      centerMemberIds: [],
+      mv: {
+        url: "",
+        directorName: "",
+        location: "",
+        publishedOn: "",
+        memo: "",
+      },
+      videos: createEmptyVideos(),
+      costumes: [],
+      artistName: values.artistName,
+      note: values.note,
+    };
+  }
+
   return {
     title: values.title,
     groupId: values.groupId,
@@ -124,6 +161,8 @@ export function toSubmitValues(values: FormValues, groupNameJa: string): CreateS
       imagePath: costume.imagePath,
       note: costume.note,
     })),
+    artistName: values.artistName,
+    note: values.note,
   };
 }
 

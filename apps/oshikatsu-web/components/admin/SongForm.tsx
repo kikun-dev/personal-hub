@@ -16,6 +16,8 @@ import type {
 import { formatSongVideoTypeLabel } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { ensureStaffRolesAction } from "@/app/(authenticated)/admin/staffRolesAction";
 import { UnregisteredStaffModal } from "@/components/admin/UnregisteredStaffModal";
@@ -125,6 +127,10 @@ export function SongForm({
     [groups, values.groupId]
   );
   const selectedGroupNameJa = selectedGroup?.nameJa ?? "";
+  // 選択中グループが「その他」受け皿グループかどうか（#264）。
+  // catch-all のときは通常楽曲固有の項目（リリース・クレジット等）を非表示にし、
+  // 代わりに誰の歌か（artistName）・メモ（note）を表示する。
+  const isCatchallGroup = selectedGroup?.isCatchall ?? false;
   const dancePracticeVideoLabel = formatSongVideoTypeLabel(
     "dance_practice",
     selectedGroupNameJa
@@ -554,7 +560,9 @@ export function SongForm({
     setIsSubmitting(true);
     setErrors({});
     try {
-      const result = await onSubmit(toSubmitValues(values, selectedGroupNameJa));
+      const result = await onSubmit(
+        toSubmitValues(values, selectedGroupNameJa, isCatchallGroup)
+      );
       if (result.errors) {
         setErrors(toErrorMap(result.errors));
       }
@@ -565,14 +573,16 @@ export function SongForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const submitValues = toSubmitValues(values, selectedGroupNameJa);
+    const submitValues = toSubmitValues(values, selectedGroupNameJa, isCatchallGroup);
     // 本体バリデーションを先に通す（制作陣マスタだけが更新される状態を避ける）
-    const validationErrors = validateSong(submitValues);
+    const validationErrors = validateSong(submitValues, isCatchallGroup);
     if (validationErrors.length > 0) {
       setErrors(toErrorMap(validationErrors));
       return;
     }
-    const unregistered = collectUnregisteredStaff();
+    // catch-all（その他）楽曲は制作陣・MV監督・衣装欄自体を表示しないため、
+    // 未登録スタッフ確認をスキップする
+    const unregistered = isCatchallGroup ? [] : collectUnregisteredStaff();
     if (unregistered.length > 0) {
       setUnregisteredStaff(unregistered);
       return;
@@ -614,79 +624,103 @@ export function SongForm({
         groups={groups}
         generationOptions={generationOptions}
         errors={errors}
+        isCatchallGroup={isCatchallGroup}
         onTitleChange={(value) => update("title", value)}
         onGroupIdChange={updateGroupId}
         onLabelChange={updateLabel}
         onGenerationChange={(value) => update("generation", value)}
       />
 
-      <SongReleaseLinksSection
-        releaseLinks={values.releaseLinks}
-        releases={releases}
-        releaseMap={releaseMap}
-        releaseQueries={releaseQueries}
-        errors={errors}
-        addReleaseLink={addReleaseLink}
-        updateReleaseLink={updateReleaseLink}
-        removeReleaseLink={removeReleaseLink}
-        updateReleaseQuery={updateReleaseQuery}
-      />
+      {isCatchallGroup && (
+        <>
+          <Input
+            id="artistName"
+            label="誰の歌か（アーティスト名）"
+            value={values.artistName}
+            onChange={(e) => update("artistName", e.target.value)}
+            error={errors.artistName}
+          />
+          <Textarea
+            id="note"
+            label="メモ"
+            value={values.note}
+            onChange={(e) => update("note", e.target.value)}
+            error={errors.note}
+          />
+        </>
+      )}
 
-      <SongCreditsSection
-        values={values}
-        creditQueries={creditQueries}
-        setCreditQueries={setCreditQueries}
-        people={people}
-        errors={errors}
-        addCreditPerson={addCreditPerson}
-        removeCreditPerson={removeCreditPerson}
-      />
+      {!isCatchallGroup && (
+        <>
+          <SongReleaseLinksSection
+            releaseLinks={values.releaseLinks}
+            releases={releases}
+            releaseMap={releaseMap}
+            releaseQueries={releaseQueries}
+            errors={errors}
+            addReleaseLink={addReleaseLink}
+            updateReleaseLink={updateReleaseLink}
+            removeReleaseLink={removeReleaseLink}
+            updateReleaseQuery={updateReleaseQuery}
+          />
 
-      <SongFormationSection
-        formationRows={values.formationRows}
-        centerMemberIds={values.centerMemberIds}
-        groupId={values.groupId}
-        errors={errors}
-        participantOptionsCount={participantOptions.length}
-        visibleParticipantOptions={visibleParticipantOptions}
-        outOfGroupSelectedMemberNames={outOfGroupSelectedMemberNames}
-        participantNameById={participantNameById}
-        showAllParticipantMembers={showAllParticipantMembers}
-        setShowAllParticipantMembers={setShowAllParticipantMembers}
-        addFormationRow={addFormationRow}
-        removeFormationRow={removeFormationRow}
-        updateFormationRowCount={updateFormationRowCount}
-        toggleFormationMember={toggleFormationMember}
-        toggleCenter={toggleCenter}
-        handleFormationDragEnd={handleFormationDragEnd}
-      />
+          <SongCreditsSection
+            values={values}
+            creditQueries={creditQueries}
+            setCreditQueries={setCreditQueries}
+            people={people}
+            errors={errors}
+            addCreditPerson={addCreditPerson}
+            removeCreditPerson={removeCreditPerson}
+          />
 
-      <SongMvSection
-        mv={values.mv}
-        errors={errors}
-        isMvFormVisible={isMvFormVisible}
-        onShow={() => setIsMvFormVisible(true)}
-        onClear={clearMv}
-        onChangeField={updateMvField}
-      />
+          <SongFormationSection
+            formationRows={values.formationRows}
+            centerMemberIds={values.centerMemberIds}
+            groupId={values.groupId}
+            errors={errors}
+            participantOptionsCount={participantOptions.length}
+            visibleParticipantOptions={visibleParticipantOptions}
+            outOfGroupSelectedMemberNames={outOfGroupSelectedMemberNames}
+            participantNameById={participantNameById}
+            showAllParticipantMembers={showAllParticipantMembers}
+            setShowAllParticipantMembers={setShowAllParticipantMembers}
+            addFormationRow={addFormationRow}
+            removeFormationRow={removeFormationRow}
+            updateFormationRowCount={updateFormationRowCount}
+            toggleFormationMember={toggleFormationMember}
+            toggleCenter={toggleCenter}
+            handleFormationDragEnd={handleFormationDragEnd}
+          />
 
-      <SongVideosSection
-        videos={values.videos}
-        visibleVideos={visibleVideos}
-        dancePracticeVideoLabel={dancePracticeVideoLabel}
-        errors={errors}
-        setVideoFormVisible={setVideoFormVisible}
-        updateVideo={updateVideo}
-        clearVideo={clearVideo}
-      />
+          <SongMvSection
+            mv={values.mv}
+            errors={errors}
+            isMvFormVisible={isMvFormVisible}
+            onShow={() => setIsMvFormVisible(true)}
+            onClear={clearMv}
+            onChangeField={updateMvField}
+          />
 
-      <SongCostumesSection
-        costumes={values.costumes}
-        errors={errors}
-        addCostume={addCostume}
-        updateCostume={updateCostume}
-        removeCostume={removeCostume}
-      />
+          <SongVideosSection
+            videos={values.videos}
+            visibleVideos={visibleVideos}
+            dancePracticeVideoLabel={dancePracticeVideoLabel}
+            errors={errors}
+            setVideoFormVisible={setVideoFormVisible}
+            updateVideo={updateVideo}
+            clearVideo={clearVideo}
+          />
+
+          <SongCostumesSection
+            costumes={values.costumes}
+            errors={errors}
+            addCostume={addCostume}
+            updateCostume={updateCostume}
+            removeCostume={removeCostume}
+          />
+        </>
+      )}
 
       <datalist id="person-suggestions-mv_director">
         {peopleNamesForRole(people, "mv_director").map((personName) => (

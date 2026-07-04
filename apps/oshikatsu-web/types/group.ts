@@ -15,4 +15,6 @@ export type Group = {
   successorId: string | null;
   sortOrder: number;
   penlightColors: GroupPenlightColor[];
+  // 「その他」受け皿グループかどうか（#264）。既定のグループ read model はこれを除外する。
+  isCatchall: boolean;
 };

@@ -159,6 +159,9 @@ export type Song = {
   mv: SongMv | null;
   videos: SongVideo[];
   costumes: SongCostume[];
+  // その他楽曲（is_catchall グループ）専用の項目。通常楽曲では null。
+  artistName: string | null;
+  note: string | null;
 };
 
 export type SongListItem = {
@@ -169,6 +172,9 @@ export type SongListItem = {
   groupColor: string;
   label: SongLabel | null;
   generation: string | null;
+  // 所属グループが「その他」受け皿グループ（is_catchall）かどうか。
+  // 楽曲一覧・セトリログの「その他も含む」絞り込みに使う。
+  isCatchall: boolean;
   releaseCount: number;
   firstReleaseDate: string | null;
   // 一覧の並び替え用：初出（最古）リリースの識別子とトラック番号
@@ -235,6 +241,9 @@ export type CreateSongInput = {
   mv: CreateSongMvInput;
   videos: Record<SongVideoType, CreateSongVideoInput>;
   costumes: CreateSongCostumeInput[];
+  // その他楽曲（is_catchall グループ）専用の項目。通常楽曲では空文字（保存時にnull化）。
+  artistName: string;
+  note: string;
 };
 
 export type UpdateSongInput = CreateSongInput;

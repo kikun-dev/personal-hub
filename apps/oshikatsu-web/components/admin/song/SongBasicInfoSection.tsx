@@ -12,6 +12,8 @@ type SongBasicInfoSectionProps = {
   groups: Group[];
   generationOptions: string[];
   errors: Record<string, string>;
+  // 選択中グループが「その他」受け皿グループのとき、ラベル・期は非表示にする（#264）
+  isCatchallGroup: boolean;
   onTitleChange: (value: string) => void;
   onGroupIdChange: (groupId: string) => void;
   onLabelChange: (label: string) => void;
@@ -26,6 +28,7 @@ export function SongBasicInfoSection({
   groups,
   generationOptions,
   errors,
+  isCatchallGroup,
   onTitleChange,
   onGroupIdChange,
   onLabelChange,
@@ -63,29 +66,31 @@ export function SongBasicInfoSection({
         )}
       </div>
 
-      <div>
-        <label htmlFor="label" className="mb-1 block text-sm font-medium text-foreground/70">
-          ラベル
-        </label>
-        <select
-          id="label"
-          value={label}
-          onChange={(e) => onLabelChange(e.target.value)}
-          className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
-        >
-          <option value="">なし</option>
-          {SONG_LABELS.map((songLabel) => (
-            <option key={songLabel} value={songLabel}>
-              {SONG_LABEL_LABELS[songLabel]}
-            </option>
-          ))}
-        </select>
-        {errors.label && (
-          <p className="mt-1 text-xs text-red-500">{errors.label}</p>
-        )}
-      </div>
+      {!isCatchallGroup && (
+        <div>
+          <label htmlFor="label" className="mb-1 block text-sm font-medium text-foreground/70">
+            ラベル
+          </label>
+          <select
+            id="label"
+            value={label}
+            onChange={(e) => onLabelChange(e.target.value)}
+            className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+          >
+            <option value="">なし</option>
+            {SONG_LABELS.map((songLabel) => (
+              <option key={songLabel} value={songLabel}>
+                {SONG_LABEL_LABELS[songLabel]}
+              </option>
+            ))}
+          </select>
+          {errors.label && (
+            <p className="mt-1 text-xs text-red-500">{errors.label}</p>
+          )}
+        </div>
+      )}
 
-      {label === "generation" && (
+      {!isCatchallGroup && label === "generation" && (
         <div>
           <label htmlFor="generation" className="mb-1 block text-sm font-medium text-foreground/70">
             期

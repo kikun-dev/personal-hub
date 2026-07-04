@@ -90,7 +90,8 @@ const loadSongFormMasterData = createSharedReadLoader(
   async () =>
     withOrbitReadClient(async (supabase) => {
       const [groups, members, people, releases] = await Promise.all([
-        getGroups(createGroupRepository(supabase)),
+        // 楽曲フォームはグループ選択肢に「その他」を含める（#264）
+        getGroups(createGroupRepository(supabase), { includeCatchall: true }),
         listMemberOptions(createMemberRepository(supabase)),
         listPersonOptions(createPersonRepository(supabase)),
         listReleaseOptions(createReleaseRepository(supabase)),

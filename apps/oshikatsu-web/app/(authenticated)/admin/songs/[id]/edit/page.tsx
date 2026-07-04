@@ -93,6 +93,8 @@ export default async function EditSongPage({
       imagePath: costume.imagePath,
       note: costume.note ?? "",
     })),
+    artistName: song.artistName ?? "",
+    note: song.note ?? "",
   };
 
   async function handleSubmit(

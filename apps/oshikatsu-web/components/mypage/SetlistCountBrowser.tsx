@@ -53,6 +53,7 @@ export function SetlistCountBrowser({
   const urlLabel = toLabel(searchParams.get("label"));
   const urlView = toView(searchParams.get("view"));
   const urlTypesParam = searchParams.get("types") ?? "";
+  const urlIncludeOther = searchParams.get("includeOther") === "1";
 
   const [groupId, setGroupId] = useState(urlGroupId);
   const [label, setLabel] = useState<SongLabel | "">(urlLabel);
@@ -60,6 +61,8 @@ export function SetlistCountBrowser({
   const [optionalTypes, setOptionalTypes] = useState<OptionalAttendedType[]>(() =>
     parseOptionalTypes(urlTypesParam)
   );
+  // 「その他」楽曲を含めるかどうか（既定off、SongBrowser と同じ絞り込み、#264）
+  const [includeOther, setIncludeOther] = useState(urlIncludeOther);
   // タイトル検索は URL 非同期の一時状態（SongBrowser の query と同じ扱い）
   const [query, setQuery] = useState("");
 
@@ -78,21 +81,33 @@ export function SetlistCountBrowser({
   useEffect(() => {
     setOptionalTypes(parseOptionalTypes(urlTypesParam));
   }, [urlTypesParam]);
+  useEffect(() => {
+    setIncludeOther(urlIncludeOther);
+  }, [urlIncludeOther]);
 
   const attendedTypes = useMemo<AttendedType[]>(
     () => ["onsite", ...optionalTypes],
     [optionalTypes]
   );
 
+  const isGroupFiltered = groupId !== "";
+  // SongBrowser と同じ除外ロジック：全グループ表示かつトグルoffのときのみ
+  // 「その他」楽曲を母集合から除外する。特定グループ選択時（その他選択を含む）は
+  // getSetlistCount 内の filterSongsByGroup が絞り込むのでそのまま渡す。
+  const baseSongs = useMemo(
+    () => (includeOther || isGroupFiltered ? songs : songs.filter((song) => !song.isCatchall)),
+    [songs, includeOther, isGroupFiltered]
+  );
+
   const result = useMemo(
     () =>
-      getSetlistCount(encounters, songs, {
+      getSetlistCount(encounters, baseSongs, {
         attendedTypes,
         groupId,
         label,
         query,
       }),
-    [encounters, songs, attendedTypes, groupId, label, query]
+    [encounters, baseSongs, attendedTypes, groupId, label, query]
   );
 
   const hasAnyEncounter = encounters.length > 0;
@@ -118,6 +133,11 @@ export function SetlistCountBrowser({
       : [...optionalTypes, type];
     setOptionalTypes(next);
     replaceListFilterParams({ types: next.join(",") });
+  };
+
+  const handleIncludeOtherChange = (nextIncludeOther: boolean) => {
+    setIncludeOther(nextIncludeOther);
+    replaceListFilterParams({ includeOther: nextIncludeOther ? "1" : "" });
   };
 
   // encounters は「参戦記録 × セットリスト登録曲」の展開結果。
@@ -176,6 +196,14 @@ export function SetlistCountBrowser({
           aria-label="楽曲タイトルで検索"
           className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
         />
+        <label className="flex items-center gap-1.5 text-sm text-foreground/70">
+          <input
+            type="checkbox"
+            checked={includeOther}
+            onChange={(event) => handleIncludeOtherChange(event.target.checked)}
+          />
+          その他も含む
+        </label>
       </div>
 
       <div className="flex flex-wrap items-center gap-4">

@@ -65,37 +65,55 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
         </div>
       </div>
 
-      <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">収録リリース</h2>
-        <ul className="space-y-2 text-sm">
-          {song.releases.map((release) => (
-            <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-foreground/10 p-3">
-              <p className="font-medium text-foreground">
-                <Link href={`/releases/${release.releaseId}`} className="hover:underline">
-                  {release.releaseTitle}
-                </Link>
-                （{RELEASE_TYPE_LABELS[release.releaseType]}）
-              </p>
-              <p className="mt-1 text-xs text-foreground/60">
-                {release.trackNumber}曲目
-                {release.releaseDate && ` / ${formatDate(release.releaseDate)}`}
-              </p>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      {song.artistName && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">誰の歌か</h2>
+          <p className="text-sm text-foreground">{song.artistName}</p>
+        </Card>
+      )}
 
-      <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">楽曲情報</h2>
-        <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-          {Array.from(creditsByRole.entries()).map(([role, names]) => (
-            <Fragment key={role}>
-              <dt className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>
-              <dd className="text-foreground">{names.join(" / ")}</dd>
-            </Fragment>
-          ))}
-        </dl>
-      </Card>
+      {song.note && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">メモ</h2>
+          <p className="whitespace-pre-wrap text-sm text-foreground">{song.note}</p>
+        </Card>
+      )}
+
+      {song.releases.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録リリース</h2>
+          <ul className="space-y-2 text-sm">
+            {song.releases.map((release) => (
+              <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-foreground/10 p-3">
+                <p className="font-medium text-foreground">
+                  <Link href={`/releases/${release.releaseId}`} className="hover:underline">
+                    {release.releaseTitle}
+                  </Link>
+                  （{RELEASE_TYPE_LABELS[release.releaseType]}）
+                </p>
+                <p className="mt-1 text-xs text-foreground/60">
+                  {release.trackNumber}曲目
+                  {release.releaseDate && ` / ${formatDate(release.releaseDate)}`}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
+      {creditsByRole.size > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">楽曲情報</h2>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+            {Array.from(creditsByRole.entries()).map(([role, names]) => (
+              <Fragment key={role}>
+                <dt className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>
+                <dd className="text-foreground">{names.join(" / ")}</dd>
+              </Fragment>
+            ))}
+          </dl>
+        </Card>
+      )}
 
       <FormationDisplay rows={song.formationRows} />
 

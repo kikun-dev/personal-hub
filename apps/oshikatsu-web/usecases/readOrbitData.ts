@@ -191,7 +191,8 @@ const loadSongsPageData = createSharedReadLoader(
 
       const [songs, groups] = await Promise.all([
         listPublicSongs(createSongRepository(supabase), filters),
-        getGroups(createGroupRepository(supabase)),
+        // 楽曲一覧ページは「その他」も含めて表示する（トグル・絞り込みで扱うため）
+        getGroups(createGroupRepository(supabase), { includeCatchall: true }),
       ]);
 
       return {
