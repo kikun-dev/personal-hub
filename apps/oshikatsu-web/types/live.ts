@@ -195,20 +195,6 @@ export type CreateLivePerformanceAbsenceInput = {
   note: string;
 };
 
-export type CreateSetlistMemberInput = {
-  memberId: string;
-  isCenter: boolean;
-};
-
-export type CreateSetlistItemInput = {
-  itemType: SetlistItemType;
-  trackId: string;
-  songTitle: string;
-  note: string;
-  performanceStyle: PerformanceStyle | "";
-  members: CreateSetlistMemberInput[];
-};
-
 export type CreateLivePerformanceInput = {
   // 既存公演の編集時のみ設定する（048で公演IDを維持するupsertに使う）。新規公演は未設定。
   id?: string;
@@ -221,7 +207,6 @@ export type CreateLivePerformanceInput = {
   ticketInfo: string;
   seatInfo: string;
   absences: CreateLivePerformanceAbsenceInput[];
-  setlistItems: CreateSetlistItemInput[];
 };
 
 export type CreateLiveInput = {
@@ -234,3 +219,20 @@ export type CreateLiveInput = {
 };
 
 export type UpdateLiveInput = CreateLiveInput;
+
+// #261: セットリスト編集ビュー用の入力型。公演単位で保存する
+// replace_performance_setlist RPC（migration 052）にそのまま対応する。
+export type SetlistEditorMemberInput = { memberId: string; isCenter: boolean };
+export type SetlistEditorFormationRowInput = { memberIds: string[] };
+export type SetlistEditorItemInput = {
+  itemType: SetlistItemType;
+  trackId: string;
+  songTitle: string;
+  note: string;
+  section: SetlistSection;
+  performanceStyles: PerformanceStyle[];
+  costumeNote: string;
+  members: SetlistEditorMemberInput[];
+  formationRows: SetlistEditorFormationRowInput[];
+};
+export type ReplaceSetlistInput = { items: SetlistEditorItemInput[] };

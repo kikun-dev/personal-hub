@@ -9,6 +9,7 @@ import type {
   LiveOption,
   LiveType,
   PerformanceStyle,
+  ReplaceSetlistInput,
 } from "@/types/live";
 import { isSetlistItemType, isPerformanceStyle, isSetlistSection } from "@/types/live";
 import { RepositoryError } from "@/types/errors";
@@ -236,25 +237,41 @@ function toLivePayload(input: CreateLiveInput) {
           member_id: absence.memberId,
           note: absence.note.trim(),
         })),
-      setlist_items: performance.setlistItems.map((item) => {
-        const isSong = item.itemType === "song";
-        return {
-          item_type: item.itemType,
-          track_id: isSong ? item.trackId : "",
-          song_title: isSong ? item.songTitle.trim() : "",
-          note: item.note.trim(),
-          performance_style: isSong ? item.performanceStyle : "",
-          members: isSong
-            ? item.members
-                .filter((member) => member.memberId)
-                .map((member) => ({
-                  member_id: member.memberId,
-                  is_center: member.isCenter,
-                }))
-            : [],
-        };
-      }),
     })),
+  };
+}
+
+// #261: 公演単位のセトリ保存 RPC（migration 052）用のペイロード整形。
+function toSetlistPayload(input: ReplaceSetlistInput) {
+  return {
+    items: input.items.map((item) => {
+      const isSong = item.itemType === "song";
+      return {
+        item_type: item.itemType,
+        track_id: isSong ? item.trackId || null : null,
+        song_title: isSong ? item.songTitle.trim() || null : null,
+        note: item.note.trim() || null,
+        section: item.section,
+        // 披露タイプ・披露メンバー・フォーメーションは楽曲のみ
+        performance_styles: isSong ? item.performanceStyles : [],
+        // 衣装は楽曲・非楽曲とも保存する
+        costume_note: item.costumeNote.trim() || null,
+        members: isSong
+          ? item.members
+              .filter((m) => m.memberId)
+              .map((m) => ({ member_id: m.memberId, is_center: m.isCenter }))
+          : [],
+        // row_number は配列順で 1 起点に採番（CHECK row_number>0 を必ず満たす）
+        formation_rows: isSong
+          ? item.formationRows
+              .filter((row) => row.memberIds.length > 0)
+              .map((row, rowIndex) => ({
+                row_number: rowIndex + 1,
+                member_ids: row.memberIds,
+              }))
+          : [],
+      };
+    }),
   };
 }
 
@@ -408,6 +425,17 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
       const { error } = await writable.from("orbit_lives").delete().eq("id", id);
       if (error) {
         throw new RepositoryError("ライブの削除に失敗しました", error);
+      }
+    },
+
+    async replaceSetlist(performanceId, input) {
+      const writable = asWritableClient(supabase);
+      const { error } = await writable.rpc("replace_performance_setlist", {
+        p_performance_id: performanceId,
+        p_payload: toSetlistPayload(input),
+      });
+      if (error) {
+        throw new RepositoryError("セットリストの保存に失敗しました", error);
       }
     },
   };

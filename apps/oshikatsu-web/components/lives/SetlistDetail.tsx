@@ -169,6 +169,7 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
   const numbered = numberSetlistItems(performance.setlistItems);
   const groups = groupBySection(numbered);
   const showHeading = shouldShowSectionHeading(groups);
+  const editHref = `${APP_ROUTES.lives}/${live.id}/performances/${performance.id}/setlist/edit`;
 
   return (
     <div className="space-y-6">
@@ -180,7 +181,17 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         >
           ← {live.name}
         </PendingLink>
-        <h1 className="text-lg font-bold text-foreground">セットリスト</h1>
+        <div className="flex items-center justify-between gap-2">
+          <h1 className="text-lg font-bold text-foreground">セットリスト</h1>
+          {isAdmin && (
+            <PendingLink
+              href={editHref}
+              className="text-sm text-blue-500 hover:underline"
+            >
+              編集
+            </PendingLink>
+          )}
+        </div>
         <p className="text-sm text-foreground/70">
           {formatScheduleLabel(live.liveType, performance)}
           {performance.venueName ? ` ${performance.venueName}` : ""}
@@ -191,9 +202,12 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <div className="rounded-lg border border-foreground/10 p-6 text-center text-sm text-foreground/60">
           <p>この公演のセットリストはまだ登録されていません。</p>
           {isAdmin && (
-            <p className="mt-1 text-xs text-foreground/40">
-              （セットリスト編集ページは準備中です）
-            </p>
+            <PendingLink
+              href={editHref}
+              className="mt-1 inline-block text-xs text-blue-500 hover:underline"
+            >
+              セットリストを編集
+            </PendingLink>
           )}
         </div>
       ) : (

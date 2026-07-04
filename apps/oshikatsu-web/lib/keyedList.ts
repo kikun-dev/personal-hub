@@ -2,9 +2,9 @@
  * `_key`（または独自のキーフィールド）で一意識別される配列アイテムに対する
  * 追加・更新・削除の共通ヘルパー。
  *
- * MemberForm / LiveForm / SongForm / ReleaseForm では、フォーム内の繰り返し項目
- * （所属グループ、SNS、公演、休演、セットリスト項目、リリースリンク、フォーメーション列、
- * 衣装、特典映像、収録曲リンクなど）を `_key` 付きの配列として管理しており、
+ * MemberForm / LiveForm / SongForm / ReleaseForm / SetlistEditor では、フォーム内の
+ * 繰り返し項目（所属グループ、SNS、公演、休演、セットリスト項目、リリースリンク、
+ * フォーメーション列、衣装、特典映像、収録曲リンクなど）を `_key` 付きの配列として管理しており、
  * 「追加＝末尾に push」「更新＝該当キーの要素だけ差し替え」「削除＝該当キーを filter で除外」
  * という同型の処理が各フォームで繰り返されている。
  *
@@ -12,7 +12,7 @@
  * （例: MemberForm/SongForm/ReleaseForm は `_key: string`（crypto.randomUUID）、
  * LiveForm は `key: number`（インクリメンタルカウンタ）を使う）ため、
  * ここでは特定のフィールド名を前提にせず `keyOf` セレクタで明示的に指定する形にしている。
- * これによりネストした配列（例: LiveForm の performances[].setlistItems[]）にも
+ * これによりネストした配列（例: SetlistEditor の items[].formationRows[]）にも
  * 同じヘルパーをそのまま適用できる。
  *
  * React state（setValues 等）は呼び出し側が持ち、ここでは配列の変換のみを担う
