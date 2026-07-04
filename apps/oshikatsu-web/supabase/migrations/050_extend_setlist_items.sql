@@ -141,10 +141,13 @@ CREATE POLICY "orbit_setlist_item_formation_members_delete" ON orbit_setlist_ite
 -- 048_preserve_performance_ids_in_upsert.sql の定義をベースに、
 -- setlist_items 部分にのみ以下を追加する（他は一切変更しない）:
 --   - section: NULLIF(...,'') を 'main' にフォールバック
---   - performance_styles: payload の配列を text[] に変換（無ければ空配列）
+--   - performance_styles: 新 payload の配列を text[] に変換。
+--     配列キーが無い旧 payload では単一値 performance_style を
+--     1要素配列に変換（どちらも無ければ空配列）
 --   - costume_note: NULLIF(...,'')
---   - 旧 performance_style 列: performance_styles の先頭要素
---     （無ければ NULL）を互換のため書き続ける
+--   - 旧 performance_style 列: 新配列の先頭要素、無ければ旧 payload の
+--     単一値を互換のため書き続ける（050 適用〜新アプリデプロイの間、
+--     旧アプリの編集で披露タイプが失われないようにする）
 --   - フォーメーション: v_item->'formation_rows'
 --     （[{row_number, member_ids: [uuid,...]}, ...] 形式）から
 --     orbit_setlist_item_formation_rows / _members へ INSERT する。
@@ -322,13 +325,25 @@ BEGIN
         NULLIF(v_item->>'track_id', '')::uuid,
         NULLIF(v_item->>'song_title', ''),
         NULLIF(v_item->>'note', ''),
-        -- 互換: 旧 performance_style 列には performance_styles の先頭要素を書く
-        -- （新コードは読まない。無ければ NULL）
-        NULLIF(v_item->'performance_styles'->>0, ''),
-        COALESCE(NULLIF(v_item->>'section', ''), 'main'),
-        ARRAY(
-          SELECT jsonb_array_elements_text(COALESCE(v_item->'performance_styles', '[]'::jsonb))
+        -- 互換: 旧 performance_style 列には新配列の先頭要素、無ければ
+        -- 旧 payload の performance_style（単一値）を書く。
+        -- 050 適用〜新アプリデプロイの間、旧アプリの編集で披露タイプが
+        -- 失われないようにするため（PR レビュー指摘）。
+        COALESCE(
+          NULLIF(v_item->'performance_styles'->>0, ''),
+          NULLIF(v_item->>'performance_style', '')
         ),
+        COALESCE(NULLIF(v_item->>'section', ''), 'main'),
+        -- 新 performance_styles 列: 新 payload（配列）を優先し、
+        -- 旧 payload（単一値）しか無ければ1要素配列に変換する
+        CASE
+          WHEN v_item ? 'performance_styles' THEN ARRAY(
+            SELECT jsonb_array_elements_text(COALESCE(v_item->'performance_styles', '[]'::jsonb))
+          )
+          WHEN NULLIF(v_item->>'performance_style', '') IS NOT NULL
+            THEN ARRAY[NULLIF(v_item->>'performance_style', '')]
+          ELSE ARRAY[]::text[]
+        END,
         NULLIF(v_item->>'costume_note', '')
       )
       RETURNING id INTO v_item_id;
