@@ -127,6 +127,17 @@ export type CalendarVideoItem = {
   date: string;
 };
 
+// 楽曲詳細ページの「総披露回数」用（Issue #281）。全ユーザー共通の客観集計であり、
+// orbit_setlist_items（item_type='song' かつ track_id が対象楽曲）を
+// orbit_live_performances → orbit_lives と辿った1披露=1件の生データ。
+// 同一公演内で複数回披露していればその回数分このリストに複数件並ぶ。
+export type SongPerformanceOccurrence = {
+  performanceId: string;
+  performanceDate: string | null;
+  liveId: string;
+  liveName: string;
+};
+
 export type SongVideo = {
   type: SongVideoType;
   url: string;

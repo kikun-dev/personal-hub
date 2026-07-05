@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { TextLink, TEXT_LINK_CLASS } from "@/components/ui/TextLink";
-import { AttendedTypeBadge } from "@/components/lives/AttendedTypeBadge";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
 import {
@@ -14,8 +13,7 @@ import {
   formatSongVideoTypeLabel,
 } from "@/types/song";
 import { APP_ROUTES } from "@/lib/routes";
-import { ATTENDED_TYPE_LABELS } from "@/types/attendance";
-import type { SongEncounterSummary } from "@/usecases/getSongEncounterSummary";
+import type { SongPerformanceSummary } from "@/usecases/getSongPerformanceSummary";
 
 const CREDIT_LABELS: Record<string, string> = {
   lyrics: "作詞",
@@ -26,11 +24,11 @@ const CREDIT_LABELS: Record<string, string> = {
 
 type SongDetailProps = {
   song: Song;
-  // 自分の遭遇記録（Issue #249、ADR 0009: ユーザー別データはページ側で合成して渡す）
-  encounterSummary: SongEncounterSummary;
+  // 総披露回数（Issue #281）。全ユーザー共通の客観集計のため shared cache 経由で渡される
+  performanceSummary: SongPerformanceSummary;
 };
 
-export function SongDetail({ song, encounterSummary }: SongDetailProps) {
+export function SongDetail({ song, performanceSummary }: SongDetailProps) {
   const labelText = formatSongLabel(song.label, song.generation, song.groupNameJa);
   const releaseLabelText = song.representativeReleaseType
     ? formatReleaseTypeLabel(song.representativeReleaseType, song.representativeNumbering)
@@ -209,7 +207,7 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground/70">あなたの遭遇記録</h2>
+          <h2 className="text-sm font-medium text-foreground/70">総披露回数</h2>
           <TextLink
             href={APP_ROUTES.mypageSetlist}
             feedback="global"
@@ -218,37 +216,23 @@ export function SongDetail({ song, encounterSummary }: SongDetailProps) {
             セトリログを見る
           </TextLink>
         </div>
-        {encounterSummary.count === 0 ? (
-          <p className="text-sm text-foreground/60">まだ聴いたことがありません</p>
+        {performanceSummary.totalCount === 0 ? (
+          <p className="text-sm text-foreground/60">まだ披露記録がありません</p>
         ) : (
           <div className="space-y-3">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-sm font-semibold text-foreground">
-                合計{encounterSummary.count}回
-              </span>
-              {encounterSummary.countsByType
-                .filter((item) => item.count > 0)
-                .map((item) => (
-                  <span key={item.attendedType} className="text-xs text-foreground/50">
-                    {ATTENDED_TYPE_LABELS[item.attendedType]}{item.count}回
-                  </span>
-                ))}
-            </div>
+            <span className="text-sm font-semibold text-foreground">
+              合計{performanceSummary.totalCount}回披露
+            </span>
             <ul className="space-y-2 text-sm">
-              {encounterSummary.encounters.map((encounter, index) => (
+              {performanceSummary.byLive.map((live) => (
                 <li
-                  key={`${encounter.performanceId}-${index}`}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border border-foreground/10 p-3"
+                  key={live.liveId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-foreground/10 p-3"
                 >
-                  <span className="text-xs text-foreground/50">
-                    {encounter.performanceDate
-                      ? formatDate(encounter.performanceDate)
-                      : "日付未定"}
-                  </span>
-                  <Link href={`/lives/${encounter.liveId}`} className="text-foreground hover:underline">
-                    {encounter.liveName}
+                  <Link href={`/lives/${live.liveId}`} className="text-foreground hover:underline">
+                    {live.liveName}
                   </Link>
-                  <AttendedTypeBadge attendedType={encounter.attendedType} />
+                  <span className="text-xs text-foreground/50">{live.count}回披露</span>
                 </li>
               ))}
             </ul>

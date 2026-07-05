@@ -1,5 +1,10 @@
-import type { TypedSupabaseClient } from "@personal-hub/supabase";
-import type { Song, SongOption, CalendarVideoItem } from "@/types/song";
+import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
+import type {
+  Song,
+  SongOption,
+  CalendarVideoItem,
+  SongPerformanceOccurrence,
+} from "@/types/song";
 import { isSongVideoType } from "@/types/song";
 import type { SongRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
@@ -37,6 +42,36 @@ const VIDEO_CALENDAR_SELECT = `
   published_on,
   orbit_tracks(id, title, orbit_groups(name_ja))
 ` as const;
+
+// 総披露回数（#281）用。orbit_setlist_items（item_type='song' かつ track_id 一致）を
+// 起点に、performance_id → orbit_live_performances → live_id → orbit_lives と辿る。
+// performance_id / live_id は NOT NULL FK のため埋め込みは非null単一オブジェクトになる
+// （attendanceRepository の MY_ATTENDANCE_SELECT と同様）。
+const SONG_PERFORMANCE_SELECT = `
+  orbit_live_performances(
+    id,
+    performance_date,
+    live_id,
+    orbit_lives(name)
+  )
+` as const;
+
+type SongPerformanceRow = SelectRows<
+  "orbit_setlist_items",
+  typeof SONG_PERFORMANCE_SELECT
+>[number];
+
+function mapSongPerformanceOccurrence(
+  row: SongPerformanceRow
+): SongPerformanceOccurrence {
+  const performance = row.orbit_live_performances;
+  return {
+    performanceId: performance.id,
+    performanceDate: performance.performance_date,
+    liveId: performance.live_id,
+    liveName: performance.orbit_lives.name,
+  };
+}
 
 function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
@@ -484,6 +519,20 @@ export function createSongRepository(
         });
       }
       return items;
+    },
+
+    async findPerformanceOccurrences(songId) {
+      const { data, error } = await supabase
+        .from("orbit_setlist_items")
+        .select(SONG_PERFORMANCE_SELECT)
+        .eq("item_type", "song")
+        .eq("track_id", songId);
+
+      if (error) {
+        throw new RepositoryError("披露記録の取得に失敗しました", error);
+      }
+
+      return data.map(mapSongPerformanceOccurrence);
     },
   };
 }
