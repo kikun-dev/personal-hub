@@ -1,19 +1,28 @@
 import type { CreateSpotInput, SpotSourceType } from "@/types/spot";
-import { isSpotCategory, isSpotSourceType } from "@/types/spot";
+import { isSpotSourceType } from "@/types/spot";
 import type { ValidationError } from "@/types/errors";
-import { isValidHttpUrl, isValidDateString, isValidUuid } from "@/lib/validation";
+import { isValidHttpUrl, isValidUuid } from "@/lib/validation";
 
 // 出典FKフィールド一覧。source_type に対応しないFKが非空のまま送られても
 // DB側（055）は全FK列がNULL許容の並列カラムのため弾けないので、usecase側で
 // 整合性を担保する。
 const FK_FIELDS = ["trackId", "videoId", "eventId", "liveId"] as const;
 
-// 出典種別ごとに対応するFKフィールド（other は対応FKなし）。
+// 出典種別ごとに対応するFKフィールド（youtube 等の新種別や other は対応FKなし）。
+// Record<SpotSourceType, ...> なので SPOT_SOURCE_TYPES に追加した種別を書き漏らすと
+// 型エラーで検出される。
 const SOURCE_TYPE_FK_FIELD: Record<SpotSourceType, (typeof FK_FIELDS)[number] | null> = {
   mv: "trackId",
   video: "videoId",
   event: "eventId",
   live: "liveId",
+  youtube: null,
+  lemino: null,
+  tv: null,
+  nogi_video: null,
+  magazine: null,
+  photobook: null,
+  blog_sns: null,
   other: null,
 };
 
@@ -24,10 +33,6 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
     errors.push({ field: "name", message: "スポット名を入力してください" });
   } else if (input.name.length > 100) {
     errors.push({ field: "name", message: "スポット名は100文字以内で入力してください" });
-  }
-
-  if (!isSpotCategory(input.category)) {
-    errors.push({ field: "category", message: "カテゴリを選択してください" });
   }
 
   const latitude = input.latitude.trim();
@@ -69,6 +74,12 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
     });
   }
 
+  // スポット単一カテゴリを廃止したため、「何の場所か」を表す出来事を
+  // 1件以上必須にする（#286）。
+  if (input.appearances.length === 0) {
+    errors.push({ field: "appearances", message: "出来事を1件以上登録してください" });
+  }
+
   input.appearances.forEach((appearance, index) => {
     if (!isSpotSourceType(appearance.sourceType)) {
       errors.push({
@@ -88,6 +99,19 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
           message: "出典種別と出典の指定が一致していません",
         });
       }
+    }
+
+    const groupId = appearance.groupId.trim();
+    if (!groupId) {
+      errors.push({
+        field: `appearances[${index}].groupId`,
+        message: "グループを選択してください",
+      });
+    } else if (!isValidUuid(groupId)) {
+      errors.push({
+        field: `appearances[${index}].groupId`,
+        message: "グループの指定が正しくありません",
+      });
     }
 
     FK_FIELDS.forEach((field) => {
@@ -114,10 +138,10 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
       });
     }
 
-    if (appearance.seriesName.length > 100) {
+    if (appearance.subtypeName.trim().length > 50) {
       errors.push({
-        field: `appearances[${index}].seriesName`,
-        message: "シリーズ名は100文字以内で入力してください",
+        field: `appearances[${index}].subtypeName`,
+        message: "サブ種別は50文字以内で入力してください",
       });
     }
 
@@ -125,14 +149,6 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
       errors.push({
         field: `appearances[${index}].note`,
         message: "メモは2000文字以内で入力してください",
-      });
-    }
-
-    const appearedOn = appearance.appearedOn.trim();
-    if (appearedOn && !isValidDateString(appearedOn)) {
-      errors.push({
-        field: `appearances[${index}].appearedOn`,
-        message: "訪問日はYYYY-MM-DD形式で入力してください",
       });
     }
 

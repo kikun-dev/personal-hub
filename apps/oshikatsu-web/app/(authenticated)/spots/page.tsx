@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@personal-hub/supabase/server";
 import { createSpotRepository } from "@/repositories/spotRepository";
 import { listSpots } from "@/usecases/listSpots";
-import { SPOT_CATEGORY_LABELS } from "@/types/spot";
+import { SPOT_SOURCE_TYPE_LABELS } from "@/types/spot";
 import { Button } from "@/components/ui/Button";
 import { TextLink } from "@/components/ui/TextLink";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
@@ -38,7 +38,7 @@ export default async function SpotsPage() {
               <tr className="border-b border-foreground/10 text-left">
                 <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
                 <th className="pb-2 pr-4 font-medium text-foreground/70">
-                  カテゴリ
+                  種別
                 </th>
                 <th className="pb-2 pr-4 font-medium text-foreground/70">
                   都道府県
@@ -53,7 +53,11 @@ export default async function SpotsPage() {
                 <tr key={spot.id} className="border-b border-foreground/5">
                   <td className="py-2 pr-4 text-foreground">{spot.name}</td>
                   <td className="py-2 pr-4 text-foreground/80">
-                    {SPOT_CATEGORY_LABELS[spot.category]}
+                    {spot.sourceTypes.length > 0
+                      ? spot.sourceTypes
+                          .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
+                          .join("、")
+                      : "—"}
                   </td>
                   <td className="py-2 pr-4 text-foreground/80">
                     {spot.prefecture ?? "—"}

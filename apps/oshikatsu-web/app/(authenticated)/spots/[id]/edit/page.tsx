@@ -19,7 +19,6 @@ type EditSpotPageProps = {
 function toInitialValues(spot: Spot): UpdateSpotInput {
   return {
     name: spot.name,
-    category: spot.category,
     description: spot.description ?? "",
     latitude: String(spot.latitude),
     longitude: String(spot.longitude),
@@ -29,12 +28,12 @@ function toInitialValues(spot: Spot): UpdateSpotInput {
     googleMapsUrl: spot.googleMapsUrl ?? "",
     appearances: spot.appearances.map((appearance) => ({
       sourceType: appearance.sourceType,
+      groupId: appearance.groupId ?? "",
       trackId: appearance.trackId ?? "",
       videoId: appearance.videoId ?? "",
       eventId: appearance.eventId ?? "",
       liveId: appearance.liveId ?? "",
-      seriesName: appearance.seriesName ?? "",
-      appearedOn: appearance.appearedOn ?? "",
+      subtypeName: appearance.subtypeName ?? "",
       note: appearance.note ?? "",
       linkUrl: appearance.linkUrl ?? "",
       memberIds: appearance.members.map((member) => member.id),

@@ -6,8 +6,6 @@ import type { EventOption } from "@/types/event";
 import { isSongVideoType, SONG_VIDEO_TYPE_LABELS } from "@/types/song";
 import type { SongVideoOption } from "@/types/song";
 import {
-  SPOT_CATEGORIES,
-  SPOT_CATEGORY_LABELS,
   SPOT_SOURCE_TYPES,
   SPOT_SOURCE_TYPE_LABELS,
   type CreateSpotAppearanceInput,
@@ -60,12 +58,12 @@ const inputClass =
 function getDefaultAppearance(): CreateSpotAppearanceInput {
   return {
     sourceType: "",
+    groupId: "",
     trackId: "",
     videoId: "",
     eventId: "",
     liveId: "",
-    seriesName: "",
-    appearedOn: "",
+    subtypeName: "",
     note: "",
     linkUrl: "",
     memberIds: [],
@@ -75,7 +73,6 @@ function getDefaultAppearance(): CreateSpotAppearanceInput {
 function getDefaultValues(): FormValues {
   return {
     name: "",
-    category: "",
     description: "",
     latitude: "",
     longitude: "",
@@ -83,7 +80,8 @@ function getDefaultValues(): FormValues {
     prefecture: "",
     googlePlaceId: "",
     googleMapsUrl: "",
-    appearances: [],
+    // 出来事1件以上必須（#286）のため、create の初期値に空行を1件入れておく。
+    appearances: [withGeneratedKey(getDefaultAppearance())],
   };
 }
 
@@ -101,12 +99,12 @@ function toSubmitValues(values: FormValues): CreateSpotInput {
     ...values,
     appearances: values.appearances.map((appearance) => ({
       sourceType: appearance.sourceType,
+      groupId: appearance.groupId,
       trackId: appearance.trackId,
       videoId: appearance.videoId,
       eventId: appearance.eventId,
       liveId: appearance.liveId,
-      seriesName: appearance.seriesName,
-      appearedOn: appearance.appearedOn,
+      subtypeName: appearance.subtypeName,
       note: appearance.note,
       linkUrl: appearance.linkUrl,
       memberIds: appearance.memberIds,
@@ -210,7 +208,8 @@ export function SpotForm({
   };
 
   // 出典種別を変更したら4つのFK値をすべて空にリセットする
-  // （validateSpot の「出典種別と出典の指定の食い違い」チェックに引っかからないように）
+  // （validateSpot の「出典種別と出典の指定の食い違い」チェックに引っかからないように）。
+  // サブ種別マスタは種別ごとに分かれているため、subtypeName も一緒にリセットする。
   const handleSourceTypeChange = (key: string, sourceType: string) => {
     updateAppearance(key, {
       sourceType,
@@ -218,6 +217,7 @@ export function SpotForm({
       videoId: "",
       eventId: "",
       liveId: "",
+      subtypeName: "",
     });
   };
 
@@ -268,19 +268,6 @@ export function SpotForm({
         value={values.name}
         onChange={(e) => update("name", e.target.value)}
         error={errors.name}
-      />
-
-      <Select
-        id="category"
-        label="カテゴリ*"
-        placeholder="選択してください"
-        options={SPOT_CATEGORIES.map((category) => ({
-          value: category,
-          label: SPOT_CATEGORY_LABELS[category],
-        }))}
-        value={values.category}
-        onChange={(e) => update("category", e.target.value)}
-        error={errors.category}
       />
 
       <div>
@@ -357,12 +344,15 @@ export function SpotForm({
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <label className="block text-sm font-medium text-foreground/70">
-            出来事
+            出来事*
           </label>
           <Button type="button" variant="secondary" onClick={addAppearance}>
             出来事を追加
           </Button>
         </div>
+        {errors.appearances && (
+          <p className="text-xs text-red-500">{errors.appearances}</p>
+        )}
 
         {values.appearances.map((appearance, index) => {
           const fieldError = (field: string) =>
@@ -385,6 +375,21 @@ export function SpotForm({
                   削除
                 </button>
               </div>
+
+              <Select
+                id={`appearance-${appearance._key}-groupId`}
+                label="グループ*"
+                placeholder="選択してください"
+                options={masters.groups.map((group) => ({
+                  value: group.id,
+                  label: group.nameJa,
+                }))}
+                value={appearance.groupId}
+                onChange={(e) =>
+                  updateAppearance(appearance._key, { groupId: e.target.value })
+                }
+                error={fieldError("groupId")}
+              />
 
               <Select
                 id={`appearance-${appearance._key}-sourceType`}
@@ -505,30 +510,38 @@ export function SpotForm({
                 </div>
               )}
 
-              <Input
-                id={`appearance-${appearance._key}-seriesName`}
-                label="シリーズ名"
-                value={appearance.seriesName}
-                onChange={(e) =>
-                  updateAppearance(appearance._key, {
-                    seriesName: e.target.value,
-                  })
-                }
-                error={fieldError("seriesName")}
-              />
-
-              <Input
-                id={`appearance-${appearance._key}-appearedOn`}
-                label="訪問日"
-                type="date"
-                value={appearance.appearedOn}
-                onChange={(e) =>
-                  updateAppearance(appearance._key, {
-                    appearedOn: e.target.value,
-                  })
-                }
-                error={fieldError("appearedOn")}
-              />
+              <div>
+                <label
+                  htmlFor={`appearance-${appearance._key}-subtypeName`}
+                  className="mb-1 block text-sm font-medium text-foreground/70"
+                >
+                  サブ種別
+                </label>
+                <input
+                  id={`appearance-${appearance._key}-subtypeName`}
+                  list={`appearance-${appearance._key}-subtypeName-options`}
+                  value={appearance.subtypeName}
+                  onChange={(e) =>
+                    updateAppearance(appearance._key, {
+                      subtypeName: e.target.value,
+                    })
+                  }
+                  placeholder="例: あそぶだけ（候補になければ新規入力可）"
+                  className={inputClass}
+                />
+                <datalist id={`appearance-${appearance._key}-subtypeName-options`}>
+                  {masters.subtypeOptions
+                    .filter((option) => option.sourceType === appearance.sourceType)
+                    .map((option) => (
+                      <option key={option.id} value={option.name} />
+                    ))}
+                </datalist>
+                {fieldError("subtypeName") && (
+                  <p className="mt-1 text-xs text-red-500">
+                    {fieldError("subtypeName")}
+                  </p>
+                )}
+              </div>
 
               <Input
                 id={`appearance-${appearance._key}-linkUrl`}

@@ -64,6 +64,7 @@ import type {
 import type {
   Spot,
   SpotListItem,
+  SpotSourceSubtype,
   CreateSpotInput,
   UpdateSpotInput,
 } from "./spot";
@@ -129,6 +130,8 @@ export type SpotRepository = {
   create(input: CreateSpotInput): Promise<Spot>;
   update(id: string, input: UpdateSpotInput): Promise<Spot>;
   delete(id: string): Promise<void>;
+  // 出来事のサブ種別マスタ一覧（フォームの選択候補用）
+  findSubtypeOptions(): Promise<SpotSourceSubtype[]>;
 };
 
 export type LiveCalendarPerformance = {

@@ -14,6 +14,7 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
+import { createSpotRepository } from "@/repositories/spotRepository";
 import { createVenueRepository } from "@/repositories/venueRepository";
 import { getEventTypes } from "@/usecases/getEventTypes";
 import { getGroups } from "@/usecases/getGroups";
@@ -188,21 +189,25 @@ export async function getLiveFormMasterData() {
 // 表示され続ける恐れがある。整備されるまでは都度取得にとどめる。
 export async function getSpotFormMasterData() {
   return withOrbitReadClient(async (supabase) => {
-    const [members, songOptions, liveOptions, eventOptions, videoOptions] =
+    const [groups, members, songOptions, liveOptions, eventOptions, videoOptions, subtypeOptions] =
       await Promise.all([
+        getGroups(createGroupRepository(supabase)),
         listMemberOptions(createMemberRepository(supabase)),
         listSongOptions(createSongRepository(supabase)),
         createLiveRepository(supabase).findOptions(),
         createEventRepository(supabase).findOptions(),
         createSongRepository(supabase).findVideoOptions(),
+        createSpotRepository(supabase).findSubtypeOptions(),
       ]);
 
     return {
+      groups,
       members,
       songOptions,
       liveOptions,
       eventOptions,
       videoOptions,
+      subtypeOptions,
     };
   });
 }

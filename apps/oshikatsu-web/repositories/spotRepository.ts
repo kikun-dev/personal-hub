@@ -7,17 +7,17 @@ import type {
   Spot,
   SpotAppearance,
   SpotListItem,
+  SpotSourceSubtype,
 } from "@/types/spot";
 import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
 
 const SPOT_LIST_SELECT =
-  "id, name, category, latitude, longitude, prefecture" as const;
+  "id, name, latitude, longitude, prefecture, orbit_spot_appearances(source_type)" as const;
 
 const SPOT_DETAIL_SELECT = `
   id,
   name,
-  category,
   description,
   latitude,
   longitude,
@@ -28,12 +28,14 @@ const SPOT_DETAIL_SELECT = `
   orbit_spot_appearances(
     id,
     source_type,
+    group_id,
+    orbit_groups(id, name_ja),
     track_id,
     video_id,
     event_id,
     live_id,
-    series_name,
-    appeared_on,
+    subtype_id,
+    orbit_spot_source_subtypes(id, name),
     note,
     link_url,
     created_at,
@@ -41,9 +43,15 @@ const SPOT_DETAIL_SELECT = `
   )
 ` as const;
 
+const SPOT_SUBTYPE_OPTION_SELECT = "id, source_type, name" as const;
+
 type SpotListRow = SelectRows<"orbit_spots", typeof SPOT_LIST_SELECT>[number];
 type SpotRow = SelectRows<"orbit_spots", typeof SPOT_DETAIL_SELECT>[number];
 type SpotAppearanceRow = SpotRow["orbit_spot_appearances"][number];
+type SpotSubtypeOptionRow = SelectRows<
+  "orbit_spot_source_subtypes",
+  typeof SPOT_SUBTYPE_OPTION_SELECT
+>[number];
 
 function mapSpotAppearance(row: SpotAppearanceRow): SpotAppearance {
   return {
@@ -52,12 +60,17 @@ function mapSpotAppearance(row: SpotAppearanceRow): SpotAppearance {
     // ドメイン型 SpotSourceType は null を持たないため、liveRepository の
     // live_type と同じ方針で無条件 cast する。
     sourceType: row.source_type as SpotAppearance["sourceType"],
+    // group_id / subtype_id は DB 上 NULL 許容の FK（アプリ層では必須）。
+    // 対応する join も nullable なため liveRepository の venue join と同じ
+    // 方針で optional chaining + ?? null を使う。
+    groupId: row.group_id,
+    groupName: row.orbit_groups?.name_ja ?? null,
     trackId: row.track_id,
     videoId: row.video_id,
     eventId: row.event_id,
     liveId: row.live_id,
-    seriesName: row.series_name,
-    appearedOn: row.appeared_on,
+    subtypeId: row.subtype_id,
+    subtypeName: row.orbit_spot_source_subtypes?.name ?? null,
     note: row.note,
     linkUrl: row.link_url,
     members: row.orbit_spot_appearance_members.map((m) => ({
@@ -71,8 +84,6 @@ function mapSpot(row: SpotRow): Spot {
   return {
     id: row.id,
     name: row.name,
-    // category も source_type と同様、CHECK 制約で許容値を保証している string 列。
-    category: row.category as Spot["category"],
     description: row.description,
     latitude: row.latitude,
     longitude: row.longitude,
@@ -88,20 +99,33 @@ function mapSpot(row: SpotRow): Spot {
 }
 
 function mapSpotListItem(row: SpotListRow): SpotListItem {
+  // スポット単一カテゴリは廃止したため、紐づく出来事の source_type を
+  // 重複排除して「何の場所か」の集合として返す（#286）。
+  const sourceTypes = Array.from(
+    new Set(row.orbit_spot_appearances.map((appearance) => appearance.source_type))
+  ) as SpotListItem["sourceTypes"];
+
   return {
     id: row.id,
     name: row.name,
-    category: row.category as SpotListItem["category"],
+    sourceTypes,
     latitude: row.latitude,
     longitude: row.longitude,
     prefecture: row.prefecture,
   };
 }
 
+function mapSubtypeOption(row: SpotSubtypeOptionRow): SpotSourceSubtype {
+  return {
+    id: row.id,
+    sourceType: row.source_type,
+    name: row.name,
+  };
+}
+
 function toSpotRow(input: CreateSpotInput) {
   return {
     name: input.name.trim(),
-    category: input.category,
     description: input.description.trim() || null,
     latitude: Number(input.latitude),
     longitude: Number(input.longitude),
@@ -114,7 +138,8 @@ function toSpotRow(input: CreateSpotInput) {
 
 type AppearanceFkField = "trackId" | "videoId" | "eventId" | "liveId";
 
-// 出典種別ごとに対応するFKフィールド（other や未知の値は対応FKなし＝undefined）。
+// 出典種別ごとに対応するFKフィールド（youtube 等の新種別や other、未知の値は
+// 対応FKなし＝undefined）。
 const APPEARANCE_FK_FIELD_BY_SOURCE_TYPE: Record<string, AppearanceFkField | undefined> = {
   mv: "trackId",
   video: "videoId",
@@ -122,22 +147,84 @@ const APPEARANCE_FK_FIELD_BY_SOURCE_TYPE: Record<string, AppearanceFkField | und
   live: "liveId",
 };
 
-function toAppearanceRow(spotId: string, input: CreateSpotAppearanceInput) {
+// source_type × trim済みサブ種別名 のキー。orbit_spot_source_subtypes の
+// unique index (source_type, name) に対応する find-or-create のキーとして使う。
+function subtypeKey(sourceType: string, name: string): string {
+  return `${sourceType}:${name}`;
+}
+
+function toAppearanceRow(
+  spotId: string,
+  input: CreateSpotAppearanceInput,
+  subtypeIdByKey: Map<string, string>
+) {
   // source_type に対応するFKだけを行に載せ、他のFKは常に null にする
   // （validateSpot が防ぐが、DB整合の多層防御）。
   const fkField = APPEARANCE_FK_FIELD_BY_SOURCE_TYPE[input.sourceType];
+  const subtypeName = input.subtypeName.trim();
   return {
     spot_id: spotId,
     source_type: input.sourceType,
+    group_id: input.groupId || null,
     track_id: fkField === "trackId" ? input.trackId || null : null,
     video_id: fkField === "videoId" ? input.videoId || null : null,
     event_id: fkField === "eventId" ? input.eventId || null : null,
     live_id: fkField === "liveId" ? input.liveId || null : null,
-    series_name: input.seriesName.trim() || null,
-    appeared_on: input.appearedOn.trim() || null,
+    subtype_id: subtypeName
+      ? (subtypeIdByKey.get(subtypeKey(input.sourceType, subtypeName)) ?? null)
+      : null,
     note: input.note.trim() || null,
     link_url: input.linkUrl.trim() || null,
   };
+}
+
+type ResolveSubtypeIdsResult = {
+  idByKey: Map<string, string>;
+  error: RepositoryError | null;
+};
+
+// appearances のうち subtypeName が非空のものについて、source_type × name の
+// find-or-create を行い、キー（subtypeKey）→id のマップを返す。
+// upsert(ignoreDuplicates: false) により、新規作成分・既存流用分の両方の id が
+// select で返ってくる。
+async function resolveSubtypeIds(
+  writable: TypedSupabaseClient,
+  appearances: CreateSpotAppearanceInput[]
+): Promise<ResolveSubtypeIdsResult> {
+  const rowsToUpsert = new Map<string, { source_type: string; name: string }>();
+  for (const appearance of appearances) {
+    const name = appearance.subtypeName.trim();
+    if (!name) continue;
+    const key = subtypeKey(appearance.sourceType, name);
+    if (!rowsToUpsert.has(key)) {
+      rowsToUpsert.set(key, { source_type: appearance.sourceType, name });
+    }
+  }
+
+  if (rowsToUpsert.size === 0) {
+    return { idByKey: new Map(), error: null };
+  }
+
+  const { data, error } = await writable
+    .from("orbit_spot_source_subtypes")
+    .upsert(Array.from(rowsToUpsert.values()), {
+      onConflict: "source_type,name",
+      ignoreDuplicates: false,
+    })
+    .select("id, source_type, name");
+
+  if (error) {
+    return {
+      idByKey: new Map(),
+      error: new RepositoryError("出来事のサブ種別の登録に失敗しました", error),
+    };
+  }
+
+  const idByKey = new Map<string, string>();
+  for (const row of data) {
+    idByKey.set(subtypeKey(row.source_type, row.name), row.id);
+  }
+  return { idByKey, error: null };
 }
 
 type InsertAppearancesResult = {
@@ -159,9 +246,19 @@ async function insertAppearances(
     return { ids: [], error: null };
   }
 
+  const { idByKey: subtypeIdByKey, error: subtypeError } = await resolveSubtypeIds(
+    writable,
+    appearances
+  );
+  if (subtypeError) {
+    return { ids: [], error: subtypeError };
+  }
+
   const { data: appearanceRows, error: appearanceError } = await writable
     .from("orbit_spot_appearances")
-    .insert(appearances.map((appearance) => toAppearanceRow(spotId, appearance)))
+    .insert(
+      appearances.map((appearance) => toAppearanceRow(spotId, appearance, subtypeIdByKey))
+    )
     .select("id");
 
   if (appearanceError) {
@@ -339,6 +436,20 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
       if (error) {
         throw new RepositoryError("スポットの削除に失敗しました", error);
       }
+    },
+
+    async findSubtypeOptions() {
+      const { data, error } = await supabase
+        .from("orbit_spot_source_subtypes")
+        .select(SPOT_SUBTYPE_OPTION_SELECT)
+        .order("source_type")
+        .order("name");
+
+      if (error) {
+        throw new RepositoryError("サブ種別一覧の取得に失敗しました", error);
+      }
+
+      return data.map(mapSubtypeOption);
     },
   };
 }
