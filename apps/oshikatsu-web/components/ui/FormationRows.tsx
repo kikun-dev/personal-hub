@@ -28,11 +28,11 @@ const SIZE_CLASSES: Record<
 // フォーメーション描画（#282）。センター判定・列番号などのドメイン差異は呼び出し側で
 // 「1メンバー = { 表示名, isCenter }」に正規化してから渡してもらう。
 //
-// 狭幅端末での折り返し崩れ対策として、各段は折り返さず中央寄せの横並び（案D）にし、
-// あふれる段だけ外側のスクロールコンテナ（overflow-x-auto）で横スクロールさせる。
-// 各段は min-w-max で自身の内容幅を最低幅として持つため、狭い段はコンテナ幅いっぱいに
-// 広がって中央寄せのまま収まり、広い段だけがその幅分だけコンテナからはみ出して
-// 横スクロール可能になる。
+// 狭幅端末での折り返し崩れ対策として、各段は折り返さず中央寄せの横並び（案D）にする。
+// 全段を「最も広い段の幅」に対して中央寄せするため、内側を w-max（=最大段の内容幅）の
+// ラッパーにまとめ、各段はそのラッパー幅いっぱいで justify-center する。これにより
+// 人数差があっても全段の中央線が揃う（#282 フォローアップ）。ラッパーは mx-auto で、収まるときは
+// 幅全体に対して中央寄せ、あふれるときは外側の overflow-x-auto で横スクロールになる。
 export function FormationRows({ rows, size = "sm" }: FormationRowsProps) {
   if (rows.length === 0) {
     return null;
@@ -44,26 +44,28 @@ export function FormationRows({ rows, size = "sm" }: FormationRowsProps) {
 
   return (
     <div className="relative">
-      <div className={`overflow-x-auto ${rowGap}`}>
-        {orderedRows.map((row) => (
-          <div
-            key={row.rowNumber}
-            className={`flex min-w-max justify-center whitespace-nowrap ${textClass} text-foreground`}
-          >
-            {row.members.map((member, index) => (
-              <span key={`${row.rowNumber}-${member.memberId}`} className="shrink-0">
-                {index > 0 && " ・ "}
-                {member.isCenter ? (
-                  <span className="font-bold text-amber-600">
-                    ★{member.memberNameJa}
-                  </span>
-                ) : (
-                  member.memberNameJa
-                )}
-              </span>
-            ))}
-          </div>
-        ))}
+      <div className="overflow-x-auto">
+        <div className={`mx-auto w-max ${rowGap}`}>
+          {orderedRows.map((row) => (
+            <div
+              key={row.rowNumber}
+              className={`flex justify-center whitespace-nowrap ${textClass} text-foreground`}
+            >
+              {row.members.map((member, index) => (
+                <span key={`${row.rowNumber}-${member.memberId}`} className="shrink-0">
+                  {index > 0 && " ・ "}
+                  {member.isCenter ? (
+                    <span className="font-bold text-amber-600">
+                      ★{member.memberNameJa}
+                    </span>
+                  ) : (
+                    member.memberNameJa
+                  )}
+                </span>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
       {/* 横スクロール可能なことを示す右端フェード。常時表示だが、段が中央寄せで
           収まっている（=スクロール不要な）場合は右端の余白にしか重ならないため
