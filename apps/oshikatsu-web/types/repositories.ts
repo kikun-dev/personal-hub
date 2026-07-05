@@ -60,6 +60,12 @@ import type {
   SongEncounter,
   UpsertAttendanceInput,
 } from "./attendance";
+import type {
+  Spot,
+  SpotListItem,
+  CreateSpotInput,
+  UpdateSpotInput,
+} from "./spot";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -111,6 +117,14 @@ export type VenueRepository = {
   findById(id: string): Promise<Venue | null>;
   create(input: CreateVenueInput): Promise<Venue>;
   update(id: string, input: UpdateVenueInput): Promise<Venue>;
+  delete(id: string): Promise<void>;
+};
+
+export type SpotRepository = {
+  findAll(): Promise<SpotListItem[]>;
+  findById(id: string): Promise<Spot | null>;
+  create(input: CreateSpotInput): Promise<Spot>;
+  update(id: string, input: UpdateSpotInput): Promise<Spot>;
   delete(id: string): Promise<void>;
 };
 

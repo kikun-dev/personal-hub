@@ -1066,6 +1066,203 @@ export type Database = {
           },
         ]
       }
+      orbit_spot_appearance_members: {
+        Row: {
+          appearance_id: string
+          created_at: string
+          id: string
+          member_id: string
+        }
+        Insert: {
+          appearance_id: string
+          created_at?: string
+          id?: string
+          member_id: string
+        }
+        Update: {
+          appearance_id?: string
+          created_at?: string
+          id?: string
+          member_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_spot_appearance_members_appearance_id_fkey"
+            columns: ["appearance_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_spot_appearances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearance_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orbit_spot_appearances: {
+        Row: {
+          appeared_on: string | null
+          created_at: string
+          event_id: string | null
+          id: string
+          link_url: string | null
+          live_id: string | null
+          note: string | null
+          series_name: string | null
+          source_type: string
+          spot_id: string
+          track_id: string | null
+          video_id: string | null
+        }
+        Insert: {
+          appeared_on?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          link_url?: string | null
+          live_id?: string | null
+          note?: string | null
+          series_name?: string | null
+          source_type: string
+          spot_id: string
+          track_id?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          appeared_on?: string | null
+          created_at?: string
+          event_id?: string | null
+          id?: string
+          link_url?: string | null
+          live_id?: string | null
+          note?: string | null
+          series_name?: string | null
+          source_type?: string
+          spot_id?: string
+          track_id?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_spot_appearances_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_live_id_fkey"
+            columns: ["live_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_lives"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_spots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_tracks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_track_videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orbit_spot_photos: {
+        Row: {
+          caption: string | null
+          created_at: string
+          id: string
+          image_path: string
+          sort_order: number
+          spot_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_path: string
+          sort_order?: number
+          spot_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string
+          id?: string
+          image_path?: string
+          sort_order?: number
+          spot_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_spot_photos_spot_id_fkey"
+            columns: ["spot_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_spots"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orbit_spots: {
+        Row: {
+          address: string | null
+          category: string
+          created_at: string
+          description: string | null
+          google_maps_url: string | null
+          google_place_id: string | null
+          id: string
+          latitude: number
+          longitude: number
+          name: string
+          prefecture: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          category: string
+          created_at?: string
+          description?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          id?: string
+          latitude: number
+          longitude: number
+          name: string
+          prefecture?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          category?: string
+          created_at?: string
+          description?: string | null
+          google_maps_url?: string | null
+          google_place_id?: string | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          name?: string
+          prefecture?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orbit_track_costumes: {
         Row: {
           created_at: string
