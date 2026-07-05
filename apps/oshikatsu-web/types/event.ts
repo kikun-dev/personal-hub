@@ -1,3 +1,10 @@
+// スポット出典セレクタ（イベント）用の軽量候補DTO
+export type EventOption = {
+  id: string;
+  title: string;
+  date: string;
+};
+
 export type Event = {
   id: string;
   eventTypeId: string;

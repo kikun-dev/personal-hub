@@ -2,6 +2,7 @@ import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type {
   Song,
   SongOption,
+  SongVideoOption,
   CalendarVideoItem,
   SongPerformanceOccurrence,
 } from "@/types/song";
@@ -43,6 +44,19 @@ const VIDEO_CALENDAR_SELECT = `
   orbit_tracks(id, title, orbit_groups(name_ja))
 ` as const;
 
+// スポットの出典セレクタ（関連動画）用。orbit_track_videos + 曲名(join)のみの軽量取得。
+const VIDEO_OPTION_SELECT = `
+  id,
+  video_type,
+  published_on,
+  orbit_tracks(title)
+` as const;
+
+type VideoOptionRow = SelectRows<
+  "orbit_track_videos",
+  typeof VIDEO_OPTION_SELECT
+>[number];
+
 // 総披露回数（#281）用。orbit_setlist_items（item_type='song' かつ track_id 一致）を
 // 起点に、performance_id → orbit_live_performances → live_id → orbit_lives と辿る。
 // performance_id / live_id は NOT NULL FK のため埋め込みは非null単一オブジェクトになる
@@ -70,6 +84,15 @@ function mapSongPerformanceOccurrence(
     performanceDate: performance.performance_date,
     liveId: performance.live_id,
     liveName: performance.orbit_lives.name,
+  };
+}
+
+function mapVideoOption(row: VideoOptionRow): SongVideoOption {
+  return {
+    id: row.id,
+    trackTitle: row.orbit_tracks.title,
+    videoType: row.video_type,
+    publishedOn: row.published_on,
   };
 }
 
@@ -533,6 +556,19 @@ export function createSongRepository(
       }
 
       return data.map(mapSongPerformanceOccurrence);
+    },
+
+    async findVideoOptions() {
+      const { data, error } = await supabase
+        .from("orbit_track_videos")
+        .select(VIDEO_OPTION_SELECT)
+        .order("published_on", { ascending: false, nullsFirst: false });
+
+      if (error) {
+        throw new RepositoryError("関連動画候補の取得に失敗しました", error);
+      }
+
+      return data.map(mapVideoOption);
     },
   };
 }

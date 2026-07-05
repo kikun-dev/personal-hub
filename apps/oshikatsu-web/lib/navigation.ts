@@ -29,6 +29,7 @@ const CONTENT_NAV_ITEMS: AppNavigationItem[] = [
 
 export const HEADER_NAV_ITEMS: AppNavigationItem[] = [
   ...CONTENT_NAV_ITEMS,
+  { href: APP_ROUTES.spots, label: "聖地マップ" },
   MYPAGE_NAV_ITEM,
   ADMIN_NAV_ITEM,
 ];

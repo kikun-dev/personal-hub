@@ -206,6 +206,14 @@ export type SongOption = {
   title: string;
 };
 
+// スポット出典セレクタ（関連動画）用の軽量候補DTO
+export type SongVideoOption = {
+  id: string;
+  trackTitle: string;
+  videoType: string;
+  publishedOn: string | null;
+};
+
 export type CreateSongReleaseLinkInput = {
   releaseId: string;
   trackNumber: string;

@@ -9,5 +9,6 @@ export const APP_ROUTES = {
   people: "/people",
   releases: "/releases",
   songs: "/songs",
+  spots: "/spots",
   venues: "/venues",
 } as const;

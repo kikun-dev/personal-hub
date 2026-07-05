@@ -3,7 +3,7 @@ import type {
   SelectRows,
   TypedSupabaseClient,
 } from "@personal-hub/supabase";
-import type { Event } from "@/types/event";
+import type { Event, EventOption } from "@/types/event";
 import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
@@ -43,7 +43,13 @@ const EVENT_HISTORY_SELECT = `
   orbit_event_members!inner(member_id)
 ` as const;
 
+const EVENT_OPTION_SELECT = "id, title, date" as const;
+
 type EventRow = SelectRows<"orbit_events", typeof EVENT_SELECT>[number];
+type EventOptionRow = SelectRows<
+  "orbit_events",
+  typeof EVENT_OPTION_SELECT
+>[number];
 type EventSummaryRow = SelectRows<
   "orbit_events",
   typeof EVENT_SUMMARY_SELECT
@@ -154,6 +160,14 @@ function mapToOnThisDayEvent(row: OnThisDayEventRow): Event {
     groupIds: row.group_ids ?? [],
     groupNames: row.group_names ?? [],
     memberIds: [],
+  };
+}
+
+function mapToEventOption(row: EventOptionRow): EventOption {
+  return {
+    id: row.id,
+    title: row.title,
+    date: row.date,
   };
 }
 
@@ -349,6 +363,19 @@ export function createEventRepository(
       }
 
       return data.map(mapToOnThisDayEvent);
+    },
+
+    async findOptions() {
+      const { data, error } = await supabase
+        .from("orbit_events")
+        .select(EVENT_OPTION_SELECT)
+        .order("date", { ascending: false });
+
+      if (error) {
+        throw new RepositoryError("イベント候補の取得に失敗しました", error);
+      }
+
+      return data.map(mapToEventOption);
     },
   };
 }

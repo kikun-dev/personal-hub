@@ -6,8 +6,10 @@ import {
 } from "@personal-hub/supabase/read-only-server";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
+import { createEventRepository } from "@/repositories/eventRepository";
 import { createEventTypeRepository } from "@/repositories/eventTypeRepository";
 import { createGroupRepository } from "@/repositories/groupRepository";
+import { createLiveRepository } from "@/repositories/liveRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
 import { createPersonRepository } from "@/repositories/personRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
@@ -176,4 +178,31 @@ const loadLiveFormMasterData = createSharedReadLoader(
 
 export async function getLiveFormMasterData() {
   return loadLiveFormMasterData();
+}
+
+// スポットフォーム用マスタデータ（Issue #286）。他フォームと異なり
+// createSharedReadLoader（shared cache）には載せない。イベント・関連動画の
+// オプション（findOptions / findVideoOptions）に対応する revalidate タグが
+// まだ整備されていない（イベント・楽曲動画の作成/更新時にキャッシュを
+// 失効させていない）ため、shared cache に載せると古い候補一覧が
+// 表示され続ける恐れがある。整備されるまでは都度取得にとどめる。
+export async function getSpotFormMasterData() {
+  return withOrbitReadClient(async (supabase) => {
+    const [members, songOptions, liveOptions, eventOptions, videoOptions] =
+      await Promise.all([
+        listMemberOptions(createMemberRepository(supabase)),
+        listSongOptions(createSongRepository(supabase)),
+        createLiveRepository(supabase).findOptions(),
+        createEventRepository(supabase).findOptions(),
+        createSongRepository(supabase).findVideoOptions(),
+      ]);
+
+    return {
+      members,
+      songOptions,
+      liveOptions,
+      eventOptions,
+      videoOptions,
+    };
+  });
 }
