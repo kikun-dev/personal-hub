@@ -310,6 +310,10 @@
 
 ## Phase 3: 発展機能
 
+- 聖地巡礼マップ（Issue #286 / ADR 0010）
+  - 活動で訪れた場所（ロケ地 / MV撮影地 / ヒット祈願 等）の登録・地図表示・多軸検索
+  - Google Maps JS API + `@vis.gl/react-google-maps` を採用、Places Autocomplete で登録
+  - spots / appearances / appearance_members / photos の 4 テーブル構成
 - メディア出演管理（`orbit_media`）
 - 公開アクセス対応（RLS の SELECT ポリシーを `true` に変更）
 - 遠征持ち物リスト
