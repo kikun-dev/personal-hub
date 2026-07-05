@@ -80,10 +80,12 @@ export function revalidateOrbitVenueData(): void {
 }
 
 export function revalidateOrbitLiveData(): void {
-  // ライブ更新は会場詳細の公演逆引きにも影響する
+  // ライブ更新は会場詳細の公演逆引きにも影響する。
+  // セットリスト編集は楽曲詳細の総披露回数（#281）にも影響するため songsDetail も失効する
   revalidateOrbitTags([
     ORBIT_CACHE_TAGS.lives,
     ORBIT_CACHE_TAGS.livesDetail,
     ORBIT_CACHE_TAGS.venues,
+    ORBIT_CACHE_TAGS.songsDetail,
   ]);
 }

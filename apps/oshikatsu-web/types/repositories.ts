@@ -19,6 +19,7 @@ import type {
   SongFilters,
   SongListItem,
   CalendarVideoItem,
+  SongPerformanceOccurrence,
 } from "./song";
 import type {
   Person,
@@ -164,6 +165,9 @@ export type SongRepository = {
   findByMemberId(memberId: string): Promise<Song[]>;
   findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
   findCalendarVideoItems(): Promise<CalendarVideoItem[]>;
+  // 楽曲詳細ページの「総披露回数」用（Issue #281）。全ユーザー共通の客観集計のため
+  // shared read cache 経路（readOrbitData.ts）から呼ぶ。
+  findPerformanceOccurrences(songId: string): Promise<SongPerformanceOccurrence[]>;
 };
 
 // ユーザー別データ（ADR 0009）。findByPerformanceIds / upsert / delete はいずれも

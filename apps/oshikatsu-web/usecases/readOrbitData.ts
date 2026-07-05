@@ -19,6 +19,7 @@ import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
+import { getSongPerformanceSummary } from "@/usecases/getSongPerformanceSummary";
 import { getVenue } from "@/usecases/getVenue";
 import { listVenues } from "@/usecases/listVenues";
 import { getLive } from "@/usecases/getLive";
@@ -210,7 +211,23 @@ const loadSongDetailPageData = createSharedReadLoader(
   [ORBIT_CACHE_TAGS.songs, ORBIT_CACHE_TAGS.songsDetail],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {
-      return getSong(createSongRepository(supabase), id);
+      const songRepo = createSongRepository(supabase);
+
+      const [song, occurrences] = await Promise.all([
+        getSong(songRepo, id),
+        songRepo.findPerformanceOccurrences(id),
+      ]);
+
+      if (!song) {
+        return null;
+      }
+
+      // 総披露回数（#281）は全ユーザー共通の客観集計のため、個人の遭遇記録
+      // （ADR 0009 対象）と異なりここで合成して shared cache に載せる
+      return {
+        song,
+        performanceSummary: getSongPerformanceSummary(occurrences),
+      };
     })
 );
 
