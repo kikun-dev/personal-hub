@@ -1,7 +1,21 @@
-import type { CreateSpotInput } from "@/types/spot";
+import type { CreateSpotInput, SpotSourceType } from "@/types/spot";
 import { isSpotCategory, isSpotSourceType } from "@/types/spot";
 import type { ValidationError } from "@/types/errors";
-import { isValidHttpUrl, isValidDateString } from "@/lib/validation";
+import { isValidHttpUrl, isValidDateString, isValidUuid } from "@/lib/validation";
+
+// 出典FKフィールド一覧。source_type に対応しないFKが非空のまま送られても
+// DB側（055）は全FK列がNULL許容の並列カラムのため弾けないので、usecase側で
+// 整合性を担保する。
+const FK_FIELDS = ["trackId", "videoId", "eventId", "liveId"] as const;
+
+// 出典種別ごとに対応するFKフィールド（other は対応FKなし）。
+const SOURCE_TYPE_FK_FIELD: Record<SpotSourceType, (typeof FK_FIELDS)[number] | null> = {
+  mv: "trackId",
+  video: "videoId",
+  event: "eventId",
+  live: "liveId",
+  other: null,
+};
 
 export function validateSpot(input: CreateSpotInput): ValidationError[] {
   const errors: ValidationError[] = [];
@@ -60,6 +74,43 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
       errors.push({
         field: `appearances[${index}].sourceType`,
         message: "出典種別を選択してください",
+      });
+    } else {
+      // 対応するFK自体は空でもよい（実体未登録の出典を許容する）が、
+      // 対応しないFKフィールドが非空の場合は指定の食い違いとしてエラーにする。
+      const expectedField = SOURCE_TYPE_FK_FIELD[appearance.sourceType];
+      const hasMismatchedFk = FK_FIELDS.some(
+        (field) => field !== expectedField && appearance[field].trim() !== ""
+      );
+      if (hasMismatchedFk) {
+        errors.push({
+          field: `appearances[${index}].sourceType`,
+          message: "出典種別と出典の指定が一致していません",
+        });
+      }
+    }
+
+    FK_FIELDS.forEach((field) => {
+      const value = appearance[field].trim();
+      if (value && !isValidUuid(value)) {
+        errors.push({
+          field: `appearances[${index}].${field}`,
+          message: "出典の指定が正しくありません",
+        });
+      }
+    });
+
+    if (appearance.memberIds.some((memberId) => !isValidUuid(memberId))) {
+      errors.push({
+        field: `appearances[${index}].memberIds`,
+        message: "メンバーの指定が正しくありません",
+      });
+    }
+
+    if (new Set(appearance.memberIds).size !== appearance.memberIds.length) {
+      errors.push({
+        field: `appearances[${index}].memberIds`,
+        message: "メンバーが重複しています",
       });
     }
 

@@ -112,19 +112,88 @@ function toSpotRow(input: CreateSpotInput) {
   };
 }
 
+type AppearanceFkField = "trackId" | "videoId" | "eventId" | "liveId";
+
+// 出典種別ごとに対応するFKフィールド（other や未知の値は対応FKなし＝undefined）。
+const APPEARANCE_FK_FIELD_BY_SOURCE_TYPE: Record<string, AppearanceFkField | undefined> = {
+  mv: "trackId",
+  video: "videoId",
+  event: "eventId",
+  live: "liveId",
+};
+
 function toAppearanceRow(spotId: string, input: CreateSpotAppearanceInput) {
+  // source_type に対応するFKだけを行に載せ、他のFKは常に null にする
+  // （validateSpot が防ぐが、DB整合の多層防御）。
+  const fkField = APPEARANCE_FK_FIELD_BY_SOURCE_TYPE[input.sourceType];
   return {
     spot_id: spotId,
     source_type: input.sourceType,
-    track_id: input.trackId || null,
-    video_id: input.videoId || null,
-    event_id: input.eventId || null,
-    live_id: input.liveId || null,
+    track_id: fkField === "trackId" ? input.trackId || null : null,
+    video_id: fkField === "videoId" ? input.videoId || null : null,
+    event_id: fkField === "eventId" ? input.eventId || null : null,
+    live_id: fkField === "liveId" ? input.liveId || null : null,
     series_name: input.seriesName.trim() || null,
     appeared_on: input.appearedOn.trim() || null,
     note: input.note.trim() || null,
     link_url: input.linkUrl.trim() || null,
   };
+}
+
+type InsertAppearancesResult = {
+  // 挿入済み出来事の id（メンバー挿入失敗時など、途中まで挿入された分の
+  // 補償削除に使う）。
+  ids: string[];
+  error: RepositoryError | null;
+};
+
+// create/update で重複していた「出来事を一括挿入→メンバーを一括挿入」を共通化する。
+// PostgREST の bulk insert は入力順で結果行を返すため、appearances の順序と
+// 挿入結果（id）を素朴に対応付けてよい前提で実装している。
+async function insertAppearances(
+  writable: TypedSupabaseClient,
+  spotId: string,
+  appearances: CreateSpotAppearanceInput[]
+): Promise<InsertAppearancesResult> {
+  if (appearances.length === 0) {
+    return { ids: [], error: null };
+  }
+
+  const { data: appearanceRows, error: appearanceError } = await writable
+    .from("orbit_spot_appearances")
+    .insert(appearances.map((appearance) => toAppearanceRow(spotId, appearance)))
+    .select("id");
+
+  if (appearanceError) {
+    return {
+      ids: [],
+      error: new RepositoryError("出来事の登録に失敗しました", appearanceError),
+    };
+  }
+
+  const ids = appearanceRows.map((row) => row.id);
+
+  const memberRows = appearances.flatMap((appearance, index) =>
+    appearance.memberIds.map((memberId) => ({
+      appearance_id: ids[index],
+      member_id: memberId,
+    }))
+  );
+
+  if (memberRows.length > 0) {
+    const { error: memberError } = await writable
+      .from("orbit_spot_appearance_members")
+      .insert(memberRows);
+
+    if (memberError) {
+      return {
+        ids,
+        error: new RepositoryError("出来事のメンバー登録に失敗しました", memberError),
+      };
+    }
+  }
+
+  return { ids, error: null };
 }
 
 export function createSpotRepository(supabase: OrbitReadClient): SpotRepository {
@@ -171,35 +240,17 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         throw new RepositoryError("スポットの作成に失敗しました", spotError);
       }
 
-      for (const appearance of input.appearances) {
-        const { data: appearanceRow, error: appearanceError } = await writable
-          .from("orbit_spot_appearances")
-          .insert(toAppearanceRow(spot.id, appearance))
-          .select("id")
-          .single();
+      const { error: appearancesError } = await insertAppearances(
+        writable,
+        spot.id,
+        input.appearances
+      );
 
-        if (appearanceError) {
-          // 補償処理: 出来事の登録失敗時は作成したスポットを削除
-          // （CASCADE で既に登録済みの出来事・メンバーも削除）
-          await writable.from("orbit_spots").delete().eq("id", spot.id);
-          throw new RepositoryError("出来事の登録に失敗しました", appearanceError);
-        }
-
-        if (appearance.memberIds.length > 0) {
-          const { error: memberError } = await writable
-            .from("orbit_spot_appearance_members")
-            .insert(
-              appearance.memberIds.map((memberId) => ({
-                appearance_id: appearanceRow.id,
-                member_id: memberId,
-              }))
-            );
-          if (memberError) {
-            // 補償処理: メンバー登録失敗時は作成したスポットを削除
-            await writable.from("orbit_spots").delete().eq("id", spot.id);
-            throw new RepositoryError("出来事のメンバー登録に失敗しました", memberError);
-          }
-        }
+      if (appearancesError) {
+        // 補償処理: 出来事/メンバーの登録失敗時は作成したスポットを削除
+        // （CASCADE で既に登録済みの出来事・メンバーも削除される）
+        await writable.from("orbit_spots").delete().eq("id", spot.id);
+        throw appearancesError;
       }
 
       const created = await this.findById(spot.id);
@@ -210,12 +261,31 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
     },
 
     async update(id, input) {
-      const existing = await this.findById(id);
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
+
+      // 存在チェックは軽量な単体取得のみで行う（3テーブルjoinの findById は不要）。
+      const { data: existing, error: existingError } = await writable
+        .from("orbit_spots")
+        .select("id")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (existingError) {
+        throw new RepositoryError("更新対象のスポットの確認に失敗しました", existingError);
+      }
       if (!existing) {
         throw new RepositoryError("更新対象のスポットが見つかりません", null);
       }
 
-      const writable: TypedSupabaseClient = asWritableClient(supabase);
+      const { data: oldAppearances, error: oldAppearancesError } = await writable
+        .from("orbit_spot_appearances")
+        .select("id")
+        .eq("spot_id", id);
+
+      if (oldAppearancesError) {
+        throw new RepositoryError("既存の出来事の取得に失敗しました", oldAppearancesError);
+      }
+
       const { error: spotError } = await writable
         .from("orbit_spots")
         .update(toSpotRow(input))
@@ -225,42 +295,33 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         throw new RepositoryError("スポットの更新に失敗しました", spotError);
       }
 
-      // 既存の出来事を全削除して入力内容で再登録する（venue/live 系と同じ
-      // 「全削除→再挿入」パターン。非アトミックだが既知の制限として許容する）。
-      // 子テーブルの orbit_spot_appearance_members は ON DELETE CASCADE で
-      // 一緒に削除される。
-      const { error: deleteError } = await writable
-        .from("orbit_spot_appearances")
-        .delete()
-        .eq("spot_id", id);
+      // 新規挿入を先に行い、旧出来事の削除は最後に行う（venue/live 系の
+      // 「全削除→再挿入」から順序を変更）。旧削除が最後なので、途中失敗しても
+      // 既存の記録は失われない。完全なアトミック化は Issue #289 でRPC化予定。
+      const { ids: insertedIds, error: insertError } = await insertAppearances(
+        writable,
+        id,
+        input.appearances
+      );
 
-      if (deleteError) {
-        throw new RepositoryError("出来事の更新に失敗しました", deleteError);
+      if (insertError) {
+        // 補償処理: 新規挿入分だけ削除し、旧データはそのまま残す
+        // （CASCADE で新規分のメンバーも削除される）
+        if (insertedIds.length > 0) {
+          await writable.from("orbit_spot_appearances").delete().in("id", insertedIds);
+        }
+        throw insertError;
       }
 
-      for (const appearance of input.appearances) {
-        const { data: appearanceRow, error: appearanceError } = await writable
+      const oldIds = oldAppearances.map((row) => row.id);
+      if (oldIds.length > 0) {
+        const { error: deleteError } = await writable
           .from("orbit_spot_appearances")
-          .insert(toAppearanceRow(id, appearance))
-          .select("id")
-          .single();
+          .delete()
+          .in("id", oldIds);
 
-        if (appearanceError) {
-          throw new RepositoryError("出来事の登録に失敗しました", appearanceError);
-        }
-
-        if (appearance.memberIds.length > 0) {
-          const { error: memberError } = await writable
-            .from("orbit_spot_appearance_members")
-            .insert(
-              appearance.memberIds.map((memberId) => ({
-                appearance_id: appearanceRow.id,
-                member_id: memberId,
-              }))
-            );
-          if (memberError) {
-            throw new RepositoryError("出来事のメンバー登録に失敗しました", memberError);
-          }
+        if (deleteError) {
+          throw new RepositoryError("旧出来事の削除に失敗しました", deleteError);
         }
       }
 
