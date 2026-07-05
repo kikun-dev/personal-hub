@@ -47,13 +47,14 @@ export default async function EditSpotPage({ params }: EditSpotPageProps) {
   await requireAdmin();
 
   const supabase = await createClient();
-  const spot = await getSpot(createSpotRepository(supabase), id);
+  const [spot, masters] = await Promise.all([
+    getSpot(createSpotRepository(supabase), id),
+    getSpotFormMasterData(),
+  ]);
 
   if (!spot) {
     notFound();
   }
-
-  const masters = await getSpotFormMasterData();
   const initialValues = toInitialValues(spot);
 
   async function handleSubmit(

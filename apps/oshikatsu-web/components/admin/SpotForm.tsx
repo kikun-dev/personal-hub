@@ -235,6 +235,14 @@ export function SpotForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 「海外」選択時は国・地域名の入力を必須にする（VenueForm と同じ担保。
+    // CreateSpotInput だけでは「未選択」と「海外選択・未入力」を区別できないため）
+    if (isOverseas && !values.prefecture.trim()) {
+      setErrors({ prefecture: "国・地域名を入力してください" });
+      return;
+    }
+
     setIsSubmitting(true);
     setErrors({});
 

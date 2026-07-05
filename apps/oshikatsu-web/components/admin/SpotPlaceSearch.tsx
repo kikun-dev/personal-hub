@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
 
 export type SpotPlaceSearchResult = {
@@ -33,6 +33,7 @@ function extractPrefecture(
 function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
   const placesLibrary = useMapsLibrary("places");
   const containerRef = useRef<HTMLDivElement>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   // onSelect の identity 変化のたびにウィジェットを作り直さないよう ref 経由で参照する
   const onSelectRef = useRef(onSelect);
   useEffect(() => {
@@ -51,27 +52,36 @@ function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
     const handleSelect = async (
       event: google.maps.places.PlacePredictionSelectEvent
     ) => {
-      const place = event.placePrediction.toPlace();
-      await place.fetchFields({
-        fields: [
-          "id",
-          "displayName",
-          "formattedAddress",
-          "location",
-          "googleMapsURI",
-          "addressComponents",
-        ],
-      });
+      setFetchError(null);
+      try {
+        const place = event.placePrediction.toPlace();
+        await place.fetchFields({
+          fields: [
+            "id",
+            "displayName",
+            "formattedAddress",
+            "location",
+            "googleMapsURI",
+            "addressComponents",
+          ],
+        });
 
-      onSelectRef.current({
-        name: place.displayName ?? "",
-        latitude: place.location ? String(place.location.lat()) : "",
-        longitude: place.location ? String(place.location.lng()) : "",
-        address: place.formattedAddress ?? "",
-        prefecture: extractPrefecture(place.addressComponents),
-        googlePlaceId: place.id,
-        googleMapsUrl: place.googleMapsURI ?? "",
-      });
+        onSelectRef.current({
+          name: place.displayName ?? "",
+          latitude: place.location ? String(place.location.lat()) : "",
+          longitude: place.location ? String(place.location.lng()) : "",
+          address: place.formattedAddress ?? "",
+          prefecture: extractPrefecture(place.addressComponents),
+          googlePlaceId: place.id,
+          googleMapsUrl: place.googleMapsURI ?? "",
+        });
+      } catch {
+        // Places API の失敗（ネットワーク・クォータ・キー制限など）を無言で
+        // 握りつぶさず、手入力への誘導を表示する
+        setFetchError(
+          "場所情報の取得に失敗しました。もう一度試すか、下の項目を手入力してください。"
+        );
+      }
     };
 
     element.addEventListener("gmp-select", handleSelect);
@@ -98,6 +108,7 @@ function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
         ref={containerRef}
         className="[&>gmp-place-autocomplete]:w-full"
       />
+      {fetchError && <p className="mt-1 text-xs text-red-500">{fetchError}</p>}
       <p className="mt-1 text-xs text-foreground/40">
         検索して選択すると、名前・緯度経度・住所・都道府県が自動入力されます（後から手動修正できます）
       </p>
@@ -115,7 +126,9 @@ export function SpotPlaceSearch({ onSelect }: SpotPlaceSearchProps) {
   }
 
   return (
-    <APIProvider apiKey={GOOGLE_MAPS_API_KEY}>
+    // language/region を固定し、都道府県（addressComponents）がブラウザの
+    // ロケールによらず日本語表記（例: 東京都）で返るようにする
+    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} language="ja" region="JP">
       <PlaceAutocompleteField onSelect={onSelect} />
     </APIProvider>
   );
