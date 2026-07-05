@@ -80,3 +80,26 @@ Google Maps Platform は 2025年3月に旧 $200 クレジットから SKU 別無
 
 - 発端 Issue: #286（Options / Trade-offs の詳細はそちらの Design notes を参照）
 - 関連 ADR: 0006（read cache）、0008（認可）、0009（ユーザー別データ。Phase 3 の訪問記録で適用予定）
+
+## 追記（2026-07-06, PR #290 / migration 057）
+
+スポット単一の `category` 列を廃止し、「何の場所か」は出来事（appearances）の
+種別の集合で表現する方式に変更した。
+
+### 理由
+
+- 同じ場所で複数カテゴリの活動（例: MV撮影とヒット祈願）が発生すると、
+  スポット単一のカテゴリを決められない（PR #290 の手動確認で顕在化）
+- 出来事をアプリ層で1件以上必須にすれば、カテゴリ相当の情報（種別）は
+  出来事側から常に導出できる
+
+### 変更点
+
+- `orbit_spots.category` を削除（migration 057）
+- 出来事の種別を拡充（mv / video / event / live に加えて youtube / lemino /
+  tv / nogi_video / magazine / photobook / blog_sns / other）
+- 種別ごとの「サブ種別」マスタ `orbit_spot_source_subtypes` を新設
+  （例: のぎ動画→あそぶだけ。フォームから新規追加できる選択式、検索対象）
+- 出来事に `group_id` を追加（どのグループの活動か。アプリ層で必須）、
+  `series_name` / `appeared_on` を削除（種別・サブ種別でカバー）
+- Decision 1 の「4テーブル構成」は photos を含む**5テーブル構成**になる

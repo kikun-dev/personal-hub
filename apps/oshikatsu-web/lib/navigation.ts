@@ -37,6 +37,7 @@ export const TOP_NAV_ITEMS: AppNavigationItem[] = [
   ...CONTENT_NAV_ITEMS,
   { href: APP_ROUTES.people, label: "制作陣" },
   { href: APP_ROUTES.venues, label: "会場" },
+  { href: APP_ROUTES.spots, label: "聖地マップ" },
   MYPAGE_NAV_ITEM,
   ADMIN_NAV_ITEM,
 ];

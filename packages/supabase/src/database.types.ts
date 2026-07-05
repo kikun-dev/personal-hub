@@ -1104,44 +1104,44 @@ export type Database = {
       }
       orbit_spot_appearances: {
         Row: {
-          appeared_on: string | null
           created_at: string
           event_id: string | null
+          group_id: string | null
           id: string
           link_url: string | null
           live_id: string | null
           note: string | null
-          series_name: string | null
           source_type: string
           spot_id: string
+          subtype_id: string | null
           track_id: string | null
           video_id: string | null
         }
         Insert: {
-          appeared_on?: string | null
           created_at?: string
           event_id?: string | null
+          group_id?: string | null
           id?: string
           link_url?: string | null
           live_id?: string | null
           note?: string | null
-          series_name?: string | null
           source_type: string
           spot_id: string
+          subtype_id?: string | null
           track_id?: string | null
           video_id?: string | null
         }
         Update: {
-          appeared_on?: string | null
           created_at?: string
           event_id?: string | null
+          group_id?: string | null
           id?: string
           link_url?: string | null
           live_id?: string | null
           note?: string | null
-          series_name?: string | null
           source_type?: string
           spot_id?: string
+          subtype_id?: string | null
           track_id?: string | null
           video_id?: string | null
         }
@@ -1151,6 +1151,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "orbit_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_groups"
             referencedColumns: ["id"]
           },
           {
@@ -1165,6 +1172,13 @@ export type Database = {
             columns: ["spot_id"]
             isOneToOne: false
             referencedRelation: "orbit_spots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_spot_appearances_subtype_id_fkey"
+            columns: ["subtype_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_spot_source_subtypes"
             referencedColumns: ["id"]
           },
           {
@@ -1218,10 +1232,30 @@ export type Database = {
           },
         ]
       }
+      orbit_spot_source_subtypes: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          source_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          source_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          source_type?: string
+        }
+        Relationships: []
+      }
       orbit_spots: {
         Row: {
           address: string | null
-          category: string
           created_at: string
           description: string | null
           google_maps_url: string | null
@@ -1235,7 +1269,6 @@ export type Database = {
         }
         Insert: {
           address?: string | null
-          category: string
           created_at?: string
           description?: string | null
           google_maps_url?: string | null
@@ -1249,7 +1282,6 @@ export type Database = {
         }
         Update: {
           address?: string | null
-          category?: string
           created_at?: string
           description?: string | null
           google_maps_url?: string | null

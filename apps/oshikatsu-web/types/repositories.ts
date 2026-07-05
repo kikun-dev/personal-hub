@@ -9,11 +9,12 @@ import type {
   MemberListItem,
   MemberOption,
 } from "./member";
-import type { Event, CreateEventInput, UpdateEventInput } from "./event";
+import type { Event, EventOption, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
 import type {
   Song,
   SongOption,
+  SongVideoOption,
   CreateSongInput,
   UpdateSongInput,
   SongFilters,
@@ -63,6 +64,7 @@ import type {
 import type {
   Spot,
   SpotListItem,
+  SpotSourceSubtype,
   CreateSpotInput,
   UpdateSpotInput,
 } from "./spot";
@@ -94,6 +96,8 @@ export type EventRepository = {
   update(id: string, input: UpdateEventInput): Promise<Event>;
   delete(id: string): Promise<void>;
   findOnThisDay(month: number, day: number): Promise<Event[]>;
+  // スポットの出典セレクタ（イベント）用の軽量候補一覧
+  findOptions(): Promise<EventOption[]>;
 };
 
 export type EventTypeRepository = {
@@ -126,6 +130,8 @@ export type SpotRepository = {
   create(input: CreateSpotInput): Promise<Spot>;
   update(id: string, input: UpdateSpotInput): Promise<Spot>;
   delete(id: string): Promise<void>;
+  // 出来事のサブ種別マスタ一覧（フォームの選択候補用）
+  findSubtypeOptions(): Promise<SpotSourceSubtype[]>;
 };
 
 export type LiveCalendarPerformance = {
@@ -183,6 +189,8 @@ export type SongRepository = {
   // 楽曲詳細ページの「総披露回数」用（Issue #281）。全ユーザー共通の客観集計のため
   // shared read cache 経路（readOrbitData.ts）から呼ぶ。
   findPerformanceOccurrences(songId: string): Promise<SongPerformanceOccurrence[]>;
+  // スポットの出典セレクタ（関連動画）用の軽量候補一覧
+  findVideoOptions(): Promise<SongVideoOption[]>;
 };
 
 // ユーザー別データ（ADR 0009）。findByPerformanceIds / upsert / delete はいずれも
