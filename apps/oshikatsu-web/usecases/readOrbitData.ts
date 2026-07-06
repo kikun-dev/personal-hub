@@ -32,6 +32,7 @@ import {
   createSongSections,
   sortSongsForListOrder,
 } from "@/usecases/groupListSections";
+import { listMemberOptions } from "@/usecases/listMemberOptions";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
 import { listPublicSongs } from "@/usecases/listPublicSongs";
@@ -276,10 +277,15 @@ const loadReleaseDetailPageData = createSharedReadLoader(
 
 const loadSpotsPageData = createSharedReadLoader(
   ["orbit", "spots-page-data"],
-  [ORBIT_CACHE_TAGS.spots],
+  [ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.members],
   async () =>
     withOrbitReadClient(async (supabase) => {
-      return listSpots(createSpotRepository(supabase));
+      const [spots, memberOptions] = await Promise.all([
+        listSpots(createSpotRepository(supabase)),
+        listMemberOptions(createMemberRepository(supabase)),
+      ]);
+
+      return { spots, memberOptions };
     })
 );
 

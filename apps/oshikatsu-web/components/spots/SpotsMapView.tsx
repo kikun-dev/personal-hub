@@ -10,15 +10,22 @@ import {
 } from "@/components/ui/GoogleMapsProvider";
 import { APP_ROUTES } from "@/lib/routes";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
-import { collectSubtypeOptions, filterSpots } from "@/usecases/spotFilters";
+import {
+  collectSpotMemberIds,
+  collectSpotPrefectures,
+  collectSubtypeOptions,
+  filterSpots,
+} from "@/usecases/spotFilters";
 import {
   SPOT_SOURCE_TYPES,
   SPOT_SOURCE_TYPE_LABELS,
   type SpotListItem,
 } from "@/types/spot";
+import type { MemberOption } from "@/types/member";
 
 type SpotsMapViewProps = {
   spots: SpotListItem[];
+  memberOptions: MemberOption[];
   isAdmin: boolean;
 };
 
@@ -143,14 +150,18 @@ function SpotInfoWindowContent({
   );
 }
 
-export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
+export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProps) {
   // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
   // （LiveBrowser / SongBrowser と同じパターン）
   const searchParams = useSearchParams();
   const urlSourceType = searchParams.get("type") ?? "";
   const urlSubtypeName = searchParams.get("subtype") ?? "";
+  const urlMemberId = searchParams.get("member") ?? "";
+  const urlPrefecture = searchParams.get("prefecture") ?? "";
   const [sourceType, setSourceType] = useState(urlSourceType);
   const [subtypeName, setSubtypeName] = useState(urlSubtypeName);
+  const [memberId, setMemberId] = useState(urlMemberId);
+  const [prefecture, setPrefecture] = useState(urlPrefecture);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [focusRequest, setFocusRequest] = useState<SpotFocusRequest | null>(null);
   // 行クリックで地図へスクロールするための地図コンテナ参照。
@@ -164,6 +175,12 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
   useEffect(() => {
     setSubtypeName(urlSubtypeName);
   }, [urlSubtypeName]);
+  useEffect(() => {
+    setMemberId(urlMemberId);
+  }, [urlMemberId]);
+  useEffect(() => {
+    setPrefecture(urlPrefecture);
+  }, [urlPrefecture]);
 
   // サブ種別の候補 = 選択中の種別（未選択なら全種別）の出来事が持つサブ種別名。
   // 判定は filterSpots と同じペア単位のロジック（spotFilters.ts）を共有する
@@ -172,9 +189,18 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     [spots, sourceType]
   );
 
+  // メンバー候補 = 登録済みスポットの出来事に実際に登場するメンバーのみ。
+  // 登場しないメンバーを選択肢に出すと常に0件になってしまうため絞り込む。
+  const memberFilterOptions = useMemo(() => {
+    const spotMemberIds = collectSpotMemberIds(spots);
+    return memberOptions.filter((member) => spotMemberIds.has(member.id));
+  }, [spots, memberOptions]);
+
+  const prefectureOptions = useMemo(() => collectSpotPrefectures(spots), [spots]);
+
   const filteredSpots = useMemo(
-    () => filterSpots(spots, { sourceType, subtypeName }),
-    [spots, sourceType, subtypeName]
+    () => filterSpots(spots, { sourceType, subtypeName, memberId, prefecture }),
+    [spots, sourceType, subtypeName, memberId, prefecture]
   );
 
   const selectedSpot =
@@ -193,6 +219,20 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     setSelectedSpotId(null);
     setFocusRequest(null);
     replaceListFilterParams({ subtype: nextSubtypeName });
+  };
+
+  const handleMemberChange = (nextMemberId: string) => {
+    setMemberId(nextMemberId);
+    setSelectedSpotId(null);
+    setFocusRequest(null);
+    replaceListFilterParams({ member: nextMemberId });
+  };
+
+  const handlePrefectureChange = (nextPrefecture: string) => {
+    setPrefecture(nextPrefecture);
+    setSelectedSpotId(null);
+    setFocusRequest(null);
+    replaceListFilterParams({ prefecture: nextPrefecture });
   };
 
   // 行クリック = 地図移動（#292 案A）。スポット名リンク（詳細遷移）とは
@@ -228,6 +268,32 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
         >
           <option value="">すべて</option>
           {subtypeOptions.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <select
+          value={memberId}
+          onChange={(event) => handleMemberChange(event.target.value)}
+          aria-label="メンバーで絞り込み"
+          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+        >
+          <option value="">全メンバー</option>
+          {memberFilterOptions.map((member) => (
+            <option key={member.id} value={member.id}>
+              {member.nameJa}
+            </option>
+          ))}
+        </select>
+        <select
+          value={prefecture}
+          onChange={(event) => handlePrefectureChange(event.target.value)}
+          aria-label="都道府県で絞り込み"
+          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+        >
+          <option value="">全都道府県</option>
+          {prefectureOptions.map((name) => (
             <option key={name} value={name}>
               {name}
             </option>

@@ -15,7 +15,7 @@ import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
 
 const SPOT_LIST_SELECT =
-  "id, name, latitude, longitude, prefecture, google_maps_url, orbit_spot_appearances(source_type, orbit_spot_source_subtypes(name))" as const;
+  "id, name, latitude, longitude, prefecture, google_maps_url, orbit_spot_appearances(source_type, orbit_spot_source_subtypes(name), orbit_spot_appearance_members(member_id))" as const;
 
 const SPOT_DETAIL_SELECT = `
   id,
@@ -133,22 +133,23 @@ function mapSpotListItem(row: SpotListRow): SpotListItem {
     new Set(row.orbit_spot_appearances.map((appearance) => appearance.source_type))
   ) as SpotListItem["sourceTypes"];
 
-  // フィルタ用は「種別×サブ種別」のペアで保持する（別々にフラット化すると
-  // ペア情報が失われ、種別Aのスポットが種別Bのサブ種別でマッチしてしまう）。
-  const tagByKey = new Map<string, SpotListItem["appearanceTags"][number]>();
-  for (const appearance of row.orbit_spot_appearances) {
-    const subtypeName = appearance.orbit_spot_source_subtypes?.name ?? null;
-    tagByKey.set(`${appearance.source_type}:${subtypeName ?? ""}`, {
+  // フィルタ用は「種別×サブ種別×メンバー」を出来事単位で保持する（dedupeしない）。
+  // (source_type, subtypeName) のキーで重複排除すると、メンバーが加わった際に
+  // 同じキーで異なるメンバー構成の出来事が1件に潰れてしまうため。
+  // 1スポットあたりの出来事は高々数件のため件数増は許容する。
+  const appearanceTags: SpotListItem["appearanceTags"] = row.orbit_spot_appearances.map(
+    (appearance) => ({
       sourceType: appearance.source_type as SpotListItem["sourceTypes"][number],
-      subtypeName,
-    });
-  }
+      subtypeName: appearance.orbit_spot_source_subtypes?.name ?? null,
+      memberIds: appearance.orbit_spot_appearance_members.map((m) => m.member_id),
+    })
+  );
 
   return {
     id: row.id,
     name: row.name,
     sourceTypes,
-    appearanceTags: Array.from(tagByKey.values()),
+    appearanceTags,
     latitude: row.latitude,
     longitude: row.longitude,
     prefecture: row.prefecture,
