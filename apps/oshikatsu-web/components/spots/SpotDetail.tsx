@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/Card";
 import { TEXT_LINK_CLASS, TextLink } from "@/components/ui/TextLink";
 import { SpotLocationMap } from "@/components/spots/SpotLocationMap";
 import { formatDate } from "@/lib/formatters";
-import { SONG_VIDEO_TYPE_LABELS, isSongVideoType } from "@/types/song";
+import { getSongVideoTypeLabel } from "@/types/song";
 import { SPOT_SOURCE_TYPE_LABELS, type Spot, type SpotAppearance } from "@/types/spot";
 
 type SpotDetailProps = {
@@ -17,11 +17,6 @@ type SourceInfo =
   | { kind: "link"; href: string; label: string }
   | { kind: "text"; label: string };
 
-function getVideoTypeLabel(videoType: string | null): string | null {
-  if (!videoType) return null;
-  return isSongVideoType(videoType) ? SONG_VIDEO_TYPE_LABELS[videoType] : videoType;
-}
-
 function getSpotAppearanceSourceInfo(appearance: SpotAppearance): SourceInfo | null {
   switch (appearance.sourceType) {
     case "mv":
@@ -34,7 +29,10 @@ function getSpotAppearanceSourceInfo(appearance: SpotAppearance): SourceInfo | n
     case "video": {
       // 動画自身に公開詳細ページは無いため、リンク先は親楽曲のページにする
       if (!appearance.videoTrackId) return null;
-      const label = [appearance.videoTrackTitle ?? "楽曲", getVideoTypeLabel(appearance.videoType)]
+      const label = [
+        appearance.videoTrackTitle ?? "楽曲",
+        appearance.videoType ? getSongVideoTypeLabel(appearance.videoType) : null,
+      ]
         .filter(Boolean)
         .join(" / ");
       return { kind: "link", href: `/songs/${appearance.videoTrackId}`, label };

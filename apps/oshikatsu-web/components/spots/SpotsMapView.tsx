@@ -64,30 +64,28 @@ function MapBoundsFitter({ spots }: { spots: SpotListItem[] }) {
   return null;
 }
 
-// 一覧の行クリック（地図移動、#292）を受けて、選択中スポットへ地図を寄せる。
+// 一覧の行クリックによる「この場所へ寄せて」という明示的な要求。
+// InfoWindow 用の選択 state（ピンクリックでも変わる）とは分離し、ピンクリックや
+// フィルタ変更で意図しない panTo / 強制ズームが発火しないようにする。
+// 同じ行の再クリックでも再パンさせるため、クリックごとに新しいオブジェクトを作る。
+type SpotFocusRequest = {
+  spot: SpotListItem;
+};
+
+// 行クリック（地図移動、#292）を受けて、要求されたスポットへ地図を寄せる。
 // MapBoundsFitter と同様、Map の子として描画し useMap() で親のインスタンスを取得する。
-// 選択解除（null）では何もしない。
-function MapSpotFocuser({
-  spots,
-  selectedSpotId,
-}: {
-  spots: SpotListItem[];
-  selectedSpotId: string | null;
-}) {
+function MapSpotFocuser({ request }: { request: SpotFocusRequest | null }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!map || !selectedSpotId) return;
+    if (!map || !request) return;
 
-    const spot = spots.find((candidate) => candidate.id === selectedSpotId);
-    if (!spot) return;
-
-    map.panTo({ lat: spot.latitude, lng: spot.longitude });
+    map.panTo({ lat: request.spot.latitude, lng: request.spot.longitude });
     const currentZoom = map.getZoom();
     if (currentZoom === undefined || currentZoom < SINGLE_POINT_ZOOM) {
       map.setZoom(SINGLE_POINT_ZOOM);
     }
-  }, [map, spots, selectedSpotId]);
+  }, [map, request]);
 
   return null;
 }
@@ -154,6 +152,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
   const [sourceType, setSourceType] = useState(urlSourceType);
   const [subtypeName, setSubtypeName] = useState(urlSubtypeName);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState<SpotFocusRequest | null>(null);
   // 行クリックで地図へスクロールするための地図コンテナ参照。
   // API キー未設定時は地図自体を描画しないため ref は常に null のまま
   // （GOOGLE_MAPS_API_KEY で分岐して何もしない）。
@@ -185,20 +184,23 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     setSourceType(nextSourceType);
     setSubtypeName("");
     setSelectedSpotId(null);
+    setFocusRequest(null);
     replaceListFilterParams({ type: nextSourceType, subtype: "" });
   };
 
   const handleSubtypeChange = (nextSubtypeName: string) => {
     setSubtypeName(nextSubtypeName);
     setSelectedSpotId(null);
+    setFocusRequest(null);
     replaceListFilterParams({ subtype: nextSubtypeName });
   };
 
   // 行クリック = 地図移動（#292 案A）。スポット名リンク（詳細遷移）とは
   // stopPropagation で切り分ける。地図が無ければ何もしない。
-  const handleRowClick = (spotId: string) => {
+  const handleRowClick = (spot: SpotListItem) => {
     if (!GOOGLE_MAPS_API_KEY) return;
-    setSelectedSpotId(spotId);
+    setSelectedSpotId(spot.id);
+    setFocusRequest({ spot });
     mapContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -249,7 +251,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
               disableDefaultUI={false}
             >
               <MapBoundsFitter spots={filteredSpots} />
-              <MapSpotFocuser spots={filteredSpots} selectedSpotId={selectedSpotId} />
+              <MapSpotFocuser request={focusRequest} />
               {filteredSpots.map((spot) => (
                 <Marker
                   key={spot.id}
@@ -300,9 +302,19 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
               {filteredSpots.map((spot) => (
                 <tr
                   key={spot.id}
-                  onClick={() => handleRowClick(spot.id)}
+                  onClick={() => handleRowClick(spot)}
+                  // クリッカブルに見える行はキーボードでも操作できるようにする
+                  tabIndex={GOOGLE_MAPS_API_KEY ? 0 : undefined}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleRowClick(spot);
+                    }
+                  }}
                   className={`border-b border-foreground/5 ${
-                    GOOGLE_MAPS_API_KEY ? "cursor-pointer hover:bg-foreground/5" : ""
+                    GOOGLE_MAPS_API_KEY
+                      ? "cursor-pointer hover:bg-foreground/5 focus-visible:bg-foreground/5 focus-visible:outline-none"
+                      : ""
                   }`}
                 >
                   <td className="py-2 pr-4 text-foreground">
