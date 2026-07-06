@@ -1,32 +1,19 @@
+import {
+  STORAGE_IMAGE_ALLOWED_MIME_TYPES,
+  isAllowedStorageImageMimeType,
+  isStorageObjectPath,
+  getStorageImageExtensionFromMimeType,
+  resolveStorageImageSrc,
+} from "@/lib/storageImage";
+
 export const MEMBER_IMAGE_BUCKET = "member-images";
 export const MEMBER_IMAGE_MAX_BYTES = 5 * 1024 * 1024;
-export const MEMBER_IMAGE_ALLOWED_MIME_TYPES = [
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-] as const;
-
-const MEMBER_IMAGE_MIME_TO_EXTENSION: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-};
+export const MEMBER_IMAGE_ALLOWED_MIME_TYPES = STORAGE_IMAGE_ALLOWED_MIME_TYPES;
 
 const MEMBER_IMAGE_PUBLIC_PATH_PREFIX = `/storage/v1/object/public/${MEMBER_IMAGE_BUCKET}/`;
 
-function encodeStoragePath(path: string): string {
-  return path
-    .split("/")
-    .map((segment) => encodeURIComponent(segment))
-    .join("/");
-}
-
 export function isMemberImageStoragePath(value: string): boolean {
-  if (!value.trim()) return false;
-  if (/^https:\/\//i.test(value)) return false;
-  if (value.startsWith("/")) return false;
-  if (value.includes("..")) return false;
-  return true;
+  return isStorageObjectPath(value);
 }
 
 export function isMemberImageLegacyPublicUrl(value: string): boolean {
@@ -47,19 +34,13 @@ export function isMemberImageLegacyPublicUrl(value: string): boolean {
 export function resolveMemberImageSrc(value: string | null): string | null {
   if (!value) return null;
   if (isMemberImageLegacyPublicUrl(value)) return value;
-  if (!isMemberImageStoragePath(value)) return null;
-
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  if (!supabaseUrl) return null;
-
-  const encodedPath = encodeStoragePath(value);
-  return `${supabaseUrl}/storage/v1/object/public/${MEMBER_IMAGE_BUCKET}/${encodedPath}`;
+  return resolveStorageImageSrc(value, MEMBER_IMAGE_BUCKET);
 }
 
 export function isAllowedMemberImageMimeType(mimeType: string): boolean {
-  return (MEMBER_IMAGE_ALLOWED_MIME_TYPES as readonly string[]).includes(mimeType);
+  return isAllowedStorageImageMimeType(mimeType);
 }
 
 export function getMemberImageExtensionFromMimeType(mimeType: string): string | null {
-  return MEMBER_IMAGE_MIME_TO_EXTENSION[mimeType] ?? null;
+  return getStorageImageExtensionFromMimeType(mimeType);
 }

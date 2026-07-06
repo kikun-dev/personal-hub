@@ -14,8 +14,10 @@ import {
 } from "@/types/spot";
 import type { getSpotFormMasterData } from "@/usecases/readOrbitAdminData";
 import { PREFECTURES, isPrefecture } from "@/lib/prefectures";
+import { readFileAsBase64 } from "@/lib/readFileAsBase64";
 import {
   addKeyedItem,
+  moveKeyedItem,
   removeKeyedItem,
   updateKeyedItem,
   withGeneratedKey,
@@ -135,27 +137,6 @@ function toSubmitValues(values: FormValues): CreateSpotInput {
       caption: photo.caption,
     })),
   };
-}
-
-function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("invalid_file_reader_result"));
-        return;
-      }
-      const base64 = result.split(",")[1];
-      if (!base64) {
-        reject(new Error("invalid_base64_data"));
-        return;
-      }
-      resolve(base64);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
-    reader.readAsDataURL(file);
-  });
 }
 
 function formatVideoOptionLabel(option: SongVideoOption): string {
@@ -295,19 +276,10 @@ export function SpotForm({
   };
 
   const movePhoto = (key: string, direction: -1 | 1) => {
-    setValues((prev) => {
-      const index = prev.photos.findIndex((p) => p._key === key);
-      const targetIndex = index + direction;
-      if (index === -1 || targetIndex < 0 || targetIndex >= prev.photos.length) {
-        return prev;
-      }
-      const nextPhotos = prev.photos.slice();
-      [nextPhotos[index], nextPhotos[targetIndex]] = [
-        nextPhotos[targetIndex],
-        nextPhotos[index],
-      ];
-      return { ...prev, photos: nextPhotos };
-    });
+    setValues((prev) => ({
+      ...prev,
+      photos: moveKeyedItem(prev.photos, (p) => p._key, key, direction),
+    }));
   };
 
   const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
