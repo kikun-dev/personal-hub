@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { ValidationError } from "@/types/errors";
 import type { EventOption } from "@/types/event";
-import { isSongVideoType, SONG_VIDEO_TYPE_LABELS } from "@/types/song";
+import { getSongVideoTypeLabel } from "@/types/song";
 import type { SongVideoOption } from "@/types/song";
 import {
   SPOT_SOURCE_TYPES,
@@ -113,9 +113,7 @@ function toSubmitValues(values: FormValues): CreateSpotInput {
 }
 
 function formatVideoOptionLabel(option: SongVideoOption): string {
-  const typeLabel = isSongVideoType(option.videoType)
-    ? SONG_VIDEO_TYPE_LABELS[option.videoType]
-    : option.videoType;
+  const typeLabel = getSongVideoTypeLabel(option.videoType);
   const publishedLabel = option.publishedOn ? `（${option.publishedOn}）` : "";
   return `${option.trackTitle} / ${typeLabel}${publishedLabel}`;
 }

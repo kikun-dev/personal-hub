@@ -20,6 +20,7 @@ import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
+import { getSpot } from "@/usecases/getSpot";
 import { getSongPerformanceSummary } from "@/usecases/getSongPerformanceSummary";
 import { getVenue } from "@/usecases/getVenue";
 import { listVenues } from "@/usecases/listVenues";
@@ -282,6 +283,15 @@ const loadSpotsPageData = createSharedReadLoader(
     })
 );
 
+const loadSpotDetailPageData = createSharedReadLoader(
+  ["orbit", "spot-detail-page-data"],
+  [ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.spotsDetail],
+  async (id: string) =>
+    withOrbitReadClient(async (supabase) => {
+      return getSpot(createSpotRepository(supabase), id);
+    })
+);
+
 const loadVenuesPageData = createSharedReadLoader(
   ["orbit", "venues-page-data"],
   [ORBIT_CACHE_TAGS.venues],
@@ -363,6 +373,10 @@ export async function getReleaseDetailPageData(id: string) {
 
 export async function getSpotsPageData() {
   return loadSpotsPageData();
+}
+
+export async function getSpotDetailPageData(id: string) {
+  return loadSpotDetailPageData(id);
 }
 
 export async function getVenuesPageData() {

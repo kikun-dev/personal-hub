@@ -107,6 +107,13 @@ export function isSongVideoType(value: string): value is SongVideoType {
   return (SONG_VIDEO_TYPES as readonly string[]).includes(value);
 }
 
+// 生の video_type 文字列（境界由来で未知値がありうる）をラベル化する。
+// 未知の値はそのまま返す。グループ別表示（dance_practice）が必要な場面では
+// formatSongVideoTypeLabel を使う。
+export function getSongVideoTypeLabel(videoType: string): string {
+  return isSongVideoType(videoType) ? SONG_VIDEO_TYPE_LABELS[videoType] : videoType;
+}
+
 export function formatSongVideoTypeLabel(
   type: SongVideoType,
   groupNameJa: string

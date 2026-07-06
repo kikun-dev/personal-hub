@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
 import { TextLink } from "@/components/ui/TextLink";
@@ -8,6 +8,7 @@ import {
   GOOGLE_MAPS_API_KEY,
   GoogleMapsProvider,
 } from "@/components/ui/GoogleMapsProvider";
+import { APP_ROUTES } from "@/lib/routes";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import { collectSubtypeOptions, filterSpots } from "@/usecases/spotFilters";
 import {
@@ -63,6 +64,32 @@ function MapBoundsFitter({ spots }: { spots: SpotListItem[] }) {
   return null;
 }
 
+// 一覧の行クリックによる「この場所へ寄せて」という明示的な要求。
+// InfoWindow 用の選択 state（ピンクリックでも変わる）とは分離し、ピンクリックや
+// フィルタ変更で意図しない panTo / 強制ズームが発火しないようにする。
+// 同じ行の再クリックでも再パンさせるため、クリックごとに新しいオブジェクトを作る。
+type SpotFocusRequest = {
+  spot: SpotListItem;
+};
+
+// 行クリック（地図移動、#292）を受けて、要求されたスポットへ地図を寄せる。
+// MapBoundsFitter と同様、Map の子として描画し useMap() で親のインスタンスを取得する。
+function MapSpotFocuser({ request }: { request: SpotFocusRequest | null }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map || !request) return;
+
+    map.panTo({ lat: request.spot.latitude, lng: request.spot.longitude });
+    const currentZoom = map.getZoom();
+    if (currentZoom === undefined || currentZoom < SINGLE_POINT_ZOOM) {
+      map.setZoom(SINGLE_POINT_ZOOM);
+    }
+  }, [map, request]);
+
+  return null;
+}
+
 function SpotInfoWindowContent({
   spot,
   isAdmin,
@@ -104,6 +131,9 @@ function SpotInfoWindowContent({
           Googleマップで開く
         </a>
       )}
+      <TextLink href={`/spots/${spot.id}`} className="block">
+        詳細を見る
+      </TextLink>
       {isAdmin && (
         <TextLink href={`/spots/${spot.id}/edit`} className="block">
           編集
@@ -122,6 +152,11 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
   const [sourceType, setSourceType] = useState(urlSourceType);
   const [subtypeName, setSubtypeName] = useState(urlSubtypeName);
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
+  const [focusRequest, setFocusRequest] = useState<SpotFocusRequest | null>(null);
+  // 行クリックで地図へスクロールするための地図コンテナ参照。
+  // API キー未設定時は地図自体を描画しないため ref は常に null のまま
+  // （GOOGLE_MAPS_API_KEY で分岐して何もしない）。
+  const mapContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setSourceType(urlSourceType);
@@ -149,13 +184,24 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     setSourceType(nextSourceType);
     setSubtypeName("");
     setSelectedSpotId(null);
+    setFocusRequest(null);
     replaceListFilterParams({ type: nextSourceType, subtype: "" });
   };
 
   const handleSubtypeChange = (nextSubtypeName: string) => {
     setSubtypeName(nextSubtypeName);
     setSelectedSpotId(null);
+    setFocusRequest(null);
     replaceListFilterParams({ subtype: nextSubtypeName });
+  };
+
+  // 行クリック = 地図移動（#292 案A）。スポット名リンク（詳細遷移）とは
+  // stopPropagation で切り分ける。地図が無ければ何もしない。
+  const handleRowClick = (spot: SpotListItem) => {
+    if (!GOOGLE_MAPS_API_KEY) return;
+    setSelectedSpotId(spot.id);
+    setFocusRequest({ spot });
+    mapContainerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   return (
@@ -193,7 +239,10 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
       </div>
 
       {GOOGLE_MAPS_API_KEY ? (
-        <div className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10">
+        <div
+          ref={mapContainerRef}
+          className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10"
+        >
           <GoogleMapsProvider>
             <Map
               defaultCenter={JAPAN_CENTER}
@@ -202,6 +251,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
               disableDefaultUI={false}
             >
               <MapBoundsFitter spots={filteredSpots} />
+              <MapSpotFocuser request={focusRequest} />
               {filteredSpots.map((spot) => (
                 <Marker
                   key={spot.id}
@@ -250,8 +300,33 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
             </thead>
             <tbody>
               {filteredSpots.map((spot) => (
-                <tr key={spot.id} className="border-b border-foreground/5">
-                  <td className="py-2 pr-4 text-foreground">{spot.name}</td>
+                <tr
+                  key={spot.id}
+                  onClick={() => handleRowClick(spot)}
+                  // クリッカブルに見える行はキーボードでも操作できるようにする
+                  tabIndex={GOOGLE_MAPS_API_KEY ? 0 : undefined}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      handleRowClick(spot);
+                    }
+                  }}
+                  className={`border-b border-foreground/5 ${
+                    GOOGLE_MAPS_API_KEY
+                      ? "cursor-pointer hover:bg-foreground/5 focus-visible:bg-foreground/5 focus-visible:outline-none"
+                      : ""
+                  }`}
+                >
+                  <td className="py-2 pr-4 text-foreground">
+                    <TextLink
+                      href={`/spots/${spot.id}`}
+                      listBackFallbackHref={APP_ROUTES.spots}
+                      className="text-sm"
+                      onClick={(event) => event.stopPropagation()}
+                    >
+                      {spot.name}
+                    </TextLink>
+                  </td>
                   <td className="py-2 pr-4 text-foreground/80">
                     {spot.sourceTypes.length > 0
                       ? spot.sourceTypes
@@ -267,6 +342,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
                       <TextLink
                         href={`/spots/${spot.id}/edit`}
                         className="text-sm"
+                        onClick={(event) => event.stopPropagation()}
                       >
                         編集
                       </TextLink>

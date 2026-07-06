@@ -53,9 +53,20 @@ export type SpotAppearance = {
   groupId: string | null;
   groupName: string | null;
   trackId: string | null;
+  // 出典クロスリンク（詳細ページ）用の表示名。mv は楽曲そのもの、video は
+  // 動画自身にページが無いため親楽曲のタイトルを表示する。
+  trackTitle: string | null;
   videoId: string | null;
+  // video 出典のリンク先は動画自身ではなく親楽曲の詳細ページ（/songs/[id]）。
+  videoTrackId: string | null;
+  videoTrackTitle: string | null;
+  videoType: string | null;
   eventId: string | null;
+  // event に公開詳細ページは無いためテキスト表示のみに使う。
+  eventTitle: string | null;
+  eventDate: string | null;
   liveId: string | null;
+  liveName: string | null;
   subtypeId: string | null;
   subtypeName: string | null;
   note: string | null;
