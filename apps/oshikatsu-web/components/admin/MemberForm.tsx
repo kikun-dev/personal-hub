@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { BLOOD_TYPES, SNS_TYPES } from "@/lib/constants";
 import { calculateZodiac } from "@/lib/zodiac";
+import { readFileAsBase64 } from "@/lib/readFileAsBase64";
 import {
   MEMBER_IMAGE_ALLOWED_MIME_TYPES,
   MEMBER_IMAGE_MAX_BYTES,
@@ -115,27 +116,6 @@ function toSubmitValues(form: FormValues): CreateMemberInput {
 function buildOrderedLabel(index: number, label: string): string {
   const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
   return `${prefix}${label}`;
-}
-
-function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("invalid_file_reader_result"));
-        return;
-      }
-      const base64 = result.split(",")[1];
-      if (!base64) {
-        reject(new Error("invalid_base64_data"));
-        return;
-      }
-      resolve(base64);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
-    reader.readAsDataURL(file);
-  });
 }
 
 export function MemberForm({

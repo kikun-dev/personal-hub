@@ -12,6 +12,7 @@ import type {
   ReleaseImageUploadInput,
 } from "@/types/release";
 import { getManualFrontSpecialSelectionLabel } from "@/lib/selectionPositionRules";
+import { readFileAsBase64 } from "@/lib/readFileAsBase64";
 import type { ValidationError } from "@/types/errors";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
@@ -67,27 +68,6 @@ type ReleaseFormProps = {
     imageFile?: ReleaseImageUploadInput
   ) => Promise<{ errors?: ValidationError[] }>;
 };
-
-function readFileAsBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result;
-      if (typeof result !== "string") {
-        reject(new Error("invalid_file_reader_result"));
-        return;
-      }
-      const base64 = result.split(",")[1];
-      if (!base64) {
-        reject(new Error("invalid_base64_data"));
-        return;
-      }
-      resolve(base64);
-    };
-    reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
-    reader.readAsDataURL(file);
-  });
-}
 
 export function ReleaseForm({
   mode,

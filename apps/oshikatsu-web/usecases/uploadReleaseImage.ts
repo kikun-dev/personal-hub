@@ -8,65 +8,25 @@ import {
   getReleaseImageExtensionFromMimeType,
   isAllowedReleaseImageMimeType,
 } from "@/lib/releaseImage";
+import { uploadStorageImage } from "@/usecases/uploadStorageImage";
 
 type UploadReleaseImageInput = {
   releaseId: string | null;
   imageFile: ReleaseImageUploadInput;
 };
 
-function decodeBase64(data: string): Uint8Array | null {
-  try {
-    const buffer = Buffer.from(data, "base64");
-    return new Uint8Array(buffer);
-  } catch {
-    return null;
-  }
-}
-
 export async function uploadReleaseImage(
   repo: ReleaseImageRepository,
   input: UploadReleaseImageInput
 ): Promise<Result<string, ValidationError[]>> {
-  if (!isAllowedReleaseImageMimeType(input.imageFile.mimeType)) {
-    return {
-      ok: false,
-      errors: [{ field: "artworkPath", message: "画像形式が不正です" }],
-    };
-  }
-
-  if (input.imageFile.size <= 0 || input.imageFile.size > RELEASE_IMAGE_MAX_BYTES) {
-    return {
-      ok: false,
-      errors: [{ field: "artworkPath", message: "画像サイズが不正です" }],
-    };
-  }
-
-  const extension = getReleaseImageExtensionFromMimeType(input.imageFile.mimeType);
-  if (!extension) {
-    return {
-      ok: false,
-      errors: [{ field: "artworkPath", message: "画像形式が不正です" }],
-    };
-  }
-
-  const body = decodeBase64(input.imageFile.base64Data);
-  if (!body || body.byteLength !== input.imageFile.size) {
-    return {
-      ok: false,
-      errors: [{ field: "artworkPath", message: "画像データが不正です" }],
-    };
-  }
-
-  const keyPrefix = input.releaseId ? `releases/${input.releaseId}` : "releases/new";
-  const objectPath = `${keyPrefix}/${Date.now()}-${randomUUID()}.${extension}`;
-
-  await repo.upload({
-    objectPath,
-    body,
-    contentType: input.imageFile.mimeType,
-    cacheControl: "31536000",
-    upsert: false,
+  return uploadStorageImage(repo, input.imageFile, {
+    errorField: "artworkPath",
+    maxBytes: RELEASE_IMAGE_MAX_BYTES,
+    isAllowedMimeType: isAllowedReleaseImageMimeType,
+    getExtensionFromMimeType: getReleaseImageExtensionFromMimeType,
+    buildObjectPath: (extension) => {
+      const keyPrefix = input.releaseId ? `releases/${input.releaseId}` : "releases/new";
+      return `${keyPrefix}/${Date.now()}-${randomUUID()}.${extension}`;
+    },
   });
-
-  return { ok: true, data: objectPath };
 }

@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
-import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
+import { addKeyedItem, moveKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
 
 type RosterMember = { memberId: string; memberNameJa: string };
@@ -158,14 +158,7 @@ export function SetlistEditor({
   };
 
   const moveItem = (key: number, direction: -1 | 1) => {
-    setItems((prev) => {
-      const index = prev.findIndex((item) => item.key === key);
-      const target = index + direction;
-      if (index < 0 || target < 0 || target >= prev.length) return prev;
-      const next = [...prev];
-      [next[index], next[target]] = [next[target], next[index]];
-      return next;
-    });
+    setItems((prev) => moveKeyedItem(prev, (item) => item.key, key, direction));
   };
 
   const removeItem = (key: number) => {

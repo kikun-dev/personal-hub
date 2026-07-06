@@ -50,6 +50,26 @@ export function removeKeyedItem<T, K>(list: T[], keyOf: (item: T) => K, targetKe
 }
 
 /**
+ * `keyOf(item) === targetKey` を満たす要素を、直前（-1）または直後（1）の要素と入れ替える。
+ * 対象が見つからない、または入れ替え先が範囲外の場合は元の配列をそのまま返す。
+ * SetlistEditor の `moveItem` / SpotForm の `movePhoto`（↑↓並び替え）が
+ * 同一セマンティクスで個別実装していたものを共通化（Issue #298）。
+ */
+export function moveKeyedItem<T, K>(
+  list: T[],
+  keyOf: (item: T) => K,
+  targetKey: K,
+  direction: -1 | 1
+): T[] {
+  const index = list.findIndex((item) => keyOf(item) === targetKey);
+  const target = index + direction;
+  if (index < 0 || target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
+
+/**
  * `_key: string`（crypto.randomUUID）を付与する。
  * MemberForm/SongForm/ReleaseForm の `withGroupKey` / `withReleaseKey` 等が
  * 個別に実装していたキー生成方法（crypto.randomUUID）を共通化したもの。
