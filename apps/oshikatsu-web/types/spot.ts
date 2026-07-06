@@ -74,6 +74,15 @@ export type SpotAppearance = {
   members: SpotAppearanceMember[];
 };
 
+// スポット写真1件（#293）。Storage の object path（image_path）を保持する点は
+// メンバー画像・リリース画像と同じ方針。
+export type SpotPhoto = {
+  id: string;
+  imagePath: string;
+  caption: string | null;
+  sortOrder: number;
+};
+
 export type Spot = {
   id: string;
   name: string;
@@ -85,6 +94,7 @@ export type Spot = {
   googlePlaceId: string | null;
   googleMapsUrl: string | null;
   appearances: SpotAppearance[];
+  photos: SpotPhoto[];
 };
 
 // 出来事1件ぶんの「種別×サブ種別」のペア。フィルタとサブ種別候補の導出に使う。
@@ -125,6 +135,13 @@ export type CreateSpotAppearanceInput = {
   memberIds: string[];
 };
 
+// アップロード済みの画像（object path）+ キャプション。sort_order は配列順から導出するため
+// 入力型には含めない（appearances と同様の方針）。
+export type CreateSpotPhotoInput = {
+  imagePath: string;
+  caption: string;
+};
+
 export type CreateSpotInput = {
   name: string;
   description: string;
@@ -135,6 +152,16 @@ export type CreateSpotInput = {
   googlePlaceId: string;
   googleMapsUrl: string;
   appearances: CreateSpotAppearanceInput[];
+  photos: CreateSpotPhotoInput[];
 };
 
 export type UpdateSpotInput = CreateSpotInput;
+
+// スポット写真アップロード用の入力（MemberImageUploadInput と同形）。
+// ファイル本体を base64 化してサーバーアクションへ渡す。
+export type SpotPhotoUploadInput = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+  base64Data: string;
+};

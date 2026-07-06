@@ -4,9 +4,11 @@ import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
   CreateSpotAppearanceInput,
   CreateSpotInput,
+  CreateSpotPhotoInput,
   Spot,
   SpotAppearance,
   SpotListItem,
+  SpotPhoto,
   SpotSourceSubtype,
 } from "@/types/spot";
 import { RepositoryError } from "@/types/errors";
@@ -44,7 +46,8 @@ const SPOT_DETAIL_SELECT = `
     link_url,
     created_at,
     orbit_spot_appearance_members(member_id, orbit_members(id, name_ja))
-  )
+  ),
+  orbit_spot_photos(id, image_path, caption, sort_order)
 ` as const;
 
 const SPOT_SUBTYPE_OPTION_SELECT = "id, source_type, name" as const;
@@ -52,6 +55,7 @@ const SPOT_SUBTYPE_OPTION_SELECT = "id, source_type, name" as const;
 type SpotListRow = SelectRows<"orbit_spots", typeof SPOT_LIST_SELECT>[number];
 type SpotRow = SelectRows<"orbit_spots", typeof SPOT_DETAIL_SELECT>[number];
 type SpotAppearanceRow = SpotRow["orbit_spot_appearances"][number];
+type SpotPhotoRow = SpotRow["orbit_spot_photos"][number];
 type SpotSubtypeOptionRow = SelectRows<
   "orbit_spot_source_subtypes",
   typeof SPOT_SUBTYPE_OPTION_SELECT
@@ -91,6 +95,15 @@ function mapSpotAppearance(row: SpotAppearanceRow): SpotAppearance {
   };
 }
 
+function mapSpotPhoto(row: SpotPhotoRow): SpotPhoto {
+  return {
+    id: row.id,
+    imagePath: row.image_path,
+    caption: row.caption,
+    sortOrder: row.sort_order,
+  };
+}
+
 function mapSpot(row: SpotRow): Spot {
   return {
     id: row.id,
@@ -106,6 +119,10 @@ function mapSpot(row: SpotRow): Spot {
       .slice()
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map(mapSpotAppearance),
+    photos: row.orbit_spot_photos
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(mapSpotPhoto),
   };
 }
 
@@ -317,6 +334,33 @@ async function insertAppearances(
   return { ids, error: null };
 }
 
+// スポット写真の一括挿入（単一ステートメントなのでアトミック）。
+// sort_order は配列 index から導出する。
+async function insertPhotos(
+  writable: TypedSupabaseClient,
+  spotId: string,
+  photos: CreateSpotPhotoInput[]
+): Promise<RepositoryError | null> {
+  if (photos.length === 0) {
+    return null;
+  }
+
+  const { error: insertError } = await writable.from("orbit_spot_photos").insert(
+    photos.map((photo, index) => ({
+      spot_id: spotId,
+      image_path: photo.imagePath.trim(),
+      caption: photo.caption.trim() || null,
+      sort_order: index,
+    }))
+  );
+
+  if (insertError) {
+    return new RepositoryError("写真の登録に失敗しました", insertError);
+  }
+
+  return null;
+}
+
 export function createSpotRepository(supabase: OrbitReadClient): SpotRepository {
   return {
     async findAll() {
@@ -372,6 +416,14 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         // （CASCADE で既に登録済みの出来事・メンバーも削除される）
         await writable.from("orbit_spots").delete().eq("id", spot.id);
         throw appearancesError;
+      }
+
+      const photosError = await insertPhotos(writable, spot.id, input.photos);
+      if (photosError) {
+        // 補償処理: 写真の登録失敗時も作成したスポットを削除
+        // （CASCADE で出来事・メンバー・写真すべて削除される）
+        await writable.from("orbit_spots").delete().eq("id", spot.id);
+        throw photosError;
       }
 
       const created = await this.findById(spot.id);
@@ -446,6 +498,35 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         }
       }
 
+      // 写真も出来事と同じく「新規挿入→旧削除」の順にする。挿入は単一
+      // ステートメントでアトミックなため補償は不要で、旧削除が失敗しても
+      // 新旧が重複表示されるだけでデータは失われない（次回保存で回復可能）。
+      const { data: oldPhotos, error: oldPhotosError } = await writable
+        .from("orbit_spot_photos")
+        .select("id")
+        .eq("spot_id", id);
+
+      if (oldPhotosError) {
+        throw new RepositoryError("既存の写真の取得に失敗しました", oldPhotosError);
+      }
+
+      const photosError = await insertPhotos(writable, id, input.photos);
+      if (photosError) {
+        throw photosError;
+      }
+
+      const oldPhotoIds = oldPhotos.map((row) => row.id);
+      if (oldPhotoIds.length > 0) {
+        const { error: photoDeleteError } = await writable
+          .from("orbit_spot_photos")
+          .delete()
+          .in("id", oldPhotoIds);
+
+        if (photoDeleteError) {
+          throw new RepositoryError("旧写真の削除に失敗しました", photoDeleteError);
+        }
+      }
+
       const updated = await this.findById(id);
       if (!updated) {
         throw new RepositoryError("更新したスポットの取得に失敗しました", null);
@@ -460,6 +541,21 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
       if (error) {
         throw new RepositoryError("スポットの削除に失敗しました", error);
       }
+    },
+
+    // Storage の孤児掃除（update/delete の server action）用。findById の
+    // 4テーブル join を写真パスの取得だけのために使わないための軽量クエリ。
+    async findPhotoPaths(id) {
+      const { data, error } = await supabase
+        .from("orbit_spot_photos")
+        .select("image_path")
+        .eq("spot_id", id);
+
+      if (error) {
+        throw new RepositoryError("写真パスの取得に失敗しました", error);
+      }
+
+      return data.map((row) => row.image_path);
     },
 
     async findSubtypeOptions() {

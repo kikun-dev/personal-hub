@@ -10,6 +10,7 @@ import {
   SPOT_SOURCE_TYPE_LABELS,
   type CreateSpotAppearanceInput,
   type CreateSpotInput,
+  type SpotPhotoUploadInput,
 } from "@/types/spot";
 import type { getSpotFormMasterData } from "@/usecases/readOrbitAdminData";
 import { PREFECTURES, isPrefecture } from "@/lib/prefectures";
@@ -19,6 +20,12 @@ import {
   updateKeyedItem,
   withGeneratedKey,
 } from "@/lib/keyedList";
+import {
+  SPOT_PHOTO_ALLOWED_MIME_TYPES,
+  SPOT_PHOTO_MAX_BYTES,
+  SPOT_PHOTO_MAX_COUNT,
+  isAllowedSpotPhotoMimeType,
+} from "@/lib/spotPhoto";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
@@ -30,6 +37,11 @@ import {
   SpotPlaceSearch,
   type SpotPlaceSearchResult,
 } from "@/components/admin/SpotPlaceSearch";
+import {
+  SpotPhotosSection,
+  withGeneratedPhotoKey,
+  type FormSpotPhoto,
+} from "@/components/admin/spot/SpotPhotosSection";
 
 // readOrbitAdminData（サーバー専用の usecase）から型だけを取り出す。
 // `import type` のためコンパイル時に消去され、クライアントバンドルに
@@ -38,8 +50,9 @@ export type SpotFormMasterData = Awaited<ReturnType<typeof getSpotFormMasterData
 
 type AppearanceField = CreateSpotAppearanceInput & { _key: string };
 
-type FormValues = Omit<CreateSpotInput, "appearances"> & {
+type FormValues = Omit<CreateSpotInput, "appearances" | "photos"> & {
   appearances: AppearanceField[];
+  photos: FormSpotPhoto[];
 };
 
 type SpotFormProps = {
@@ -49,6 +62,12 @@ type SpotFormProps = {
   onSubmit: (
     values: CreateSpotInput
   ) => Promise<{ errors?: ValidationError[] }>;
+  // ファイル選択と同時に Storage へアップロードし、imagePath を返す
+  // サーバーアクション。呼び出し元ページ（new/edit）が requireAdmin 済みの
+  // アクションを渡す。
+  onUploadPhoto: (
+    imageFile: SpotPhotoUploadInput
+  ) => Promise<{ imagePath?: string; errors?: ValidationError[] }>;
 };
 
 const OVERSEAS_VALUE = "__overseas__";
@@ -82,6 +101,7 @@ function getDefaultValues(): FormValues {
     googleMapsUrl: "",
     // 出来事1件以上必須（#286）のため、create の初期値に空行を1件入れておく。
     appearances: [withGeneratedKey(getDefaultAppearance())],
+    photos: [],
   };
 }
 
@@ -91,6 +111,7 @@ function toFormValues(input: CreateSpotInput): FormValues {
     appearances: input.appearances.map((appearance) =>
       withGeneratedKey(appearance)
     ),
+    photos: input.photos.map(withGeneratedPhotoKey),
   };
 }
 
@@ -109,7 +130,32 @@ function toSubmitValues(values: FormValues): CreateSpotInput {
       linkUrl: appearance.linkUrl,
       memberIds: appearance.memberIds,
     })),
+    photos: values.photos.map((photo) => ({
+      imagePath: photo.imagePath,
+      caption: photo.caption,
+    })),
   };
+}
+
+function readFileAsBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const result = reader.result;
+      if (typeof result !== "string") {
+        reject(new Error("invalid_file_reader_result"));
+        return;
+      }
+      const base64 = result.split(",")[1];
+      if (!base64) {
+        reject(new Error("invalid_base64_data"));
+        return;
+      }
+      resolve(base64);
+    };
+    reader.onerror = () => reject(reader.error ?? new Error("file_read_failed"));
+    reader.readAsDataURL(file);
+  });
 }
 
 function formatVideoOptionLabel(option: SongVideoOption): string {
@@ -127,12 +173,15 @@ export function SpotForm({
   initialValues,
   masters,
   onSubmit,
+  onUploadPhoto,
 }: SpotFormProps) {
   // 都道府県が空でなく47に無い＝海外（地域名手入力）。VenueForm と同じパターン。
   const [isOverseas, setIsOverseas] = useState(() => {
     const initial = initialValues ?? getDefaultValues();
     return initial.prefecture !== "" && !isPrefecture(initial.prefecture);
   });
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoUploadError, setPhotoUploadError] = useState<string | null>(null);
 
   const {
     values,
@@ -229,6 +278,92 @@ export function SpotForm({
           : [...a.memberIds, memberId],
       })),
     }));
+  };
+
+  const updatePhotoCaption = (key: string, caption: string) => {
+    setValues((prev) => ({
+      ...prev,
+      photos: updateKeyedItem(prev.photos, (p) => p._key, key, { caption }),
+    }));
+  };
+
+  const removePhoto = (key: string) => {
+    setValues((prev) => ({
+      ...prev,
+      photos: removeKeyedItem(prev.photos, (p) => p._key, key),
+    }));
+  };
+
+  const movePhoto = (key: string, direction: -1 | 1) => {
+    setValues((prev) => {
+      const index = prev.photos.findIndex((p) => p._key === key);
+      const targetIndex = index + direction;
+      if (index === -1 || targetIndex < 0 || targetIndex >= prev.photos.length) {
+        return prev;
+      }
+      const nextPhotos = prev.photos.slice();
+      [nextPhotos[index], nextPhotos[targetIndex]] = [
+        nextPhotos[targetIndex],
+        nextPhotos[index],
+      ];
+      return { ...prev, photos: nextPhotos };
+    });
+  };
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    // 同じファイルを続けて選択してもイベントが発火するように、入力欄はここでリセットする
+    e.target.value = "";
+    if (!file) return;
+
+    setPhotoUploadError(null);
+
+    if (values.photos.length >= SPOT_PHOTO_MAX_COUNT) {
+      setPhotoUploadError(`写真は${SPOT_PHOTO_MAX_COUNT}件までです`);
+      return;
+    }
+
+    if (!isAllowedSpotPhotoMimeType(file.type)) {
+      setPhotoUploadError(
+        `画像形式は ${SPOT_PHOTO_ALLOWED_MIME_TYPES.join(", ")} のみ対応しています`
+      );
+      return;
+    }
+
+    if (file.size > SPOT_PHOTO_MAX_BYTES) {
+      setPhotoUploadError(
+        `画像サイズは ${Math.floor(SPOT_PHOTO_MAX_BYTES / (1024 * 1024))}MB 以下にしてください`
+      );
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const base64Data = await readFileAsBase64(file);
+      const result = await onUploadPhoto({
+        fileName: file.name,
+        mimeType: file.type,
+        size: file.size,
+        base64Data,
+      });
+
+      if (!result.imagePath) {
+        setPhotoUploadError(
+          result.errors?.[0]?.message ?? "画像のアップロードに失敗しました"
+        );
+        return;
+      }
+
+      const imagePath = result.imagePath;
+      setValues((prev) => ({
+        ...prev,
+        photos: addKeyedItem(prev.photos, withGeneratedPhotoKey({ imagePath, caption: "" })),
+      }));
+    } catch {
+      setPhotoUploadError("画像のアップロードに失敗しました。時間をおいて再度お試しください");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -597,7 +732,23 @@ export function SpotForm({
         })}
       </section>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <SpotPhotosSection
+        photos={values.photos}
+        errors={errors}
+        isUploading={isUploadingPhoto}
+        uploadError={photoUploadError}
+        onFileChange={handlePhotoFileChange}
+        onCaptionChange={updatePhotoCaption}
+        onRemove={removePhoto}
+        onMoveUp={(key) => movePhoto(key, -1)}
+        onMoveDown={(key) => movePhoto(key, 1)}
+      />
+
+      <Button
+        type="submit"
+        disabled={isSubmitting || isUploadingPhoto}
+        className="w-full"
+      >
         {isSubmitting ? "保存中..." : mode === "create" ? "登録する" : "更新する"}
       </Button>
     </form>

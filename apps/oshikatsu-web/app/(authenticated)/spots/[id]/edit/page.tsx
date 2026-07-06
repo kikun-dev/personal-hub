@@ -7,6 +7,7 @@ import { getSpotFormMasterData } from "@/usecases/readOrbitAdminData";
 import { SpotForm } from "@/components/admin/SpotForm";
 import { DeleteButton } from "@/components/admin/DeleteButton";
 import { updateSpotAction, deleteSpotAction } from "./actions";
+import { uploadSpotPhotoAction } from "../../photoActions";
 import type { Spot, UpdateSpotInput } from "@/types/spot";
 import type { ValidationError } from "@/types/errors";
 
@@ -37,6 +38,10 @@ function toInitialValues(spot: Spot): UpdateSpotInput {
       note: appearance.note ?? "",
       linkUrl: appearance.linkUrl ?? "",
       memberIds: appearance.members.map((member) => member.id),
+    })),
+    photos: spot.photos.map((photo) => ({
+      imagePath: photo.imagePath,
+      caption: photo.caption ?? "",
     })),
   };
 }
@@ -90,6 +95,7 @@ export default async function EditSpotPage({ params }: EditSpotPageProps) {
         initialValues={initialValues}
         masters={masters}
         onSubmit={handleSubmit}
+        onUploadPhoto={uploadSpotPhotoAction}
       />
     </div>
   );

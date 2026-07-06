@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/requireAdmin";
 import { getSpotFormMasterData } from "@/usecases/readOrbitAdminData";
 import { SpotForm } from "@/components/admin/SpotForm";
 import { createSpotAction } from "./actions";
+import { uploadSpotPhotoAction } from "../photoActions";
 import type { CreateSpotInput } from "@/types/spot";
 import type { ValidationError } from "@/types/errors";
 
@@ -24,7 +25,12 @@ export default async function NewSpotPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-xl font-bold text-foreground">スポットを追加</h1>
-      <SpotForm mode="create" masters={masters} onSubmit={handleSubmit} />
+      <SpotForm
+        mode="create"
+        masters={masters}
+        onSubmit={handleSubmit}
+        onUploadPhoto={uploadSpotPhotoAction}
+      />
     </div>
   );
 }
