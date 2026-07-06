@@ -82,9 +82,13 @@ export type SpotListItem = {
   id: string;
   name: string;
   sourceTypes: SpotSourceType[];
+  // 紐づく出来事のサブ種別名（重複排除・null除外）。フィルタの候補導出に使う。
+  subtypeNames: string[];
   latitude: number;
   longitude: number;
   prefecture: string | null;
+  // InfoWindow の「Googleマップで開く」リンク用。未設定のスポットもあるため null 許容。
+  googleMapsUrl: string | null;
 };
 
 export type CreateSpotAppearanceInput = {

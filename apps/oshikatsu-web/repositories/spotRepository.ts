@@ -13,7 +13,7 @@ import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
 
 const SPOT_LIST_SELECT =
-  "id, name, latitude, longitude, prefecture, orbit_spot_appearances(source_type)" as const;
+  "id, name, latitude, longitude, prefecture, google_maps_url, orbit_spot_appearances(source_type, orbit_spot_source_subtypes(name))" as const;
 
 const SPOT_DETAIL_SELECT = `
   id,
@@ -105,13 +105,24 @@ function mapSpotListItem(row: SpotListRow): SpotListItem {
     new Set(row.orbit_spot_appearances.map((appearance) => appearance.source_type))
   ) as SpotListItem["sourceTypes"];
 
+  // サブ種別はフィルタ候補として使うため、null を除外して重複排除する。
+  const subtypeNames = Array.from(
+    new Set(
+      row.orbit_spot_appearances
+        .map((appearance) => appearance.orbit_spot_source_subtypes?.name ?? null)
+        .filter((name): name is string => name !== null)
+    )
+  );
+
   return {
     id: row.id,
     name: row.name,
     sourceTypes,
+    subtypeNames,
     latitude: row.latitude,
     longitude: row.longitude,
     prefecture: row.prefecture,
+    googleMapsUrl: row.google_maps_url,
   };
 }
 
