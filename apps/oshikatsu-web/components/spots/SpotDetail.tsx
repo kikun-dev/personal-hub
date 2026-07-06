@@ -142,6 +142,8 @@ function SpotPhotoItem({ photo }: { photo: SpotPhoto }) {
         alt={photo.caption ?? "スポット写真"}
         width={400}
         height={400}
+        // グリッドは 2列（sm以上3列）なので、セル幅に見合った候補を選ばせる
+        sizes="(min-width: 640px) 33vw, 50vw"
         className="aspect-square w-full rounded-lg object-cover"
       />
       {photo.caption && (

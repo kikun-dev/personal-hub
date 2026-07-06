@@ -1,5 +1,7 @@
 export const SPOT_PHOTO_BUCKET = "spot-photos";
 export const SPOT_PHOTO_MAX_BYTES = 5 * 1024 * 1024;
+// 1スポットあたりの写真上限（フォームUI・バリデーションの共通ソース）
+export const SPOT_PHOTO_MAX_COUNT = 10;
 export const SPOT_PHOTO_ALLOWED_MIME_TYPES = [
   "image/jpeg",
   "image/png",
@@ -20,9 +22,11 @@ export const SPOT_PHOTO_OBJECT_PREFIX = "spots/";
 export function isSpotPhotoStoragePath(value: string): boolean {
   if (!value.trim()) return false;
   if (/^https:\/\//i.test(value)) return false;
-  if (value.startsWith("/")) return false;
   if (value.includes("..")) return false;
-  return true;
+  // アップロード（uploadSpotPhoto）が生成するパスは必ずこの prefix 配下
+  // （migration 058 のポリシーとも一致）。prefix 外のパスを弾くことで、
+  // 改ざんされた imagePath の保存や、孤児掃除での意図しない削除を防ぐ。
+  return value.startsWith(SPOT_PHOTO_OBJECT_PREFIX);
 }
 
 function encodeStoragePath(path: string): string {

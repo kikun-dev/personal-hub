@@ -2,6 +2,7 @@ import type { CreateSpotInput, SpotSourceType } from "@/types/spot";
 import { isSpotSourceType } from "@/types/spot";
 import type { ValidationError } from "@/types/errors";
 import { isValidHttpUrl, isValidUuid } from "@/lib/validation";
+import { SPOT_PHOTO_MAX_COUNT, isSpotPhotoStoragePath } from "@/lib/spotPhoto";
 
 // 出典FKフィールド一覧。source_type に対応しないFKが非空のまま送られても
 // DB側（055）は全FK列がNULL許容の並列カラムのため弾けないので、usecase側で
@@ -160,8 +161,11 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
     }
   });
 
-  if (input.photos.length > 10) {
-    errors.push({ field: "photos", message: "写真は10件以内で登録してください" });
+  if (input.photos.length > SPOT_PHOTO_MAX_COUNT) {
+    errors.push({
+      field: "photos",
+      message: `写真は${SPOT_PHOTO_MAX_COUNT}件以内で登録してください`,
+    });
   }
 
   input.photos.forEach((photo, index) => {
@@ -170,10 +174,12 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
         field: `photos[${index}].imagePath`,
         message: "画像を指定してください",
       });
-    } else if (photo.imagePath.length > 255) {
+    } else if (!isSpotPhotoStoragePath(photo.imagePath.trim())) {
+      // アップロードが生成する spots/ prefix のパス以外は受け付けない
+      // （改ざんされたパスの保存や、孤児掃除での意図しない削除を防ぐ）
       errors.push({
         field: `photos[${index}].imagePath`,
-        message: "画像パスは255文字以内で入力してください",
+        message: "画像の指定が正しくありません",
       });
     }
 

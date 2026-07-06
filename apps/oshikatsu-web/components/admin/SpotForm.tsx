@@ -23,6 +23,7 @@ import {
 import {
   SPOT_PHOTO_ALLOWED_MIME_TYPES,
   SPOT_PHOTO_MAX_BYTES,
+  SPOT_PHOTO_MAX_COUNT,
   isAllowedSpotPhotoMimeType,
 } from "@/lib/spotPhoto";
 import { Input } from "@/components/ui/Input";
@@ -46,8 +47,6 @@ import {
 // `import type` のためコンパイル時に消去され、クライアントバンドルに
 // サーバー専用コードが含まれることはない。
 export type SpotFormMasterData = Awaited<ReturnType<typeof getSpotFormMasterData>>;
-
-const SPOT_PHOTO_MAX_COUNT = 10;
 
 type AppearanceField = CreateSpotAppearanceInput & { _key: string };
 

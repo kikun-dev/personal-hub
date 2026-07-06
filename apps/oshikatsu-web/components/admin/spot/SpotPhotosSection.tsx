@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/Input";
 import {
   SPOT_PHOTO_ALLOWED_MIME_TYPES,
   SPOT_PHOTO_MAX_BYTES,
+  SPOT_PHOTO_MAX_COUNT,
   resolveSpotPhotoSrc,
 } from "@/lib/spotPhoto";
 
@@ -128,7 +129,7 @@ export function SpotPhotosSection({
         />
         <p className="mt-1 text-xs text-foreground/50">
           JPEG / PNG / WebP、最大 {Math.floor(SPOT_PHOTO_MAX_BYTES / (1024 * 1024))}
-          MB、最大10枚。選択すると即座にアップロードされます
+          MB、最大{SPOT_PHOTO_MAX_COUNT}枚。選択すると即座にアップロードされます
         </p>
         {isUploading && (
           <p className="mt-1 text-xs text-foreground/50">アップロード中...</p>

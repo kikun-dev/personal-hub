@@ -334,24 +334,13 @@ async function insertAppearances(
   return { ids, error: null };
 }
 
-// スポット写真の全削除→再挿入。photos は appearances と違い id を持たない入力
-// （path + caption）で、他テーブルからの参照も無いため、appearances のような
-// 「新規挿入→旧削除」の順序を取る必要が無く、素朴な置き換えで良い。
+// スポット写真の一括挿入（単一ステートメントなのでアトミック）。
 // sort_order は配列 index から導出する。
-async function replacePhotos(
+async function insertPhotos(
   writable: TypedSupabaseClient,
   spotId: string,
   photos: CreateSpotPhotoInput[]
 ): Promise<RepositoryError | null> {
-  const { error: deleteError } = await writable
-    .from("orbit_spot_photos")
-    .delete()
-    .eq("spot_id", spotId);
-
-  if (deleteError) {
-    return new RepositoryError("写真の削除に失敗しました", deleteError);
-  }
-
   if (photos.length === 0) {
     return null;
   }
@@ -429,7 +418,7 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         throw appearancesError;
       }
 
-      const photosError = await replacePhotos(writable, spot.id, input.photos);
+      const photosError = await insertPhotos(writable, spot.id, input.photos);
       if (photosError) {
         // 補償処理: 写真の登録失敗時も作成したスポットを削除
         // （CASCADE で出来事・メンバー・写真すべて削除される）
@@ -509,9 +498,33 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         }
       }
 
-      const photosError = await replacePhotos(writable, id, input.photos);
+      // 写真も出来事と同じく「新規挿入→旧削除」の順にする。挿入は単一
+      // ステートメントでアトミックなため補償は不要で、旧削除が失敗しても
+      // 新旧が重複表示されるだけでデータは失われない（次回保存で回復可能）。
+      const { data: oldPhotos, error: oldPhotosError } = await writable
+        .from("orbit_spot_photos")
+        .select("id")
+        .eq("spot_id", id);
+
+      if (oldPhotosError) {
+        throw new RepositoryError("既存の写真の取得に失敗しました", oldPhotosError);
+      }
+
+      const photosError = await insertPhotos(writable, id, input.photos);
       if (photosError) {
         throw photosError;
+      }
+
+      const oldPhotoIds = oldPhotos.map((row) => row.id);
+      if (oldPhotoIds.length > 0) {
+        const { error: photoDeleteError } = await writable
+          .from("orbit_spot_photos")
+          .delete()
+          .in("id", oldPhotoIds);
+
+        if (photoDeleteError) {
+          throw new RepositoryError("旧写真の削除に失敗しました", photoDeleteError);
+        }
       }
 
       const updated = await this.findById(id);
@@ -528,6 +541,21 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
       if (error) {
         throw new RepositoryError("スポットの削除に失敗しました", error);
       }
+    },
+
+    // Storage の孤児掃除（update/delete の server action）用。findById の
+    // 4テーブル join を写真パスの取得だけのために使わないための軽量クエリ。
+    async findPhotoPaths(id) {
+      const { data, error } = await supabase
+        .from("orbit_spot_photos")
+        .select("image_path")
+        .eq("spot_id", id);
+
+      if (error) {
+        throw new RepositoryError("写真パスの取得に失敗しました", error);
+      }
+
+      return data.map((row) => row.image_path);
     },
 
     async findSubtypeOptions() {

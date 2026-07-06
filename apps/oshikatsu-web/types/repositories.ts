@@ -132,6 +132,8 @@ export type SpotRepository = {
   delete(id: string): Promise<void>;
   // 出来事のサブ種別マスタ一覧（フォームの選択候補用）
   findSubtypeOptions(): Promise<SpotSourceSubtype[]>;
+  // Storage 孤児掃除用の軽量クエリ（update/delete 前の旧写真パス取得）
+  findPhotoPaths(id: string): Promise<string[]>;
 };
 
 export type LiveCalendarPerformance = {

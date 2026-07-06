@@ -34,8 +34,7 @@ export async function updateSpotAction(
   try {
     // 更新前の写真パスを控えておき、更新成功後に「新しい入力に無くなったもの」を
     // Storage から掃除する（DB書き込み優先。Storage削除の失敗は致命傷にしない）。
-    const existing = await repo.findById(id);
-    const oldImagePaths = existing?.photos.map((photo) => photo.imagePath) ?? [];
+    const oldImagePaths = await repo.findPhotoPaths(id);
 
     const result = await updateSpot(repo, id, input);
     if (!result.ok) {
@@ -69,10 +68,9 @@ export async function deleteSpotAction(
   const spotPhotoRepo = createSpotPhotoRepository(supabase);
 
   try {
-    const existing = await repo.findById(id);
+    const imagePaths = await repo.findPhotoPaths(id);
     await deleteSpot(repo, id);
 
-    const imagePaths = existing?.photos.map((photo) => photo.imagePath) ?? [];
     if (imagePaths.length > 0) {
       await cleanupSpotPhotos(spotPhotoRepo, imagePaths);
     }
