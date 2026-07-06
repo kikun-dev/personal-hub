@@ -103,8 +103,11 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 - **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、関連動画、衣装）
 - **ライブ/会場/セットリスト管理**（公演、出演メンバー、披露メンバー、披露タイプ）
 - **制作陣管理**（人物マスタ、担当 role、担当楽曲一覧）
-- **聖地マップ**（活動で訪れた場所の登録・地図表示・種別/サブ種別フィルタ）
+- **聖地マップ**（活動で訪れた場所の登録・地図表示・スポット詳細・写真）
   - スポットは出来事（グループ・種別・サブ種別・出典FK・メンバー・リンク・メモ）を1件以上持ち、単一カテゴリは持たない（ADR 0010 追記）
+  - 絞り込みは 種別/都道府県 の select（URL同期）+ スポット名・サブ種別・メンバー名の横断テキスト検索（URL非同期、楽曲一覧と同方式）
+  - 一覧の行クリックで地図移動、スポット名/InfoWindow から詳細ページへ（#292 案A）
+  - 写真は Supabase Storage（`spot-photos` バケット）へアップロードし、`orbit_spot_photos.image_path` に object path を保持
   - 場所登録は Places Autocomplete（Places API New）、地図表示は Google Maps JS API + `@vis.gl/react-google-maps`（`GoogleMapsProvider` で language=ja / region=JP 固定）
 - **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場/スポット CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
