@@ -160,5 +160,30 @@ export function validateSpot(input: CreateSpotInput): ValidationError[] {
     }
   });
 
+  if (input.photos.length > 10) {
+    errors.push({ field: "photos", message: "写真は10件以内で登録してください" });
+  }
+
+  input.photos.forEach((photo, index) => {
+    if (!photo.imagePath.trim()) {
+      errors.push({
+        field: `photos[${index}].imagePath`,
+        message: "画像を指定してください",
+      });
+    } else if (photo.imagePath.length > 255) {
+      errors.push({
+        field: `photos[${index}].imagePath`,
+        message: "画像パスは255文字以内で入力してください",
+      });
+    }
+
+    if (photo.caption.length > 200) {
+      errors.push({
+        field: `photos[${index}].caption`,
+        message: "キャプションは200文字以内で入力してください",
+      });
+    }
+  });
+
   return errors;
 }

@@ -1,10 +1,17 @@
+import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { TEXT_LINK_CLASS, TextLink } from "@/components/ui/TextLink";
 import { SpotLocationMap } from "@/components/spots/SpotLocationMap";
 import { formatDate } from "@/lib/formatters";
+import { resolveSpotPhotoSrc } from "@/lib/spotPhoto";
 import { getSongVideoTypeLabel } from "@/types/song";
-import { SPOT_SOURCE_TYPE_LABELS, type Spot, type SpotAppearance } from "@/types/spot";
+import {
+  SPOT_SOURCE_TYPE_LABELS,
+  type Spot,
+  type SpotAppearance,
+  type SpotPhoto,
+} from "@/types/spot";
 
 type SpotDetailProps = {
   spot: Spot;
@@ -124,6 +131,26 @@ function SpotAppearanceItem({ appearance }: { appearance: SpotAppearance }) {
   );
 }
 
+function SpotPhotoItem({ photo }: { photo: SpotPhoto }) {
+  const src = resolveSpotPhotoSrc(photo.imagePath);
+  if (!src) return null;
+
+  return (
+    <li>
+      <Image
+        src={src}
+        alt={photo.caption ?? "スポット写真"}
+        width={400}
+        height={400}
+        className="aspect-square w-full rounded-lg object-cover"
+      />
+      {photo.caption && (
+        <p className="mt-1 text-xs text-foreground/60">{photo.caption}</p>
+      )}
+    </li>
+  );
+}
+
 export function SpotDetail({ spot }: SpotDetailProps) {
   return (
     <div className="space-y-6">
@@ -182,6 +209,19 @@ export function SpotDetail({ spot }: SpotDetailProps) {
           </ul>
         )}
       </Card>
+
+      {spot.photos.length > 0 && (
+        <Card>
+          <h2 className="mb-3 text-sm font-medium text-foreground/70">
+            写真（{spot.photos.length}件）
+          </h2>
+          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {spot.photos.map((photo) => (
+              <SpotPhotoItem key={photo.id} photo={photo} />
+            ))}
+          </ul>
+        </Card>
+      )}
     </div>
   );
 }

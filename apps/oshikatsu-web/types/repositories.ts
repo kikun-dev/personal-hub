@@ -231,3 +231,14 @@ export type ReleaseImageRepository = {
   }): Promise<void>;
   remove(objectPaths: string[]): Promise<void>;
 };
+
+export type SpotPhotoRepository = {
+  upload(input: {
+    objectPath: string;
+    body: Uint8Array;
+    contentType: string;
+    cacheControl: string;
+    upsert: boolean;
+  }): Promise<void>;
+  remove(objectPaths: string[]): Promise<void>;
+};

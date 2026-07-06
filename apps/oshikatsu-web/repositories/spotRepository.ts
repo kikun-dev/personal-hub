@@ -4,9 +4,11 @@ import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
   CreateSpotAppearanceInput,
   CreateSpotInput,
+  CreateSpotPhotoInput,
   Spot,
   SpotAppearance,
   SpotListItem,
+  SpotPhoto,
   SpotSourceSubtype,
 } from "@/types/spot";
 import { RepositoryError } from "@/types/errors";
@@ -44,7 +46,8 @@ const SPOT_DETAIL_SELECT = `
     link_url,
     created_at,
     orbit_spot_appearance_members(member_id, orbit_members(id, name_ja))
-  )
+  ),
+  orbit_spot_photos(id, image_path, caption, sort_order)
 ` as const;
 
 const SPOT_SUBTYPE_OPTION_SELECT = "id, source_type, name" as const;
@@ -52,6 +55,7 @@ const SPOT_SUBTYPE_OPTION_SELECT = "id, source_type, name" as const;
 type SpotListRow = SelectRows<"orbit_spots", typeof SPOT_LIST_SELECT>[number];
 type SpotRow = SelectRows<"orbit_spots", typeof SPOT_DETAIL_SELECT>[number];
 type SpotAppearanceRow = SpotRow["orbit_spot_appearances"][number];
+type SpotPhotoRow = SpotRow["orbit_spot_photos"][number];
 type SpotSubtypeOptionRow = SelectRows<
   "orbit_spot_source_subtypes",
   typeof SPOT_SUBTYPE_OPTION_SELECT
@@ -91,6 +95,15 @@ function mapSpotAppearance(row: SpotAppearanceRow): SpotAppearance {
   };
 }
 
+function mapSpotPhoto(row: SpotPhotoRow): SpotPhoto {
+  return {
+    id: row.id,
+    imagePath: row.image_path,
+    caption: row.caption,
+    sortOrder: row.sort_order,
+  };
+}
+
 function mapSpot(row: SpotRow): Spot {
   return {
     id: row.id,
@@ -106,6 +119,10 @@ function mapSpot(row: SpotRow): Spot {
       .slice()
       .sort((a, b) => a.created_at.localeCompare(b.created_at))
       .map(mapSpotAppearance),
+    photos: row.orbit_spot_photos
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map(mapSpotPhoto),
   };
 }
 
@@ -317,6 +334,44 @@ async function insertAppearances(
   return { ids, error: null };
 }
 
+// スポット写真の全削除→再挿入。photos は appearances と違い id を持たない入力
+// （path + caption）で、他テーブルからの参照も無いため、appearances のような
+// 「新規挿入→旧削除」の順序を取る必要が無く、素朴な置き換えで良い。
+// sort_order は配列 index から導出する。
+async function replacePhotos(
+  writable: TypedSupabaseClient,
+  spotId: string,
+  photos: CreateSpotPhotoInput[]
+): Promise<RepositoryError | null> {
+  const { error: deleteError } = await writable
+    .from("orbit_spot_photos")
+    .delete()
+    .eq("spot_id", spotId);
+
+  if (deleteError) {
+    return new RepositoryError("写真の削除に失敗しました", deleteError);
+  }
+
+  if (photos.length === 0) {
+    return null;
+  }
+
+  const { error: insertError } = await writable.from("orbit_spot_photos").insert(
+    photos.map((photo, index) => ({
+      spot_id: spotId,
+      image_path: photo.imagePath.trim(),
+      caption: photo.caption.trim() || null,
+      sort_order: index,
+    }))
+  );
+
+  if (insertError) {
+    return new RepositoryError("写真の登録に失敗しました", insertError);
+  }
+
+  return null;
+}
+
 export function createSpotRepository(supabase: OrbitReadClient): SpotRepository {
   return {
     async findAll() {
@@ -372,6 +427,14 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         // （CASCADE で既に登録済みの出来事・メンバーも削除される）
         await writable.from("orbit_spots").delete().eq("id", spot.id);
         throw appearancesError;
+      }
+
+      const photosError = await replacePhotos(writable, spot.id, input.photos);
+      if (photosError) {
+        // 補償処理: 写真の登録失敗時も作成したスポットを削除
+        // （CASCADE で出来事・メンバー・写真すべて削除される）
+        await writable.from("orbit_spots").delete().eq("id", spot.id);
+        throw photosError;
       }
 
       const created = await this.findById(spot.id);
@@ -444,6 +507,11 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
         if (deleteError) {
           throw new RepositoryError("旧出来事の削除に失敗しました", deleteError);
         }
+      }
+
+      const photosError = await replacePhotos(writable, id, input.photos);
+      if (photosError) {
+        throw photosError;
       }
 
       const updated = await this.findById(id);
