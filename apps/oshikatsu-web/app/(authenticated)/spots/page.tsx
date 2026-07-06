@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/Button";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 
 export default async function SpotsPage() {
-  const spots = await getSpotsPageData();
+  const { spots, memberOptions } = await getSpotsPageData();
   const role = await getSessionRole();
   const isAdmin = isAdminRole(role);
 
@@ -24,7 +24,7 @@ export default async function SpotsPage() {
       {/* useSearchParams を使うクライアントコンポーネントは Suspense で包む
           （lives / songs 等の Browser パターンと同じ） */}
       <Suspense fallback={<div className="h-10" />}>
-        <SpotsMapView spots={spots} isAdmin={isAdmin} />
+        <SpotsMapView spots={spots} memberOptions={memberOptions} isAdmin={isAdmin} />
       </Suspense>
     </div>
   );

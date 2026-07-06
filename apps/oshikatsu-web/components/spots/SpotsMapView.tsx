@@ -10,15 +10,22 @@ import {
 } from "@/components/ui/GoogleMapsProvider";
 import { APP_ROUTES } from "@/lib/routes";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
-import { collectSubtypeOptions, filterSpots } from "@/usecases/spotFilters";
+import {
+  collectSpotPrefectures,
+  filterSpotsByPrefecture,
+  filterSpotsBySourceType,
+  searchSpots,
+} from "@/usecases/spotFilters";
 import {
   SPOT_SOURCE_TYPES,
   SPOT_SOURCE_TYPE_LABELS,
   type SpotListItem,
 } from "@/types/spot";
+import type { MemberOption } from "@/types/member";
 
 type SpotsMapViewProps = {
   spots: SpotListItem[];
+  memberOptions: MemberOption[];
   isAdmin: boolean;
 };
 
@@ -143,14 +150,17 @@ function SpotInfoWindowContent({
   );
 }
 
-export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
+export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProps) {
   // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
   // （LiveBrowser / SongBrowser と同じパターン）
   const searchParams = useSearchParams();
   const urlSourceType = searchParams.get("type") ?? "";
-  const urlSubtypeName = searchParams.get("subtype") ?? "";
+  const urlPrefecture = searchParams.get("prefecture") ?? "";
   const [sourceType, setSourceType] = useState(urlSourceType);
-  const [subtypeName, setSubtypeName] = useState(urlSubtypeName);
+  const [prefecture, setPrefecture] = useState(urlPrefecture);
+  // テキスト検索（スポット名・サブ種別・メンバー名）は SongBrowser のタイトル検索と
+  // 同じく URL 非同期の一時状態にする
+  const [query, setQuery] = useState("");
   const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
   const [focusRequest, setFocusRequest] = useState<SpotFocusRequest | null>(null);
   // 行クリックで地図へスクロールするための地図コンテナ参照。
@@ -162,19 +172,33 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     setSourceType(urlSourceType);
   }, [urlSourceType]);
   useEffect(() => {
-    setSubtypeName(urlSubtypeName);
-  }, [urlSubtypeName]);
+    setPrefecture(urlPrefecture);
+  }, [urlPrefecture]);
 
-  // サブ種別の候補 = 選択中の種別（未選択なら全種別）の出来事が持つサブ種別名。
-  // 判定は filterSpots と同じペア単位のロジック（spotFilters.ts）を共有する
-  const subtypeOptions = useMemo(
-    () => collectSubtypeOptions(spots, sourceType),
-    [spots, sourceType]
+  const prefectureOptions = useMemo(() => collectSpotPrefectures(spots), [spots]);
+
+  // テキスト検索でメンバー名を引くための id → 表示名マップ。
+  // このファイルでは Map が @vis.gl/react-google-maps のコンポーネント名に
+  // 隠されるため、組み込みの Map は globalThis 経由で参照する。
+  const memberNameById = useMemo(
+    () =>
+      new globalThis.Map<string, string>(
+        memberOptions.map((member) => [member.id, member.nameJa])
+      ),
+    [memberOptions]
   );
 
   const filteredSpots = useMemo(
-    () => filterSpots(spots, { sourceType, subtypeName }),
-    [spots, sourceType, subtypeName]
+    () =>
+      searchSpots(
+        filterSpotsByPrefecture(
+          filterSpotsBySourceType(spots, sourceType),
+          prefecture
+        ),
+        query,
+        memberNameById
+      ),
+    [spots, sourceType, prefecture, query, memberNameById]
   );
 
   const selectedSpot =
@@ -182,17 +206,22 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
 
   const handleSourceTypeChange = (nextSourceType: string) => {
     setSourceType(nextSourceType);
-    setSubtypeName("");
     setSelectedSpotId(null);
     setFocusRequest(null);
-    replaceListFilterParams({ type: nextSourceType, subtype: "" });
+    replaceListFilterParams({ type: nextSourceType });
   };
 
-  const handleSubtypeChange = (nextSubtypeName: string) => {
-    setSubtypeName(nextSubtypeName);
+  const handlePrefectureChange = (nextPrefecture: string) => {
+    setPrefecture(nextPrefecture);
     setSelectedSpotId(null);
     setFocusRequest(null);
-    replaceListFilterParams({ subtype: nextSubtypeName });
+    replaceListFilterParams({ prefecture: nextPrefecture });
+  };
+
+  const handleQueryChange = (nextQuery: string) => {
+    setQuery(nextQuery);
+    setSelectedSpotId(null);
+    setFocusRequest(null);
   };
 
   // 行クリック = 地図移動（#292 案A）。スポット名リンク（詳細遷移）とは
@@ -221,18 +250,26 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
           ))}
         </select>
         <select
-          value={subtypeName}
-          onChange={(event) => handleSubtypeChange(event.target.value)}
-          aria-label="サブ種別で絞り込み"
+          value={prefecture}
+          onChange={(event) => handlePrefectureChange(event.target.value)}
+          aria-label="都道府県で絞り込み"
           className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
         >
-          <option value="">すべて</option>
-          {subtypeOptions.map((name) => (
+          <option value="">全都道府県</option>
+          {prefectureOptions.map((name) => (
             <option key={name} value={name}>
               {name}
             </option>
           ))}
         </select>
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => handleQueryChange(event.target.value)}
+          placeholder="名前・サブ種別・メンバーで検索"
+          aria-label="スポット名・サブ種別・メンバー名で検索"
+          className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+        />
         <span className="ml-auto shrink-0 text-sm text-foreground/50">
           {filteredSpots.length}件
         </span>
