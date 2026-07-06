@@ -1940,6 +1940,10 @@ export type Database = {
         Args: { p_id: string; p_payload: Json }
         Returns: string
       }
+      upsert_orbit_spot: {
+        Args: { p_id: string; p_payload: Json }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never

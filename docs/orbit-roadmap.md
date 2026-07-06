@@ -334,7 +334,7 @@
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
 | Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
-| spot create/update 非アトミック | spots + appearances + members を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 でRPC化予定 |
+| ~~spot create/update 非アトミック~~ | ~~spots + appearances + members を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み）~~ | ✅ Issue #289 で対応済み |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
 | ~~Orbit 認可が authenticated 一段階~~ | ~~Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない~~ | ✅ Issue #213 で対応済み |

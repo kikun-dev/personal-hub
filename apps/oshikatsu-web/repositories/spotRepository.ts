@@ -2,9 +2,7 @@ import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
 import type { SpotRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
 import type {
-  CreateSpotAppearanceInput,
   CreateSpotInput,
-  CreateSpotPhotoInput,
   Spot,
   SpotAppearance,
   SpotListItem,
@@ -165,201 +163,37 @@ function mapSubtypeOption(row: SpotSubtypeOptionRow): SpotSourceSubtype {
   };
 }
 
-function toSpotRow(input: CreateSpotInput) {
+// #289: upsert_orbit_spot（migration 059）用のペイロード整形。
+// トリム済みの値を渡す（空文字→NULL変換はRPC側のNULLIFが行う）。
+// appearances/photos の出典FKゲーティング・sort_orderの配列順採番もRPC側が行うため、
+// ここでは既存 toAppearanceRow 相当の値をそのまま渡してよい。
+function toSpotPayload(input: CreateSpotInput) {
   return {
     name: input.name.trim(),
-    description: input.description.trim() || null,
+    description: input.description.trim(),
     latitude: Number(input.latitude),
     longitude: Number(input.longitude),
-    address: input.address.trim() || null,
-    prefecture: input.prefecture.trim() || null,
-    google_place_id: input.googlePlaceId.trim() || null,
-    google_maps_url: input.googleMapsUrl.trim() || null,
-  };
-}
-
-type AppearanceFkField = "trackId" | "videoId" | "eventId" | "liveId";
-
-// 出典種別ごとに対応するFKフィールド（youtube 等の新種別や other、未知の値は
-// 対応FKなし＝undefined）。
-const APPEARANCE_FK_FIELD_BY_SOURCE_TYPE: Record<string, AppearanceFkField | undefined> = {
-  mv: "trackId",
-  video: "videoId",
-  event: "eventId",
-  live: "liveId",
-};
-
-// source_type × trim済みサブ種別名 のキー。orbit_spot_source_subtypes の
-// unique index (source_type, name) に対応する find-or-create のキーとして使う。
-function subtypeKey(sourceType: string, name: string): string {
-  return `${sourceType}:${name}`;
-}
-
-function toAppearanceRow(
-  spotId: string,
-  input: CreateSpotAppearanceInput,
-  subtypeIdByKey: Map<string, string>
-) {
-  // source_type に対応するFKだけを行に載せ、他のFKは常に null にする
-  // （validateSpot が防ぐが、DB整合の多層防御）。
-  const fkField = APPEARANCE_FK_FIELD_BY_SOURCE_TYPE[input.sourceType];
-  const subtypeName = input.subtypeName.trim();
-  return {
-    spot_id: spotId,
-    source_type: input.sourceType,
-    group_id: input.groupId || null,
-    track_id: fkField === "trackId" ? input.trackId || null : null,
-    video_id: fkField === "videoId" ? input.videoId || null : null,
-    event_id: fkField === "eventId" ? input.eventId || null : null,
-    live_id: fkField === "liveId" ? input.liveId || null : null,
-    subtype_id: subtypeName
-      ? (subtypeIdByKey.get(subtypeKey(input.sourceType, subtypeName)) ?? null)
-      : null,
-    note: input.note.trim() || null,
-    link_url: input.linkUrl.trim() || null,
-  };
-}
-
-type ResolveSubtypeIdsResult = {
-  idByKey: Map<string, string>;
-  error: RepositoryError | null;
-};
-
-// appearances のうち subtypeName が非空のものについて、source_type × name の
-// find-or-create を行い、キー（subtypeKey）→id のマップを返す。
-// upsert(ignoreDuplicates: false) により、新規作成分・既存流用分の両方の id が
-// select で返ってくる。
-async function resolveSubtypeIds(
-  writable: TypedSupabaseClient,
-  appearances: CreateSpotAppearanceInput[]
-): Promise<ResolveSubtypeIdsResult> {
-  const rowsToUpsert = new Map<string, { source_type: string; name: string }>();
-  for (const appearance of appearances) {
-    const name = appearance.subtypeName.trim();
-    if (!name) continue;
-    const key = subtypeKey(appearance.sourceType, name);
-    if (!rowsToUpsert.has(key)) {
-      rowsToUpsert.set(key, { source_type: appearance.sourceType, name });
-    }
-  }
-
-  if (rowsToUpsert.size === 0) {
-    return { idByKey: new Map(), error: null };
-  }
-
-  const { data, error } = await writable
-    .from("orbit_spot_source_subtypes")
-    .upsert(Array.from(rowsToUpsert.values()), {
-      onConflict: "source_type,name",
-      ignoreDuplicates: false,
-    })
-    .select("id, source_type, name");
-
-  if (error) {
-    return {
-      idByKey: new Map(),
-      error: new RepositoryError("出来事のサブ種別の登録に失敗しました", error),
-    };
-  }
-
-  const idByKey = new Map<string, string>();
-  for (const row of data) {
-    idByKey.set(subtypeKey(row.source_type, row.name), row.id);
-  }
-  return { idByKey, error: null };
-}
-
-type InsertAppearancesResult = {
-  // 挿入済み出来事の id（メンバー挿入失敗時など、途中まで挿入された分の
-  // 補償削除に使う）。
-  ids: string[];
-  error: RepositoryError | null;
-};
-
-// create/update で重複していた「出来事を一括挿入→メンバーを一括挿入」を共通化する。
-// PostgREST の bulk insert は入力順で結果行を返すため、appearances の順序と
-// 挿入結果（id）を素朴に対応付けてよい前提で実装している。
-async function insertAppearances(
-  writable: TypedSupabaseClient,
-  spotId: string,
-  appearances: CreateSpotAppearanceInput[]
-): Promise<InsertAppearancesResult> {
-  if (appearances.length === 0) {
-    return { ids: [], error: null };
-  }
-
-  const { idByKey: subtypeIdByKey, error: subtypeError } = await resolveSubtypeIds(
-    writable,
-    appearances
-  );
-  if (subtypeError) {
-    return { ids: [], error: subtypeError };
-  }
-
-  const { data: appearanceRows, error: appearanceError } = await writable
-    .from("orbit_spot_appearances")
-    .insert(
-      appearances.map((appearance) => toAppearanceRow(spotId, appearance, subtypeIdByKey))
-    )
-    .select("id");
-
-  if (appearanceError) {
-    return {
-      ids: [],
-      error: new RepositoryError("出来事の登録に失敗しました", appearanceError),
-    };
-  }
-
-  const ids = appearanceRows.map((row) => row.id);
-
-  const memberRows = appearances.flatMap((appearance, index) =>
-    appearance.memberIds.map((memberId) => ({
-      appearance_id: ids[index],
-      member_id: memberId,
-    }))
-  );
-
-  if (memberRows.length > 0) {
-    const { error: memberError } = await writable
-      .from("orbit_spot_appearance_members")
-      .insert(memberRows);
-
-    if (memberError) {
-      return {
-        ids,
-        error: new RepositoryError("出来事のメンバー登録に失敗しました", memberError),
-      };
-    }
-  }
-
-  return { ids, error: null };
-}
-
-// スポット写真の一括挿入（単一ステートメントなのでアトミック）。
-// sort_order は配列 index から導出する。
-async function insertPhotos(
-  writable: TypedSupabaseClient,
-  spotId: string,
-  photos: CreateSpotPhotoInput[]
-): Promise<RepositoryError | null> {
-  if (photos.length === 0) {
-    return null;
-  }
-
-  const { error: insertError } = await writable.from("orbit_spot_photos").insert(
-    photos.map((photo, index) => ({
-      spot_id: spotId,
+    address: input.address.trim(),
+    prefecture: input.prefecture.trim(),
+    google_place_id: input.googlePlaceId.trim(),
+    google_maps_url: input.googleMapsUrl.trim(),
+    appearances: input.appearances.map((appearance) => ({
+      source_type: appearance.sourceType,
+      group_id: appearance.groupId,
+      subtype_name: appearance.subtypeName.trim(),
+      track_id: appearance.trackId,
+      video_id: appearance.videoId,
+      event_id: appearance.eventId,
+      live_id: appearance.liveId,
+      note: appearance.note,
+      link_url: appearance.linkUrl,
+      member_ids: appearance.memberIds,
+    })),
+    photos: input.photos.map((photo) => ({
       image_path: photo.imagePath.trim(),
-      caption: photo.caption.trim() || null,
-      sort_order: index,
-    }))
-  );
-
-  if (insertError) {
-    return new RepositoryError("写真の登録に失敗しました", insertError);
-  }
-
-  return null;
+      caption: photo.caption,
+    })),
+  };
 }
 
 export function createSpotRepository(supabase: OrbitReadClient): SpotRepository {
@@ -395,39 +229,21 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
     },
 
     async create(input) {
-      const writable: TypedSupabaseClient = asWritableClient(supabase);
-      const { data: spot, error: spotError } = await writable
-        .from("orbit_spots")
-        .insert(toSpotRow(input))
-        .select("id")
-        .single();
+      // upsert_orbit_spot の p_id は生成型上 non-null な string になっているが、create
+      // では新規作成のため p_id: null を送る必要がある（関数は null を「新規作成」の合図
+      // として受け付ける）。生成型がこのケースを表現できない既知の制約のため、
+      // TypedSupabaseClient にせず asWritableClient の返り値（未typed）のまま呼び出す。
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable.rpc("upsert_orbit_spot", {
+        p_id: null,
+        p_payload: toSpotPayload(input),
+      });
 
-      if (spotError) {
-        throw new RepositoryError("スポットの作成に失敗しました", spotError);
+      if (error) {
+        throw new RepositoryError("スポットの作成に失敗しました", error);
       }
 
-      const { error: appearancesError } = await insertAppearances(
-        writable,
-        spot.id,
-        input.appearances
-      );
-
-      if (appearancesError) {
-        // 補償処理: 出来事/メンバーの登録失敗時は作成したスポットを削除
-        // （CASCADE で既に登録済みの出来事・メンバーも削除される）
-        await writable.from("orbit_spots").delete().eq("id", spot.id);
-        throw appearancesError;
-      }
-
-      const photosError = await insertPhotos(writable, spot.id, input.photos);
-      if (photosError) {
-        // 補償処理: 写真の登録失敗時も作成したスポットを削除
-        // （CASCADE で出来事・メンバー・写真すべて削除される）
-        await writable.from("orbit_spots").delete().eq("id", spot.id);
-        throw photosError;
-      }
-
-      const created = await this.findById(spot.id);
+      const created = await this.findById(data as string);
       if (!created) {
         throw new RepositoryError("作成したスポットの取得に失敗しました", null);
       }
@@ -435,100 +251,24 @@ export function createSpotRepository(supabase: OrbitReadClient): SpotRepository 
     },
 
     async update(id, input) {
+      // update では p_id に既存の非null文字列idを渡すため実ペイロードと生成型 Args が
+      // 一致する。typed client で呼び出す。
       const writable: TypedSupabaseClient = asWritableClient(supabase);
+      const { data, error } = await writable.rpc("upsert_orbit_spot", {
+        p_id: id,
+        p_payload: toSpotPayload(input),
+      });
 
-      // 存在チェックは軽量な単体取得のみで行う（3テーブルjoinの findById は不要）。
-      const { data: existing, error: existingError } = await writable
-        .from("orbit_spots")
-        .select("id")
-        .eq("id", id)
-        .maybeSingle();
-
-      if (existingError) {
-        throw new RepositoryError("更新対象のスポットの確認に失敗しました", existingError);
-      }
-      if (!existing) {
-        throw new RepositoryError("更新対象のスポットが見つかりません", null);
-      }
-
-      const { data: oldAppearances, error: oldAppearancesError } = await writable
-        .from("orbit_spot_appearances")
-        .select("id")
-        .eq("spot_id", id);
-
-      if (oldAppearancesError) {
-        throw new RepositoryError("既存の出来事の取得に失敗しました", oldAppearancesError);
-      }
-
-      const { error: spotError } = await writable
-        .from("orbit_spots")
-        .update(toSpotRow(input))
-        .eq("id", id);
-
-      if (spotError) {
-        throw new RepositoryError("スポットの更新に失敗しました", spotError);
-      }
-
-      // 新規挿入を先に行い、旧出来事の削除は最後に行う（venue/live 系の
-      // 「全削除→再挿入」から順序を変更）。旧削除が最後なので、途中失敗しても
-      // 既存の記録は失われない。完全なアトミック化は Issue #289 でRPC化予定。
-      const { ids: insertedIds, error: insertError } = await insertAppearances(
-        writable,
-        id,
-        input.appearances
-      );
-
-      if (insertError) {
-        // 補償処理: 新規挿入分だけ削除し、旧データはそのまま残す
-        // （CASCADE で新規分のメンバーも削除される）
-        if (insertedIds.length > 0) {
-          await writable.from("orbit_spot_appearances").delete().in("id", insertedIds);
+      if (error) {
+        // RPC は対象スポットが存在しない場合 ERRCODE P0002 で例外を投げる
+        // （migration 059）。存在しないIDへの更新をユーザー向けメッセージに変換する。
+        if (error.code === "P0002") {
+          throw new RepositoryError("更新対象のスポットが見つかりません", error);
         }
-        throw insertError;
+        throw new RepositoryError("スポットの更新に失敗しました", error);
       }
 
-      const oldIds = oldAppearances.map((row) => row.id);
-      if (oldIds.length > 0) {
-        const { error: deleteError } = await writable
-          .from("orbit_spot_appearances")
-          .delete()
-          .in("id", oldIds);
-
-        if (deleteError) {
-          throw new RepositoryError("旧出来事の削除に失敗しました", deleteError);
-        }
-      }
-
-      // 写真も出来事と同じく「新規挿入→旧削除」の順にする。挿入は単一
-      // ステートメントでアトミックなため補償は不要で、旧削除が失敗しても
-      // 新旧が重複表示されるだけでデータは失われない（次回保存で回復可能）。
-      const { data: oldPhotos, error: oldPhotosError } = await writable
-        .from("orbit_spot_photos")
-        .select("id")
-        .eq("spot_id", id);
-
-      if (oldPhotosError) {
-        throw new RepositoryError("既存の写真の取得に失敗しました", oldPhotosError);
-      }
-
-      const photosError = await insertPhotos(writable, id, input.photos);
-      if (photosError) {
-        throw photosError;
-      }
-
-      const oldPhotoIds = oldPhotos.map((row) => row.id);
-      if (oldPhotoIds.length > 0) {
-        const { error: photoDeleteError } = await writable
-          .from("orbit_spot_photos")
-          .delete()
-          .in("id", oldPhotoIds);
-
-        if (photoDeleteError) {
-          throw new RepositoryError("旧写真の削除に失敗しました", photoDeleteError);
-        }
-      }
-
-      const updated = await this.findById(id);
+      const updated = await this.findById(data);
       if (!updated) {
         throw new RepositoryError("更新したスポットの取得に失敗しました", null);
       }
