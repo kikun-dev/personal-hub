@@ -103,7 +103,10 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 - **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、関連動画、衣装）
 - **ライブ/会場/セットリスト管理**（公演、出演メンバー、披露メンバー、披露タイプ）
 - **制作陣管理**（人物マスタ、担当 role、担当楽曲一覧）
-- **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場 CRUD）
+- **聖地マップ**（活動で訪れた場所の登録・地図表示・種別/サブ種別フィルタ）
+  - スポットは出来事（グループ・種別・サブ種別・出典FK・メンバー・リンク・メモ）を1件以上持ち、単一カテゴリは持たない（ADR 0010 追記）
+  - 場所登録は Places Autocomplete（Places API New）、地図表示は Google Maps JS API + `@vis.gl/react-google-maps`（`GoogleMapsProvider` で language=ja / region=JP 固定）
+- **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場/スポット CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
   - 来歴はイベント管理で `is_member_history` を付与して管理（メンバー画面側での来歴入力は廃止）
 - **Google ログイン**
