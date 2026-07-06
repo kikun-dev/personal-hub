@@ -20,6 +20,8 @@ export function revalidateOrbitMemberData(): void {
     ORBIT_CACHE_TAGS.lives,
     ORBIT_CACHE_TAGS.livesDetail,
     ORBIT_CACHE_TAGS.top,
+    // スポット詳細は出来事のメンバー名を表示するため失効する
+    ORBIT_CACHE_TAGS.spotsDetail,
   ]);
 }
 
@@ -28,6 +30,8 @@ export function revalidateOrbitEventData(): void {
     ORBIT_CACHE_TAGS.members,
     ORBIT_CACHE_TAGS.membersDetail,
     ORBIT_CACHE_TAGS.top,
+    // スポット詳細は出来事（event）のタイトル・日付を表示するため失効する
+    ORBIT_CACHE_TAGS.spotsDetail,
   ]);
 }
 
@@ -44,6 +48,8 @@ export function revalidateOrbitSongData(): void {
     // セットリストが楽曲タイトルを参照表示するため失効する
     ORBIT_CACHE_TAGS.lives,
     ORBIT_CACHE_TAGS.livesDetail,
+    // スポット詳細は出来事の出典（mv/動画）から楽曲タイトルを表示するため失効する
+    ORBIT_CACHE_TAGS.spotsDetail,
   ]);
 }
 
@@ -80,8 +86,7 @@ export function revalidateOrbitVenueData(): void {
 }
 
 export function revalidateOrbitSpotData(): void {
-  // 現時点では管理CRUDのみで閲覧導線が無いため実質未参照だが、地図ビュー
-  // （PR③で追加予定）から参照されるようになる前提でタグ自体は先行整備する。
+  // 地図ビュー（一覧）とスポット詳細ページの両方が参照するため両タグを失効する
   revalidateOrbitTags([ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.spotsDetail]);
 }
 
@@ -93,5 +98,7 @@ export function revalidateOrbitLiveData(): void {
     ORBIT_CACHE_TAGS.livesDetail,
     ORBIT_CACHE_TAGS.venues,
     ORBIT_CACHE_TAGS.songsDetail,
+    // スポット詳細は出来事の出典（live）からライブ名を表示するため失効する
+    ORBIT_CACHE_TAGS.spotsDetail,
   ]);
 }
