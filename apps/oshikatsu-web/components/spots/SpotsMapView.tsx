@@ -1,0 +1,283 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
+import { TextLink } from "@/components/ui/TextLink";
+import {
+  GOOGLE_MAPS_API_KEY,
+  GoogleMapsProvider,
+} from "@/components/ui/GoogleMapsProvider";
+import { replaceListFilterParams } from "@/lib/listFilterUrl";
+import { collectSubtypeOptions, filterSpots } from "@/usecases/spotFilters";
+import {
+  SPOT_SOURCE_TYPES,
+  SPOT_SOURCE_TYPE_LABELS,
+  type SpotListItem,
+} from "@/types/spot";
+
+type SpotsMapViewProps = {
+  spots: SpotListItem[];
+  isAdmin: boolean;
+};
+
+// ピンが0件のときのフォールバック表示（日本全体が収まる程度）
+const JAPAN_CENTER = { lat: 36.2, lng: 138.2 };
+const JAPAN_ZOOM = 5;
+// ユニーク座標が1点だけのとき fitBounds は最大ズームまで寄ってしまうため、
+// 固定ズームでセンタリングする
+const SINGLE_POINT_ZOOM = 15;
+
+// フィルタ変更・初期表示のたびに全ピンが収まる範囲へフィットする。
+// Map コンポーネントの子として描画し、useMap() で親の Map インスタンスを取得する。
+function MapBoundsFitter({ spots }: { spots: SpotListItem[] }) {
+  const map = useMap();
+
+  useEffect(() => {
+    if (!map) return;
+
+    if (spots.length === 0) {
+      map.setCenter(JAPAN_CENTER);
+      map.setZoom(JAPAN_ZOOM);
+      return;
+    }
+
+    // 同一座標のスポットが複数あっても bounds の面積はゼロになるため、
+    // 件数ではなくユニーク座標数で判定する
+    const uniquePositions = new Set(
+      spots.map((spot) => `${spot.latitude},${spot.longitude}`)
+    );
+    if (uniquePositions.size === 1) {
+      map.setCenter({ lat: spots[0].latitude, lng: spots[0].longitude });
+      map.setZoom(SINGLE_POINT_ZOOM);
+      return;
+    }
+
+    const bounds = new google.maps.LatLngBounds();
+    for (const spot of spots) {
+      bounds.extend({ lat: spot.latitude, lng: spot.longitude });
+    }
+    map.fitBounds(bounds);
+  }, [map, spots]);
+
+  return null;
+}
+
+function SpotInfoWindowContent({
+  spot,
+  isAdmin,
+}: {
+  spot: SpotListItem;
+  isAdmin: boolean;
+}) {
+  const subtypeNames = Array.from(
+    new Set(
+      spot.appearanceTags.flatMap((tag) =>
+        tag.subtypeName !== null ? [tag.subtypeName] : []
+      )
+    )
+  );
+
+  return (
+    <div className="space-y-1 py-1 text-sm">
+      <p className="font-bold text-foreground">{spot.name}</p>
+      {spot.sourceTypes.length > 0 && (
+        <p className="text-foreground/70">
+          {spot.sourceTypes
+            .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
+            .join("、")}
+        </p>
+      )}
+      {subtypeNames.length > 0 && (
+        <p className="text-foreground/70">{subtypeNames.join("、")}</p>
+      )}
+      {spot.prefecture && (
+        <p className="text-foreground/70">{spot.prefecture}</p>
+      )}
+      {spot.googleMapsUrl && (
+        <a
+          href={spot.googleMapsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block text-foreground underline"
+        >
+          Googleマップで開く
+        </a>
+      )}
+      {isAdmin && (
+        <TextLink href={`/spots/${spot.id}/edit`} className="block">
+          編集
+        </TextLink>
+      )}
+    </div>
+  );
+}
+
+export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
+  // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
+  // （LiveBrowser / SongBrowser と同じパターン）
+  const searchParams = useSearchParams();
+  const urlSourceType = searchParams.get("type") ?? "";
+  const urlSubtypeName = searchParams.get("subtype") ?? "";
+  const [sourceType, setSourceType] = useState(urlSourceType);
+  const [subtypeName, setSubtypeName] = useState(urlSubtypeName);
+  const [selectedSpotId, setSelectedSpotId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSourceType(urlSourceType);
+  }, [urlSourceType]);
+  useEffect(() => {
+    setSubtypeName(urlSubtypeName);
+  }, [urlSubtypeName]);
+
+  // サブ種別の候補 = 選択中の種別（未選択なら全種別）の出来事が持つサブ種別名。
+  // 判定は filterSpots と同じペア単位のロジック（spotFilters.ts）を共有する
+  const subtypeOptions = useMemo(
+    () => collectSubtypeOptions(spots, sourceType),
+    [spots, sourceType]
+  );
+
+  const filteredSpots = useMemo(
+    () => filterSpots(spots, { sourceType, subtypeName }),
+    [spots, sourceType, subtypeName]
+  );
+
+  const selectedSpot =
+    filteredSpots.find((spot) => spot.id === selectedSpotId) ?? null;
+
+  const handleSourceTypeChange = (nextSourceType: string) => {
+    setSourceType(nextSourceType);
+    setSubtypeName("");
+    setSelectedSpotId(null);
+    replaceListFilterParams({ type: nextSourceType, subtype: "" });
+  };
+
+  const handleSubtypeChange = (nextSubtypeName: string) => {
+    setSubtypeName(nextSubtypeName);
+    setSelectedSpotId(null);
+    replaceListFilterParams({ subtype: nextSubtypeName });
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-3">
+        <select
+          value={sourceType}
+          onChange={(event) => handleSourceTypeChange(event.target.value)}
+          aria-label="種別で絞り込み"
+          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+        >
+          <option value="">すべて</option>
+          {SPOT_SOURCE_TYPES.map((value) => (
+            <option key={value} value={value}>
+              {SPOT_SOURCE_TYPE_LABELS[value]}
+            </option>
+          ))}
+        </select>
+        <select
+          value={subtypeName}
+          onChange={(event) => handleSubtypeChange(event.target.value)}
+          aria-label="サブ種別で絞り込み"
+          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+        >
+          <option value="">すべて</option>
+          {subtypeOptions.map((name) => (
+            <option key={name} value={name}>
+              {name}
+            </option>
+          ))}
+        </select>
+        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+          {filteredSpots.length}件
+        </span>
+      </div>
+
+      {GOOGLE_MAPS_API_KEY ? (
+        <div className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10">
+          <GoogleMapsProvider>
+            <Map
+              defaultCenter={JAPAN_CENTER}
+              defaultZoom={JAPAN_ZOOM}
+              gestureHandling="greedy"
+              disableDefaultUI={false}
+            >
+              <MapBoundsFitter spots={filteredSpots} />
+              {filteredSpots.map((spot) => (
+                <Marker
+                  key={spot.id}
+                  position={{ lat: spot.latitude, lng: spot.longitude }}
+                  onClick={() => setSelectedSpotId(spot.id)}
+                />
+              ))}
+              {selectedSpot && (
+                <InfoWindow
+                  position={{
+                    lat: selectedSpot.latitude,
+                    lng: selectedSpot.longitude,
+                  }}
+                  onCloseClick={() => setSelectedSpotId(null)}
+                >
+                  <SpotInfoWindowContent spot={selectedSpot} isAdmin={isAdmin} />
+                </InfoWindow>
+              )}
+            </Map>
+          </GoogleMapsProvider>
+        </div>
+      ) : (
+        <p className="rounded-lg border border-dashed border-foreground/20 px-3 py-2 text-xs text-foreground/50">
+          Google MapsのAPIキーが未設定のため、地図は表示できません。一覧のみ表示します。
+        </p>
+      )}
+
+      {filteredSpots.length === 0 ? (
+        <p className="py-12 text-center text-sm text-foreground/50">
+          該当するスポットがありません
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-foreground/10 text-left">
+                <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
+                <th className="pb-2 pr-4 font-medium text-foreground/70">種別</th>
+                <th className="pb-2 pr-4 font-medium text-foreground/70">
+                  都道府県
+                </th>
+                {isAdmin && (
+                  <th className="pb-2 font-medium text-foreground/70">操作</th>
+                )}
+              </tr>
+            </thead>
+            <tbody>
+              {filteredSpots.map((spot) => (
+                <tr key={spot.id} className="border-b border-foreground/5">
+                  <td className="py-2 pr-4 text-foreground">{spot.name}</td>
+                  <td className="py-2 pr-4 text-foreground/80">
+                    {spot.sourceTypes.length > 0
+                      ? spot.sourceTypes
+                          .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
+                          .join("、")
+                      : "—"}
+                  </td>
+                  <td className="py-2 pr-4 text-foreground/80">
+                    {spot.prefecture ?? "—"}
+                  </td>
+                  {isAdmin && (
+                    <td className="py-2">
+                      <TextLink
+                        href={`/spots/${spot.id}/edit`}
+                        className="text-sm"
+                      >
+                        編集
+                      </TextLink>
+                    </td>
+                  )}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

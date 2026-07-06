@@ -13,7 +13,7 @@ import { RepositoryError } from "@/types/errors";
 import { asWritableClient } from "@/lib/asWritableClient";
 
 const SPOT_LIST_SELECT =
-  "id, name, latitude, longitude, prefecture, orbit_spot_appearances(source_type)" as const;
+  "id, name, latitude, longitude, prefecture, google_maps_url, orbit_spot_appearances(source_type, orbit_spot_source_subtypes(name))" as const;
 
 const SPOT_DETAIL_SELECT = `
   id,
@@ -105,13 +105,26 @@ function mapSpotListItem(row: SpotListRow): SpotListItem {
     new Set(row.orbit_spot_appearances.map((appearance) => appearance.source_type))
   ) as SpotListItem["sourceTypes"];
 
+  // フィルタ用は「種別×サブ種別」のペアで保持する（別々にフラット化すると
+  // ペア情報が失われ、種別Aのスポットが種別Bのサブ種別でマッチしてしまう）。
+  const tagByKey = new Map<string, SpotListItem["appearanceTags"][number]>();
+  for (const appearance of row.orbit_spot_appearances) {
+    const subtypeName = appearance.orbit_spot_source_subtypes?.name ?? null;
+    tagByKey.set(`${appearance.source_type}:${subtypeName ?? ""}`, {
+      sourceType: appearance.source_type as SpotListItem["sourceTypes"][number],
+      subtypeName,
+    });
+  }
+
   return {
     id: row.id,
     name: row.name,
     sourceTypes,
+    appearanceTags: Array.from(tagByKey.values()),
     latitude: row.latitude,
     longitude: row.longitude,
     prefecture: row.prefecture,
+    googleMapsUrl: row.google_maps_url,
   };
 }
 

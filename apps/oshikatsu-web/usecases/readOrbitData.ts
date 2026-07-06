@@ -13,6 +13,7 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
 import { sortMemberSongsByReleaseOrder } from "@/usecases/memberSongOrder";
+import { createSpotRepository } from "@/repositories/spotRepository";
 import { createVenueRepository } from "@/repositories/venueRepository";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { getGroups } from "@/usecases/getGroups";
@@ -33,6 +34,7 @@ import {
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
 import { listPublicSongs } from "@/usecases/listPublicSongs";
+import { listSpots } from "@/usecases/listSpots";
 import type { MemberFilters as MemberFiltersType } from "@/types/member";
 import type { ReleaseFilters as ReleaseFiltersType } from "@/types/release";
 import type { SongFilters as SongFiltersType } from "@/types/song";
@@ -271,6 +273,15 @@ const loadReleaseDetailPageData = createSharedReadLoader(
     })
 );
 
+const loadSpotsPageData = createSharedReadLoader(
+  ["orbit", "spots-page-data"],
+  [ORBIT_CACHE_TAGS.spots],
+  async () =>
+    withOrbitReadClient(async (supabase) => {
+      return listSpots(createSpotRepository(supabase));
+    })
+);
+
 const loadVenuesPageData = createSharedReadLoader(
   ["orbit", "venues-page-data"],
   [ORBIT_CACHE_TAGS.venues],
@@ -348,6 +359,10 @@ export async function getReleasesPageData(filters: ReleaseFiltersType) {
 
 export async function getReleaseDetailPageData(id: string) {
   return loadReleaseDetailPageData(id);
+}
+
+export async function getSpotsPageData() {
+  return loadSpotsPageData();
 }
 
 export async function getVenuesPageData() {
