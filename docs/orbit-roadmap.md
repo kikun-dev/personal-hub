@@ -311,9 +311,11 @@
 ## Phase 3: 発展機能
 
 - 聖地巡礼マップ（Issue #286 / ADR 0010）
-  - 活動で訪れた場所（ロケ地 / MV撮影地 / ヒット祈願 等）の登録・地図表示・多軸検索
-  - Google Maps JS API + `@vis.gl/react-google-maps` を採用、Places Autocomplete で登録
-  - spots / appearances / appearance_members / photos の 4 テーブル構成
+  - [x] Phase 1: 登録（Places Autocomplete）・地図表示・種別/サブ種別フィルタ（✅ #286 / PR #288・#290・#291 で対応済み）
+    - スポット単一カテゴリは廃止し、出来事（グループ・種別・サブ種別・出典FK・メンバー）を1件以上必須とするモデルに変更（ADR 0010 追記、migration 055〜057）
+  - [ ] Phase 2: スポット詳細ページ + 一覧/地図の導線（#292）、写真アップロード（#293）、メンバー/都道府県フィルタ（#294）
+  - [ ] Phase 3: 訪問記録（ユーザー別データ、ADR 0009 パターン）。近隣検索は件数が増えたら PostGIS を検討
+  - リファクタ: create/update のトランザクションRPC化（#289、既知負債表参照）
 - メディア出演管理（`orbit_media`）
 - 公開アクセス対応（RLS の SELECT ポリシーを `true` に変更）
 - 遠征持ち物リスト
