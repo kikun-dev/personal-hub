@@ -333,16 +333,21 @@
 | ~~カレンダー月切り替え~~ | ~~データは初期ロード時の月のみ~~ | ✅ Phase 1.5 で URL search params 対応済み |
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
-| Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
+| ~~Repository update 非アトミック~~ | ~~update の全削除→再挿入がトランザクションなし~~ | ✅ member(012) / event update(015) / release・song(022/023/026) / live(031) / setlist(052) / spot(059) で RPC 化済み。event create のみ補償削除方式が残る（下記） |
+| event create 非アトミック | event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み） | Issue #304 で RPC 化予定（`upsert_orbit_spot`（059）と同型） |
 | spot create/update 非アトミック | spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 で対応済み |
 | ~~画像アップロード基盤の3重複~~ | ~~member / release / spot で storage repository・lib ヘルパー・readFileAsBase64 がほぼ逐語コピー~~ | ✅ Issue #298 で対応済み |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
 | ~~Orbit 認可が authenticated 一段階~~ | ~~Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない~~ | ✅ Issue #213 で対応済み |
-| auth callback / public route 判定の軽微な緩さ | `next` のバックスラッシュ、public path の前方一致判定 | Issue #214 で対応予定 |
-| `createReadOnlyClient` が型レベルでは read-only でない | service role client のため、誤用時に書き込み API も呼べる | Issue #215 で型レベルの read-only 化を検討 |
-| Supabase 生成型未導入 | リレーション型を手書きし、`T | T[]` union / `as` キャストが残る | Issue #216 で段階導入予定 |
-| song/release リポジトリ肥大化 | select 定義と mapper が CRUD 本体に同居している | Issue #217 で mapper 分割予定 |
-| 管理フォーム巨大化 | `SongForm` / `ReleaseForm` / `LiveForm` / `MemberForm` に submit・errors・keyed array 操作が重複 | Issue #218 で共通化・分割予定 |
-| ルート error / not-found 未整備 | `notFound()` は複数箇所で使うが、カスタム 404 とルートエラー画面がない | Issue #219 で対応予定 |
-| admin/viewer ロール体系が未導入 | 現状はオーナー単独運用前提。閲覧のみ共有ができない | Issue #221 で将来対応（#213 完了後に着手。書き込み権限の差のみなら中規模で拡張可能） |
+| ~~auth callback / public route 判定の軽微な緩さ~~ | ~~`next` のバックスラッシュ、public path の前方一致判定~~ | ✅ Issue #214 で対応済み |
+| ~~`createReadOnlyClient` が型レベルでは read-only でない~~ | ~~service role client のため、誤用時に書き込み API も呼べる~~ | ✅ Issue #215 で `ReadOnlySupabaseClient` に型限定済み |
+| ~~Supabase 生成型未導入~~ | ~~リレーション型を手書きし、`T \| T[]` union / `as` キャストが残る~~ | ✅ Issue #216 / #239〜#241 で全リポジトリ typed client 化済み（残る `as` は CHECK 制約列の enum 絞り込みのみ） |
+| ~~song/release リポジトリ肥大化~~ | ~~select 定義と mapper が CRUD 本体に同居している~~ | ✅ Issue #217 で mapper 分割済み |
+| ~~管理フォーム巨大化~~ | ~~`SongForm` / `ReleaseForm` / `LiveForm` / `MemberForm` に submit・errors・keyed array 操作が重複~~ | ✅ Issue #218 で `useAdminForm` + keyedList 共通化・セクション分割済み |
+| ~~ルート error / not-found 未整備~~ | ~~`notFound()` は複数箇所で使うが、カスタム 404 とルートエラー画面がない~~ | ✅ Issue #219 で対応済み |
+| ~~admin/viewer ロール体系が未導入~~ | ~~現状はオーナー単独運用前提。閲覧のみ共有ができない~~ | ✅ Issue #221 / #244 で導入済み（RLS 045/046 + proxy allowedRoles + requireAdmin/requireOrbitUser） |
+| ~~Google Maps API キーの制限設定が未確認~~ | ~~`NEXT_PUBLIC_*` で公開されるキー。ADR 0010 はリファラ制限 + 予算アラート設定を採用条件にしている~~ | ✅ 2026-07-07 に設定済みを確認（ADR 0010 追記） |
+| SpotForm の肥大化 | 728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ | Issue #303 で SongForm と同構成（`components/admin/spot/` へのセクション分割）に揃える |
+| revalidateOrbit のタグ依存が手書き | エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理。参照追加時の失効漏れを検知できない | Issue #305 で宣言的な依存表への再構成を検討 |
+| `readOrbitData.ts` の単調成長 | ページローダー集約点として 402 行・12 ローダーに成長 | Issue #306 でドメイン別（music / live / spot / venue）分割を検討 |

@@ -103,3 +103,10 @@ Google Maps Platform は 2025年3月に旧 $200 クレジットから SKU 別無
 - 出来事に `group_id` を追加（どのグループの活動か。アプリ層で必須）、
   `series_name` / `appeared_on` を削除（種別・サブ種別でカバー）
 - Decision 1 の「4テーブル構成」は photos を含む**5テーブル構成**になる
+
+## 追記（2026-07-07, advisor 007 監査）
+
+Decision 2 の採用条件としていた Google Cloud 側の設定
+（API キーの HTTP リファラ制限・予算アラート）は**設定済みであることをオーナーが確認した**。
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` はクライアントに露出する公開キーだが、
+リファラ制限により第三者サイトからの流用はできない。
