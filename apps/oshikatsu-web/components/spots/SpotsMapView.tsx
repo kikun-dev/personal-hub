@@ -2,16 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import {
-  APIProvider,
-  InfoWindow,
-  Map,
-  Marker,
-  useMap,
-} from "@vis.gl/react-google-maps";
+import { InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
 import { TextLink } from "@/components/ui/TextLink";
+import {
+  GOOGLE_MAPS_API_KEY,
+  GoogleMapsProvider,
+} from "@/components/ui/GoogleMapsProvider";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
-import { filterSpots } from "@/usecases/spotFilters";
+import { collectSubtypeOptions, filterSpots } from "@/usecases/spotFilters";
 import {
   SPOT_SOURCE_TYPES,
   SPOT_SOURCE_TYPE_LABELS,
@@ -23,11 +21,12 @@ type SpotsMapViewProps = {
   isAdmin: boolean;
 };
 
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
-
 // ピンが0件のときのフォールバック表示（日本全体が収まる程度）
 const JAPAN_CENTER = { lat: 36.2, lng: 138.2 };
 const JAPAN_ZOOM = 5;
+// ユニーク座標が1点だけのとき fitBounds は最大ズームまで寄ってしまうため、
+// 固定ズームでセンタリングする
+const SINGLE_POINT_ZOOM = 15;
 
 // フィルタ変更・初期表示のたびに全ピンが収まる範囲へフィットする。
 // Map コンポーネントの子として描画し、useMap() で親の Map インスタンスを取得する。
@@ -43,11 +42,14 @@ function MapBoundsFitter({ spots }: { spots: SpotListItem[] }) {
       return;
     }
 
-    // 1件だけのとき fitBounds は最大ズームまで寄ってしまうため、
-    // 固定ズームでセンタリングする
-    if (spots.length === 1) {
+    // 同一座標のスポットが複数あっても bounds の面積はゼロになるため、
+    // 件数ではなくユニーク座標数で判定する
+    const uniquePositions = new Set(
+      spots.map((spot) => `${spot.latitude},${spot.longitude}`)
+    );
+    if (uniquePositions.size === 1) {
       map.setCenter({ lat: spots[0].latitude, lng: spots[0].longitude });
-      map.setZoom(15);
+      map.setZoom(SINGLE_POINT_ZOOM);
       return;
     }
 
@@ -68,6 +70,14 @@ function SpotInfoWindowContent({
   spot: SpotListItem;
   isAdmin: boolean;
 }) {
+  const subtypeNames = Array.from(
+    new Set(
+      spot.appearanceTags.flatMap((tag) =>
+        tag.subtypeName !== null ? [tag.subtypeName] : []
+      )
+    )
+  );
+
   return (
     <div className="space-y-1 py-1 text-sm">
       <p className="font-bold text-foreground">{spot.name}</p>
@@ -78,8 +88,8 @@ function SpotInfoWindowContent({
             .join("、")}
         </p>
       )}
-      {spot.subtypeNames.length > 0 && (
-        <p className="text-foreground/70">{spot.subtypeNames.join("、")}</p>
+      {subtypeNames.length > 0 && (
+        <p className="text-foreground/70">{subtypeNames.join("、")}</p>
       )}
       {spot.prefecture && (
         <p className="text-foreground/70">{spot.prefecture}</p>
@@ -120,22 +130,12 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
     setSubtypeName(urlSubtypeName);
   }, [urlSubtypeName]);
 
-  // サブ種別の候補 = 選択中の種別（未選択なら全種別）に紐づくスポットが持つサブ種別名
-  const subtypeOptions = useMemo(() => {
-    const present = new Set<string>();
-    for (const spot of spots) {
-      if (
-        sourceType !== "" &&
-        !(spot.sourceTypes as readonly string[]).includes(sourceType)
-      ) {
-        continue;
-      }
-      for (const name of spot.subtypeNames) {
-        present.add(name);
-      }
-    }
-    return Array.from(present).sort((a, b) => a.localeCompare(b, "ja"));
-  }, [spots, sourceType]);
+  // サブ種別の候補 = 選択中の種別（未選択なら全種別）の出来事が持つサブ種別名。
+  // 判定は filterSpots と同じペア単位のロジック（spotFilters.ts）を共有する
+  const subtypeOptions = useMemo(
+    () => collectSubtypeOptions(spots, sourceType),
+    [spots, sourceType]
+  );
 
   const filteredSpots = useMemo(
     () => filterSpots(spots, { sourceType, subtypeName }),
@@ -194,7 +194,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
 
       {GOOGLE_MAPS_API_KEY ? (
         <div className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10">
-          <APIProvider apiKey={GOOGLE_MAPS_API_KEY} language="ja" region="JP">
+          <GoogleMapsProvider>
             <Map
               defaultCenter={JAPAN_CENTER}
               defaultZoom={JAPAN_ZOOM}
@@ -221,7 +221,7 @@ export function SpotsMapView({ spots, isAdmin }: SpotsMapViewProps) {
                 </InfoWindow>
               )}
             </Map>
-          </APIProvider>
+          </GoogleMapsProvider>
         </div>
       ) : (
         <p className="rounded-lg border border-dashed border-foreground/20 px-3 py-2 text-xs text-foreground/50">

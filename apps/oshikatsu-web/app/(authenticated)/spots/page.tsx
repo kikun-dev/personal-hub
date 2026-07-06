@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import Link from "next/link";
 import { getSpotsPageData } from "@/usecases/readOrbitData";
 import { SpotsMapView } from "@/components/spots/SpotsMapView";
@@ -20,7 +21,11 @@ export default async function SpotsPage() {
         )}
       </div>
 
-      <SpotsMapView spots={spots} isAdmin={isAdmin} />
+      {/* useSearchParams を使うクライアントコンポーネントは Suspense で包む
+          （lives / songs 等の Browser パターンと同じ） */}
+      <Suspense fallback={<div className="h-10" />}>
+        <SpotsMapView spots={spots} isAdmin={isAdmin} />
+      </Suspense>
     </div>
   );
 }

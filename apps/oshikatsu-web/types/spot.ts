@@ -76,14 +76,23 @@ export type Spot = {
   appearances: SpotAppearance[];
 };
 
+// 出来事1件ぶんの「種別×サブ種別」のペア。フィルタとサブ種別候補の導出に使う。
+// 種別とサブ種別を別々にフラット化するとペア情報が失われ、種別Aのスポットが
+// 種別Bのサブ種別でマッチしてしまうため、必ずペアで保持する。
+export type SpotAppearanceTag = {
+  sourceType: SpotSourceType;
+  subtypeName: string | null;
+};
+
 // 地図ピン表示用の軽量DTO。スポット単一カテゴリは廃止したため、
 // そのスポットに紐づく出来事の種別を重複排除して表示する（#286）。
 export type SpotListItem = {
   id: string;
   name: string;
+  // 表示用（重複排除済み）。フィルタには appearanceTags を使う。
   sourceTypes: SpotSourceType[];
-  // 紐づく出来事のサブ種別名（重複排除・null除外）。フィルタの候補導出に使う。
-  subtypeNames: string[];
+  // 紐づく出来事の種別×サブ種別ペア（重複排除済み）。
+  appearanceTags: SpotAppearanceTag[];
   latitude: number;
   longitude: number;
   prefecture: string | null;

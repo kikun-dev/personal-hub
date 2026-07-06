@@ -1,7 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { APIProvider, useMapsLibrary } from "@vis.gl/react-google-maps";
+import { useMapsLibrary } from "@vis.gl/react-google-maps";
+import {
+  GOOGLE_MAPS_API_KEY,
+  GoogleMapsProvider,
+} from "@/components/ui/GoogleMapsProvider";
 
 export type SpotPlaceSearchResult = {
   name: string;
@@ -16,8 +20,6 @@ export type SpotPlaceSearchResult = {
 type SpotPlaceSearchProps = {
   onSelect: (result: SpotPlaceSearchResult) => void;
 };
-
-const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 
 // 住所コンポーネントから都道府県（administrative_area_level_1）の long text を取り出す。
 // 該当が無い（海外の住所など）場合は空文字を返し、フォーム側の手入力に委ねる。
@@ -126,10 +128,8 @@ export function SpotPlaceSearch({ onSelect }: SpotPlaceSearchProps) {
   }
 
   return (
-    // language/region を固定し、都道府県（addressComponents）がブラウザの
-    // ロケールによらず日本語表記（例: 東京都）で返るようにする
-    <APIProvider apiKey={GOOGLE_MAPS_API_KEY} language="ja" region="JP">
+    <GoogleMapsProvider>
       <PlaceAutocompleteField onSelect={onSelect} />
-    </APIProvider>
+    </GoogleMapsProvider>
   );
 }
