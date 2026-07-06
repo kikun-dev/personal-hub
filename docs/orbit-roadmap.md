@@ -313,7 +313,7 @@
 - 聖地巡礼マップ（Issue #286 / ADR 0010）
   - [x] Phase 1: 登録（Places Autocomplete）・地図表示・種別/サブ種別フィルタ（✅ #286 / PR #288・#290・#291 で対応済み）
     - スポット単一カテゴリは廃止し、出来事（グループ・種別・サブ種別・出典FK・メンバー）を1件以上必須とするモデルに変更（ADR 0010 追記、migration 055〜057）
-  - [ ] Phase 2: スポット詳細ページ + 一覧/地図の導線（#292）、写真アップロード（#293）、メンバー/都道府県フィルタ（#294）
+  - [x] Phase 2: スポット詳細ページ + 一覧/地図の導線（✅ #292 / PR #296）、写真アップロード（✅ #293 / PR #297）、フィルタ拡充（✅ #294 / PR #299。種別・都道府県は select、サブ種別・メンバー名・スポット名は横断テキスト検索）
   - [ ] Phase 3: 訪問記録（ユーザー別データ、ADR 0009 パターン）。近隣検索は件数が増えたら PostGIS を検討
   - リファクタ: create/update のトランザクションRPC化（#289、既知負債表参照）
 - メディア出演管理（`orbit_media`）
@@ -334,7 +334,8 @@
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
 | Repository update 非アトミック | update の全削除→再挿入がトランザクションなし | RPC 関数でトランザクション化 |
-| ~~spot create/update 非アトミック~~ | ~~spots + appearances + members を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み）~~ | ✅ Issue #289 で対応済み |
+| spot create/update 非アトミック | spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 で対応済み |
+| 画像アップロード基盤の3重複 | member / release / spot で storage repository・lib ヘルパー・readFileAsBase64 がほぼ逐語コピー | Issue #298 で共通化予定 |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
 | ~~Orbit 認可が authenticated 一段階~~ | ~~Supabase サインアップ OFF は確認済みだが、RLS レイヤーでオーナー限定の多層防御がない~~ | ✅ Issue #213 で対応済み |
