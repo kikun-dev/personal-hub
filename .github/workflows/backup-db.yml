@@ -1,0 +1,76 @@
+name: Backup - database
+
+# oshikatsu-web / household-web が共有する Supabase プロジェクトの DB を
+# 日次でダンプし、S3 互換の外部オブジェクトストレージ（Cloudflare R2 / Backblaze B2 等）へ
+# 保存する。再入力不可能な個人データ（参戦記録・聖地スポット・写真メタ・Wiki 等）の保全が目的。
+# 設計判断は Issue #321 / docs/ops/backup-restore.md を参照。
+
+on:
+  # 日次 03:00 JST（= 18:00 UTC 前日）。無料枠運用のため 1 日 1 回で十分。
+  schedule:
+    - cron: "0 18 * * *"
+  # 手動実行（初回検証・臨時取得用）
+  workflow_dispatch:
+
+# 認証情報のみ扱い、リポジトリの内容は変更しない
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-db
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump and upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Dump database
+        env:
+          # Supabase の「Session pooler」ではなく direct connection の接続文字列を使う
+          # （postgresql://postgres:<db-password>@db.<ref>.supabase.co:5432/postgres）。
+          # docs/ops/backup-restore.md の手順で GitHub Secrets に登録する。
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL secret が未設定です（docs/ops/backup-restore.md 参照）"
+            exit 1
+          fi
+          # スキーマ + データを1ファイルに。--data-only ではなく既定（スキーマ含む）で
+          # 単体復元可能なダンプにする。
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f dump.sql
+          gzip -9 dump.sql
+          echo "dumped $(du -h dump.sql.gz | cut -f1)"
+
+      - name: Upload to S3-compatible storage
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          # R2: https://<accountid>.r2.cloudflarestorage.com / B2: https://s3.<region>.backblazeb2.com
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          # R2 は "auto" で可。B2 等は発行時のリージョンを指定する。
+          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+        run: |
+          set -euo pipefail
+          for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_ENDPOINT BACKUP_S3_BUCKET; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::$v secret が未設定です（docs/ops/backup-restore.md 参照）"
+              exit 1
+            fi
+          done
+          # 世代管理: 年/月フォルダ + 日付キー。上書きされないため日次で1世代ずつ残る。
+          KEY="backups/$(date -u +%Y)/$(date -u +%m)/orbit-$(date -u +%Y%m%d).sql.gz"
+          aws s3 cp dump.sql.gz "s3://${BACKUP_S3_BUCKET}/${KEY}" \
+            --endpoint-url "$BACKUP_S3_ENDPOINT"
+          echo "uploaded s3://${BACKUP_S3_BUCKET}/${KEY}"
