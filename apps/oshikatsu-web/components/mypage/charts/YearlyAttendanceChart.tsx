@@ -47,7 +47,9 @@ export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceCh
               width={32}
             />
             <Tooltip
-              formatter={(value: number | undefined) => [`${value ?? 0}件`, "参戦数"]}
+              // recharts 3.9 で formatter の value は ValueType（string | number | ...）に広がったため
+              // number 前提をやめ、数値以外は 0 件として表示する（従来と同じ表示結果）。
+              formatter={(value) => [`${typeof value === "number" ? value : 0}件`, "参戦数"]}
               labelFormatter={(year) => (year !== undefined ? `${year}年` : "")}
               contentStyle={{
                 backgroundColor: "var(--background)",
