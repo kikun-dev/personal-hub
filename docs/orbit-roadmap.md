@@ -386,3 +386,4 @@
 | ~~SpotForm の肥大化~~ | ~~728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ~~ | ✅ Issue #303 で SongForm と同構成に分割済み（728 → 337 行） |
 | ~~revalidateOrbit のタグ依存が手書き~~ | ~~エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理~~ | ✅ Issue #305 で「タグ→表示エンティティ」の宣言表（`TAG_DISPLAY_SOURCES`）に再構成済み |
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |
+| migration 全件適用が冗長 | 61 本の migration に開発中の中間物が多く、`db reset`（ローカル / CI db-verify）が全件リプレイで遅い | Issue #329 で baseline 化を検討（本番 `schema_migrations` 整合が本丸。ADR 昇格候補） |
