@@ -57,7 +57,7 @@ jobs:
           # （復元順序と注意点は docs/ops/backup-restore.md）。
           supabase db dump --db-url "$SUPABASE_DB_URL" -f roles.sql --role-only
           supabase db dump --db-url "$SUPABASE_DB_URL" -f schema.sql
-          supabase db dump --db-url "$SUPABASE_DB_URL" -f data.sql --use-copy --data-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f data.sql --use-copy --data-only --schema public
           supabase db dump --db-url "$SUPABASE_DB_URL" -f auth_data.sql --use-copy --data-only --schema auth
 
           STAMP="$(date -u +%Y%m%d)"
