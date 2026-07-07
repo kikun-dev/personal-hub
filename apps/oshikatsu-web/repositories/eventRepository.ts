@@ -3,7 +3,12 @@ import type {
   SelectRows,
   TypedSupabaseClient,
 } from "@personal-hub/supabase";
-import type { Event, EventOption } from "@/types/event";
+import type {
+  CreateEventInput,
+  Event,
+  EventOption,
+  UpdateEventInput,
+} from "@/types/event";
 import type { MemberHistory } from "@/types/member";
 import type { EventRepository } from "@/types/repositories";
 import type { OrbitReadClient } from "@/types/orbitReadClient";
@@ -178,6 +183,25 @@ function getMonthRange(year: number, month: number) {
   return { startDate, endDate };
 }
 
+// #304: upsert_orbit_event（migration 060）用のペイロード整形。
+// description は空文字→NULL変換をしない（RPC側は COALESCE(..., '') を使う）。
+// end_date/start_time/venue/url の空文字→NULL変換はRPC側のNULLIFが行う。
+function toEventPayload(input: CreateEventInput | UpdateEventInput) {
+  return {
+    event_type_id: input.eventTypeId,
+    title: input.title,
+    description: input.description,
+    is_member_history: input.isMemberHistory,
+    date: input.date,
+    end_date: input.endDate,
+    start_time: input.startTime,
+    venue: input.venue,
+    url: input.url,
+    group_ids: input.groupIds,
+    member_ids: input.memberIds,
+  };
+}
+
 export function createEventRepository(
   supabase: OrbitReadClient
 ): EventRepository {
@@ -247,60 +271,21 @@ export function createEventRepository(
     },
 
     async create(input) {
-      const writable: TypedSupabaseClient = asWritableClient(supabase);
-      const { data: event, error: eventError } = await writable
-        .from("orbit_events")
-        .insert({
-          event_type_id: input.eventTypeId,
-          title: input.title,
-          description: input.description || "",
-          is_member_history: input.isMemberHistory,
-          date: input.date,
-          end_date: input.endDate || null,
-          start_time: input.startTime || null,
-          venue: input.venue || null,
-          url: input.url || null,
-        })
-        .select("id")
-        .single();
+      // upsert_orbit_event の p_id は生成型上 non-null な string になっているが、create
+      // では新規作成のため p_id: null を送る必要がある（関数は null を「新規作成」の合図
+      // として受け付ける）。生成型がこのケースを表現できない既知の制約のため、
+      // TypedSupabaseClient にせず asWritableClient の返り値（未typed）のまま呼び出す。
+      const writable = asWritableClient(supabase);
+      const { data, error } = await writable.rpc("upsert_orbit_event", {
+        p_id: null,
+        p_payload: toEventPayload(input),
+      });
 
-      if (eventError) {
-        throw new RepositoryError("イベントの作成に失敗しました", eventError);
+      if (error) {
+        throw new RepositoryError("イベントの作成に失敗しました", error);
       }
 
-      if (input.groupIds.length > 0) {
-        const { error: groupError } = await writable
-          .from("orbit_event_groups")
-          .insert(
-            input.groupIds.map((groupId) => ({
-              event_id: event.id,
-              group_id: groupId,
-            }))
-          );
-        if (groupError) {
-          // 補償処理: グループ登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
-          await writable.from("orbit_events").delete().eq("id", event.id);
-          throw new RepositoryError("イベントのグループ登録に失敗しました", groupError);
-        }
-      }
-
-      if (input.memberIds.length > 0) {
-        const { error: memberError } = await writable
-          .from("orbit_event_members")
-          .insert(
-            input.memberIds.map((memberId) => ({
-              event_id: event.id,
-              member_id: memberId,
-            }))
-          );
-        if (memberError) {
-          // 補償処理: メンバー登録失敗時は作成したイベントを削除（CASCADE で中間テーブルも削除）
-          await writable.from("orbit_events").delete().eq("id", event.id);
-          throw new RepositoryError("イベントのメンバー登録に失敗しました", memberError);
-        }
-      }
-
-      const created = await this.findById(event.id);
+      const created = await this.findById(data as string);
       if (!created) {
         throw new RepositoryError("作成したイベントの取得に失敗しました", null);
       }
@@ -308,29 +293,16 @@ export function createEventRepository(
     },
 
     async update(id, input) {
-      // 生成型上 update_event_with_relations の p_end_date / p_start_time / p_venue /
-      // p_url は non-null な string になっているが、これは PostgREST の RPC スカラー引数の
-      // 型生成が NULL 許容を反映しない既知の制約であり、関数自体は null を受け付ける。
-      // ペイロード側の誤りではないため、ここでは TypedSupabaseClient にせず
-      // asWritableClient の返り値（未typed）のまま呼び出す。
-      const writable = asWritableClient(supabase);
-      const { error: rpcError } = await writable.rpc("update_event_with_relations", {
-        p_event_id: id,
-        p_event_type_id: input.eventTypeId,
-        p_title: input.title,
-        p_description: input.description || "",
-        p_is_member_history: input.isMemberHistory,
-        p_date: input.date,
-        p_end_date: input.endDate || null,
-        p_start_time: input.startTime || null,
-        p_venue: input.venue || null,
-        p_url: input.url || null,
-        p_group_ids: input.groupIds,
-        p_member_ids: input.memberIds,
+      // update では p_id に既存の非null文字列idを渡すため実ペイロードと生成型 Args が
+      // 一致する。typed client で呼び出す。
+      const writable: TypedSupabaseClient = asWritableClient(supabase);
+      const { error } = await writable.rpc("upsert_orbit_event", {
+        p_id: id,
+        p_payload: toEventPayload(input),
       });
 
-      if (rpcError) {
-        throw new RepositoryError("イベントの更新に失敗しました", rpcError);
+      if (error) {
+        throw new RepositoryError("イベントの更新に失敗しました", error);
       }
 
       const updated = await this.findById(id);
