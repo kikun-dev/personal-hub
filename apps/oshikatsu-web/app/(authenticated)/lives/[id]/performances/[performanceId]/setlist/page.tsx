@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { SetlistDetail } from "@/components/lives/SetlistDetail";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
-import { getLiveDetailPageData } from "@/usecases/readOrbitData";
+import { getLiveDetailPageData } from "@/usecases/readOrbitLiveData";
 
 type SetlistDetailPageProps = {
   params: Promise<{ id: string; performanceId: string }>;

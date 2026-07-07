@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getLivesPageData } from "@/usecases/readOrbitData";
+import { getLivesPageData } from "@/usecases/readOrbitLiveData";
 import { Button } from "@/components/ui/Button";
 import { AdminLivesTable } from "@/components/admin/AdminLivesTable";
 

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
 import { LiveDetail } from "@/components/lives/LiveDetail";
-import { getLiveDetailPageData } from "@/usecases/readOrbitData";
+import { getLiveDetailPageData } from "@/usecases/readOrbitLiveData";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
 import { getMyAttendancesForLive } from "@/usecases/getMyAttendancesForLive";
 

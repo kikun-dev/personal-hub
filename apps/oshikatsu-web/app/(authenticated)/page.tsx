@@ -9,7 +9,7 @@ import {
   parseCalendarDateParams,
 } from "@/lib/dateParams";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
-import { getTopPageData } from "@/usecases/readOrbitData";
+import { getTopPageData } from "@/usecases/readOrbitMusicData";
 
 type TopPageProps = {
   searchParams: Promise<{ year?: string; month?: string; day?: string }>;

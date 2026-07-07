@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { ReleaseBrowser } from "@/components/releases/ReleaseBrowser";
-import { getReleasesPageData } from "@/usecases/readOrbitData";
+import { getReleasesPageData } from "@/usecases/readOrbitMusicData";
 
 export default async function ReleasesPage() {
   // 絞り込みはクライアント側で行うため、常に全件取得する

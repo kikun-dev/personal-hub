@@ -1,6 +1,6 @@
 import { redirect, notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/requireAdmin";
-import { getLiveDetailPageData } from "@/usecases/readOrbitData";
+import { getLiveDetailPageData } from "@/usecases/readOrbitLiveData";
 import { getLiveFormMasterData } from "@/usecases/readOrbitAdminData";
 import { SetlistEditor } from "@/components/lives/SetlistEditor";
 import {

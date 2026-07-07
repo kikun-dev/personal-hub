@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { SongBrowser } from "@/components/songs/SongBrowser";
-import { getSongsPageData } from "@/usecases/readOrbitData";
+import { getSongsPageData } from "@/usecases/readOrbitMusicData";
 
 export default async function SongsPage() {
   // 絞り込みはクライアント側で行うため、常に全件取得する

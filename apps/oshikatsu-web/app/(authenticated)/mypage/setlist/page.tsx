@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { requireOrbitUser } from "@/lib/requireOrbitUser";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
-import { getSongsPageData } from "@/usecases/readOrbitData";
+import { getSongsPageData } from "@/usecases/readOrbitMusicData";
 import { SetlistCountBrowser } from "@/components/mypage/SetlistCountBrowser";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { APP_ROUTES } from "@/lib/routes";

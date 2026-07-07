@@ -5,7 +5,7 @@ import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { APP_ROUTES } from "@/lib/routes";
-import { getSongDetailPageData } from "@/usecases/readOrbitData";
+import { getSongDetailPageData } from "@/usecases/readOrbitMusicData";
 
 type SongDetailPageProps = {
   params: Promise<{ id: string }>;

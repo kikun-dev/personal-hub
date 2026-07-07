@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@personal-hub/supabase/server";
-import { getVenueDetailPageData } from "@/usecases/readOrbitData";
+import { getVenueDetailPageData } from "@/usecases/readOrbitLiveData";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
 import { getVenueVisitStats } from "@/usecases/getVenueVisitStats";
 import { Button } from "@/components/ui/Button";
