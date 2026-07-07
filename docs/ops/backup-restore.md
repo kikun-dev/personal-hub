@@ -41,7 +41,7 @@ Cloudflare R2 の例（Backblaze B2 でも S3 互換なので同様）:
 
 | Secret 名 | 値 |
 |---|---|
-| `SUPABASE_DB_URL` | direct connection の接続文字列（下記） |
+| `SUPABASE_DB_URL` | IPv4 session pooler の接続文字列（下記） |
 | `BACKUP_S3_ACCESS_KEY_ID` | ストレージのアクセスキー ID |
 | `BACKUP_S3_SECRET_ACCESS_KEY` | ストレージのシークレットアクセスキー |
 | `BACKUP_S3_ENDPOINT` | S3 互換エンドポイント URL |
@@ -49,10 +49,13 @@ Cloudflare R2 の例（Backblaze B2 でも S3 互換なので同様）:
 | `BACKUP_S3_REGION` | （任意）R2 は未設定で `auto`。B2 等は発行時のリージョン |
 
 `SUPABASE_DB_URL` は Supabase ダッシュボード → Project Settings → Database →
-Connection string → **URI（direct connection）** から取得する。形式:
+Connection string → **Session pooler** から取得する。GitHub Actions の hosted runner は
+Supabase direct connection の IPv6 に到達できないため、IPv4 対応の session pooler を使う。
+`pg_dump` / backup 用途では direct connection が第一候補だが、IPv4 add-on なしで direct connection を
+使えない場合は session pooler を代替にする。形式:
 
 ```
-postgresql://postgres:<db-password>@db.<project-ref>.supabase.co:5432/postgres
+postgresql://postgres.<project-ref>:<db-password>@<region>.pooler.supabase.com:5432/postgres
 ```
 
 > Secrets はリポジトリにも Actions のログにも出力しない（ワークフローは値の存在チェックのみ行う）。

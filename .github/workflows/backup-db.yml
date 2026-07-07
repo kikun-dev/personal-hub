@@ -39,14 +39,14 @@ jobs:
 
       - name: Dump database
         env:
-          # Supabase の direct connection の接続文字列
-          # （postgresql://postgres:<db-password>@db.<ref>.supabase.co:5432/postgres）。
+          # GitHub-hosted runner は Supabase direct connection（IPv6）に到達できないため、
+          # Supabase の IPv4 session pooler 接続文字列を使う。
           # docs/ops/backup-restore.md の手順で GitHub Secrets に登録する。
           SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
         run: |
           set -euo pipefail
           if [ -z "${SUPABASE_DB_URL:-}" ]; then
-            echo "::error::SUPABASE_DB_URL secret が未設定です（docs/ops/backup-restore.md 参照）"
+            echo "::error::SUPABASE_DB_URL secret が未設定です（IPv4 session pooler URL を登録。docs/ops/backup-restore.md 参照）"
             exit 1
           fi
 
