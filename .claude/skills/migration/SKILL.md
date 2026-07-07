@@ -39,10 +39,16 @@ argument-hint: "<DB変更の内容> [対象アプリ: oshikatsu-web(デフォル
 
 ### 3. 適用と検証
 
-- ローカル適用: アプリディレクトリで `supabase db push`（または `supabase db reset` でシード込み再構築）
-- 適用後、影響するアプリの typecheck / lint と、関連画面の手動確認を行う
-- スキーマ変更のたびに `pnpm --filter @personal-hub/supabase gen:types` で Database 型
-  （`packages/supabase/src/database.types.ts`）を再生成する（要 `npx supabase login` 済み）
+- **ローカルで検証**（Docker + Supabase ローカル環境。詳細は `docs/ops/local-supabase.md`）:
+  `apps/oshikatsu-web` で `supabase db reset` を実行し、新しい migration を含む
+  全 migration + seed がエラーなく適用されることを確認する
+  （同じ検証を CI の `db-verify` ジョブが PR 上でも自動実行する）
+- スキーマを変えたら Database 型（`packages/supabase/src/database.types.ts`）を再生成する:
+  ローカルからは `supabase gen types typescript --local`（`apps/oshikatsu-web` で実行）、
+  本番反映後なら `pnpm --filter @personal-hub/supabase gen:types`（要 `npx supabase login` 済み）
+- 影響するアプリの typecheck / lint と、関連画面の手動確認を行う
+- **本番へ反映**: `supabase db push` は本番 DB への書き込みのため **ユーザーが実行する**
+  （CI の `db-verify` が緑であることを確認してから依頼する）
 
 ### 4. 関連ドキュメントの更新（該当する場合のみ）
 

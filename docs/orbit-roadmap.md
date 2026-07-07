@@ -341,11 +341,11 @@
   - GitHub Actions の cron で `supabase db dump`（`pg_dump`）を定期取得し、private に保存する
   - 復元手順を docs 化し、一度実際に復元試験を行う（手順が動くことの確認まで含めて完了とする）
   - 効果: 参戦記録・聖地スポット・Wiki など再入力不可能な個人データの保全。最優先
-- [ ] **P1-2: Docker + Supabase ローカル環境**（Issue #322 / ADR で「Docker 導入」の非目標を更新）
+- [x] **P1-2: Docker + Supabase ローカル環境**（Issue #322 / ADR 0012）
   - `supabase start`（Docker）でローカル DB を立て、migration を「ローカル検証 → 本番 push」の
-    フローに変更する（本番直あての解消。#309/#313 で都度必要だった調整を根絶する）
-  - seed で開発データを再現できるようにする
-  - CI に `supabase db reset`（全 migration + seed の適用）を追加し、migration の適用可能性を
+    フローに変更した（本番直あての解消。#309/#313 で都度必要だった調整を根絶）
+  - seed 登録を glob 化して開発データを再現（036〜039 の登録漏れも解消）
+  - CI（`db-verify.yml`）に `supabase db reset` を追加し、migration の適用可能性を
     マージ前に自動検証する
 - [ ] **P2-1: テスト基盤（Vitest）**（Issue #323 / フレームワーク選定は ADR）
   - usecases / lib の純関数（validate 系・集計系・`markdownHeadings` 等）から着手し、CI に組み込む
@@ -386,3 +386,4 @@
 | ~~SpotForm の肥大化~~ | ~~728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ~~ | ✅ Issue #303 で SongForm と同構成に分割済み（728 → 337 行） |
 | ~~revalidateOrbit のタグ依存が手書き~~ | ~~エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理~~ | ✅ Issue #305 で「タグ→表示エンティティ」の宣言表（`TAG_DISPLAY_SOURCES`）に再構成済み |
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |
+| migration 全件適用が冗長 | 61 本の migration に開発中の中間物が多く、`db reset`（ローカル / CI db-verify）が全件リプレイで遅い | Issue #329 で baseline 化を検討（本番 `schema_migrations` 整合が本丸。ADR 昇格候補） |
