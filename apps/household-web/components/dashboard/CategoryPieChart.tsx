@@ -51,7 +51,9 @@ export function CategoryPieChart({ data }: CategoryPieChartProps) {
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number | undefined) => formatYen(value ?? 0)}
+            // recharts 3.9 で formatter の value は ValueType（string | number | ...）に広がったため
+            // number 前提をやめ、数値以外は 0 円として表示する（従来と同じ表示結果）。
+            formatter={(value) => formatYen(typeof value === "number" ? value : 0)}
             contentStyle={{
               backgroundColor: "var(--background)",
               border: "1px solid rgba(0,0,0,0.1)",
