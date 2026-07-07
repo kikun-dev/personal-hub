@@ -334,7 +334,7 @@
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
 | ~~Repository update 非アトミック~~ | ~~update の全削除→再挿入がトランザクションなし~~ | ✅ member(012) / event update(015) / release・song(022/023/026) / live(031) / setlist(052) / spot(059) で RPC 化済み。event create のみ補償削除方式が残る（下記） |
-| event create 非アトミック | event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み） | Issue #304 で RPC 化予定（`upsert_orbit_spot`（059）と同型） |
+| ~~event create 非アトミック~~ | ~~event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み）~~ | ✅ Issue #304 で `upsert_orbit_event`（060）に統合済み |
 | spot create/update 非アトミック | spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 で対応済み |
 | ~~画像アップロード基盤の3重複~~ | ~~member / release / spot で storage repository・lib ヘルパー・readFileAsBase64 がほぼ逐語コピー~~ | ✅ Issue #298 で対応済み |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |

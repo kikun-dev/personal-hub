@@ -62,13 +62,13 @@ export function orbitReadClientTypeTest(
   client.from("orbit_groups").upsert({ name_ja: "test" });
 
   // --- 異常系: 更新系 rpc は OrbitReadRpcFunction のユニオンに含まれずコンパイルエラーになる ---
-  // @ts-expect-error update_event_with_relations は書き込み用 rpc のため呼べない
-  client.rpc("update_event_with_relations", {});
+  // @ts-expect-error upsert_orbit_event は書き込み用 rpc のため呼べない
+  client.rpc("upsert_orbit_event", {});
 
   // --- 異常系: raw な ReadOnlySupabaseClient（TAllowedRpc 未指定 = never）では
   // 読み取り用を含む一切の rpc が呼べない（更新系 rpc の誤用防止。#215 の完了条件） ---
   // @ts-expect-error ReadOnlySupabaseClient は default で rpc を一切許可しない
-  readOnlyClient.rpc("update_event_with_relations", {});
+  readOnlyClient.rpc("upsert_orbit_event", {});
   // @ts-expect-error 読み取り用 rpc も許可ユニオンを渡さない限り呼べない
   readOnlyClient.rpc("find_orbit_events_on_this_day", {});
 

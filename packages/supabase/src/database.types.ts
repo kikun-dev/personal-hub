@@ -1849,23 +1849,6 @@ export type Database = {
         Args: { p_center_member_ids: Json; p_track_id: string }
         Returns: undefined
       }
-      update_event_with_relations: {
-        Args: {
-          p_date: string
-          p_description: string
-          p_end_date: string
-          p_event_id: string
-          p_event_type_id: string
-          p_group_ids: string[]
-          p_is_member_history: boolean
-          p_member_ids: string[]
-          p_start_time: string
-          p_title: string
-          p_url: string
-          p_venue: string
-        }
-        Returns: undefined
-      }
       update_member_with_relations: {
         Args: {
           p_blog_hashtag: string
@@ -1935,6 +1918,10 @@ export type Database = {
           p_videos: Json
         }
         Returns: undefined
+      }
+      upsert_orbit_event: {
+        Args: { p_id: string; p_payload: Json }
+        Returns: string
       }
       upsert_orbit_live: {
         Args: { p_id: string; p_payload: Json }
