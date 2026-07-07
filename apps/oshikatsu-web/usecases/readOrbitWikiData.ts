@@ -1,10 +1,9 @@
 // Orbit の閲覧系ページローダー（ADR 0006 shared read cache）。
-// wiki ドメイン（#313）の read model を集約する。
+// wiki ドメイン（#313 閲覧 / #314 作成・編集）の read model を集約する。
 // 共有キャッシュ基盤（withOrbitReadClient / createSharedReadLoader）は orbitReadLoader.ts を参照。
 //
-// 注記: #313 は閲覧のみが対象で書き込み導線が無いため、lib/revalidateOrbit.ts への
-// "wiki" エンティティ・タグ行の追加は本Issueでは行わない（書き込み導線を追加する
-// #314 で対応する）。
+// 書き込み時のキャッシュ失効は lib/revalidateOrbit.ts の revalidateOrbitWikiData()
+// （"wiki" エンティティ・タグ行）を参照。
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
 import { createWikiRepository } from "@/repositories/wikiRepository";
 import { getWikiPage } from "@/usecases/getWikiPage";

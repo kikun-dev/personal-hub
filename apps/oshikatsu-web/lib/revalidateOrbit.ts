@@ -10,7 +10,8 @@ type OrbitEntity =
   | "person"
   | "venue"
   | "spot"
-  | "live";
+  | "live"
+  | "wiki";
 
 // 各キャッシュタグが「どのエンティティのデータを表示しているか」の宣言表。
 // エンティティを更新すると、そのエンティティを含む行のタグがすべて失効する。
@@ -72,6 +73,10 @@ const TAG_DISPLAY_SOURCES: Record<string, readonly OrbitEntity[]> = {
   ],
   // eventTypes・groups はマスタ表示専用で、現状どの更新系 Server Action からも
   // 失効されない（イベント種別・グループの CRUD UI が無いため）。行として持たない。
+  // Wikiページは他エンティティのデータを表示せず、他画面もWiki本文を表示しないため
+  // （閉じた単独ドメイン）、"wiki" のみを含む単純な行にする。
+  [ORBIT_CACHE_TAGS.wiki]: ["wiki"],
+  [ORBIT_CACHE_TAGS.wikiDetail]: ["wiki"],
 };
 
 function revalidateOrbitEntity(entity: OrbitEntity): void {
@@ -112,4 +117,8 @@ export function revalidateOrbitSpotData(): void {
 
 export function revalidateOrbitLiveData(): void {
   revalidateOrbitEntity("live");
+}
+
+export function revalidateOrbitWikiData(): void {
+  revalidateOrbitEntity("wiki");
 }

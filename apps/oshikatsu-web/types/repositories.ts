@@ -68,7 +68,12 @@ import type {
   CreateSpotInput,
   UpdateSpotInput,
 } from "./spot";
-import type { WikiPage, WikiPageListItem } from "./wiki";
+import type {
+  WikiPage,
+  WikiPageListItem,
+  CreateWikiPageInput,
+  UpdateWikiPageInput,
+} from "./wiki";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -137,10 +142,13 @@ export type SpotRepository = {
   findPhotoPaths(id: string): Promise<string[]>;
 };
 
-// Wiki的静的ページ集（#313）。閲覧のみが対象（書き込みは #314）。
+// Wiki的静的ページ集（#313 閲覧 / #314 作成・編集）。
 export type WikiRepository = {
   findAll(): Promise<WikiPageListItem[]>;
   findBySlug(slug: string): Promise<WikiPage | null>;
+  create(input: CreateWikiPageInput): Promise<WikiPage>;
+  update(id: string, input: UpdateWikiPageInput): Promise<WikiPage>;
+  delete(id: string): Promise<void>;
 };
 
 export type LiveCalendarPerformance = {
