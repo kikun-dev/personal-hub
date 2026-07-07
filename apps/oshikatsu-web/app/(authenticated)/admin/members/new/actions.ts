@@ -7,6 +7,7 @@ import { createMember } from "@/usecases/createMember";
 import { uploadMemberImage } from "@/usecases/uploadMemberImage";
 import { removeMemberImages } from "@/usecases/removeMemberImages";
 import { revalidateOrbitMemberData } from "@/lib/revalidateOrbit";
+import { toRepositoryErrorLog } from "@/lib/logRepositoryError";
 import type { CreateMemberInput, MemberImageUploadInput } from "@/types/member";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -58,10 +59,7 @@ export async function createMemberAction(
   } catch (e) {
     await cleanupUploadedMemberImage(uploadedImagePath, memberImageRepo);
     if (e instanceof RepositoryError) {
-      console.error("createMemberAction: repository error", {
-        message: e.message,
-        cause: e.cause,
-      });
+      console.error("createMemberAction: repository error", toRepositoryErrorLog(e));
       return {
         errors: [{ field: "_form", message: "メンバーの作成に失敗しました" }],
       };
