@@ -68,6 +68,7 @@ import type {
   CreateSpotInput,
   UpdateSpotInput,
 } from "./spot";
+import type { WikiPage, WikiPageListItem } from "./wiki";
 
 export type GroupRepository = {
   findAll(): Promise<Group[]>;
@@ -134,6 +135,12 @@ export type SpotRepository = {
   findSubtypeOptions(): Promise<SpotSourceSubtype[]>;
   // Storage 孤児掃除用の軽量クエリ（update/delete 前の旧写真パス取得）
   findPhotoPaths(id: string): Promise<string[]>;
+};
+
+// Wiki的静的ページ集（#313）。閲覧のみが対象（書き込みは #314）。
+export type WikiRepository = {
+  findAll(): Promise<WikiPageListItem[]>;
+  findBySlug(slug: string): Promise<WikiPage | null>;
 };
 
 export type LiveCalendarPerformance = {

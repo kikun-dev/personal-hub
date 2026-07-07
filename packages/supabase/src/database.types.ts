@@ -1663,6 +1663,36 @@ export type Database = {
         }
         Relationships: []
       }
+      orbit_wiki_pages: {
+        Row: {
+          body_markdown: string
+          created_at: string
+          id: string
+          slug: string
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          body_markdown?: string
+          created_at?: string
+          id?: string
+          slug: string
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          body_markdown?: string
+          created_at?: string
+          id?: string
+          slug?: string
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       payment_methods: {
         Row: {
           created_at: string

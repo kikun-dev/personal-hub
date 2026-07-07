@@ -11,4 +11,5 @@ export const APP_ROUTES = {
   songs: "/songs",
   spots: "/spots",
   venues: "/venues",
+  wiki: "/wiki",
 } as const;
