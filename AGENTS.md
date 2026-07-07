@@ -11,7 +11,7 @@ personal-hub で作業する AI エージェント（主に Codex）向けの運
 
 - Claude（Claude Code）：設計 + 実装（リファクタリングの実装を含む）
 - Codex：レビュー（リファクタリングの提案を含む）。
-  ユーザーから指示された場合は実装も担う
+  例外的に、Claude またはユーザーから明示指示された場合に限り実装も担う
 - ワークフローと共用実装スキルの一覧は `rules/ai-collaboration.md` を参照。
 
 ## 3. 共通ルール（マスタは rules/。内容をここに複製しない）
@@ -25,6 +25,7 @@ personal-hub で作業する AI エージェント（主に Codex）向けの運
 
 ## 4. 実装時の進め方（Codex 向け）
 
+- Claude またはユーザーから明示指示された場合に限り、この節の手順で実装する
 - 着手は `.codex/skills/issue-start/SKILL.md`、リファクタ実装は `.codex/skills/refactor/SKILL.md`、
   DB 変更は `.codex/skills/migration/SKILL.md`、PR 作成は `.codex/skills/pr/SKILL.md` の手順に従う
 - これらは Claude と同一内容の共用スキル。手順を変更する場合は `.claude/skills/` 側も同期する
