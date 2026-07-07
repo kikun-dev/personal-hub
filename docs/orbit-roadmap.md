@@ -334,7 +334,7 @@
 | ~~middleware 非推奨警告~~ | ~~Next.js 16 で `middleware.ts` が deprecated~~ | ✅ Issue #27 対応で `proxy.ts` へ移行済み |
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
 | ~~Repository update 非アトミック~~ | ~~update の全削除→再挿入がトランザクションなし~~ | ✅ member(012) / event update(015) / release・song(022/023/026) / live(031) / setlist(052) / spot(059) で RPC 化済み。event create のみ補償削除方式が残る（下記） |
-| event create 非アトミック | event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み） | Issue #304 で RPC 化予定（`upsert_orbit_spot`（059）と同型） |
+| ~~event create 非アトミック~~ | ~~event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み）~~ | ✅ Issue #304 で `upsert_orbit_event`（060）に統合済み |
 | spot create/update 非アトミック | spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 で対応済み |
 | ~~画像アップロード基盤の3重複~~ | ~~member / release / spot で storage repository・lib ヘルパー・readFileAsBase64 がほぼ逐語コピー~~ | ✅ Issue #298 で対応済み |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
@@ -349,5 +349,5 @@
 | ~~admin/viewer ロール体系が未導入~~ | ~~現状はオーナー単独運用前提。閲覧のみ共有ができない~~ | ✅ Issue #221 / #244 で導入済み（RLS 045/046 + proxy allowedRoles + requireAdmin/requireOrbitUser） |
 | ~~Google Maps API キーの制限設定が未確認~~ | ~~`NEXT_PUBLIC_*` で公開されるキー。ADR 0010 はリファラ制限 + 予算アラート設定を採用条件にしている~~ | ✅ 2026-07-07 に設定済みを確認（ADR 0010 追記） |
 | SpotForm の肥大化 | 728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ | Issue #303 で SongForm と同構成（`components/admin/spot/` へのセクション分割）に揃える |
-| revalidateOrbit のタグ依存が手書き | エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理。参照追加時の失効漏れを検知できない | Issue #305 で宣言的な依存表への再構成を検討 |
+| ~~revalidateOrbit のタグ依存が手書き~~ | ~~エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理。参照追加時の失効漏れを検知できない~~ | ✅ Issue #305 で「タグ→表示エンティティ」の宣言表（`TAG_DISPLAY_SOURCES`）に再構成済み |
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |

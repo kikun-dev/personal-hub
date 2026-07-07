@@ -1,104 +1,115 @@
 import { updateTag } from "next/cache";
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
 
-function revalidateOrbitTags(tags: readonly string[]): void {
-  for (const tag of tags) {
-    updateTag(tag);
+// エンティティ = 管理系 Server Action の更新単位。
+type OrbitEntity =
+  | "member"
+  | "event"
+  | "song"
+  | "release"
+  | "person"
+  | "venue"
+  | "spot"
+  | "live";
+
+// 各キャッシュタグが「どのエンティティのデータを表示しているか」の宣言表。
+// エンティティを更新すると、そのエンティティを含む行のタグがすべて失効する。
+// 画面に新しい参照を追加したら、その画面のタグの行にエンティティを足すだけでよい。
+const TAG_DISPLAY_SOURCES: Record<string, readonly OrbitEntity[]> = {
+  [ORBIT_CACHE_TAGS.top]: ["member", "event"],
+  [ORBIT_CACHE_TAGS.members]: ["member", "event", "song", "release"],
+  [ORBIT_CACHE_TAGS.membersDetail]: ["member", "event", "song", "release"],
+  [ORBIT_CACHE_TAGS.membersList]: ["member"],
+  [ORBIT_CACHE_TAGS.releases]: ["member", "song", "release", "person"],
+  [ORBIT_CACHE_TAGS.releasesDetail]: ["release", "person"],
+  [ORBIT_CACHE_TAGS.releasesList]: ["member", "song", "release"],
+  [ORBIT_CACHE_TAGS.songs]: ["member", "song", "release", "person"],
+  [ORBIT_CACHE_TAGS.songsDetail]: [
+    "song",
+    "release",
+    "person",
+    // セットリスト編集は楽曲詳細の総披露回数（#281）にも影響する
+    "live",
+  ],
+  [ORBIT_CACHE_TAGS.songsList]: ["member", "song"],
+  [ORBIT_CACHE_TAGS.songOptions]: ["song", "release"],
+  [ORBIT_CACHE_TAGS.lives]: [
+    // ライブ詳細は出演グループ名・休演メンバー名を表示する
+    "member",
+    // セットリストが楽曲タイトルを参照表示する
+    "song",
+    // ライブ詳細・公演に会場名を表示する
+    "venue",
+    "live",
+  ],
+  [ORBIT_CACHE_TAGS.livesDetail]: [
+    // ライブ詳細は出演グループ名・休演メンバー名を表示する
+    "member",
+    // セットリストが楽曲タイトルを参照表示する
+    "song",
+    // ライブ詳細・公演に会場名を表示する
+    "venue",
+    "live",
+  ],
+  [ORBIT_CACHE_TAGS.people]: ["person"],
+  [ORBIT_CACHE_TAGS.venues]: [
+    "venue",
+    // ライブ更新は会場詳細の公演逆引きにも影響する
+    "live",
+  ],
+  [ORBIT_CACHE_TAGS.spots]: ["spot"],
+  [ORBIT_CACHE_TAGS.spotsDetail]: [
+    // スポット詳細は出来事のメンバー名を表示する
+    "member",
+    // スポット詳細は出来事（event）のタイトル・日付を表示する
+    "event",
+    // スポット詳細は出来事の出典（mv/動画）から楽曲タイトルを表示する
+    "song",
+    // 地図ビュー（一覧）とスポット詳細ページの両方が参照するため、spots と両方に含める
+    "spot",
+    // スポット詳細は出来事の出典（live）からライブ名を表示する
+    "live",
+  ],
+  // eventTypes・groups はマスタ表示専用で、現状どの更新系 Server Action からも
+  // 失効されない（イベント種別・グループの CRUD UI が無いため）。行として持たない。
+};
+
+function revalidateOrbitEntity(entity: OrbitEntity): void {
+  for (const [tag, entities] of Object.entries(TAG_DISPLAY_SOURCES)) {
+    if (entities.includes(entity)) {
+      updateTag(tag);
+    }
   }
 }
 
 export function revalidateOrbitMemberData(): void {
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.members,
-    ORBIT_CACHE_TAGS.membersDetail,
-    ORBIT_CACHE_TAGS.membersList,
-    ORBIT_CACHE_TAGS.releases,
-    ORBIT_CACHE_TAGS.releasesList,
-    ORBIT_CACHE_TAGS.songs,
-    ORBIT_CACHE_TAGS.songsList,
-    // ライブ詳細は出演グループ名・休演メンバー名を表示するため失効する
-    ORBIT_CACHE_TAGS.lives,
-    ORBIT_CACHE_TAGS.livesDetail,
-    ORBIT_CACHE_TAGS.top,
-    // スポット詳細は出来事のメンバー名を表示するため失効する
-    ORBIT_CACHE_TAGS.spotsDetail,
-  ]);
+  revalidateOrbitEntity("member");
 }
 
 export function revalidateOrbitEventData(): void {
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.members,
-    ORBIT_CACHE_TAGS.membersDetail,
-    ORBIT_CACHE_TAGS.top,
-    // スポット詳細は出来事（event）のタイトル・日付を表示するため失効する
-    ORBIT_CACHE_TAGS.spotsDetail,
-  ]);
+  revalidateOrbitEntity("event");
 }
 
 export function revalidateOrbitSongData(): void {
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.members,
-    ORBIT_CACHE_TAGS.membersDetail,
-    ORBIT_CACHE_TAGS.releases,
-    ORBIT_CACHE_TAGS.releasesList,
-    ORBIT_CACHE_TAGS.songOptions,
-    ORBIT_CACHE_TAGS.songs,
-    ORBIT_CACHE_TAGS.songsDetail,
-    ORBIT_CACHE_TAGS.songsList,
-    // セットリストが楽曲タイトルを参照表示するため失効する
-    ORBIT_CACHE_TAGS.lives,
-    ORBIT_CACHE_TAGS.livesDetail,
-    // スポット詳細は出来事の出典（mv/動画）から楽曲タイトルを表示するため失効する
-    ORBIT_CACHE_TAGS.spotsDetail,
-  ]);
+  revalidateOrbitEntity("song");
 }
 
 export function revalidateOrbitReleaseData(): void {
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.members,
-    ORBIT_CACHE_TAGS.membersDetail,
-    ORBIT_CACHE_TAGS.releases,
-    ORBIT_CACHE_TAGS.releasesDetail,
-    ORBIT_CACHE_TAGS.releasesList,
-    ORBIT_CACHE_TAGS.songOptions,
-    ORBIT_CACHE_TAGS.songs,
-    ORBIT_CACHE_TAGS.songsDetail,
-  ]);
+  revalidateOrbitEntity("release");
 }
 
 export function revalidateOrbitPersonData(): void {
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.people,
-    ORBIT_CACHE_TAGS.releases,
-    ORBIT_CACHE_TAGS.releasesDetail,
-    ORBIT_CACHE_TAGS.songs,
-    ORBIT_CACHE_TAGS.songsDetail,
-  ]);
+  revalidateOrbitEntity("person");
 }
 
 export function revalidateOrbitVenueData(): void {
-  // ライブ詳細・公演に会場名を表示するため失効する
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.venues,
-    ORBIT_CACHE_TAGS.lives,
-    ORBIT_CACHE_TAGS.livesDetail,
-  ]);
+  revalidateOrbitEntity("venue");
 }
 
 export function revalidateOrbitSpotData(): void {
-  // 地図ビュー（一覧）とスポット詳細ページの両方が参照するため両タグを失効する
-  revalidateOrbitTags([ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.spotsDetail]);
+  revalidateOrbitEntity("spot");
 }
 
 export function revalidateOrbitLiveData(): void {
-  // ライブ更新は会場詳細の公演逆引きにも影響する。
-  // セットリスト編集は楽曲詳細の総披露回数（#281）にも影響するため songsDetail も失効する
-  revalidateOrbitTags([
-    ORBIT_CACHE_TAGS.lives,
-    ORBIT_CACHE_TAGS.livesDetail,
-    ORBIT_CACHE_TAGS.venues,
-    ORBIT_CACHE_TAGS.songsDetail,
-    // スポット詳細は出来事の出典（live）からライブ名を表示するため失効する
-    ORBIT_CACHE_TAGS.spotsDetail,
-  ]);
+  revalidateOrbitEntity("live");
 }
