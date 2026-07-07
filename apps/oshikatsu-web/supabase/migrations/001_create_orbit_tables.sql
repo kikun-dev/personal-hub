@@ -1,4 +1,19 @@
 -- ============================================================
+-- updated_at 自動更新トリガー関数（共有基盤）
+-- household-web の 001_create_tables.sql と同一定義。本番は両アプリで
+-- 同一 Supabase プロジェクトを共有しており household 側が先に作成するが、
+-- oshikatsu 単独のローカル/CI（supabase db reset）でも自己完結するよう
+-- CREATE OR REPLACE で冪等に定義する（本番は 001 適用済みのため再実行されない）。
+-- ============================================================
+CREATE OR REPLACE FUNCTION update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================================
 -- orbit_groups（グループ）
 -- ============================================================
 CREATE TABLE orbit_groups (
