@@ -1,0 +1,90 @@
+name: Backup - database
+
+# oshikatsu-web / household-web が共有する Supabase プロジェクトの DB を
+# 日次でダンプし、S3 互換の外部オブジェクトストレージ（Cloudflare R2 / Backblaze B2 等）へ
+# 保存する。再入力不可能な個人データ（参戦記録・聖地スポット・写真メタ・Wiki 等）の保全が目的。
+# 設計判断は Issue #321 / docs/ops/backup-restore.md を参照。
+
+on:
+  # 日次 03:00 JST（= 18:00 UTC 前日）。無料枠運用のため 1 日 1 回で十分。
+  schedule:
+    - cron: "0 18 * * *"
+  # 手動実行（初回検証・臨時取得用）
+  workflow_dispatch:
+
+# 認証情報のみ扱い、リポジトリの内容は変更しない
+permissions:
+  contents: read
+
+concurrency:
+  group: backup-db
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    name: Dump and upload
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          # 日次バックアップで dump の挙動が勝手に変わらないよう固定する。
+          # 更新するときは依存更新 PR と同じ扱いで手動実行 + 復元試験してから上げる
+          # （docs/ops/backup-restore.md「CLI バージョンの更新」）。
+          version: 2.109.1
+
+      - name: Dump database
+        env:
+          # Supabase の direct connection の接続文字列
+          # （postgresql://postgres:<db-password>@db.<ref>.supabase.co:5432/postgres）。
+          # docs/ops/backup-restore.md の手順で GitHub Secrets に登録する。
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_DB_URL:-}" ]; then
+            echo "::error::SUPABASE_DB_URL secret が未設定です（docs/ops/backup-restore.md 参照）"
+            exit 1
+          fi
+
+          # supabase db dump はデフォルトでスキーマのみを出す。データを保全するため
+          # Supabase 公式のバックアップ手順に沿って roles / schema / data を分けて取得する。
+          # 参戦記録（orbit_live_attendances）は auth.users を FK 参照するため、
+          # 別プロジェクトへ復元しても FK が満たせるよう auth スキーマのデータも取得する
+          # （復元順序と注意点は docs/ops/backup-restore.md）。
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f roles.sql --role-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f schema.sql
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f data.sql --use-copy --data-only
+          supabase db dump --db-url "$SUPABASE_DB_URL" -f auth_data.sql --use-copy --data-only --schema auth
+
+          STAMP="$(date -u +%Y%m%d)"
+          ARCHIVE="orbit-${STAMP}.tar.gz"
+          tar czf "$ARCHIVE" roles.sql schema.sql data.sql auth_data.sql
+          echo "ARCHIVE=$ARCHIVE" >> "$GITHUB_ENV"
+          echo "created $ARCHIVE ($(du -h "$ARCHIVE" | cut -f1))"
+
+      - name: Upload to S3-compatible storage
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.BACKUP_S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.BACKUP_S3_SECRET_ACCESS_KEY }}
+          # R2: https://<accountid>.r2.cloudflarestorage.com / B2: https://s3.<region>.backblazeb2.com
+          BACKUP_S3_ENDPOINT: ${{ secrets.BACKUP_S3_ENDPOINT }}
+          BACKUP_S3_BUCKET: ${{ secrets.BACKUP_S3_BUCKET }}
+          # R2 は "auto" で可。B2 等は発行時のリージョンを指定する。
+          AWS_DEFAULT_REGION: ${{ secrets.BACKUP_S3_REGION || 'auto' }}
+        run: |
+          set -euo pipefail
+          for v in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BACKUP_S3_ENDPOINT BACKUP_S3_BUCKET; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error::$v secret が未設定です（docs/ops/backup-restore.md 参照）"
+              exit 1
+            fi
+          done
+          # 世代管理: 年/月フォルダ + 日付キー。上書きされないため日次で1世代ずつ残る。
+          KEY="backups/$(date -u +%Y)/$(date -u +%m)/${ARCHIVE}"
+          aws s3 cp "$ARCHIVE" "s3://${BACKUP_S3_BUCKET}/${KEY}" \
+            --endpoint-url "$BACKUP_S3_ENDPOINT"
+          echo "uploaded s3://${BACKUP_S3_BUCKET}/${KEY}"
