@@ -73,5 +73,6 @@ supabase stop --no-backup   # データも破棄してクリーンにする
 
 - household-web はローカル環境（config.toml）を整備していない（Issue #322 の Non-goal）。
   必要になれば同じ仕組みを `apps/household-web/supabase/` に用意する
-- `#321` の DB 復元試験は、このローカル環境へ `psql -f data.sql` で流すのが手軽
-  （`docs/ops/backup-restore.md` の復元手順を参照）
+- `#321` の DB 復元試験は、このローカル環境を復元先に使うと手軽。
+  `docs/ops/backup-restore.md` の復元手順に従い、必要に応じて
+  `schema.sql` → `auth_data.sql` → `data.sql` の順で流し込む
