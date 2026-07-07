@@ -154,6 +154,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
 - `orbit_live_attendances` — ライブ参加記録（**ユーザー別データ**。本人のみ読み書き、ADR 0009）
 - `orbit_spots` / `orbit_spot_appearances` / `orbit_spot_appearance_members` / `orbit_spot_photos` / `orbit_spot_source_subtypes` — 聖地スポット、出来事（グループ・種別・サブ種別・出典FK: track/video/event/live）、出来事×メンバー、写真、サブ種別マスタ（ADR 0010。スポット単一カテゴリは持たず、種別は出来事側で表現する）
+- `orbit_wiki_pages` — Wiki的静的ページ集（オーディション関係・持ち物リスト・外部リンク集等。slug/title/body_markdown。#313 は閲覧のみ、作成・編集導線は #314）
 
 ### RLS 方針
 グローバルデータは `app_metadata.role ∈ {"admin", "viewer"}` で判定する。

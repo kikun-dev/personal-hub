@@ -18,4 +18,6 @@ export const ORBIT_CACHE_TAGS = {
   spotsDetail: "orbit:spots:detail",
   top: "orbit:top",
   venues: "orbit:venues",
+  wiki: "orbit:wiki",
+  wikiDetail: "orbit:wiki:detail",
 } as const;
