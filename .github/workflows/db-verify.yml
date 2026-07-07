@@ -1,0 +1,58 @@
+name: DB verify - oshikatsu-web
+
+# oshikatsu-web の Supabase ローカルスタックを起動し、全 migration + seed が
+# エラーなく適用できることを検証する（`supabase db reset`）。
+# 本番へ push する前に「migration が実際に通る」ことを CI で保証し、
+# #309/#313 で起きた「本番で初めて適用する」状況を根絶する（Issue #322）。
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "apps/oshikatsu-web/supabase/**"
+      - ".github/workflows/db-verify.yml"
+  pull_request:
+    paths:
+      - "apps/oshikatsu-web/supabase/**"
+      - ".github/workflows/db-verify.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  db-reset:
+    name: Apply migrations and seeds
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        # config.toml / migrations / seeds はこのディレクトリ基準で解決される
+        working-directory: apps/oshikatsu-web
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          # backup-db.yml と同じ固定バージョン（挙動を揃える）
+          version: 2.109.1
+
+      - name: Start local Supabase
+        run: supabase start
+
+      - name: Reset database (apply all migrations + seeds)
+        run: supabase db reset
+
+      - name: Show migration status
+        if: always()
+        run: supabase migration list --local
+
+      - name: Stop local Supabase
+        if: always()
+        run: supabase stop --no-backup

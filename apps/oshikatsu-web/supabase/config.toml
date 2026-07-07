@@ -62,14 +62,9 @@ schema_paths = []
 enabled = true
 # Specifies an ordered list of seed files to load during db reset.
 # Supports glob patterns relative to supabase directory: "./seeds/*.sql"
-sql_paths = [
-  "./seeds/030_seed_sakamichi_release_tracks_starter.sql",
-  "./seeds/031_seed_sakamichi_tracks_expanded.sql",
-  "./seeds/032_seed_sakamichi_single_tracks_expanded.sql",
-  "./seeds/033_fix_hinata_recent_single_tracks.sql",
-  "./seeds/034_seed_sakamichi_venues.sql",
-  "./seeds/035_seed_sakamichi_lives_2026.sql",
-]
+# glob で seeds/ 全件をファイル名の辞書順（= ゼロ埋め採番順）に適用する。
+# 明示列挙だと seed 追加のたびに更新が必要で、実際 036〜039 が登録漏れしていた（#322）。
+sql_paths = ["./seeds/*.sql"]
 
 [db.network_restrictions]
 # Enable management of network restrictions.

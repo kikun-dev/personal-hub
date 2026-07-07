@@ -29,11 +29,13 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - フロントエンド：Next.js 16（App Router） + TypeScript + Tailwind CSS 4
 - パッケージ管理：pnpm（workspaces）
 - データベース + 認証：Supabase（PostgreSQL + Google OAuth + RLS）
+  - **oshikatsu-web と household-web は別々の Supabase プロジェクト**（DB は共有しない）
+  - ローカル開発：Docker + Supabase CLI ローカルスタック（oshikatsu-web、ADR 0012。`docs/ops/local-supabase.md`）
 - 状態管理：ライブラリなし（Server Components + useState + URL params）
 - チャート：recharts（household-web で導入済み）
 - Markdown レンダリング：react-markdown + remark-gfm（oshikatsu-web の Wiki で導入済み、ADR 0011）
 - リポジトリ：GitHub（private）
-- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build）
+- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build、oshikatsu-web は migration の db-verify）
 - デプロイ：Vercel（household-web / oshikatsu-web）
 - IDE：VS Code（Remote WSL）
 
@@ -202,6 +204,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0009 | Orbit ユーザー別データ（参加記録）の導入方針 | Accepted |
 | 0010 | 聖地巡礼マップの実装場所と地図ライブラリの採用 | Accepted |
 | 0011 | Wiki的静的ページ集のコンテンツ管理と Markdown レンダリング | Accepted |
+| 0012 | Supabase ローカル環境（Docker）の導入と migration 検証フロー | Accepted |
 
 ---
 
@@ -214,8 +217,8 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 ### 方針を転換した項目
 
 - ~~Docker 導入~~: 主要機能が揃い、本番 DB 直あての運用リスクが顕在化したため、
-  Phase 4（運用基盤の整備）で Supabase ローカル環境として導入する方向に転換した
-  （`docs/orbit-roadmap.md` Phase 4 / Issue #322）。判断の詳細は ADR に残す
+  Phase 4（運用基盤の整備）で Supabase ローカル環境として導入した
+  （Issue #322 / **ADR 0012** / `docs/ops/local-supabase.md`）
 - ~~テストは対象外~~: リファクタの安全性を機械的検証に頼ってきたが、ロジック退行を
   継続的に検知するため Phase 4 でテスト基盤（Vitest）を導入する（Issue #323）。
   対象範囲は Decision で確定してから着手する
