@@ -29,7 +29,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - フロントエンド：Next.js 16（App Router） + TypeScript + Tailwind CSS 4
 - パッケージ管理：pnpm（workspaces）
 - データベース + 認証：Supabase（PostgreSQL + Google OAuth + RLS）
-  - **oshikatsu-web と household-web は別々の Supabase プロジェクト**（DB は共有しない）
+  - **oshikatsu-web と household-web は同一 Supabase プロジェクトを共有**（`orbit_` prefix によるテーブル名前空間分離。ADR 0005）。Vercel のデプロイのみ別プロジェクトで、両 URL を Supabase の Auth に登録している
   - ローカル開発：Docker + Supabase CLI ローカルスタック（oshikatsu-web、ADR 0012。`docs/ops/local-supabase.md`）
 - 状態管理：ライブラリなし（Server Components + useState + URL params）
 - チャート：recharts（household-web で導入済み）
