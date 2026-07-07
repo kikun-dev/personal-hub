@@ -80,11 +80,22 @@ Actions タブ → 「Backup - database」→ Run workflow で手動実行し、
 
 ## 復元手順
 
+原則として、いきなり本番 DB に流し込まない。まずローカル Supabase または別プロジェクトへ復元し、
+バックアップの中身と件数を確認してから、本番復旧が必要か判断する。
+
 1. ストレージから対象日のアーカイブを取得して展開する:
 
    ```bash
-   aws s3 cp "s3://<bucket>/backups/2026/07/orbit-20260707.tar.gz" . \
-     --endpoint-url "<endpoint>"
+   export AWS_ACCESS_KEY_ID="<backup access key id>"
+   export AWS_SECRET_ACCESS_KEY="<backup secret access key>"
+   export AWS_DEFAULT_REGION="auto"  # R2 の場合。B2 等は発行時のリージョン
+
+   BACKUP_S3_ENDPOINT="https://<accountid>.r2.cloudflarestorage.com"
+   BACKUP_S3_BUCKET="<bucket>"
+   BACKUP_KEY="backups/2026/07/orbit-20260707.tar.gz"
+
+   aws s3 cp "s3://${BACKUP_S3_BUCKET}/${BACKUP_KEY}" . \
+     --endpoint-url "${BACKUP_S3_ENDPOINT}"
    tar xzf orbit-20260707.tar.gz   # roles.sql / schema.sql / data.sql / auth_data.sql
    ```
 
@@ -101,13 +112,50 @@ Actions タブ → 「Backup - database」→ Run workflow で手動実行し、
      DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"  # ローカルの例
      # roles.sql は Supabase プロジェクト間・ローカルでは既存ロールと衝突し得るため通常は不要。
      # 空クラスタへ移す等でロールが無い場合のみ psql -f roles.sql を先に実行する。
-     psql "$DB" -f schema.sql
-     psql "$DB" -f auth_data.sql   # 参戦記録の FK（auth.users）用
-     psql "$DB" -f data.sql
+     psql "$DB" -v ON_ERROR_STOP=1 -f schema.sql
+     psql "$DB" -v ON_ERROR_STOP=1 -f auth_data.sql   # 参戦記録の FK（auth.users）用
+     psql "$DB" -v ON_ERROR_STOP=1 -f data.sql
      ```
 
-3. 主要テーブルの件数を確認する（例: `select count(*) from orbit_live_attendances;`、
-   `select count(*) from orbit_spots;`）。
+3. 主要テーブルの件数を確認する:
+
+   ```bash
+   psql "$DB" -v ON_ERROR_STOP=1 <<'SQL'
+   select 'auth.users' as table_name, count(*) as rows from auth.users
+   union all
+   select 'orbit_groups', count(*) from public.orbit_groups
+   union all
+   select 'orbit_members', count(*) from public.orbit_members
+   union all
+   select 'orbit_live_attendances', count(*) from public.orbit_live_attendances
+   union all
+   select 'orbit_spots', count(*) from public.orbit_spots
+   union all
+   select 'orbit_wiki_pages', count(*) from public.orbit_wiki_pages
+   order by table_name;
+   SQL
+   ```
+
+### ローカル Supabase で復元試験する場合
+
+Issue #321 の完了条件として復元試験を行う場合は、`apps/oshikatsu-web` のローカル Supabase を
+復元先に使う。日次バックアップ workflow には復元処理を入れず、必要なときに手元で実行する。
+
+```bash
+cd apps/oshikatsu-web
+supabase start
+cd ../..
+
+# 上の「復元手順」でアーカイブ取得・展開を済ませてから実行する
+DB="postgresql://postgres:postgres@127.0.0.1:54322/postgres"
+psql "$DB" -v ON_ERROR_STOP=1 -f schema.sql
+psql "$DB" -v ON_ERROR_STOP=1 -f auth_data.sql
+psql "$DB" -v ON_ERROR_STOP=1 -f data.sql
+
+# 件数確認後、不要ならローカル環境を破棄
+cd apps/oshikatsu-web
+supabase stop --no-backup
+```
 
 > 補足: public データ（グループ / メンバー / 楽曲 / スポット / Wiki 等）は auth 非依存のため、
 > `auth_data.sql` を流さなくても `schema.sql` → `data.sql` だけで復元・検証できる
