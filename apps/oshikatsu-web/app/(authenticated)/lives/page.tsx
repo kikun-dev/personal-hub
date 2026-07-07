@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { LiveBrowser } from "@/components/lives/LiveBrowser";
-import { getLivesPageData } from "@/usecases/readOrbitData";
+import { getLivesPageData } from "@/usecases/readOrbitLiveData";
 
 export default async function LivesPage() {
   const { lives, groups } = await getLivesPageData();

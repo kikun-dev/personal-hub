@@ -5,7 +5,7 @@ import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { APP_ROUTES } from "@/lib/routes";
-import { getSpotDetailPageData } from "@/usecases/readOrbitData";
+import { getSpotDetailPageData } from "@/usecases/readOrbitSpotData";
 
 type SpotDetailPageProps = {
   params: Promise<{ id: string }>;

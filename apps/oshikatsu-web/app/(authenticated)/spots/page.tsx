@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import Link from "next/link";
-import { getSpotsPageData } from "@/usecases/readOrbitData";
+import { getSpotsPageData } from "@/usecases/readOrbitSpotData";
 import { SpotsMapView } from "@/components/spots/SpotsMapView";
 import { Button } from "@/components/ui/Button";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";

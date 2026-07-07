@@ -1,10 +1,6 @@
-import { unstable_cache } from "next/cache";
-import { createClient } from "@personal-hub/supabase/server";
-import {
-  createReadOnlyClient,
-  isReadOnlyServerClientAvailable,
-} from "@personal-hub/supabase/read-only-server";
-import type { OrbitReadClient } from "@/types/orbitReadClient";
+// Orbit の閲覧系ページローダー（ADR 0006 shared read cache）。
+// top / member / song / release ドメインの read model を集約する。
+// 共有キャッシュ基盤（withOrbitReadClient / createSharedReadLoader）は orbitReadLoader.ts を参照。
 import { ORBIT_CACHE_TAGS } from "@/lib/cacheTags";
 import { formatSelectionPositionLabel } from "@/lib/selectionPositionLabel";
 import { createEventRepository } from "@/repositories/eventRepository";
@@ -13,58 +9,28 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { createReleaseRepository } from "@/repositories/releaseRepository";
 import { createSongRepository } from "@/repositories/songRepository";
 import { sortMemberSongsByReleaseOrder } from "@/usecases/memberSongOrder";
-import { createSpotRepository } from "@/repositories/spotRepository";
-import { createVenueRepository } from "@/repositories/venueRepository";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { getGroups } from "@/usecases/getGroups";
 import { getMember } from "@/usecases/getMember";
 import { getRelease } from "@/usecases/getRelease";
 import { getSong } from "@/usecases/getSong";
-import { getSpot } from "@/usecases/getSpot";
 import { getSongPerformanceSummary } from "@/usecases/getSongPerformanceSummary";
-import { getVenue } from "@/usecases/getVenue";
-import { listVenues } from "@/usecases/listVenues";
-import { getLive } from "@/usecases/getLive";
-import { listPublicLives } from "@/usecases/listPublicLives";
 import { getTopPageContent } from "@/usecases/getTopPageContent";
 import {
   createMemberSections,
   createSongSections,
   sortSongsForListOrder,
 } from "@/usecases/groupListSections";
-import { listMemberOptions } from "@/usecases/listMemberOptions";
 import { listPublicMembers } from "@/usecases/listPublicMembers";
 import { listPublicReleases } from "@/usecases/listPublicReleases";
 import { listPublicSongs } from "@/usecases/listPublicSongs";
-import { listSpots } from "@/usecases/listSpots";
 import type { MemberFilters as MemberFiltersType } from "@/types/member";
 import type { ReleaseFilters as ReleaseFiltersType } from "@/types/release";
 import type { SongFilters as SongFiltersType } from "@/types/song";
-
-const canUseSharedReadCache = isReadOnlyServerClientAvailable();
-
-async function withOrbitReadClient<T>(
-  loader: (supabase: OrbitReadClient) => Promise<T>
-): Promise<T> {
-  if (canUseSharedReadCache) {
-    return loader(createReadOnlyClient());
-  }
-
-  const supabase = await createClient();
-  return loader(supabase);
-}
-
-function createSharedReadLoader<TArgs extends unknown[], TResult>(
-  keyParts: string[],
-  tags: string[],
-  loader: (...args: TArgs) => Promise<TResult>
-): (...args: TArgs) => Promise<TResult> {
-  if (!canUseSharedReadCache) {
-    return loader;
-  }
-
-  return unstable_cache(loader, keyParts, { tags });
-}
+import {
+  createSharedReadLoader,
+  withOrbitReadClient,
+} from "@/usecases/orbitReadLoader";
 
 const loadTopPageData = createSharedReadLoader(
   ["orbit", "top-page-data"],
@@ -275,76 +241,6 @@ const loadReleaseDetailPageData = createSharedReadLoader(
     })
 );
 
-const loadSpotsPageData = createSharedReadLoader(
-  ["orbit", "spots-page-data"],
-  [ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.members],
-  async () =>
-    withOrbitReadClient(async (supabase) => {
-      const [spots, memberOptions] = await Promise.all([
-        listSpots(createSpotRepository(supabase)),
-        listMemberOptions(createMemberRepository(supabase)),
-      ]);
-
-      return { spots, memberOptions };
-    })
-);
-
-const loadSpotDetailPageData = createSharedReadLoader(
-  ["orbit", "spot-detail-page-data"],
-  [ORBIT_CACHE_TAGS.spots, ORBIT_CACHE_TAGS.spotsDetail],
-  async (id: string) =>
-    withOrbitReadClient(async (supabase) => {
-      return getSpot(createSpotRepository(supabase), id);
-    })
-);
-
-const loadVenuesPageData = createSharedReadLoader(
-  ["orbit", "venues-page-data"],
-  [ORBIT_CACHE_TAGS.venues],
-  async () =>
-    withOrbitReadClient(async (supabase) => {
-      return listVenues(createVenueRepository(supabase));
-    })
-);
-
-const loadVenueDetailPageData = createSharedReadLoader(
-  ["orbit", "venue-detail-page-data"],
-  [ORBIT_CACHE_TAGS.venues, ORBIT_CACHE_TAGS.lives],
-  async (id: string) =>
-    withOrbitReadClient(async (supabase) => {
-      const venue = await getVenue(createVenueRepository(supabase), id);
-      if (!venue) {
-        return null;
-      }
-      const performances = await createLiveRepository(
-        supabase
-      ).findPerformancesByVenue(id);
-      return { venue, performances };
-    })
-);
-
-const loadLivesPageData = createSharedReadLoader(
-  ["orbit", "lives-page-data"],
-  [ORBIT_CACHE_TAGS.lives, ORBIT_CACHE_TAGS.groups],
-  async () =>
-    withOrbitReadClient(async (supabase) => {
-      const [lives, groups] = await Promise.all([
-        listPublicLives(createLiveRepository(supabase)),
-        getGroups(createGroupRepository(supabase)),
-      ]);
-      return { lives, groups };
-    })
-);
-
-const loadLiveDetailPageData = createSharedReadLoader(
-  ["orbit", "live-detail-page-data"],
-  [ORBIT_CACHE_TAGS.lives, ORBIT_CACHE_TAGS.livesDetail],
-  async (id: string) =>
-    withOrbitReadClient(async (supabase) => {
-      return getLive(createLiveRepository(supabase), id);
-    })
-);
-
 export async function getTopPageData(
   year: number,
   month: number,
@@ -375,28 +271,4 @@ export async function getReleasesPageData(filters: ReleaseFiltersType) {
 
 export async function getReleaseDetailPageData(id: string) {
   return loadReleaseDetailPageData(id);
-}
-
-export async function getSpotsPageData() {
-  return loadSpotsPageData();
-}
-
-export async function getSpotDetailPageData(id: string) {
-  return loadSpotDetailPageData(id);
-}
-
-export async function getVenuesPageData() {
-  return loadVenuesPageData();
-}
-
-export async function getVenueDetailPageData(id: string) {
-  return loadVenueDetailPageData(id);
-}
-
-export async function getLivesPageData() {
-  return loadLivesPageData();
-}
-
-export async function getLiveDetailPageData(id: string) {
-  return loadLiveDetailPageData(id);
 }

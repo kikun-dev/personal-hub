@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getVenuesPageData } from "@/usecases/readOrbitData";
+import { getVenuesPageData } from "@/usecases/readOrbitLiveData";
 import { VenueTable } from "@/components/venues/VenueTable";
 import { Button } from "@/components/ui/Button";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";

@@ -189,7 +189,7 @@ export type SongRepository = {
   findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
   findCalendarVideoItems(): Promise<CalendarVideoItem[]>;
   // 楽曲詳細ページの「総披露回数」用（Issue #281）。全ユーザー共通の客観集計のため
-  // shared read cache 経路（readOrbitData.ts）から呼ぶ。
+  // shared read cache 経路（readOrbitMusicData.ts）から呼ぶ。
   findPerformanceOccurrences(songId: string): Promise<SongPerformanceOccurrence[]>;
   // スポットの出典セレクタ（関連動画）用の軽量候補一覧
   findVideoOptions(): Promise<SongVideoOption[]>;

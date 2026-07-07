@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { MemberBrowser } from "@/components/members/MemberBrowser";
-import { getMembersPageData } from "@/usecases/readOrbitData";
+import { getMembersPageData } from "@/usecases/readOrbitMusicData";
 
 export default async function MembersPage() {
   // 絞り込みはクライアント側で行うため、卒業含む全件を取得する
