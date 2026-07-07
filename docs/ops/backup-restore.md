@@ -60,7 +60,7 @@ postgresql://postgres:<db-password>@db.<project-ref>.supabase.co:5432/postgres
 ### 3. 動作確認（手動実行）
 
 Actions タブ → 「Backup - database」→ Run workflow で手動実行し、成功することを確認する。
-成功後、ストレージのバケットに `backups/YYYY/MM/orbit-YYYYMMDD.sql.gz` が作られていることを確認する。
+成功後、ストレージのバケットに `backups/YYYY/MM/orbit-YYYYMMDD.tar.gz` が作られていることを確認する。
 
 ### 4. 失敗通知を有効にする
 
