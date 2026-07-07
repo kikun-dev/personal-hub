@@ -31,6 +31,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - データベース + 認証：Supabase（PostgreSQL + Google OAuth + RLS）
 - 状態管理：ライブラリなし（Server Components + useState + URL params）
 - チャート：recharts（household-web で導入済み）
+- Markdown レンダリング：react-markdown + remark-gfm（oshikatsu-web の Wiki で導入済み、ADR 0011）
 - リポジトリ：GitHub（private）
 - CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build）
 - デプロイ：Vercel（household-web / oshikatsu-web）
@@ -172,7 +173,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 
 ### 今後の予定
 `docs/orbit-roadmap.md` を参照。主要な設計判断は ADR 0005〜0009。
-全体レビューと改善計画は `docs/advisor/006-oshikatsu-web-current-state-audit.md` を参照。
+全体レビューと改善計画は `docs/advisor/007-oshikatsu-web-current-state-audit.md` を参照（第2回監査。前回は 006）。
 
 ---
 

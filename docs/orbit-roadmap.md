@@ -316,11 +316,15 @@
   - [x] Phase 2: スポット詳細ページ + 一覧/地図の導線（✅ #292 / PR #296）、写真アップロード（✅ #293 / PR #297）、フィルタ拡充（✅ #294 / PR #299。種別・都道府県は select、サブ種別・メンバー名・スポット名は横断テキスト検索）
   - [ ] Phase 3: 訪問記録（ユーザー別データ、ADR 0009 パターン）。近隣検索は件数が増えたら PostGIS を検討
   - リファクタ: create/update のトランザクションRPC化（#289、既知負債表参照）
+- [x] Wiki的静的ページ集（Issue #312〜#314 / ADR 0011 / PR #315〜#317）
+  - [x] `orbit_wiki_pages`（migration 061）+ react-markdown による閲覧基盤（`/wiki` 一覧・`/wiki/[slug]` 詳細・h2/h3 目次）
+  - [x] 管理画面からの作成・編集・削除（Markdown プレビュー付き、admin のみ）
+  - 遠征持ち物リスト・外部サイトリンク集・オーディション関係などの「参照」メインのページはここにコンテンツとして作成する
 - メディア出演管理（`orbit_media`）
 - 公開アクセス対応（RLS の SELECT ポリシーを `true` に変更）
-- 遠征持ち物リスト
+- ~~遠征持ち物リスト~~（→ Wiki のコンテンツとして作成する。基盤は #313/#314 で対応済み）
 - スケジュール分析（イベントデータからの集計・可視化）
-- 外部サイトリンク集
+- ~~外部サイトリンク集~~（→ Wiki のコンテンツとして作成する。基盤は #313/#314 で対応済み）
 
 ---
 
@@ -335,7 +339,7 @@
 | Orbit 閲覧導線の request 依存 | layout 認証と cookie 依存 read path が重なり shared cache を使いにくい | ✅ Issue #66 で基盤対応、クエリ最適化は Issue #68 で継続 |
 | ~~Repository update 非アトミック~~ | ~~update の全削除→再挿入がトランザクションなし~~ | ✅ member(012) / event update(015) / release・song(022/023/026) / live(031) / setlist(052) / spot(059) で RPC 化済み。event create のみ補償削除方式が残る（下記） |
 | ~~event create 非アトミック~~ | ~~event + groups + members を複数リクエストで挿入（失敗時は補償削除で被害は限定済み）~~ | ✅ Issue #304 で `upsert_orbit_event`（060）に統合済み |
-| spot create/update 非アトミック | spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み） | Issue #289 で対応済み |
+| ~~spot create/update 非アトミック~~ | ~~spots + appearances + members + photos を複数リクエストで書き込む（新規挿入→旧削除の順序化と補償削除で被害は限定済み）~~ | ✅ Issue #289 で `upsert_orbit_spot`（059）に統合済み |
 | ~~画像アップロード基盤の3重複~~ | ~~member / release / spot で storage repository・lib ヘルパー・readFileAsBase64 がほぼ逐語コピー~~ | ✅ Issue #298 で対応済み |
 | `UpdateXxxInput = CreateXxxInput` | 部分更新不可（全フィールド送信が必要） | フォームは常に全フィールド送信するため当面問題なし |
 | ~~Top右ナビとHeaderの項目定義が共有~~ | ~~#60時点では `APP_NAV_ITEMS` を共通利用しており、簡易/完全版の役割分離が未完了~~ | ✅ Issue #62 で `HEADER_NAV_ITEMS` / `TOP_NAV_ITEMS` に分離済み |
@@ -348,6 +352,6 @@
 | ~~ルート error / not-found 未整備~~ | ~~`notFound()` は複数箇所で使うが、カスタム 404 とルートエラー画面がない~~ | ✅ Issue #219 で対応済み |
 | ~~admin/viewer ロール体系が未導入~~ | ~~現状はオーナー単独運用前提。閲覧のみ共有ができない~~ | ✅ Issue #221 / #244 で導入済み（RLS 045/046 + proxy allowedRoles + requireAdmin/requireOrbitUser） |
 | ~~Google Maps API キーの制限設定が未確認~~ | ~~`NEXT_PUBLIC_*` で公開されるキー。ADR 0010 はリファラ制限 + 予算アラート設定を採用条件にしている~~ | ✅ 2026-07-07 に設定済みを確認（ADR 0010 追記） |
-| SpotForm の肥大化 | 728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ | Issue #303 で SongForm と同構成（`components/admin/spot/` へのセクション分割）に揃える |
+| ~~SpotForm の肥大化~~ | ~~728 行。共通基盤は適用済みだがセクション分割が `SpotPhotosSection` のみ~~ | ✅ Issue #303 で SongForm と同構成に分割済み（728 → 337 行） |
 | ~~revalidateOrbit のタグ依存が手書き~~ | ~~エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理~~ | ✅ Issue #305 で「タグ→表示エンティティ」の宣言表（`TAG_DISPLAY_SOURCES`）に再構成済み |
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |
