@@ -198,6 +198,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0008 | Orbit 認可レイヤーのオーナー限定化（app_metadata.role） | Accepted |
 | 0009 | Orbit ユーザー別データ（参加記録）の導入方針 | Accepted |
 | 0010 | 聖地巡礼マップの実装場所と地図ライブラリの採用 | Accepted |
+| 0011 | Wiki的静的ページ集のコンテンツ管理と Markdown レンダリング | Accepted |
 
 ---
 
