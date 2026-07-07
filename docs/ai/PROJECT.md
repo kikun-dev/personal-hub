@@ -109,7 +109,8 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
   - 一覧の行クリックで地図移動、スポット名/InfoWindow から詳細ページへ（#292 案A）
   - 写真は Supabase Storage（`spot-photos` バケット）へアップロードし、`orbit_spot_photos.image_path` に object path を保持
   - 場所登録は Places Autocomplete（Places API New）、地図表示は Google Maps JS API + `@vis.gl/react-google-maps`（`GoogleMapsProvider` で language=ja / region=JP 固定）
-- **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場/スポット CRUD）
+- **Wiki**（参照用の静的ページ集。Markdown、管理画面から作成・編集）
+- **管理画面**（メンバー/イベント/制作陣/リリース/楽曲/ライブ/会場/スポット/Wiki CRUD）
   - メンバー画像は Supabase Storage へアップロードし、`orbit_members.image_url` には object path を保持
   - 来歴はイベント管理で `is_member_history` を付与して管理（メンバー画面側での来歴入力は廃止）
 - **Google ログイン**
@@ -154,7 +155,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー
 - `orbit_live_attendances` — ライブ参加記録（**ユーザー別データ**。本人のみ読み書き、ADR 0009）
 - `orbit_spots` / `orbit_spot_appearances` / `orbit_spot_appearance_members` / `orbit_spot_photos` / `orbit_spot_source_subtypes` — 聖地スポット、出来事（グループ・種別・サブ種別・出典FK: track/video/event/live）、出来事×メンバー、写真、サブ種別マスタ（ADR 0010。スポット単一カテゴリは持たず、種別は出来事側で表現する）
-- `orbit_wiki_pages` — Wiki的静的ページ集（オーディション関係・持ち物リスト・外部リンク集等。slug/title/body_markdown。#313 は閲覧のみ、作成・編集導線は #314）
+- `orbit_wiki_pages` — Wiki的静的ページ集（オーディション関係・持ち物リスト・外部リンク集等。slug/title/body_markdown/sort_order。#313 で閲覧、#314 で管理画面からの作成・編集・削除を追加）
 
 ### RLS 方針
 グローバルデータは `app_metadata.role ∈ {"admin", "viewer"}` で判定する。
