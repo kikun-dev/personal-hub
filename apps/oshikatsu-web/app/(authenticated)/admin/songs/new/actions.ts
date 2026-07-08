@@ -11,6 +11,7 @@ import {
   isDuplicateTrackNumberError,
   DUPLICATE_TRACK_NUMBER_MESSAGE,
 } from "@/lib/releaseTrackErrors";
+import { toRepositoryErrorLog } from "@/lib/logRepositoryError";
 
 export async function createSongAction(
   input: CreateSongInput
@@ -29,10 +30,7 @@ export async function createSongAction(
     return {};
   } catch (e) {
     if (e instanceof RepositoryError) {
-      console.error("createSongAction: repository error", {
-        message: e.message,
-        cause: e.cause,
-      });
+      console.error("createSongAction: repository error", toRepositoryErrorLog(e));
       if (isDuplicateTrackNumberError(e)) {
         return {
           errors: [{ field: "_form", message: DUPLICATE_TRACK_NUMBER_MESSAGE }],

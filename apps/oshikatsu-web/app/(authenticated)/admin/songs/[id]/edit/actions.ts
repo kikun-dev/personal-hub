@@ -12,6 +12,7 @@ import {
   isDuplicateTrackNumberError,
   DUPLICATE_TRACK_NUMBER_MESSAGE,
 } from "@/lib/releaseTrackErrors";
+import { toRepositoryErrorLog } from "@/lib/logRepositoryError";
 
 export async function updateSongAction(
   id: string,
@@ -33,8 +34,7 @@ export async function updateSongAction(
     if (e instanceof RepositoryError) {
       console.error("updateSongAction: repository error", {
         id,
-        message: e.message,
-        cause: e.cause,
+        ...toRepositoryErrorLog(e),
       });
       if (isDuplicateTrackNumberError(e)) {
         return {
