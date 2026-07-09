@@ -37,23 +37,21 @@ export function Header({ isAdmin }: HeaderProps) {
     <header className="border-b border-foreground/10 bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <PendingLink href="/" feedback="global" className="flex items-center">
-            {/* ライト/ダークで別画像を出し分け（Tailwind の dark: は prefers-color-scheme 準拠） */}
+          <PendingLink
+            href="/"
+            feedback="global"
+            className="flex items-center gap-2"
+          >
+            {/* アイコン（正方形tile）+ テキスト。文字色はテーマ追従で背景依存なし */}
             <Image
-              src="/Sakalog_header.png"
-              alt="Sakalog"
-              width={1306}
-              height={734}
+              src="/Sakalog_icon.png"
+              alt=""
+              width={512}
+              height={512}
               priority
-              className="h-8 w-auto dark:hidden"
+              className="h-8 w-8"
             />
-            <Image
-              src="/Sakalog_header_dark.png"
-              alt="Sakalog"
-              width={1673}
-              height={940}
-              className="hidden h-8 w-auto dark:block"
-            />
+            <span className="text-lg font-bold text-foreground">Sakalog</span>
           </PendingLink>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">
