@@ -27,17 +27,23 @@ function LoginContent() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">
-            {/* アイコン（正方形tile）+ テキスト。文字色はテーマ追従で背景依存なし */}
+          <h1>
+            {/* 横型ロゴをライト/ダークで出し分け（dark: は prefers-color-scheme 準拠、ダーク版は透過PNG） */}
             <Image
-              src="/Sakalog_icon.png"
-              alt=""
-              width={512}
-              height={512}
+              src="/Sakalog_header.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
               priority
-              className="mx-auto mb-3 block h-20 w-20"
+              className="inline-block h-auto w-56 dark:hidden"
             />
-            Sakalog
+            <Image
+              src="/Sakalog_header_dark.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
+              className="hidden h-auto w-56 dark:inline-block"
+            />
           </h1>
           <p className="mt-2 text-sm text-foreground/60">
             坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。
