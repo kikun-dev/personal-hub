@@ -15,7 +15,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 ## 2. アプリ構成（技術名 → ブランド名）
 
 - household-web → Ledger（家計管理）
-- oshikatsu-web → Orbit（推し活管理）
+- oshikatsu-web → Sakalog（坂道グループの情報と推し活の記録アーカイブ。内部コード名・DB prefix は orbit のまま）
 - tasks-web → Flow（タスク管理）
 
 すべて Next.js ベースの Web アプリとして構成する。
@@ -96,7 +96,7 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 
 ---
 
-## 6. oshikatsu-web（Orbit）の現状
+## 6. oshikatsu-web（Sakalog）の現状
 
 ### 主な機能
 - **トップページ**（月間カレンダー + 今日のイベント + 今日はなんの日）

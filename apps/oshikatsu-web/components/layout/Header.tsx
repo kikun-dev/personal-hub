@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
 import { createClient } from "@personal-hub/supabase/client";
@@ -36,12 +37,23 @@ export function Header({ isAdmin }: HeaderProps) {
     <header className="border-b border-foreground/10 bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <PendingLink
-            href="/"
-            feedback="global"
-            className="text-lg font-bold text-foreground"
-          >
-            Orbit
+          <PendingLink href="/" feedback="global" className="flex items-center">
+            {/* 横型ロゴをライト/ダークで出し分け（dark: は prefers-color-scheme 準拠、ダーク版は透過PNG） */}
+            <Image
+              src="/Sakalog_header.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
+              priority
+              className="h-8 w-auto dark:hidden"
+            />
+            <Image
+              src="/Sakalog_header_dark.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
+              className="hidden h-8 w-auto dark:block"
+            />
           </PendingLink>
           {/* デスクトップナビ */}
           <nav className="hidden gap-4 md:flex">

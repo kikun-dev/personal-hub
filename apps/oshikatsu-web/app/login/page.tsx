@@ -1,6 +1,7 @@
 "use client";
 
 import { createClient } from "@personal-hub/supabase/client";
+import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
 
@@ -26,9 +27,26 @@ function LoginContent() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground">Orbit</h1>
+          <h1>
+            {/* 横型ロゴをライト/ダークで出し分け（dark: は prefers-color-scheme 準拠、ダーク版は透過PNG） */}
+            <Image
+              src="/Sakalog_header.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
+              priority
+              className="inline-block h-auto w-56 dark:hidden"
+            />
+            <Image
+              src="/Sakalog_header_dark.png"
+              alt="Sakalog"
+              width={2172}
+              height={724}
+              className="hidden h-auto w-56 dark:inline-block"
+            />
+          </h1>
           <p className="mt-2 text-sm text-foreground/60">
-            坂道グループ総合データベース
+            坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。
           </p>
         </div>
 
