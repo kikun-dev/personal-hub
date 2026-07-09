@@ -27,14 +27,24 @@ function LoginContent() {
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 px-4">
         <div className="text-center">
-          <Image
-            src="/Sakalog_header.png"
-            alt="Sakalog"
-            width={1306}
-            height={734}
-            priority
-            className="mx-auto h-auto w-48"
-          />
+          <h1>
+            {/* ライト/ダークで別画像を出し分け（Tailwind の dark: は prefers-color-scheme 準拠） */}
+            <Image
+              src="/Sakalog_header.png"
+              alt="Sakalog"
+              width={1306}
+              height={734}
+              priority
+              className="inline-block h-auto w-48 dark:hidden"
+            />
+            <Image
+              src="/Sakalog_header_dark.png"
+              alt="Sakalog"
+              width={1673}
+              height={940}
+              className="hidden h-auto w-48 dark:inline-block"
+            />
+          </h1>
           <p className="mt-2 text-sm text-foreground/60">
             坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。
           </p>

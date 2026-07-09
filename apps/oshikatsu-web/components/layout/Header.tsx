@@ -38,13 +38,21 @@ export function Header({ isAdmin }: HeaderProps) {
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
           <PendingLink href="/" feedback="global" className="flex items-center">
+            {/* ライト/ダークで別画像を出し分け（Tailwind の dark: は prefers-color-scheme 準拠） */}
             <Image
               src="/Sakalog_header.png"
               alt="Sakalog"
               width={1306}
               height={734}
               priority
-              className="h-8 w-auto"
+              className="h-8 w-auto dark:hidden"
+            />
+            <Image
+              src="/Sakalog_header_dark.png"
+              alt="Sakalog"
+              width={1673}
+              height={940}
+              className="hidden h-8 w-auto dark:block"
             />
           </PendingLink>
           {/* デスクトップナビ */}

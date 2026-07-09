@@ -10,7 +10,7 @@
 | Directory | Brand | Description | Status |
 | --- | --- | --- | --- |
 | `apps/household-web` | Ledger | 支出特化型の家計管理 | Deployed |
-| `apps/oshikatsu-web` | Orbit | 坂道グループ総合データベース | Active |
+| `apps/oshikatsu-web` | Sakalog | 坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ（内部コード名は orbit） | Active |
 | `apps/tasks-web` | Flow | タスク管理 | Planned |
 
 ------------------------------------------------------------------------

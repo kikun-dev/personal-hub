@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   title: "Sakalog",
   description: "坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。",
   icons: {
-    icon: "/Sakalog_logo.png",
+    icon: "/Sakalog_icon.png",
   },
 };
 
