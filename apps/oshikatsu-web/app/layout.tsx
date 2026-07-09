@@ -15,8 +15,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Orbit - 推し活データベース",
-  description: "坂道グループ総合データベース",
+  title: "Sakalog",
+  description: "坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。",
+  icons: {
+    icon: "/Sakalog_logo.png",
+  },
 };
 
 export default function RootLayout({
