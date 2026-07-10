@@ -26,7 +26,7 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 | フェーズ/計画の進捗 | `docs/orbit-roadmap.md` の該当フェーズ |
 | 監査指摘への対応（Issue クローズ） | `docs/advisor/` の該当ドキュメントの Issue 対応表 |
 | ルール・運用の変更 | `rules/` ↔ `CLAUDE.md` / `AGENTS.md` の整合（**マスタは rules/**。役割別ファイルには複製せず参照させる） |
-| 定型手順の変更 | `.claude/skills/` / `.codex/skills/` の該当スキルの手順 |
+| 定型手順の変更 | `.claude/skills/` / `.agents/skills/` の該当スキルの手順 |
 
 ## 追加チェック（差分に関わらず毎回）
 
