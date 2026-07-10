@@ -9,7 +9,7 @@
 
 ### 共用実装スキル
 
-実装の定型手順は `.claude/skills/` と `.codex/skills/` に**同一内容**で置く（共用スキル）:
+実装の定型手順は `.claude/skills/` と `.agents/skills/` に**同一内容**で置く（共用スキル）:
 `issue-start`（着手）/ `refactor`（振る舞い不変のリファクタ実装）/ `migration`（DB変更）/
 `pr`（PR作成）/ `doc-sync`（ドキュメント同期）。
 片方を変更したらもう片方も同期する（`doc-sync` の同期チェックマップに従う）。

@@ -26,13 +26,13 @@ personal-hub で作業する AI エージェント（主に Codex）向けの運
 ## 4. 実装時の進め方（Codex 向け）
 
 - Claude またはユーザーから明示指示された場合に限り、この節の手順で実装する
-- 着手は `.codex/skills/issue-start/SKILL.md`、リファクタ実装は `.codex/skills/refactor/SKILL.md`、
-  DB 変更は `.codex/skills/migration/SKILL.md`、PR 作成は `.codex/skills/pr/SKILL.md` の手順に従う
+- 着手は `.agents/skills/issue-start/SKILL.md`、リファクタ実装は `.agents/skills/refactor/SKILL.md`、
+  DB 変更は `.agents/skills/migration/SKILL.md`、PR 作成は `.agents/skills/pr/SKILL.md` の手順に従う
 - これらは Claude と同一内容の共用スキル。手順を変更する場合は `.claude/skills/` 側も同期する
 
 ## 5. レビュー時の観点（Codex 向け）
 
-- PR 差分の定型レビューは `.codex/skills/pr-review/SKILL.md` の手順・出力形式に従う
+- PR 差分の定型レビューは `.agents/skills/pr-review/SKILL.md` の手順・出力形式に従う
 - `rules/` と ADR への準拠を確認する（依存方向・層責務・`any` 禁止・境界バリデーション）
 - 指摘は PR コメントに残す。設計レベルの議論が必要なら PR ではなく Issue へ誘導する
 - リファクタ提案は原則「振る舞い不変」の範囲で行い、振る舞い変更を伴う場合は Issue 化を提案する

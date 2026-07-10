@@ -6,7 +6,7 @@
 
 Codexは **レビュー**（リファクタリングの提案を含む）を担当する。
 例外的に、Claude またはユーザーから明示指示された場合に限り実装も担う。
-実装の定型手順は `.claude/skills/` と `.codex/skills/` の**共用スキル**（同一内容。
+実装の定型手順は `.claude/skills/` と `.agents/skills/` の**共用スキル**（同一内容。
 片方を変更したらもう片方も同期する）。ワークフローは `rules/ai-collaboration.md` を参照。
 
 ---
