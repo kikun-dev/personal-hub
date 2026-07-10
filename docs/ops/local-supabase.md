@@ -40,7 +40,7 @@ supabase stop --no-backup   # データも破棄してクリーンにする
 
 ## migration の追加フロー（本番直あての回避）
 
-`/migration`（`.claude/skills/migration` / `.codex/skills/migration`）で migration を作ったあと:
+`/migration`（`.claude/skills/migration` / `.agents/skills/migration`）で migration を作ったあと:
 
 1. **ローカルで検証**: `supabase db reset` を実行し、新しい migration を含む全件が
    エラーなく適用されることを確認する（CI の `db-verify` ジョブと同じ検証）
