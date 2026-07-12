@@ -21,7 +21,7 @@ Thumbs.db
 .vscode/
 
 # Claude Code local settings
-.claude/settings.local.json
+**/.claude/settings.local.json
 
 # Build
 dist/
@@ -33,3 +33,12 @@ coverage/
 # Supabase CLI local state
 # monorepo配下のどこで CLI を実行しても除外されるよう ** で先頭を許容する
 **/supabase/.temp/
+
+# Codex local hooks
+**/.codex/hooks.json
+
+# Impeccable local state
+**/.impeccable/config.local.json
+**/.impeccable/hook.cache.json
+**/.impeccable/hook.pending.json
+**/.impeccable/live/sessions/

@@ -15,6 +15,9 @@ argument-hint: "<Issue番号>"
 
 - `gh issue view <N>` で本文・ラベル・コメントを読む
 - 本文が参照するドキュメント（`docs/advisor/`、ADR、roadmap）と関連 Issue（前提・後続）を読む
+- `apps/oshikatsu-web` の UI / UX に関係する Issue の場合のみ、
+  `rules/sakalog.md`、`apps/oshikatsu-web/PRODUCT.md`、`apps/oshikatsu-web/DESIGN.md` を読む
+  （非 UI Issue では必須にしない）
 - 前提 Issue が未完了の場合は、着手可能かユーザーに確認する
 
 ### 2. 設計の確認（Design notes / Decision）
@@ -47,6 +50,9 @@ argument-hint: "<Issue番号>"
 - **変更ファイル一覧**（見込み）と各変更の要点
 - **検証計画**: typecheck / lint + 手動確認手順（Issue の Acceptance Criteria と対応させる）
 - **PR 分割方針**: 差分が大きくなる場合はどこで切るか（1変更1責務）
+- **Sakalog UI / UX の cwd 方針**: `/issue-start`、ブランチ・PR等のリポジトリ全体作業は
+  personal-hub ルートで行い、UI / UX 実装セッションは Impeccable Hook が
+  `PRODUCT.md` / `DESIGN.md` を解決できる `apps/oshikatsu-web` cwd で開始する旨を明記する
 - 計画に対する仮定・不確定要素を明示する
 
 ## 完了条件

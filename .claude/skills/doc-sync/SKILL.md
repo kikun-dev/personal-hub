@@ -17,7 +17,7 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 
 ## 同期チェックマップ（この表の左が変わったら右を確認する）
 
-| コード側の変更 | 確認・更新するドキュメント |
+| 変更内容 | 確認・更新するドキュメント |
 |---|---|
 | 機能の追加・変更・削除 | `docs/ai/PROJECT.md` §5/§6 の機能一覧・運用メモ |
 | テーブル・migration の追加/変更 | `docs/ai/PROJECT.md` の「主要DBテーブル」、RLS 方針 |
@@ -27,12 +27,16 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 | 監査指摘への対応（Issue クローズ） | `docs/advisor/` の該当ドキュメントの Issue 対応表 |
 | ルール・運用の変更 | `rules/` ↔ `CLAUDE.md` / `AGENTS.md` の整合（**マスタは rules/**。役割別ファイルには複製せず参照させる） |
 | 定型手順の変更 | `.claude/skills/` / `.agents/skills/` の該当スキルの手順 |
+| Sakalog の Product Purpose を変える Decision | `apps/oshikatsu-web/PRODUCT.md` の更新要否 |
+| Sakalog の Target Design System を変える Decision、または `DESIGN.md` の変更 | `/impeccable document` で `apps/oshikatsu-web/.impeccable/design.json` の同期を確認する（`design.json` は手編集しない） |
 
 ## 追加チェック（差分に関わらず毎回）
 
 - Issue に「Decision を残す」とされた変更（新規ライブラリ・層構造・データモデル・重要 UX）が
   `rules/process.md` の基準で ADR 昇格に該当しないか
 - ドキュメント内の相互参照（Issue 番号・ファイルパス・ADR 番号）が実在するか
+- `apps/oshikatsu-web/DESIGN.md` は段階的に目指す Target Design System である。
+  既存 UI との差を通常のドキュメント不整合として自動修正しない
 
 ## 修正の実施
 
@@ -40,6 +44,8 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 - 事実の更新（済/未済、番号、一覧への追加）はそのまま修正する
 - **意味・方針を変える修正**（運用メモの書き換え、ルールの変更など）は、修正案を提示して
   ユーザーの確認を取ってから行う
+- `apps/oshikatsu-web/.impeccable/design.json` は手編集せず、`DESIGN.md` を正として
+  `/impeccable document` で再生成・同期する
 - 修正はドキュメントのみ。コード側を「ドキュメントに合わせて」変更しない
   （コードが正でドキュメントが古い、が原則。逆と思われる場合は報告して確認する）
 

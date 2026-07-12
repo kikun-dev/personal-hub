@@ -20,6 +20,7 @@ personal-hub で作業する AI エージェント（主に Codex）向けの運
   - 依存方向は `UI → UseCase → Repository` のみ。`apps → packages` は可、逆は禁止
 - 開発優先順位・実装・検証・Git・言語ポリシー：`rules/implementation.md`
 - Issue / PR / ADR の記録ルール：`rules/process.md`
+- Sakalog 固有の正典・技術制約・UI変更ルール：`rules/sakalog.md`
 - 技術スタックの正典：`docs/ai/PROJECT.md`
   （Next.js 16 / TypeScript / Tailwind CSS 4 / Supabase / pnpm workspaces）
 
