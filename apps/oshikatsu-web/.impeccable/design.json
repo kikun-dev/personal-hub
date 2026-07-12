@@ -1,0 +1,246 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-12T17:29:46Z",
+  "title": "Design System: Sakalog",
+  "extensions": {
+    "colorMeta": {
+      "background-light": {
+        "role": "neutral",
+        "displayName": "ライト背景",
+        "canonical": "oklch(100% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "foreground-light": {
+        "role": "neutral",
+        "displayName": "ライト文字",
+        "canonical": "oklch(20.5% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "background-dark": {
+        "role": "neutral",
+        "displayName": "ダーク背景",
+        "canonical": "oklch(14.5% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "foreground-dark": {
+        "role": "neutral",
+        "displayName": "ダーク文字",
+        "canonical": "oklch(94.6% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "surface-hover-light": {
+        "role": "neutral",
+        "displayName": "ライトホバー面",
+        "canonical": "oklch(96.1% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "surface-selected-light": {
+        "role": "neutral",
+        "displayName": "ライト選択面",
+        "canonical": "oklch(92.2% 0 0)",
+        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+      },
+      "nogizaka": {
+        "role": "primary",
+        "displayName": "乃木坂パープル",
+        "canonical": "oklch(45.3% 0.164 319.2)",
+        "tonalRamp": ["oklch(15% 0.164 319.2)", "oklch(27% 0.164 319.2)", "oklch(39% 0.164 319.2)", "oklch(51% 0.164 319.2)", "oklch(63% 0.164 319.2)", "oklch(75% 0.164 319.2)", "oklch(87% 0.164 319.2)", "oklch(95% 0.164 319.2)"]
+      },
+      "nogizaka-soft": {
+        "role": "primary",
+        "displayName": "乃木坂パープル淡色",
+        "canonical": "oklch(45.3% 0.164 319.2 / 0.125)",
+        "tonalRamp": ["oklch(15% 0.164 319.2 / 0.125)", "oklch(27% 0.164 319.2 / 0.125)", "oklch(39% 0.164 319.2 / 0.125)", "oklch(51% 0.164 319.2 / 0.125)", "oklch(63% 0.164 319.2 / 0.125)", "oklch(75% 0.164 319.2 / 0.125)", "oklch(87% 0.164 319.2 / 0.125)", "oklch(95% 0.164 319.2 / 0.125)"]
+      },
+      "sakurazaka": {
+        "role": "primary",
+        "displayName": "櫻坂ピンク",
+        "canonical": "oklch(65.5% 0.193 359.4)",
+        "tonalRamp": ["oklch(15% 0.193 359.4)", "oklch(27% 0.193 359.4)", "oklch(39% 0.193 359.4)", "oklch(51% 0.193 359.4)", "oklch(63% 0.193 359.4)", "oklch(75% 0.193 359.4)", "oklch(87% 0.193 359.4)", "oklch(95% 0.193 359.4)"]
+      },
+      "hinatazaka": {
+        "role": "primary",
+        "displayName": "日向坂スカイ",
+        "canonical": "oklch(77.1% 0.120 228.7)",
+        "tonalRamp": ["oklch(15% 0.120 228.7)", "oklch(27% 0.120 228.7)", "oklch(39% 0.120 228.7)", "oklch(51% 0.120 228.7)", "oklch(63% 0.120 228.7)", "oklch(75% 0.120 228.7)", "oklch(87% 0.120 228.7)", "oklch(95% 0.120 228.7)"]
+      },
+      "keyakizaka": {
+        "role": "secondary",
+        "displayName": "欅坂グリーン",
+        "canonical": "oklch(53.6% 0.146 150.6)",
+        "tonalRamp": ["oklch(15% 0.146 150.6)", "oklch(27% 0.146 150.6)", "oklch(39% 0.146 150.6)", "oklch(51% 0.146 150.6)", "oklch(63% 0.146 150.6)", "oklch(75% 0.146 150.6)", "oklch(87% 0.146 150.6)", "oklch(95% 0.146 150.6)"]
+      },
+      "hiragana-keyakizaka": {
+        "role": "secondary",
+        "displayName": "ひらがなけやきグリーン",
+        "canonical": "oklch(73.0% 0.138 144.3)",
+        "tonalRamp": ["oklch(15% 0.138 144.3)", "oklch(27% 0.138 144.3)", "oklch(39% 0.138 144.3)", "oklch(51% 0.138 144.3)", "oklch(63% 0.138 144.3)", "oklch(75% 0.138 144.3)", "oklch(87% 0.138 144.3)", "oklch(95% 0.138 144.3)"]
+      },
+      "birthday": {
+        "role": "tertiary",
+        "displayName": "誕生日マゼンタ",
+        "canonical": "oklch(66.7% 0.259 322.1)",
+        "tonalRamp": ["oklch(15% 0.259 322.1)", "oklch(27% 0.259 322.1)", "oklch(39% 0.259 322.1)", "oklch(51% 0.259 322.1)", "oklch(63% 0.259 322.1)", "oklch(75% 0.259 322.1)", "oklch(87% 0.259 322.1)", "oklch(95% 0.259 322.1)"]
+      },
+      "live": {
+        "role": "tertiary",
+        "displayName": "ライブオレンジ",
+        "canonical": "oklch(70.5% 0.187 47.6)",
+        "tonalRamp": ["oklch(15% 0.187 47.6)", "oklch(27% 0.187 47.6)", "oklch(39% 0.187 47.6)", "oklch(51% 0.187 47.6)", "oklch(63% 0.187 47.6)", "oklch(75% 0.187 47.6)", "oklch(87% 0.187 47.6)", "oklch(95% 0.187 47.6)"]
+      },
+      "release": {
+        "role": "tertiary",
+        "displayName": "リリースブルー",
+        "canonical": "oklch(62.3% 0.188 259.8)",
+        "tonalRamp": ["oklch(15% 0.188 259.8)", "oklch(27% 0.188 259.8)", "oklch(39% 0.188 259.8)", "oklch(51% 0.188 259.8)", "oklch(63% 0.188 259.8)", "oklch(75% 0.188 259.8)", "oklch(87% 0.188 259.8)", "oklch(95% 0.188 259.8)"]
+      },
+      "video": {
+        "role": "tertiary",
+        "displayName": "動画グリーン",
+        "canonical": "oklch(69.6% 0.149 162.5)",
+        "tonalRamp": ["oklch(15% 0.149 162.5)", "oklch(27% 0.149 162.5)", "oklch(39% 0.149 162.5)", "oklch(51% 0.149 162.5)", "oklch(63% 0.149 162.5)", "oklch(75% 0.149 162.5)", "oklch(87% 0.149 162.5)", "oklch(95% 0.149 162.5)"]
+      },
+      "error": {
+        "role": "tertiary",
+        "displayName": "エラーレッド",
+        "canonical": "oklch(63.7% 0.208 25.3)",
+        "tonalRamp": ["oklch(15% 0.208 25.3)", "oklch(27% 0.208 25.3)", "oklch(39% 0.208 25.3)", "oklch(51% 0.208 25.3)", "oklch(63% 0.208 25.3)", "oklch(75% 0.208 25.3)", "oklch(87% 0.208 25.3)", "oklch(95% 0.208 25.3)"]
+      }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "ページ見出し", "purpose": "ページ名と詳細画面の主題。" },
+      "title": { "displayName": "重要タイトル", "purpose": "月表示や独立した重要タイトル。" },
+      "body": { "displayName": "標準本文", "purpose": "本文、ナビゲーション、フォーム、一覧。" },
+      "label": { "displayName": "補助ラベル", "purpose": "バッジ、補助情報、カレンダー。" },
+      "mono": { "displayName": "コード", "purpose": "WikiのコードとMarkdown編集。" }
+    },
+    "shadows": [
+      {
+        "name": "interactive-lift",
+        "value": "0 10px 15px -3px rgb(0 0 0 / 0.10), 0 4px 6px -4px rgb(0 0 0 / 0.10)",
+        "purpose": "候補リストなど、現在の面より前へ出る操作面。"
+      },
+      {
+        "name": "overlay-lift",
+        "value": "0 20px 25px -5px rgb(0 0 0 / 0.10), 0 8px 10px -6px rgb(0 0 0 / 0.10)",
+        "purpose": "モーダルとモバイルドロワー。"
+      }
+    ],
+    "motion": [
+      {
+        "name": "state-change",
+        "value": "150ms cubic-bezier(0.4, 0, 0.2, 1)",
+        "purpose": "ホバー、フォーカス、選択状態の色変化。"
+      },
+      {
+        "name": "overlay-enter-exit",
+        "value": "200ms cubic-bezier(0, 0, 0.2, 1)",
+        "purpose": "モバイルドロワーと背景オーバーレイ。"
+      }
+    ],
+    "breakpoints": [
+      { "name": "sm", "value": "640px" },
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "画面の主要操作に使う、白黒反転のボタン。",
+      "html": "<button class=\"ds-btn-primary\">保存する</button>",
+      "css": ".ds-btn-primary { background: var(--foreground, #171717); color: var(--background, #fff); padding: 10px 16px; border: 0; border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: color-mix(in srgb, var(--foreground, #171717) 90%, var(--background, #fff)); } .ds-btn-primary:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-primary:active { opacity: 0.85; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "主要操作を競合させない、境界線付きの補助ボタン。",
+      "html": "<button class=\"ds-btn-secondary\">キャンセル</button>",
+      "css": ".ds-btn-secondary { background: var(--background, #fff); color: var(--foreground, #171717); padding: 10px 16px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--foreground, #171717) 5%, var(--background, #fff)); } .ds-btn-secondary:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-secondary:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "ナビゲーションや低優先度の操作に使う軽いボタン。",
+      "html": "<button class=\"ds-btn-ghost\">戻る</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: color-mix(in srgb, var(--foreground, #171717) 60%, transparent); padding: 10px 16px; border: 0; border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { color: var(--foreground, #171717); background: color-mix(in srgb, var(--foreground, #171717) 5%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-ghost:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, transparent); }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "フォーム全体で共通の、コンパクトな入力欄。",
+      "html": "<label class=\"ds-field-label\" for=\"ds-field\">タイトル</label><input class=\"ds-field\" id=\"ds-field\" placeholder=\"タイトルを入力\">",
+      "css": ".ds-field-label { display: block; margin-bottom: 4px; color: color-mix(in srgb, var(--foreground, #171717) 70%, transparent); font: 500 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field { width: 100%; background: var(--background, #fff); color: var(--foreground, #171717); padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; font: 400 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field::placeholder { color: color-mix(in srgb, var(--foreground, #171717) 30%, transparent); } .ds-field:hover { border-color: color-mix(in srgb, var(--foreground, #171717) 20%, transparent); } .ds-field:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 0; }"
+    },
+    {
+      "name": "Interactive Card",
+      "kind": "card",
+      "refersTo": "card-interactive",
+      "description": "メンバー、楽曲、ライブ、リリース一覧の共通カード。",
+      "html": "<a class=\"ds-card\" href=\"#\"><strong>6th YEAR BIRTHDAY LIVE</strong><span>2018年7月6日</span></a>",
+      "css": ".ds-card { display: flex; flex-direction: column; gap: 4px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 16px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; text-decoration: none; font: 400 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-card strong { font-weight: 500; } .ds-card span { color: color-mix(in srgb, var(--foreground, #171717) 50%, transparent); font-size: 12px; } .ds-card:hover { background: color-mix(in srgb, var(--foreground, #171717) 5%, var(--background, #fff)); } .ds-card:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-card:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); }"
+    },
+    {
+      "name": "Nogizaka Group Badge",
+      "kind": "chip",
+      "refersTo": "badge-nogizaka",
+      "description": "所属グループを色と文字の両方で示すバッジ。",
+      "html": "<span class=\"ds-badge-nogizaka\">乃木坂46 3期生</span>",
+      "css": ".ds-badge-nogizaka { display: inline-flex; align-items: center; white-space: nowrap; background: #7B2D8E20; color: #7B2D8E; padding: 2px 10px; border-radius: 9999px; font: 500 12px/1.33 Arial, Helvetica, sans-serif; }"
+    },
+    {
+      "name": "Active Navigation Item",
+      "kind": "nav",
+      "refersTo": "navigation-active",
+      "description": "現在地を面と文字の太さで示すナビゲーション項目。",
+      "html": "<a class=\"ds-nav-active\" href=\"#\" aria-current=\"page\">メンバー</a>",
+      "css": ".ds-nav-active { display: block; background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); color: var(--foreground, #171717); padding: 8px 12px; border-radius: 8px; text-decoration: none; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-active:hover { background: color-mix(in srgb, var(--foreground, #171717) 15%, var(--background, #fff)); } .ds-nav-active:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-nav-active:active { background: color-mix(in srgb, var(--foreground, #171717) 20%, var(--background, #fff)); }"
+    },
+    {
+      "name": "Selected Calendar Day",
+      "kind": "custom",
+      "refersTo": "calendar-day-selected",
+      "description": "選択日を白黒反転で明確に示すカレンダーセル。",
+      "html": "<button class=\"ds-calendar-day\" aria-pressed=\"true\">13</button>",
+      "css": ".ds-calendar-day { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; background: var(--foreground, #171717); color: var(--background, #fff); border: 0; border-radius: 9999px; font: 700 12px/1 Arial, Helvetica, sans-serif; transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-calendar-day:hover { opacity: 0.9; } .ds-calendar-day:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 40%, transparent); outline-offset: 2px; } .ds-calendar-day:active { opacity: 0.8; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "毎日ひらく、育っていく推し活アーカイブ",
+    "overview": "Sakalog は、今日の出来事を確認する軽さと、積み重なった思い出を読み返す親密さを同じ画面に置く。白黒の静かな土台に、グループやイベントを示す色が小さく現れ、情報量が増えても視線の順序を失わせない。\n\n部品は親しみやすく軽快に扱える一方、形や状態表現は一貫させる。画面はモバイルからデスクトップまで最大幅 1024px の読みやすい中心領域を基本とし、カード一覧は 640px と 1024px を境に構造的に組み替える。動きは状態変化の説明に限り、装飾のための演出には使わない。",
+    "keyCharacteristics": [
+      "毎日開いても疲れない、白黒中心の静かな情報面",
+      "グループ色とイベント色による、意味のある小さな彩り",
+      "角をわずかに丸めた、親しみやすく軽快な操作部品",
+      "境界線を基本に、重要な操作面だけへ控えめな奥行き",
+      "14px を中心にした、情報密度の高い一貫した文字階層"
+    ],
+    "rules": [
+      { "name": "The Meaningful Color Rule", "body": "色は所属、イベント種別、エラー、選択状態のいずれかを示さなければならない。意味のない彩色は禁止する。", "section": "colors" },
+      { "name": "The Group Ownership Rule", "body": "グループ色は対応するグループの情報だけが所有する。主要ボタンや汎用ナビゲーションのブランド装飾には流用しない。", "section": "colors" },
+      { "name": "The Compact Clarity Rule", "body": "14pxを標準に密度を保つ代わりに、主要本文のコントラストは WCAG 2.2 AA を下回らせない。", "section": "typography" },
+      { "name": "The One-Family Rule", "body": "プロダクトUIへ装飾用ディスプレイ書体を追加しない。親しみやすさは色、余白、言葉でつくる。", "section": "typography" },
+      { "name": "The Earned Lift Rule", "body": "影は階層または操作上の重要度を伝える要素だけが使える。通常カードの反復へ影を付けない。", "section": "elevation" },
+      { "name": "The One Edge Rule", "body": "広い影と装飾的な1px境界線を同じ要素へ重ねない。境界か奥行きのどちらか一方で面を定義する。", "section": "elevation" }
+    ],
+    "dos": [
+      "**Do** 白黒のニュートラルを画面の大半に使い、グループ色とイベント色を意味のある小領域へ限定する。",
+      "**Do** 8pxの角丸、14px本文、16pxカード余白を共通語彙として再利用する。",
+      "**Do** 今日の出来事、今後の予定、過去の記録を近い導線でつなぎ、「毎日ひらく、育っていく推し活アーカイブ」を実感できる構成にする。",
+      "**Do** ホバー、フォーカス、選択、無効、読み込み、エラーの各状態を実装し、動きは状態変化を伝える用途に限定する。",
+      "**Do** OSのダークモードとreduced motionを尊重し、WCAG 2.2 AA相当のコントラストとキーボード操作を維持する。"
+    ],
+    "donts": [
+      "**Don't** 「装飾を重ねて情報が騒がしくなったファンサイト」のような見せ方にする。色、バッジ、カード、アイコンを意味なく増やさない。",
+      "**Don't** 「目的のない動きや過剰な演出」を加える。ページ読み込みの連続アニメーション、バウンス、常時点滅は禁止する。",
+      "**Don't** グループ色を汎用ボタンや無関係な画面の装飾へ流用する。",
+      "**Don't** 通常カードへ境界線と広いぼかし影を同時に付ける。カードの角丸は16pxを超えさせない。",
+      "**Don't** 小さく薄い文字だけで重要情報を伝える。色だけでイベント種別、選択状態、エラーを区別しない。"
+    ]
+  }
+}
