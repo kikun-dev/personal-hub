@@ -42,3 +42,6 @@ coverage/
 **/.impeccable/hook.cache.json
 **/.impeccable/hook.pending.json
 **/.impeccable/live/sessions/
+
+# Playwright local authentication state
+**/playwright/.auth/

@@ -9,6 +9,9 @@ argument-hint: "[対象アプリ: oshikatsu-web(デフォルト) | household-web
 対象アプリを観点別に調査し、`docs/advisor/` に監査ドキュメントを残す。
 `docs/advisor/006-oshikatsu-web-current-state-audit.md` が見本。
 
+Sakalog の Design Audit（デザイン・UX監査）は本スキルの対象外。
+`docs/advisor/design/` に日付ベースの命名で別管理する（`rules/sakalog.md`「Design Auditの保存と利用」参照）。
+
 ## 手順
 
 ### 1. 前回監査の確認

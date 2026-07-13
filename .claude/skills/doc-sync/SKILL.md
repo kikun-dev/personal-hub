@@ -25,6 +25,7 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 | 技術的負債の解消・発生 | `docs/orbit-roadmap.md` の「技術的負債・既知の制限」表（解決済みは既存様式どおり `~~取り消し線~~` + `✅ Issue #N で対応済み`） |
 | フェーズ/計画の進捗 | `docs/orbit-roadmap.md` の該当フェーズ |
 | 監査指摘への対応（Issue クローズ） | `docs/advisor/` の該当ドキュメントの Issue 対応表 |
+| Design Audit追加・再監査 | `docs/advisor/design/README.md` のAudit一覧を確認・更新 |
 | ルール・運用の変更 | `rules/` ↔ `CLAUDE.md` / `AGENTS.md` の整合（**マスタは rules/**。役割別ファイルには複製せず参照させる） |
 | 定型手順の変更 | `.claude/skills/` / `.agents/skills/` の該当スキルの手順 |
 | Sakalog の Product Purpose を変える Decision | `apps/oshikatsu-web/PRODUCT.md` の更新要否 |
@@ -37,6 +38,10 @@ argument-hint: "[PR番号 | コミット範囲]（省略時: main との差分 +
 - ドキュメント内の相互参照（Issue 番号・ファイルパス・ADR 番号）が実在するか
 - `apps/oshikatsu-web/DESIGN.md` は段階的に目指す Target Design System である。
   既存 UI との差を通常のドキュメント不整合として自動修正しない
+- `docs/advisor/design/` の監査レポートは時点スナップショットとして扱い、後続実装に合わせて
+  過去のFindingやScoreを現在状態へ書き換えない
+- Design Auditの指摘へ対応した場合は既存レポートを上書きせず、Related Issuesへの追跡情報追加または
+  新しい再監査レポートで結果を記録する
 
 ## 修正の実施
 
