@@ -36,12 +36,15 @@
 | `docs/ai/PROJECT.md` | 現在実装されている機能、技術構成、運用上の事実 |
 | `apps/oshikatsu-web/PRODUCT.md` | Sakalog のプロダクト目的、利用者、提供価値、Design Principles |
 | `apps/oshikatsu-web/DESIGN.md` | 新規 UI と段階的な既存 UI 改善で目指す Target Design System |
+| `docs/advisor/design/` | Product DesignとImpeccableを統合したDesign Auditの時点記録 |
 | Issue の Decision | 現在の変更で採用する設計判断と変更範囲 |
 | `docs/orbit-roadmap.md` | 実装計画、進捗、技術的負債、既知の制限 |
 
 - 現在の変更では、Issue の Acceptance Criteria と Decision をスコープの正とする
 - Issue Decision は共通ルールや Accepted ADR を暗黙に上書きしない。衝突する場合は実装を止め、
   Issue で解消し、必要なら ADR を更新する
+- `docs/advisor/design/`のFindingとRecommended Roadmapは確定仕様ではなく、`PRODUCT.md`、
+  `DESIGN.md`、Issue Decisionを上書きしない
 - 正典同士で対象領域が重なり、内容が矛盾する場合は推測で決めず Issue に戻す
 
 ## Product / UI / UX の変更
@@ -55,6 +58,27 @@
   `.impeccable/design.json` を所定の生成フローで同期する
 - critique / audit / redesign、Visual Target との Design QA は、
   `rules/ai-collaboration.md` に定める専用フローへ分離する
+
+### Design Auditの保存と利用
+
+SakalogのDesign Auditは原則として次の流れで行う。
+
+Product Design Audit
+→ Impeccable Critique
+→ Impeccable Technical Audit
+→ Consolidated Findings
+→ Recommended Roadmap
+→ Issue Decision
+→ 実装
+→ Design QA / 再監査
+
+- 統合した監査レポートは`docs/advisor/design/`へ時点スナップショットとして保存し、
+  `docs/advisor/design/README.md`のAudit一覧へ追加する
+- ファイル名は`YYYY-MM-DD-<product>-<scope>.md`とする
+- FindingとRecommended Roadmapは改善判断の材料であり、確定仕様や確定実装計画ではない。
+  採否、優先度、変更範囲はIssue Decisionで決定する
+- 後続実装に合わせて過去レポートのFindingやScoreを現在状態へ書き換えない。
+  対応状況はRelated Issuesへの追跡情報追加または新しい再監査レポートで記録する
 
 ## Sakalog 固有の技術ルール
 

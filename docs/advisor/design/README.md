@@ -1,0 +1,48 @@
+# Design Audits
+
+Product DesignとImpeccableによる監査を統合した、正式なDesign Audit記録の索引と運用ルール。
+
+## Audits
+
+| Date | Product | Scope | Report |
+|---|---|---|---|
+| 2026-07-13 | Sakalog | トップページからイベント詳細までの主要閲覧フロー | [Report](./2026-07-13-sakalog-primary-flow.md) |
+
+## Audit Flow
+
+1. Product Design Audit
+2. Impeccable Critique
+3. Impeccable Technical Audit
+4. Consolidated Findings
+5. Recommended Roadmap
+6. Issue Decision
+7. 実装
+8. Design QA / 再監査
+
+## Document Roles
+
+- **Product Design Audit**: 主要フローをユーザー目的、情報設計、認知負荷、アクセシビリティの観点から評価する。
+- **Impeccable Critique**: UIの階層、明瞭さ、一貫性、感情的体験を独立して批評する。
+- **Impeccable Technical Audit**: Accessibility、Performance、Theming、Responsive Design、Anti-Patternsをコードレベルで検証する。
+- **Consolidated Findings**: Product Design / Critique / Technical Auditの指摘を根本原因単位で統合する。
+- **Recommended Roadmap**: 統合Findingを依存関係と改善効果に基づいて並べる。確定した実装計画ではない。
+- **Issue Decision**: Findingの採否、優先度、変更範囲を決定し、実装可能な単位へ分割する。
+
+関連文書と保存場所の役割は次のとおり。
+
+- `docs/advisor/design/`: Product DesignとImpeccableを統合した正式なDesign Audit記録。
+- `.impeccable/critique/`: Impeccableが生成するCritiqueのスナップショット。正式な統合監査記録の代替ではない。
+- `PRODUCT.md`: Product Purpose、ユーザー価値、成功条件の正典。
+- `DESIGN.md`: UI仕様、デザインシステム、アクセシビリティ基準の正典。
+- Issue: 改善の採否、優先度、実装範囲を決めるIssue Decisionの記録。
+
+## Storage Policy
+
+- 監査レポートは原則として監査時点のスナップショットとして保存し、後続実装や次回監査の結果で既存レポートを上書きしない。
+- ファイル名は `YYYY-MM-DD-<product>-<scope>.md` とする。
+- 再監査は新しい日付のレポートとして追加し、本READMEのAudit一覧を更新する。
+- 監査指摘へ対応した場合は、既存レポートのFindingやScoreを現在状態へ書き換えず、Related Issuesへの追跡情報追加または再監査レポートで結果を記録する。
+
+## Decision Boundary
+
+FindingとRecommended Roadmapは、改善判断の材料であり確定仕様ではない。採否と変更範囲はIssue Decisionで決定する。Design Auditは`PRODUCT.md`、`DESIGN.md`、Issue Decisionを上書きしない。
