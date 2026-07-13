@@ -118,18 +118,17 @@ const getWebSocketDebuggerURL = (version) => {
   return version.webSocketDebuggerUrl;
 };
 
-const startCdpRelay = (cdpHost) => {
-  const windowsRelayFile = execFileSync("wslpath", ["-w", relayFile], {
-    encoding: "utf8",
-  }).trim();
-  const relay = spawn(
+// relayの子プロセス参照を保持し、呼び出し側のfinallyで確実に終了させる。
+// detachedで放置すると、接続失敗時に認証済みChromeのCDPへの入口が残る。
+const startCdpRelay = (cdpHost) =>
+  spawn(
     "powershell.exe",
     [
       "-NoProfile",
       "-ExecutionPolicy",
       "Bypass",
       "-File",
-      windowsRelayFile,
+      execFileSync("wslpath", ["-w", relayFile], { encoding: "utf8" }).trim(),
       "-ListenAddress",
       cdpHost,
       "-ListenPort",
@@ -139,25 +138,24 @@ const startCdpRelay = (cdpHost) => {
     ],
     {
       cwd: "/mnt/c",
-      detached: true,
       stdio: "ignore",
     },
   );
-  relay.unref();
-};
 
-const getConnectURL = async ({ cdpHost, isWindowsChrome }) => {
+const getConnectTarget = async ({ cdpHost, isWindowsChrome }) => {
   const version = await readCdpVersion(isWindowsChrome);
   const webSocketURL = new URL(getWebSocketDebuggerURL(version));
 
-  if (isWindowsChrome) {
-    startCdpRelay(cdpHost);
-    webSocketURL.hostname = cdpHost;
-    webSocketURL.port = String(relayPort);
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  if (!isWindowsChrome) {
+    return { connectURL: webSocketURL.toString(), relay: null };
   }
 
-  return webSocketURL.toString();
+  const relay = startCdpRelay(cdpHost);
+  webSocketURL.hostname = cdpHost;
+  webSocketURL.port = String(relayPort);
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  return { connectURL: webSocketURL.toString(), relay };
 };
 
 const { cdpHost, executablePath, isWindowsChrome, userDataDir } =
@@ -197,32 +195,43 @@ try {
 
   await terminal.question("");
 
-  const connectURL = await getConnectURL({ cdpHost, isWindowsChrome });
-  const browser = await chromium.connectOverCDP(connectURL);
+  const { connectURL, relay } = await getConnectTarget({
+    cdpHost,
+    isWindowsChrome,
+  });
 
   try {
-    const context = browser.contexts()[0];
+    const browser = await chromium.connectOverCDP(connectURL);
 
-    if (!context) {
-      throw new Error("認証済みChromeのBrowserContextを取得できませんでした。");
+    try {
+      const context = browser.contexts()[0];
+
+      if (!context) {
+        throw new Error("認証済みChromeのBrowserContextを取得できませんでした。");
+      }
+
+      const hasAuthenticatedSakalogPage = context.pages().some((page) => {
+        const currentURL = new URL(page.url());
+
+        return currentURL.origin === baseURL && currentURL.pathname !== "/login";
+      });
+
+      if (!hasAuthenticatedSakalogPage) {
+        throw new Error("認証後のSakalogトップページを確認できませんでした。");
+      }
+
+      // 保存中の一時的な露出を防ぐため、ディレクトリ自体を700にする。
+      const authDir = dirname(authFile);
+      await mkdir(authDir, { recursive: true, mode: 0o700 });
+      await chmod(authDir, 0o700);
+      await context.storageState({ path: authFile });
+      await chmod(authFile, 0o600);
+      output.write(`認証状態を保存しました: ${authFile}\n`);
+    } finally {
+      await browser.close();
     }
-
-    const hasAuthenticatedSakalogPage = context.pages().some((page) => {
-      const currentURL = new URL(page.url());
-
-      return currentURL.origin === baseURL && currentURL.pathname !== "/login";
-    });
-
-    if (!hasAuthenticatedSakalogPage) {
-      throw new Error("認証後のSakalogトップページを確認できませんでした。");
-    }
-
-    await mkdir(dirname(authFile), { recursive: true });
-    await context.storageState({ path: authFile });
-    await chmod(authFile, 0o600);
-    output.write(`認証状態を保存しました: ${authFile}\n`);
   } finally {
-    await browser.close();
+    relay?.kill();
   }
 } finally {
   terminal.close();
