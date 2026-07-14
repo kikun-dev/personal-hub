@@ -65,7 +65,7 @@ const PUBLIC_LIST_SELECT = `
 ` as const;
 
 const CALENDAR_PERFORMANCE_SELECT =
-  "performance_date, live_id, orbit_lives(name)" as const;
+  "performance_date, starts_at, live_id, orbit_lives(name), orbit_venues(name)" as const;
 
 const LIVE_OPTION_SELECT = "id, name" as const;
 
@@ -320,6 +320,8 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
         // 列自体のnull許容をそのまま反映するため、クエリによる絞り込みを反映した cast として
         // 残す。
         date: row.performance_date as string,
+        startsAt: row.starts_at,
+        venueName: row.orbit_venues?.name ?? null,
       }));
     },
 

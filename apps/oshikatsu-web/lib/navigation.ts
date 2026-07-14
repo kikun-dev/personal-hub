@@ -41,13 +41,6 @@ export const NAV_SECTIONS: AppNavigationSection[] = [
   { label: "アカウント", items: ACCOUNT_NAV_ITEMS },
 ];
 
-// 右側パネル（TopNavigationPanel）用のフラット一覧。既存と完全に同一の内容・順序を維持する。
-export const TOP_NAV_ITEMS: AppNavigationItem[] = [
-  ...PRIMARY_NAV_ITEMS,
-  ...ARCHIVE_NAV_ITEMS,
-  ...ACCOUNT_NAV_ITEMS,
-];
-
 export function isNavigationItemActive(pathname: string, href: string): boolean {
   return pathname === href || (href !== "/" && pathname.startsWith(href));
 }

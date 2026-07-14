@@ -155,6 +155,9 @@ export type LiveCalendarPerformance = {
   liveId: string;
   liveName: string;
   date: string;
+  // トップページの Next Events rail（#344）で開演時刻・会場名を補足表示するために追加。
+  startsAt: string | null;
+  venueName: string | null;
 };
 
 export type ReleaseCalendarItem = {

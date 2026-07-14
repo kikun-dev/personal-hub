@@ -54,6 +54,9 @@ export type LiveCalendarEvent = {
   liveId: string;
   name: string;
   date: string;
+  // Next Events rail（#344）の補足表示用。値が無ければ表示しない。
+  startsAt: string | null;
+  venueName: string | null;
 };
 
 export type ReleaseCalendarEvent = {
