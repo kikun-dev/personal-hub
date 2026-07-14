@@ -4,6 +4,7 @@ import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
+import { TourOverview } from "@/components/lives/TourOverview";
 import { TextLink } from "@/components/ui/TextLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
@@ -235,6 +236,11 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
     targetPerformance !== null
       ? findNextPerformance(live.performances, targetPerformance)
       : null;
+  const targetHasSetlistSongs =
+    targetPerformance !== null &&
+    numberSetlistItems(targetPerformance.setlistItems).some(
+      ({ item }) => item.itemType === "song"
+    );
 
   const scheduleSection = (
       /* 事前情報: 会場・日程 */
@@ -441,7 +447,13 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
               詳細を見る →
             </TextLink>
           </div>
-          <PerformanceSetlistSummary performance={targetPerformance} />
+          {targetHasSetlistSongs ? (
+            <PerformanceSetlistSummary performance={targetPerformance} />
+          ) : (
+            // 未登録を明示し、読み込み漏れに見えないようにする（Critique P2）。
+            // 「詳細を見る」導線は #261 の決定（セトリ0件でも参照ページへ辿れる）に従い残す。
+            <p className="text-xs text-foreground/60">セットリストは未登録です</p>
+          )}
         </div>
 
         <AttendanceControl
@@ -487,53 +499,28 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
     </section>
   );
 
-  // context 時のツアー全体 overview（#346）: fallback のカードグリッドより静かな
-  // hairline 区切りの行リスト。visual weight を この公演 > 次の公演 > ツアー全体 に保つ。
+  const descriptionBlock = live.description && (
+    <p className="whitespace-pre-wrap text-sm text-foreground/80">
+      {live.description}
+    </p>
+  );
+
+  // context 時のツアー全体 overview（#346）: 静かな行リスト + group 単位の展開。
   const quietScheduleSection = live.performances.length > 0 && (
-    <section className="space-y-2">
-      <h2 className="text-sm font-semibold text-foreground">
-        {useVenueGrid ? "公演・日程" : "会場・日程"}
-      </h2>
-      <div className="divide-y divide-foreground/10">
-        {venueGroups.map((group) => (
-          <div key={group.venueId ?? "none"} className="py-3 first:pt-0 last:pb-0">
-            <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
-              {group.venuePrefecture ? (
-                <>
-                  <span className="font-medium text-foreground">
-                    {performanceAreaLabel(group.venuePrefecture)}
-                  </span>
-                  {group.venueId && group.venueName && (
-                    <TextLink
-                      href={`/venues/${group.venueId}`}
-                      className="text-xs"
-                    >
-                      {group.venueName}
-                    </TextLink>
-                  )}
-                </>
-              ) : group.venueId && group.venueName ? (
-                <TextLink
-                  href={`/venues/${group.venueId}`}
-                  className="text-sm font-medium"
-                >
-                  {group.venueName}
-                </TextLink>
-              ) : (
-                <span className="text-foreground/50">会場未定</span>
-              )}
-            </p>
-            <div className="mt-1 space-y-0.5 text-xs text-foreground/70">
-              {group.performances.map((performance) => (
-                <p key={performance.id}>
-                  {formatScheduleLine(live.liveType, performance)}
-                </p>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
+    <TourOverview
+      heading={useVenueGrid ? "公演・日程" : "会場・日程"}
+      groups={venueGroups.map((group) => ({
+        key: group.venueId ?? "none",
+        areaLabel: group.venuePrefecture
+          ? performanceAreaLabel(group.venuePrefecture)
+          : null,
+        venueId: group.venueId,
+        venueName: group.venueName,
+        scheduleLines: group.performances.map((performance) =>
+          formatScheduleLine(live.liveType, performance)
+        ),
+      }))}
+    />
   );
 
   return (
@@ -574,23 +561,22 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         )}
       </div>
 
-      {live.description && (
-        <p className="whitespace-pre-wrap text-sm text-foreground/80">
-          {live.description}
-        </p>
-      )}
-
       {/* 有効 context（#346）: この公演 → 次の公演 → ツアー全体 → メンバー。
           全公演のセトリ付き横スライドは表示しない。fallback は従来 UI を維持。 */}
       {context !== null && targetPerformance !== null ? (
         <>
           {thisPerformanceSection}
           {nextPerformanceSection}
+          {/* Critique P3: 長文 description が primary surface（この公演/次の公演）の
+              先頭着地を押し下げないよう、有効 context 時はツアー全体説明としてここへ下げる。
+              タイトルと GroupBadge は上に維持する。 */}
+          {descriptionBlock}
           {quietScheduleSection}
           {membersSection}
         </>
       ) : (
         <>
+          {descriptionBlock}
           {scheduleSection}
           {membersSection}
           {performancesSection}
