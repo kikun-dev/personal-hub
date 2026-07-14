@@ -3,11 +3,13 @@ import { createClient } from "@personal-hub/supabase/server";
 const ADMIN_ROLE = "admin";
 
 /**
- * Server Component から追加のネットワーク往復なしでロールを取得するヘルパー。
+ * Server Component から Auth server への毎回の往復なしでロールを取得するヘルパー。
  *
- * `supabase.auth.getSession()` は cookie に載っている JWT をサーバー側で
- * 検証なしで読むだけであり（ADR 0006: layout で `getUser`（ネットワーク往復）を
- * 行わない方針を維持するための選択）、これは **認可判定に使ってはならない**。
+ * `supabase.auth.getClaims()` は cookie の JWT を**署名検証してから** claims を
+ * 返す（ES256 の検証鍵は初回の JWKS 取得後にキャッシュされるため、layout で毎回
+ * `getUser`（ネットワーク往復）を行わない ADR 0006 の意図を維持できる）。
+ * 未検証の `getSession().session.user` は参照しない（Issue #351）。
+ * 取得エラー・claims 欠落・不正な role 型では `null` へ fail closed する。
  *
  * ここでの用途は UI の表示出し分け（管理メニューや編集/削除導線の非表示）のみ。
  * 実際の防御は
@@ -18,11 +20,11 @@ const ADMIN_ROLE = "admin";
  */
 export async function getSessionRole(): Promise<string | null> {
   const supabase = await createClient();
-  const {
-    data: { session },
-  } = await supabase.auth.getSession();
+  const { data, error } = await supabase.auth.getClaims();
 
-  const role: unknown = session?.user.app_metadata.role;
+  if (error || !data) return null;
+
+  const role: unknown = data.claims.app_metadata?.role;
   return typeof role === "string" ? role : null;
 }
 
