@@ -76,8 +76,10 @@ function getEventPresentation(event: CalendarEvent): EventPresentation {
       return {
         badge: { label: "ライブ", color: LIVE_COLOR },
         nameLink: (
+          // リンク行の日付をライブ詳細へ継承する（#346）。DaySchedule / Past Same-Day /
+          // Next Events / カレンダー下の一覧はすべてこの1箇所を共用している。
           <Link
-            href={`/lives/${event.liveId}`}
+            href={`/lives/${event.liveId}?date=${event.date}`}
             className="text-foreground hover:underline"
           >
             {event.name}

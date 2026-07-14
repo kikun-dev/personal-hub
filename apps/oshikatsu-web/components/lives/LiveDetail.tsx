@@ -8,12 +8,16 @@ import { TextLink } from "@/components/ui/TextLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { numberSetlistItems } from "@/usecases/setlistNumbering";
+import { topPageDateHref, monthDayLabel } from "@/lib/liveDateContext";
 
 type LiveDetailProps = {
   live: Live;
   // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参戦記録を持つ。未登録の公演は
   // キーが存在しない（page.tsx で Object.fromEntries した Map をそのまま渡す）。
   myAttendances: Record<string, LiveAttendance>;
+  // 日付 context（#346）。トップの選択日から遷移した場合のみ検証済み "YYYY-MM-DD"、
+  // それ以外（直接訪問・不正値・対象ライブの公演と不一致）は null。
+  contextDate: string | null;
 };
 
 // 種別ごとに時間ラベルを出し分ける（フェス=出演時刻、配信=配信時刻、開場は出さない）
@@ -141,37 +145,26 @@ function PerformanceSetlistSummary({
   );
 }
 
-export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
+export function LiveDetail({ live, myAttendances, contextDate }: LiveDetailProps) {
   const venueGroups = groupByVenue(live.performances);
   // ツアー、または会場が複数ある場合は会場ごとのカードで表示する
   const useVenueGrid = live.liveType === "tour" || venueGroups.length > 1;
 
-  return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <p className="text-xs text-foreground/50">{LIVE_TYPE_LABELS[live.liveType]}</p>
-        <h1 className="text-xl font-bold text-foreground">{live.name}</h1>
-        {live.performerGroups.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            {live.performerGroups.map((group) => (
-              <GroupBadge
-                key={group.groupId}
-                groupName={group.groupNameJa}
-                groupColor={group.groupColor}
-              />
-            ))}
-          </div>
-        )}
-      </div>
+  // 有効 context では該当公演（performanceDate === contextDate、昼夜複数なら全て）を
+  // 先頭へ、残り（次の公演・その後の日程）を元の日付順のまま後段へ置く（#346）。
+  const isTargetPerformance = (performance: LivePerformance): boolean =>
+    contextDate !== null && performance.performanceDate === contextDate;
+  const orderedPerformances =
+    contextDate === null
+      ? live.performances
+      : [
+          ...live.performances.filter(isTargetPerformance),
+          ...live.performances.filter((p) => !isTargetPerformance(p)),
+        ];
 
-      {live.description && (
-        <p className="whitespace-pre-wrap text-sm text-foreground/80">
-          {live.description}
-        </p>
-      )}
-
-      {/* 事前情報: 会場・日程 */}
-      {live.performances.length > 0 && (
+  const scheduleSection = (
+      /* 事前情報: 会場・日程 */
+      live.performances.length > 0 && (
         <section className="space-y-3">
           {useVenueGrid ? (
             <>
@@ -233,9 +226,11 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
             </div>
           )}
         </section>
-      )}
+      )
+  );
 
-      {live.performerMembers.length > 0 && (
+  const membersSection = (
+      live.performerMembers.length > 0 && (
         <section className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">出演メンバー</h2>
@@ -251,14 +246,16 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
               .join(" / ")}
           </p>
         </section>
-      )}
+      )
+  );
 
-      {/* 当日情報: 1日ごとのカードを横スライド */}
-      {live.performances.length > 0 && (
+  const performancesSection = (
+      /* 当日情報: 1日ごとのカードを横スライド */
+      live.performances.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">公演ごとの情報</h2>
           <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
-            {live.performances.map((performance) => (
+            {orderedPerformances.map((performance) => (
               <div
                 key={performance.id}
                 className="w-[85%] shrink-0 snap-start space-y-2 rounded-lg border border-foreground/10 p-4 sm:w-80"
@@ -270,6 +267,11 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
                       : "日付未定"}
                   </span>
                   <VenueLink performance={performance} />
+                  {isTargetPerformance(performance) && (
+                    <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium text-foreground">
+                      この公演
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-2 text-xs">
@@ -326,6 +328,67 @@ export function LiveDetail({ live, myAttendances }: LiveDetailProps) {
             ))}
           </div>
         </section>
+      )
+  );
+
+  return (
+    <div className="space-y-6">
+      {/* 閲覧文脈の戻り導線（#346）: 有効 context では元の選択日へ、
+          直接訪問・invalid context では ライブ一覧へ戻す。日付や該当公演を推測しない。 */}
+      <p>
+        {contextDate !== null ? (
+          <Link
+            href={topPageDateHref(contextDate)}
+            className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+          >
+            ← {monthDayLabel(contextDate)}の出来事へ戻る
+          </Link>
+        ) : (
+          <Link
+            href="/lives"
+            className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+          >
+            ← ライブ一覧へ戻る
+          </Link>
+        )}
+      </p>
+
+      <div className="space-y-2">
+        <p className="text-xs text-foreground/50">{LIVE_TYPE_LABELS[live.liveType]}</p>
+        <h1 className="text-xl font-bold text-foreground">{live.name}</h1>
+        {live.performerGroups.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {live.performerGroups.map((group) => (
+              <GroupBadge
+                key={group.groupId}
+                groupName={group.groupNameJa}
+                groupColor={group.groupColor}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {live.description && (
+        <p className="whitespace-pre-wrap text-sm text-foreground/80">
+          {live.description}
+        </p>
+      )}
+
+      {/* セクション順序（#346）: 有効 context では次の公演・ツアー全体情報を
+          該当公演の後段へ置く（#341 Decision）。fallback は従来どおりの順序。 */}
+      {contextDate !== null ? (
+        <>
+          {performancesSection}
+          {scheduleSection}
+          {membersSection}
+        </>
+      ) : (
+        <>
+          {scheduleSection}
+          {membersSection}
+          {performancesSection}
+        </>
       )}
     </div>
   );
