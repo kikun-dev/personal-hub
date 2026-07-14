@@ -33,7 +33,10 @@ import {
 } from "@/usecases/orbitReadLoader";
 
 const loadTopPageData = createSharedReadLoader(
-  ["orbit", "top-page-data"],
+  // v2: #346 で LiveCalendarEvent へ performanceId を追加し日次系を performance 単位へ
+  // 変更した。unstable_cache は key が同じ限り旧 deployment の payload を返し得るため、
+  // DTO の形が変わる変更では schema version を bump して旧 payload を再利用しない。
+  ["orbit", "top-page-data", "v2"],
   [
     ORBIT_CACHE_TAGS.top,
     ORBIT_CACHE_TAGS.lives,

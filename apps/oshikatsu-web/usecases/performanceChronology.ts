@@ -28,20 +28,28 @@ export function findNextPerformance(
   }
   if (sameDayNext !== null) return sameDayNext;
 
-  // 翌日以降の最初の日付の公演。日付内は startsAt 既知同士なら昇順、
-  // 時刻不明を含む場合は入力順の先頭（時刻の推測はしない）。
-  let next: LivePerformance | null = null;
+  // 翌日以降で最小の performanceDate を先に確定する（二段階判定。
+  // 逐次比較だと同日の時刻不明を読み飛ばした後に既知時刻へ置き換わり、
+  // 「時刻不明を含む日は入力順の先頭」という stable-order 契約が崩れるため）。
+  let nextDate: string | null = null;
   for (const p of performances) {
     if (p.performanceDate === null) continue;
     if (p.performanceDate <= target.performanceDate) continue;
-    if (next === null || p.performanceDate < next.performanceDate!) {
-      next = p;
-    } else if (
-      p.performanceDate === next.performanceDate &&
-      p.startsAt !== null &&
-      next.startsAt !== null &&
-      p.startsAt < next.startsAt
-    ) {
+    if (nextDate === null || p.performanceDate < nextDate) {
+      nextDate = p.performanceDate;
+    }
+  }
+  if (nextDate === null) return null;
+
+  // その日の候補（入力順のまま）。時刻不明が1件でもあれば入力順の先頭
+  // （時刻を推測しない）、全件既知なら最早 startsAt（同時刻は入力順先頭を維持）。
+  const candidates = performances.filter((p) => p.performanceDate === nextDate);
+  if (candidates.some((p) => p.startsAt === null)) {
+    return candidates[0];
+  }
+  let next = candidates[0];
+  for (const p of candidates) {
+    if (p.startsAt !== null && next.startsAt !== null && p.startsAt < next.startsAt) {
       next = p;
     }
   }
