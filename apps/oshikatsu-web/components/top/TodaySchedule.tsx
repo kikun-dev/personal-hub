@@ -27,10 +27,10 @@ export function TodaySchedule({ events }: TodayScheduleProps) {
 
   return (
     <div className="space-y-2">
-      <ul className="space-y-2">
+      <ul className="space-y-2.5">
         {visibleEvents.map((event) => (
           <li key={eventKey(event)}>
-            <EventListItem event={event} />
+            <EventListItem event={event} variant="stacked" />
           </li>
         ))}
       </ul>

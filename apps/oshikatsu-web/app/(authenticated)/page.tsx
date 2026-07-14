@@ -59,22 +59,24 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="space-y-8">
-        <div>
-          <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
-          <p className="mt-1 text-sm text-foreground/60">
-            {formatMonthDayKanjiWithWeekday(todayDateStr)}
-          </p>
-        </div>
+        <section className="space-y-5">
+          <div>
+            <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
+            <p className="mt-1 text-sm text-foreground/60">
+              {formatMonthDayKanjiWithWeekday(todayDateStr)}
+            </p>
+          </div>
 
-        <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-foreground">
-            今日の予定
-          </h2>
-          <TodaySchedule events={todayEvents} />
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-foreground">
+              今日の予定
+            </h2>
+            <TodaySchedule events={todayEvents} />
+          </div>
         </section>
 
         <div className="lg:hidden">
-          <NextEvents events={nextEvents} today={now} />
+          <NextEvents events={nextEvents} today={now} frame="plain" />
         </div>
 
         <RecentAttendance overview={recentAttendance} />

@@ -32,9 +32,24 @@ function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
 
+// year/month（1始まり）に delta か月を加算した年月を返す。
+function addMonths(
+  year: number,
+  month: number,
+  delta: number
+): { year: number; month: number } {
+  const d = new Date(year, month - 1 + delta, 1);
+  return { year: d.getFullYear(), month: d.getMonth() + 1 };
+}
+
 const NEXT_EVENTS_LIMIT = 4;
-// Next Events rail のカスタムイベント・誕生日探索の上限（今日の月から何か月先まで見るか、#344）。
-const NEXT_EVENTS_MAX_SCAN_MONTHS = 12;
+// Next Events rail の探索窓（今日の月を含む12 calendar months、#344 レビュー対応）。
+// ライブ/リリース/動画/カスタムイベント/誕生日のすべての候補をこの窓でフィルタし、
+// 窓外のイベントが窓内のイベントを押しのけないようにする。
+const NEXT_EVENTS_WINDOW_MONTHS = 12;
+// カスタムイベント・誕生日はバッチ1（今日の月+2か月=3か月）→ バッチ2（残り9か月）の
+// 最大2回の並列取得で窓全体をカバーする。
+const NEXT_EVENTS_BATCH1_MONTHS = 3;
 
 // 日次一覧（今日の予定・選択日・Next Events 同日内）の並び規則（#344 レビュー対応）:
 // 1. 時刻の無い予定が先。種別順: 誕生日 → リリース → 動画 → ライブ → カスタムイベント
@@ -109,10 +124,9 @@ export async function getTopPageContent(
   const todayDate = new Date(todayYear, todayMonth - 1, todayDay);
   const todayStr = `${todayYear}-${pad(todayMonth)}-${pad(todayDay)}`;
 
-  // 選択日=今日 / 選択月=当月のとき、下段の重複フェッチを避けるための判定（#344 レビュー対応）。
+  // 選択日=今日のとき、下段の重複フェッチを避けるための判定（#344 レビュー対応）。
   const isSelectedDateToday =
     year === todayYear && month === todayMonth && day === todayDay;
-  const isSelectedMonthToday = year === todayYear && month === todayMonth;
 
   const [
     monthEventsRaw,
@@ -303,47 +317,81 @@ export async function getTopPageContent(
   }
   todayEvents.sort(compareDailyEvents);
 
-  // Next Events rail（#344 レビュー対応）: 今日より後（date > todayStr）のイベントを
-  // 日付昇順（同日内は上記の並び規則）で先頭4件。
-  // ライブ/リリース/動画は全件取得済みリストから拾える（無制限 horizon）。
+  // Next Events rail（#344 レビュー対応）: 探索窓 = 今日の月を含む12 calendar months。
+  // 窓終端（exclusive）= 今日の月の12か月後の月初日。ライブ/リリース/動画は無制限 horizon の
+  // 全件取得済みリストから拾えるが、窓外の候補がカスタムイベント・誕生日（窓内の月しか
+  // 取得しない）を押しのけないよう、ここで同じ窓条件（date > todayStr && date < 窓終端）を適用する。
+  const windowEnd = addMonths(
+    todayYear,
+    todayMonth,
+    NEXT_EVENTS_WINDOW_MONTHS
+  );
+  const windowEndStr = `${windowEnd.year}-${pad(windowEnd.month)}-01`;
+
   const nextEventCandidates: CalendarEvent[] = [];
   for (const p of uniqueLivePerformances) {
-    if (p.date > todayStr) nextEventCandidates.push(toLiveEvent(p));
+    if (p.date > todayStr && p.date < windowEndStr) {
+      nextEventCandidates.push(toLiveEvent(p));
+    }
   }
   for (const r of releaseItems) {
-    if (r.date > todayStr) nextEventCandidates.push(toReleaseEvent(r));
+    if (r.date > todayStr && r.date < windowEndStr) {
+      nextEventCandidates.push(toReleaseEvent(r));
+    }
   }
   for (const v of videoEvents) {
-    if (v.date > todayStr) nextEventCandidates.push(v);
+    if (v.date > todayStr && v.date < windowEndStr) {
+      nextEventCandidates.push(v);
+    }
   }
 
-  // カスタムイベント・誕生日は月単位のメソッドしか無いため、今日の月から1か月ずつ
-  // 探索範囲を広げる。種別によって探索期間は変えず、日付昇順で上位4件が
-  // 「次に走査する月の初日」より前に確定した時点で打ち切る（上限12か月）。
-  let scanYear = todayYear;
-  let scanMonth = todayMonth;
-  for (let i = 0; i < NEXT_EVENTS_MAX_SCAN_MONTHS; i++) {
-    const monthlyEvents =
-      i === 0 && isSelectedMonthToday
-        ? monthEventsRaw
-        : await getEventsForMonth(eventRepo, memberRepo, scanYear, scanMonth);
+  // カスタムイベント・誕生日は月単位のメソッドしか無いため、窓（12か月）を
+  // バッチ1（今日の月+2か月=3か月）→ バッチ2（残り9か月）の最大2回の Promise.all で取得する。
+  // 走査月が選択月（引数 year/month）と一致する場合は monthEventsRaw を再利用し、
+  // 重複取得を避ける（バッチ1・バッチ2のどちらでも成立し得る）。
+  const fetchMonthEvents = (coord: {
+    year: number;
+    month: number;
+  }): Promise<CalendarEvent[]> =>
+    coord.year === year && coord.month === month
+      ? Promise.resolve(monthEventsRaw)
+      : getEventsForMonth(eventRepo, memberRepo, coord.year, coord.month);
+
+  const batch1Coords = Array.from({ length: NEXT_EVENTS_BATCH1_MONTHS }, (_, i) =>
+    addMonths(todayYear, todayMonth, i)
+  );
+  const batch1Results = await Promise.all(batch1Coords.map(fetchMonthEvents));
+  for (const monthlyEvents of batch1Results) {
     for (const e of monthlyEvents) {
       if (e.date > todayStr) nextEventCandidates.push(e);
     }
+  }
+  nextEventCandidates.sort(compareForNextEvents);
 
-    // 次に走査する月へ進める（scanMonth は1始まりのため、そのまま Date の月引数に渡すと
-    // 0始まり換算で翌月の初日になる）。
-    const nextScanDate = new Date(scanYear, scanMonth, 1);
-    scanYear = nextScanDate.getFullYear();
-    scanMonth = nextScanDate.getMonth() + 1;
-    const nextScanFirstDayStr = `${scanYear}-${pad(scanMonth)}-01`;
+  // バッチ1確定条件: 上位4件の4件目の日付が「バッチ1終端の翌月初日」より前であること。
+  const batch1End = addMonths(
+    todayYear,
+    todayMonth,
+    NEXT_EVENTS_BATCH1_MONTHS
+  );
+  const batch1EndStr = `${batch1End.year}-${pad(batch1End.month)}-01`;
+  const confirmedAfterBatch1 =
+    nextEventCandidates.length >= NEXT_EVENTS_LIMIT &&
+    nextEventCandidates[NEXT_EVENTS_LIMIT - 1].date < batch1EndStr;
 
+  if (!confirmedAfterBatch1) {
+    // バッチ2 = 残り9か月（窓全体を走査し終えるため、以降の追加判定は不要）。
+    const batch2Coords = Array.from(
+      { length: NEXT_EVENTS_WINDOW_MONTHS - NEXT_EVENTS_BATCH1_MONTHS },
+      (_, i) => addMonths(todayYear, todayMonth, NEXT_EVENTS_BATCH1_MONTHS + i)
+    );
+    const batch2Results = await Promise.all(batch2Coords.map(fetchMonthEvents));
+    for (const monthlyEvents of batch2Results) {
+      for (const e of monthlyEvents) {
+        if (e.date > todayStr) nextEventCandidates.push(e);
+      }
+    }
     nextEventCandidates.sort(compareForNextEvents);
-
-    const hasEnoughConfirmed =
-      nextEventCandidates.length >= NEXT_EVENTS_LIMIT &&
-      nextEventCandidates[NEXT_EVENTS_LIMIT - 1].date < nextScanFirstDayStr;
-    if (hasEnoughConfirmed) break;
   }
 
   const nextEvents = nextEventCandidates.slice(0, NEXT_EVENTS_LIMIT);
