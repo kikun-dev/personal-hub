@@ -40,7 +40,7 @@ export function AttendanceListItem({
         <AttendedTypeBadge attendedType={entry.attendedType} />
       </PendingLink>
       {showNote && entry.note && (
-        <p className="mt-1 truncate text-xs text-foreground/50">{entry.note}</p>
+        <p className="mt-1 truncate text-xs text-foreground/60">{entry.note}</p>
       )}
     </li>
   );

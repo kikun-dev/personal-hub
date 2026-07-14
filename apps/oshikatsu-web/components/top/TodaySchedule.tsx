@@ -18,7 +18,7 @@ export function TodaySchedule({ events }: TodayScheduleProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (events.length === 0) {
-    return <p className="text-sm text-foreground/40">今日の予定はありません</p>;
+    return <p className="text-sm text-foreground/60">今日の予定はありません</p>;
   }
 
   const hasMore = events.length > VISIBLE_LIMIT;

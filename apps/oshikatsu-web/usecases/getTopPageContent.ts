@@ -33,6 +33,62 @@ function pad(value: number): string {
 }
 
 const NEXT_EVENTS_LIMIT = 4;
+// Next Events rail のカスタムイベント・誕生日探索の上限（今日の月から何か月先まで見るか、#344）。
+const NEXT_EVENTS_MAX_SCAN_MONTHS = 12;
+
+// 日次一覧（今日の予定・選択日・Next Events 同日内）の並び規則（#344 レビュー対応）:
+// 1. 時刻の無い予定が先。種別順: 誕生日 → リリース → 動画 → ライブ → カスタムイベント
+// 2. 時刻のある予定は時刻昇順（ライブ = 集約後の最早 startsAt、カスタム = startTime）
+// 3. 同値の tie-breaker: 種別順（1と同じ順）→ 名称（name / title / memberName / trackTitle）昇順
+const DAILY_EVENT_TYPE_ORDER: Record<CalendarEvent["type"], number> = {
+  birthday: 0,
+  release: 1,
+  video: 2,
+  live: 3,
+  event: 4,
+};
+
+function getDailyEventTime(event: CalendarEvent): string | null {
+  if (event.type === "live") return event.startsAt;
+  if (event.type === "event") return event.startTime;
+  return null;
+}
+
+function getDailyEventName(event: CalendarEvent): string {
+  switch (event.type) {
+    case "live":
+      return event.name;
+    case "release":
+      return event.title;
+    case "video":
+      return event.trackTitle;
+    case "birthday":
+      return event.memberName;
+    case "event":
+      return event.title;
+  }
+}
+
+function compareDailyEvents(a: CalendarEvent, b: CalendarEvent): number {
+  const timeA = getDailyEventTime(a);
+  const timeB = getDailyEventTime(b);
+  if ((timeA === null) !== (timeB === null)) {
+    return timeA === null ? -1 : 1;
+  }
+  if (timeA !== null && timeB !== null && timeA !== timeB) {
+    return timeA < timeB ? -1 : 1;
+  }
+  const typeDiff = DAILY_EVENT_TYPE_ORDER[a.type] - DAILY_EVENT_TYPE_ORDER[b.type];
+  if (typeDiff !== 0) return typeDiff;
+  return getDailyEventName(a).localeCompare(getDailyEventName(b));
+}
+
+// Next Events rail 用: 日付昇順、同日内は compareDailyEvents に従う。
+function compareForNextEvents(a: CalendarEvent, b: CalendarEvent): number {
+  const dateDiff = a.date.localeCompare(b.date);
+  if (dateDiff !== 0) return dateDiff;
+  return compareDailyEvents(a, b);
+}
 
 export async function getTopPageContent(
   eventRepo: EventRepository,
@@ -52,42 +108,85 @@ export async function getTopPageContent(
   const selectedDate = new Date(year, month - 1, day);
   const todayDate = new Date(todayYear, todayMonth - 1, todayDay);
   const todayStr = `${todayYear}-${pad(todayMonth)}-${pad(todayDay)}`;
-  const nextMonthDate = new Date(todayYear, todayMonth, 1);
+
+  // 選択日=今日 / 選択月=当月のとき、下段の重複フェッチを避けるための判定（#344 レビュー対応）。
+  const isSelectedDateToday =
+    year === todayYear && month === todayMonth && day === todayDay;
+  const isSelectedMonthToday = year === todayYear && month === todayMonth;
 
   const [
-    monthEvents,
-    selectedDateEvents,
+    monthEventsRaw,
     onThisDayBaseEvents,
     livePerformances,
     releaseItems,
     videoItems,
     todayBaseEvents,
-    thisMonthEventsForNext,
-    nextMonthEventsForNext,
+    selectedDateEventsRaw,
   ] = await Promise.all([
     getEventsForMonth(eventRepo, memberRepo, year, month),
-    getEventsForDate(eventRepo, memberRepo, selectedDate),
     getOnThisDay(eventRepo, selectedDate),
     liveRepo.findCalendarPerformances(),
     releaseRepo.findCalendarItems(),
     songRepo.findCalendarVideoItems(),
     getEventsForDate(eventRepo, memberRepo, todayDate),
-    // Next Events rail 用: カスタムイベント・誕生日は月単位のメソッドしか無いため、
-    // 今日の月 + 翌月の2回分を取得して today < date でフィルタする（#344）。
-    getEventsForMonth(eventRepo, memberRepo, todayYear, todayMonth),
-    getEventsForMonth(
-      eventRepo,
-      memberRepo,
-      nextMonthDate.getFullYear(),
-      nextMonthDate.getMonth() + 1
-    ),
+    // 選択日が今日と同じ場合は todayBaseEvents 側の結果を共有するため、ここでは取得しない。
+    isSelectedDateToday
+      ? Promise.resolve<CalendarEvent[]>([])
+      : getEventsForDate(eventRepo, memberRepo, selectedDate),
   ]);
 
-  // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する
-  const uniqueLivePerformances = Array.from(
-    new Map(
-      livePerformances.map((p) => [`${p.liveId}:${p.date}`, p])
-    ).values()
+  // 共有の有無に関わらず、以降で push するため必ず clone してから使う。
+  const monthEvents = monthEventsRaw.slice();
+  const selectedDateEvents = (
+    isSelectedDateToday ? todayBaseEvents : selectedDateEventsRaw
+  ).slice();
+
+  // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する（#344 レビュー対応）。
+  // 集約前は Map で最後の1件が任意に残る不具合があったため、全公演を畳み込む形に変更した。
+  const performancesByKey = new Map<
+    string,
+    {
+      liveId: string;
+      liveName: string;
+      date: string;
+      startsAt: string | null;
+      venueName: string | null;
+    }[]
+  >();
+  for (const p of livePerformances) {
+    const key = `${p.liveId}:${p.date}`;
+    const bucket = performancesByKey.get(key);
+    if (bucket) {
+      bucket.push(p);
+    } else {
+      performancesByKey.set(key, [p]);
+    }
+  }
+
+  const uniqueLivePerformances = Array.from(performancesByKey.values()).map(
+    (perfs) => {
+      const first = perfs[0];
+      // startsAt: 非nullの最早開演時刻（"HH:MM:SS" は固定長のため文字列比較で min を取れる）
+      const startsAtValues = perfs
+        .map((p) => p.startsAt)
+        .filter((s): s is string => s !== null)
+        .sort();
+      // venueName: 全公演で同一（かつ非null）のときのみ採用。混在/null混じりは null。
+      const venueNames = perfs.map((p) => p.venueName);
+      const venueName =
+        venueNames[0] !== null && venueNames.every((v) => v === venueNames[0])
+          ? venueNames[0]
+          : null;
+
+      return {
+        liveId: first.liveId,
+        liveName: first.liveName,
+        date: first.date,
+        startsAt: startsAtValues.length > 0 ? startsAtValues[0] : null,
+        venueName,
+        performanceCount: perfs.length,
+      };
+    }
   );
 
   const monthPrefix = `${year}-${pad(month)}`;
@@ -98,16 +197,18 @@ export async function getTopPageContent(
     liveId: string;
     liveName: string;
     date: string;
-    startsAt?: string | null;
-    venueName?: string | null;
+    startsAt: string | null;
+    venueName: string | null;
+    performanceCount: number;
   }): LiveCalendarEvent => ({
     type: "live",
     id: `${p.liveId}:${p.date}`,
     liveId: p.liveId,
     name: p.liveName,
     date: p.date,
-    startsAt: p.startsAt ?? null,
-    venueName: p.venueName ?? null,
+    startsAt: p.startsAt,
+    venueName: p.venueName,
+    performanceCount: p.performanceCount,
   });
 
   const toReleaseEvent = (r: {
@@ -165,6 +266,7 @@ export async function getTopPageContent(
   for (const r of releaseItems) {
     if (r.date === dateStr) selectedDateEvents.push(toReleaseEvent(r));
   }
+  selectedDateEvents.sort(compareDailyEvents);
 
   // 今日はなんの日（過去・同じ月日）
   const onThisDayEvents: OnThisDayItem[] = onThisDayBaseEvents.map((e) => ({
@@ -199,29 +301,58 @@ export async function getTopPageContent(
   for (const r of releaseItems) {
     if (r.date === todayStr) todayEvents.push(toReleaseEvent(r));
   }
+  todayEvents.sort(compareDailyEvents);
 
-  // Next Events rail（#344）: 今日より後（date > todayStr）のイベントを日付昇順で先頭4件。
-  // カスタムイベント・誕生日は今日の月 + 翌月の2回分から拾う（それ以降の月は対象外）。
-  const nextEvents: CalendarEvent[] = [];
+  // Next Events rail（#344 レビュー対応）: 今日より後（date > todayStr）のイベントを
+  // 日付昇順（同日内は上記の並び規則）で先頭4件。
+  // ライブ/リリース/動画は全件取得済みリストから拾える（無制限 horizon）。
+  const nextEventCandidates: CalendarEvent[] = [];
   for (const p of uniqueLivePerformances) {
-    if (p.date > todayStr) nextEvents.push(toLiveEvent(p));
+    if (p.date > todayStr) nextEventCandidates.push(toLiveEvent(p));
   }
   for (const r of releaseItems) {
-    if (r.date > todayStr) nextEvents.push(toReleaseEvent(r));
+    if (r.date > todayStr) nextEventCandidates.push(toReleaseEvent(r));
   }
   for (const v of videoEvents) {
-    if (v.date > todayStr) nextEvents.push(v);
+    if (v.date > todayStr) nextEventCandidates.push(v);
   }
-  for (const e of [...thisMonthEventsForNext, ...nextMonthEventsForNext]) {
-    if (e.date > todayStr) nextEvents.push(e);
+
+  // カスタムイベント・誕生日は月単位のメソッドしか無いため、今日の月から1か月ずつ
+  // 探索範囲を広げる。種別によって探索期間は変えず、日付昇順で上位4件が
+  // 「次に走査する月の初日」より前に確定した時点で打ち切る（上限12か月）。
+  let scanYear = todayYear;
+  let scanMonth = todayMonth;
+  for (let i = 0; i < NEXT_EVENTS_MAX_SCAN_MONTHS; i++) {
+    const monthlyEvents =
+      i === 0 && isSelectedMonthToday
+        ? monthEventsRaw
+        : await getEventsForMonth(eventRepo, memberRepo, scanYear, scanMonth);
+    for (const e of monthlyEvents) {
+      if (e.date > todayStr) nextEventCandidates.push(e);
+    }
+
+    // 次に走査する月へ進める（scanMonth は1始まりのため、そのまま Date の月引数に渡すと
+    // 0始まり換算で翌月の初日になる）。
+    const nextScanDate = new Date(scanYear, scanMonth, 1);
+    scanYear = nextScanDate.getFullYear();
+    scanMonth = nextScanDate.getMonth() + 1;
+    const nextScanFirstDayStr = `${scanYear}-${pad(scanMonth)}-01`;
+
+    nextEventCandidates.sort(compareForNextEvents);
+
+    const hasEnoughConfirmed =
+      nextEventCandidates.length >= NEXT_EVENTS_LIMIT &&
+      nextEventCandidates[NEXT_EVENTS_LIMIT - 1].date < nextScanFirstDayStr;
+    if (hasEnoughConfirmed) break;
   }
-  nextEvents.sort((a, b) => a.date.localeCompare(b.date));
+
+  const nextEvents = nextEventCandidates.slice(0, NEXT_EVENTS_LIMIT);
 
   return {
     monthEvents,
     onThisDayEvents,
     selectedDateEvents,
     todayEvents,
-    nextEvents: nextEvents.slice(0, NEXT_EVENTS_LIMIT),
+    nextEvents,
   };
 }

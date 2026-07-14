@@ -41,12 +41,17 @@ export function EventListItem({ event }: EventListItemProps) {
               {event.name}
             </Link>
             {event.startsAt && (
-              <span className="ml-1 text-foreground/50">
+              <span className="ml-1 text-foreground/60">
                 {formatTime(event.startsAt)}
               </span>
             )}
+            {event.performanceCount > 1 && (
+              <span className="ml-1 text-xs text-foreground/60">
+                全{event.performanceCount}公演
+              </span>
+            )}
             {event.venueName && (
-              <span className="ml-1 text-xs text-foreground/40">
+              <span className="ml-1 text-xs text-foreground/60">
                 @ {event.venueName}
               </span>
             )}
@@ -85,11 +90,11 @@ export function EventListItem({ event }: EventListItemProps) {
               {event.memberName}
             </Link>
             {event.age !== null && (
-              <span className="ml-1 text-foreground/50">
+              <span className="ml-1 text-foreground/60">
                 ({event.age}歳)
               </span>
             )}
-            <span className="ml-1 text-xs text-foreground/40">
+            <span className="ml-1 text-xs text-foreground/60">
               {event.groupNames.join(", ")}
             </span>
           </div>
@@ -100,16 +105,16 @@ export function EventListItem({ event }: EventListItemProps) {
           <div>
             <span className="text-foreground">{event.title}</span>
             {event.startTime && (
-              <span className="ml-1 text-foreground/50">
+              <span className="ml-1 text-foreground/60">
                 {formatTime(event.startTime)}
               </span>
             )}
             {event.venue && (
-              <span className="ml-1 text-xs text-foreground/40">
+              <span className="ml-1 text-xs text-foreground/60">
                 @ {event.venue}
               </span>
             )}
-            <span className="ml-1 text-xs text-foreground/40">
+            <span className="ml-1 text-xs text-foreground/60">
               {event.groupNames.join(", ")}
             </span>
           </div>

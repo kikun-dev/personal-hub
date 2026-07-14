@@ -55,8 +55,13 @@ export type LiveCalendarEvent = {
   name: string;
   date: string;
   // Next Events rail（#344）の補足表示用。値が無ければ表示しない。
+  // 同一ライブ・同一日の複数公演（昼夜公演など）を集約した結果:
+  // startsAt = 非nullの最早開演時刻（全て null なら null）
+  // venueName = 全公演で同一（かつ非null）の場合のみ、混在/null混じりは null
   startsAt: string | null;
   venueName: string | null;
+  // 集約された公演数（同一ライブ・同一日）。2以上のときのみ「全N公演」を補足表示する。
+  performanceCount: number;
 };
 
 export type ReleaseCalendarEvent = {
