@@ -1,11 +1,11 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { EventCalendar } from "@/components/events/EventCalendar";
-import { EventList } from "@/components/events/EventList";
-import { OnThisDay } from "@/components/events/OnThisDay";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { NextEvents } from "@/components/top/NextEvents";
+import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
-import { TodaySchedule } from "@/components/top/TodaySchedule";
+import { DaySchedule } from "@/components/top/DaySchedule";
 import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
@@ -35,11 +35,9 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const { year, month, day } = parseCalendarDateParams(params, now);
   const selectedDateStr = `${year}-${pad(month)}-${pad(day)}`;
   const isSelectedToday = selectedDateStr === todayDateStr;
-  const eventListTitle = `${month}/${day}のイベント`;
-  const eventListEmptyMessage = `${month}/${day}のイベントはありません`;
-  const onThisDayTitle = isSelectedToday
-    ? "今日はなんの日"
-    : `${month}/${day}はなんの日`;
+  const pastSameDayTitle = isSelectedToday
+    ? "過去の今日"
+    : `過去の${month}月${day}日`;
 
   const {
     monthEvents,
@@ -60,30 +58,67 @@ export default async function TopPage({ searchParams }: TopPageProps) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="space-y-8">
         <section className="space-y-5">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
-            <p className="mt-1 text-sm text-foreground/60">
-              {formatMonthDayKanjiWithWeekday(todayDateStr)}
-            </p>
-          </div>
+          {isSelectedToday ? (
+            <div>
+              <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
+              <p className="mt-1 text-sm text-foreground/60">
+                {formatMonthDayKanjiWithWeekday(todayDateStr)}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-foreground/60">選んだ日のSakalog</p>
+              <h1 className="mt-1 text-xl font-bold text-foreground">
+                {year}年{formatMonthDayKanjiWithWeekday(selectedDateStr)}
+              </h1>
+              <p className="mt-2">
+                <Link
+                  href="/"
+                  className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+                >
+                  ← 今日へ戻る
+                </Link>
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">
-              今日の予定
+              {isSelectedToday ? "今日の予定" : `${month}月${day}日の予定`}
             </h2>
-            <TodaySchedule events={todayEvents} />
+            {/* key: 日付変更時に再マウントし、展開状態が別日の文脈へ残らないよう初期化する */}
+            <DaySchedule
+              key={selectedDateStr}
+              events={isSelectedToday ? todayEvents : selectedDateEvents}
+              emptyMessage={
+                isSelectedToday
+                  ? "今日の予定はありません"
+                  : `${month}月${day}日の予定はありません`
+              }
+            />
           </div>
         </section>
 
-        <div className="lg:hidden">
-          <NextEvents events={nextEvents} today={now} frame="plain" />
+        {/* Mobile: 過去の同日 → 次のイベント → 最近の参加記録 の縦積み。
+            Desktop(lg): NextEvents は rail 側にあるため隠し、過去の同日(広) + 参加記録(狭) の横並び。
+            display:none はグリッドフローから外れるため単一 DOM で両順序を満たせる（#345）。 */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-6">
+          {/* key: DaySchedule と同様、日付変更時に展開状態を初期化する */}
+          <PastSameDay
+            key={selectedDateStr}
+            events={onThisDayEvents}
+            title={pastSameDayTitle}
+            currentYear={year}
+          />
+          <div className="lg:hidden">
+            <NextEvents events={nextEvents} today={now} frame="plain" />
+          </div>
+          <RecentAttendance overview={recentAttendance} />
         </div>
-
-        <RecentAttendance overview={recentAttendance} />
 
         <section className="space-y-6">
           <h2 id="calendar" className="text-sm font-semibold text-foreground">
-            カレンダー
+            日付から探す
           </h2>
 
           <div className="flex items-center">
@@ -104,24 +139,6 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             month={month}
             selectedDateStr={selectedDateStr}
           />
-
-          <div
-            className={`grid gap-6 ${isSelectedToday ? "" : "md:grid-cols-2"}`}
-          >
-            {!isSelectedToday && (
-              <EventList
-                events={selectedDateEvents}
-                title={eventListTitle}
-                emptyMessage={eventListEmptyMessage}
-              />
-            )}
-
-            <OnThisDay
-              events={onThisDayEvents}
-              selectedDate={new Date(year, month - 1, day)}
-              title={onThisDayTitle}
-            />
-          </div>
         </section>
       </div>
 

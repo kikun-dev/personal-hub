@@ -302,7 +302,9 @@ export async function getTopPageContent(
       onThisDayEvents.push(v);
     }
   }
-  onThisDayEvents.sort((a, b) => b.date.localeCompare(a.date));
+  onThisDayEvents.sort(
+    (a, b) => b.date.localeCompare(a.date) || compareDailyEvents(a, b)
+  );
 
   // 今日の予定（#344）: selectedDateEvents と同一ロジックを「今日」の日付で計算する。
   const todayEvents: CalendarEvent[] = todayBaseEvents.slice();

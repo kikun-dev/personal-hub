@@ -190,7 +190,7 @@ function InlineDetailSpan({ detail }: { detail: DetailPart }) {
   );
 }
 
-// イベント一覧の1行分の表示（EventList / TodaySchedule / NextEvents で共用）。
+// イベント一覧の1行分の表示（DaySchedule / NextEvents / PastSameDay で共用）。
 // バッジ・リンク・補足の組み立ては元々 EventList.tsx にあったものを抽出した（#344）。
 export function EventListItem({
   event,
