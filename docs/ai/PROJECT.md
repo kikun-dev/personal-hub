@@ -205,6 +205,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0010 | 聖地巡礼マップの実装場所と地図ライブラリの採用 | Accepted |
 | 0011 | Wiki的静的ページ集のコンテンツ管理と Markdown レンダリング | Accepted |
 | 0012 | Supabase ローカル環境（Docker）の導入と migration 検証フロー | Accepted |
+| 0013 | Sakalog主要閲覧ジャーニーのDaily Story方針 | Accepted |
 
 ---
 
