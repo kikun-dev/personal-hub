@@ -86,7 +86,9 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             <h2 className="text-sm font-semibold text-foreground">
               {isSelectedToday ? "今日の予定" : `${month}月${day}日の予定`}
             </h2>
+            {/* key: 日付変更時に再マウントし、展開状態が別日の文脈へ残らないよう初期化する */}
             <DaySchedule
+              key={selectedDateStr}
               events={isSelectedToday ? todayEvents : selectedDateEvents}
               emptyMessage={
                 isSelectedToday
@@ -101,7 +103,9 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             Desktop(lg): NextEvents は rail 側にあるため隠し、過去の同日(広) + 参加記録(狭) の横並び。
             display:none はグリッドフローから外れるため単一 DOM で両順序を満たせる（#345）。 */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-6">
+          {/* key: DaySchedule と同様、日付変更時に展開状態を初期化する */}
           <PastSameDay
+            key={selectedDateStr}
             events={onThisDayEvents}
             title={pastSameDayTitle}
             currentYear={year}
