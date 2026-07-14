@@ -437,24 +437,23 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           </p>
         )}
 
-        <div className="space-y-1 border-t border-foreground/10 pt-3">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="text-xs font-medium text-foreground/70">セットリスト</p>
-            <TextLink
-              href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
-              className="text-xs"
-            >
-              詳細を見る →
-            </TextLink>
-          </div>
-          {targetHasSetlistSongs ? (
+        {/* セットリストは存在する場合のみ描画する（未来公演では無いのが自然で、
+            「未登録」表示は管理状態に見えるため section ごと出さない）。
+            fallback の carousel は #261 の決定（0件でも導線常時表示）のまま変更しない。 */}
+        {targetHasSetlistSongs && (
+          <div className="space-y-1 border-t border-foreground/10 pt-3">
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-xs font-medium text-foreground/70">セットリスト</p>
+              <TextLink
+                href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
+                className="text-xs"
+              >
+                詳細を見る →
+              </TextLink>
+            </div>
             <PerformanceSetlistSummary performance={targetPerformance} />
-          ) : (
-            // 未登録を明示し、読み込み漏れに見えないようにする（Critique P2）。
-            // 「詳細を見る」導線は #261 の決定（セトリ0件でも参照ページへ辿れる）に従い残す。
-            <p className="text-xs text-foreground/60">セットリストは未登録です</p>
-          )}
-        </div>
+          </div>
+        )}
 
         <AttendanceControl
           performanceId={targetPerformance.id}
