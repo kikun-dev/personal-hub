@@ -65,7 +65,7 @@ const PUBLIC_LIST_SELECT = `
 ` as const;
 
 const CALENDAR_PERFORMANCE_SELECT =
-  "performance_date, starts_at, live_id, orbit_lives(name), orbit_venues(name)" as const;
+  "id, performance_date, starts_at, live_id, orbit_lives(name), orbit_venues(name)" as const;
 
 const LIVE_OPTION_SELECT = "id, name" as const;
 
@@ -314,6 +314,7 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
       }
 
       return data.map((row) => ({
+        id: row.id,
         liveId: row.live_id,
         liveName: row.orbit_lives.name,
         // performance_date は .not(..., "is", null) で非null行のみに絞っているが、生成型は

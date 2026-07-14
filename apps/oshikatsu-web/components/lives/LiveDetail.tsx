@@ -8,16 +8,21 @@ import { TextLink } from "@/components/ui/TextLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { numberSetlistItems } from "@/usecases/setlistNumbering";
-import { topPageDateHref, monthDayLabel } from "@/lib/liveDateContext";
+import {
+  topPageDateHref,
+  monthDayLabel,
+  type LiveDateContext,
+} from "@/lib/liveDateContext";
+import { findNextPerformance } from "@/usecases/performanceChronology";
 
 type LiveDetailProps = {
   live: Live;
   // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参戦記録を持つ。未登録の公演は
   // キーが存在しない（page.tsx で Object.fromEntries した Map をそのまま渡す）。
   myAttendances: Record<string, LiveAttendance>;
-  // 日付 context（#346）。トップの選択日から遷移した場合のみ検証済み "YYYY-MM-DD"、
-  // それ以外（直接訪問・不正値・対象ライブの公演と不一致）は null。
-  contextDate: string | null;
+  // 日付+公演 context（#346）。トップの選択日から遷移した場合のみ検証済み
+  // { date, performanceId }、それ以外（直接訪問・不正値・対象ライブの公演と不一致）は null。
+  context: LiveDateContext | null;
 };
 
 // 種別ごとに時間ラベルを出し分ける（フェス=出演時刻、配信=配信時刻、開場は出さない）
@@ -145,22 +150,104 @@ function PerformanceSetlistSummary({
   );
 }
 
-export function LiveDetail({ live, myAttendances, contextDate }: LiveDetailProps) {
+function PerformanceCard({
+  live,
+  performance,
+  attendance,
+  showTime = false,
+  className,
+}: {
+  live: Live;
+  performance: LivePerformance;
+  attendance: LiveAttendance | null;
+  // この公演 section でのみ時刻行を表示（fallback の carousel は現行 DOM を維持）
+  showTime?: boolean;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-2 rounded-lg border border-foreground/10 p-4 ${className ?? ""}`}>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-medium text-foreground">
+          {performance.performanceDate
+            ? formatMonthDayWithWeekday(performance.performanceDate)
+            : "日付未定"}
+        </span>
+        <VenueLink performance={performance} />
+      </div>
+
+      {showTime &&
+        (() => {
+          const time = formatScheduleTime(
+            live.liveType,
+            performance.doorsOpenAt,
+            performance.startsAt
+          );
+          return time ? <p className="text-xs text-foreground/70">{time}</p> : null;
+        })()}
+
+      <div className="flex flex-wrap gap-2 text-xs">
+        {performance.hasStreaming && (
+          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+            配信あり
+          </span>
+        )}
+        {performance.hasLiveViewing && (
+          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+            ライブビューイング
+          </span>
+        )}
+      </div>
+
+      {performance.absences.length > 0 && (
+        <p className="text-xs text-foreground/70">
+          休演:{" "}
+          {performance.absences
+            .map((absence) =>
+              absence.note
+                ? `${absence.memberNameJa}（${absence.note}）`
+                : absence.memberNameJa
+            )
+            .join("、")}
+        </p>
+      )}
+
+      <div className="space-y-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="text-xs font-medium text-foreground/70">セットリスト</p>
+          {/* #261: セトリ詳細の参照ビューへの導線。セトリ0件でも空状態の
+              参照ページへ辿れるよう、導線は常に表示する（レビュー指摘）。
+              既存のセトリ表示自体は変更しない（簡素化は#262） */}
+          <TextLink
+            href={`/lives/${live.id}/performances/${performance.id}/setlist`}
+            className="text-xs"
+          >
+            詳細を見る →
+          </TextLink>
+        </div>
+        {/* #262: セトリ簡易表示は楽曲のみ。非楽曲（MC等）は省き、
+            詳細はセトリ詳細画面（#261）で見る */}
+        <PerformanceSetlistSummary performance={performance} />
+      </div>
+
+      <AttendanceControl performanceId={performance.id} attendance={attendance} />
+    </div>
+  );
+}
+
+export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
   const venueGroups = groupByVenue(live.performances);
   // ツアー、または会場が複数ある場合は会場ごとのカードで表示する
   const useVenueGrid = live.liveType === "tour" || venueGroups.length > 1;
 
-  // 有効 context では該当公演（performanceDate === contextDate、昼夜複数なら全て）を
-  // 先頭へ、残り（次の公演・その後の日程）を元の日付順のまま後段へ置く（#346）。
-  const isTargetPerformance = (performance: LivePerformance): boolean =>
-    contextDate !== null && performance.performanceDate === contextDate;
-  const orderedPerformances =
-    contextDate === null
-      ? live.performances
-      : [
-          ...live.performances.filter(isTargetPerformance),
-          ...live.performances.filter((p) => !isTargetPerformance(p)),
-        ];
+  // 有効 context の対象公演・次の公演（#346）。
+  const targetPerformance =
+    context !== null
+      ? live.performances.find((p) => p.id === context.performanceId) ?? null
+      : null;
+  const nextPerformance =
+    targetPerformance !== null
+      ? findNextPerformance(live.performances, targetPerformance)
+      : null;
 
   const scheduleSection = (
       /* 事前情報: 会場・日程 */
@@ -255,80 +342,52 @@ export function LiveDetail({ live, myAttendances, contextDate }: LiveDetailProps
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">公演ごとの情報</h2>
           <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
-            {orderedPerformances.map((performance) => (
-              <div
+            {live.performances.map((performance) => (
+              <PerformanceCard
                 key={performance.id}
-                className="w-[85%] shrink-0 snap-start space-y-2 rounded-lg border border-foreground/10 p-4 sm:w-80"
-              >
-                <div className="flex flex-wrap items-center gap-2 text-sm">
-                  <span className="font-medium text-foreground">
-                    {performance.performanceDate
-                      ? formatMonthDayWithWeekday(performance.performanceDate)
-                      : "日付未定"}
-                  </span>
-                  <VenueLink performance={performance} />
-                  {isTargetPerformance(performance) && (
-                    <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs font-medium text-foreground">
-                      この公演
-                    </span>
-                  )}
-                </div>
-
-                <div className="flex flex-wrap gap-2 text-xs">
-                  {performance.hasStreaming && (
-                    <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
-                      配信あり
-                    </span>
-                  )}
-                  {performance.hasLiveViewing && (
-                    <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
-                      ライブビューイング
-                    </span>
-                  )}
-                </div>
-
-                {performance.absences.length > 0 && (
-                  <p className="text-xs text-foreground/70">
-                    休演:{" "}
-                    {performance.absences
-                      .map((absence) =>
-                        absence.note
-                          ? `${absence.memberNameJa}（${absence.note}）`
-                          : absence.memberNameJa
-                      )
-                      .join("、")}
-                  </p>
-                )}
-
-                <div className="space-y-1">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <p className="text-xs font-medium text-foreground/70">
-                      セットリスト
-                    </p>
-                    {/* #261: セトリ詳細の参照ビューへの導線。セトリ0件でも空状態の
-                        参照ページへ辿れるよう、導線は常に表示する（レビュー指摘）。
-                        既存のセトリ表示自体は変更しない（簡素化は#262） */}
-                    <TextLink
-                      href={`/lives/${live.id}/performances/${performance.id}/setlist`}
-                      className="text-xs"
-                    >
-                      詳細を見る →
-                    </TextLink>
-                  </div>
-                  {/* #262: セトリ簡易表示は楽曲のみ。非楽曲（MC等）は省き、
-                      詳細はセトリ詳細画面（#261）で見る */}
-                  <PerformanceSetlistSummary performance={performance} />
-                </div>
-
-                <AttendanceControl
-                  performanceId={performance.id}
-                  attendance={myAttendances[performance.id] ?? null}
-                />
-              </div>
+                className="w-[85%] shrink-0 snap-start sm:w-80"
+                live={live}
+                performance={performance}
+                attendance={myAttendances[performance.id] ?? null}
+              />
             ))}
           </div>
         </section>
       )
+  );
+
+  const thisPerformanceSection = targetPerformance !== null && (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold text-foreground">この公演</h2>
+      <PerformanceCard
+        live={live}
+        performance={targetPerformance}
+        attendance={myAttendances[targetPerformance.id] ?? null}
+        showTime
+      />
+    </section>
+  );
+
+  const nextPerformanceSection = nextPerformance !== null && (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold text-foreground">次の公演</h2>
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span className="font-medium text-foreground">
+          {nextPerformance.performanceDate
+            ? formatMonthDayWithWeekday(nextPerformance.performanceDate)
+            : "日付未定"}
+        </span>
+        <VenueLink performance={nextPerformance} />
+        {(() => {
+          const time = formatScheduleTime(
+            live.liveType,
+            nextPerformance.doorsOpenAt,
+            nextPerformance.startsAt
+          );
+          return time ? <span className="text-foreground/70">{time}</span> : null;
+        })()}
+      </div>
+    </section>
   );
 
   return (
@@ -336,12 +395,12 @@ export function LiveDetail({ live, myAttendances, contextDate }: LiveDetailProps
       {/* 閲覧文脈の戻り導線（#346）: 有効 context では元の選択日へ、
           直接訪問・invalid context では ライブ一覧へ戻す。日付や該当公演を推測しない。 */}
       <p>
-        {contextDate !== null ? (
+        {context !== null && targetPerformance !== null ? (
           <Link
-            href={topPageDateHref(contextDate)}
+            href={topPageDateHref(context.date)}
             className="text-sm text-foreground/60 hover:text-foreground hover:underline"
           >
-            ← {monthDayLabel(contextDate)}の出来事へ戻る
+            ← {monthDayLabel(context.date)}の出来事へ戻る
           </Link>
         ) : (
           <Link
@@ -375,11 +434,12 @@ export function LiveDetail({ live, myAttendances, contextDate }: LiveDetailProps
         </p>
       )}
 
-      {/* セクション順序（#346）: 有効 context では次の公演・ツアー全体情報を
-          該当公演の後段へ置く（#341 Decision）。fallback は従来どおりの順序。 */}
-      {contextDate !== null ? (
+      {/* 有効 context（#346）: この公演 → 次の公演 → ツアー全体 → メンバー。
+          全公演のセトリ付き横スライドは表示しない。fallback は従来 UI を維持。 */}
+      {context !== null && targetPerformance !== null ? (
         <>
-          {performancesSection}
+          {thisPerformanceSection}
+          {nextPerformanceSection}
           {scheduleSection}
           {membersSection}
         </>
