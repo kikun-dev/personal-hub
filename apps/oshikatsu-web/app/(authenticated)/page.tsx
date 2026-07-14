@@ -1,9 +1,9 @@
 import { Suspense } from "react";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { EventList } from "@/components/events/EventList";
-import { OnThisDay } from "@/components/events/OnThisDay";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { NextEvents } from "@/components/top/NextEvents";
+import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
 import { TodaySchedule } from "@/components/top/TodaySchedule";
 import {
@@ -37,9 +37,9 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const isSelectedToday = selectedDateStr === todayDateStr;
   const eventListTitle = `${month}/${day}のイベント`;
   const eventListEmptyMessage = `${month}/${day}のイベントはありません`;
-  const onThisDayTitle = isSelectedToday
-    ? "今日はなんの日"
-    : `${month}/${day}はなんの日`;
+  const pastSameDayTitle = isSelectedToday
+    ? "過去の今日"
+    : `過去の${month}月${day}日`;
 
   const {
     monthEvents,
@@ -75,15 +75,24 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           </div>
         </section>
 
-        <div className="lg:hidden">
-          <NextEvents events={nextEvents} today={now} frame="plain" />
+        {/* Mobile: 過去の同日 → 次のイベント → 最近の参加記録 の縦積み。
+            Desktop(lg): NextEvents は rail 側にあるため隠し、過去の同日(広) + 参加記録(狭) の横並び。
+            display:none はグリッドフローから外れるため単一 DOM で両順序を満たせる（#345）。 */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-6">
+          <PastSameDay
+            events={onThisDayEvents}
+            title={pastSameDayTitle}
+            currentYear={year}
+          />
+          <div className="lg:hidden">
+            <NextEvents events={nextEvents} today={now} frame="plain" />
+          </div>
+          <RecentAttendance overview={recentAttendance} />
         </div>
-
-        <RecentAttendance overview={recentAttendance} />
 
         <section className="space-y-6">
           <h2 id="calendar" className="text-sm font-semibold text-foreground">
-            カレンダー
+            日付から探す
           </h2>
 
           <div className="flex items-center">
@@ -105,23 +114,13 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             selectedDateStr={selectedDateStr}
           />
 
-          <div
-            className={`grid gap-6 ${isSelectedToday ? "" : "md:grid-cols-2"}`}
-          >
-            {!isSelectedToday && (
-              <EventList
-                events={selectedDateEvents}
-                title={eventListTitle}
-                emptyMessage={eventListEmptyMessage}
-              />
-            )}
-
-            <OnThisDay
-              events={onThisDayEvents}
-              selectedDate={new Date(year, month - 1, day)}
-              title={onThisDayTitle}
+          {!isSelectedToday && (
+            <EventList
+              events={selectedDateEvents}
+              title={eventListTitle}
+              emptyMessage={eventListEmptyMessage}
             />
-          </div>
+          )}
         </section>
       </div>
 
