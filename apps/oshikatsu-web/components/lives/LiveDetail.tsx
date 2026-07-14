@@ -154,14 +154,11 @@ function PerformanceCard({
   live,
   performance,
   attendance,
-  showTime = false,
   className,
 }: {
   live: Live;
   performance: LivePerformance;
   attendance: LiveAttendance | null;
-  // この公演 section でのみ時刻行を表示（fallback の carousel は現行 DOM を維持）
-  showTime?: boolean;
   className?: string;
 }) {
   return (
@@ -174,16 +171,6 @@ function PerformanceCard({
         </span>
         <VenueLink performance={performance} />
       </div>
-
-      {showTime &&
-        (() => {
-          const time = formatScheduleTime(
-            live.liveType,
-            performance.doorsOpenAt,
-            performance.startsAt
-          );
-          return time ? <p className="text-xs text-foreground/70">{time}</p> : null;
-        })()}
 
       <div className="flex flex-wrap gap-2 text-xs">
         {performance.hasStreaming && (
@@ -356,36 +343,195 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       )
   );
 
+  const targetArea = targetPerformance?.venuePrefecture
+    ? performanceAreaLabel(targetPerformance.venuePrefecture)
+    : null;
+  const targetTime = targetPerformance
+    ? formatScheduleTime(
+        live.liveType,
+        targetPerformance.doorsOpenAt,
+        targetPerformance.startsAt
+      )
+    : null;
+  const targetDateLabel = targetPerformance?.performanceDate
+    ? formatMonthDayWithWeekday(targetPerformance.performanceDate)
+    : "日付未定";
+
   const thisPerformanceSection = targetPerformance !== null && (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-foreground">この公演</h2>
-      <PerformanceCard
-        live={live}
-        performance={targetPerformance}
-        attendance={myAttendances[targetPerformance.id] ?? null}
-        showTime
-      />
+      {/* 選択状態は色ではなく中立の境界強度（/25）で表現する（Meaningful Color Rule）。
+          影は使わない（Earned Lift / One Edge Rule）。 */}
+      <div className="space-y-3 rounded-lg border border-foreground/25 bg-background p-4">
+        <div className="space-y-1">
+          {/* 主役行: 都道府県から意味のある「○○公演」を作れる場合のみ使用し、
+              作れない場合は会場名、それも無ければ日付+時刻を主役行にする
+              （表示のために存在しない公演名を推測・生成しない）。 */}
+          {targetArea !== null ? (
+            <>
+              <p className="text-sm text-foreground/70">
+                {targetDateLabel}
+                {targetTime !== null && <span className="ml-2">{targetTime}</span>}
+              </p>
+              <p className="text-base font-semibold text-foreground">
+                {targetArea}
+              </p>
+              <VenueLink performance={targetPerformance} />
+            </>
+          ) : targetPerformance.venueId && targetPerformance.venueName ? (
+            <>
+              <p className="text-sm text-foreground/70">
+                {targetDateLabel}
+                {targetTime !== null && <span className="ml-2">{targetTime}</span>}
+              </p>
+              <TextLink
+                href={`/venues/${targetPerformance.venueId}`}
+                className="text-base font-semibold"
+              >
+                {targetPerformance.venueName}
+              </TextLink>
+            </>
+          ) : (
+            <p className="text-base font-semibold text-foreground">
+              {targetDateLabel}
+              {targetTime !== null && (
+                <span className="ml-2 text-sm font-normal text-foreground/70">
+                  {targetTime}
+                </span>
+              )}
+            </p>
+          )}
+        </div>
+
+        {(targetPerformance.hasStreaming || targetPerformance.hasLiveViewing) && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            {targetPerformance.hasStreaming && (
+              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+                配信あり
+              </span>
+            )}
+            {targetPerformance.hasLiveViewing && (
+              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+                ライブビューイング
+              </span>
+            )}
+          </div>
+        )}
+
+        {targetPerformance.absences.length > 0 && (
+          <p className="text-xs text-foreground/70">
+            休演:{" "}
+            {targetPerformance.absences
+              .map((absence) =>
+                absence.note
+                  ? `${absence.memberNameJa}（${absence.note}）`
+                  : absence.memberNameJa
+              )
+              .join("、")}
+          </p>
+        )}
+
+        <div className="space-y-1 border-t border-foreground/10 pt-3">
+          <div className="flex items-baseline justify-between gap-2">
+            <p className="text-xs font-medium text-foreground/70">セットリスト</p>
+            <TextLink
+              href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
+              className="text-xs"
+            >
+              詳細を見る →
+            </TextLink>
+          </div>
+          <PerformanceSetlistSummary performance={targetPerformance} />
+        </div>
+
+        <AttendanceControl
+          performanceId={targetPerformance.id}
+          attendance={myAttendances[targetPerformance.id] ?? null}
+        />
+      </div>
     </section>
   );
+
+  const nextArea = nextPerformance?.venuePrefecture
+    ? performanceAreaLabel(nextPerformance.venuePrefecture)
+    : null;
+  const nextTime = nextPerformance
+    ? formatScheduleTime(live.liveType, nextPerformance.doorsOpenAt, nextPerformance.startsAt)
+    : null;
 
   const nextPerformanceSection = nextPerformance !== null && (
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-foreground">次の公演</h2>
-      <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="font-medium text-foreground">
-          {nextPerformance.performanceDate
-            ? formatMonthDayWithWeekday(nextPerformance.performanceDate)
-            : "日付未定"}
-        </span>
-        <VenueLink performance={nextPerformance} />
-        {(() => {
-          const time = formatScheduleTime(
-            live.liveType,
-            nextPerformance.doorsOpenAt,
-            nextPerformance.startsAt
-          );
-          return time ? <span className="text-foreground/70">{time}</span> : null;
-        })()}
+      {/* secondary surface: この公演より薄い境界と密な padding。
+          「あとN日」は表示しない（次の公演は選択公演基準の相対時間軸のため。#346 Decision） */}
+      <div className="space-y-1 rounded-lg border border-foreground/10 p-3 text-sm">
+        <p>
+          <span className="font-medium text-foreground">
+            {nextPerformance.performanceDate
+              ? formatMonthDayWithWeekday(nextPerformance.performanceDate)
+              : "日付未定"}
+          </span>
+          {nextTime !== null && (
+            <span className="ml-2 text-foreground/70">{nextTime}</span>
+          )}
+        </p>
+        {(nextArea !== null || nextPerformance.venueName) && (
+          <p className="flex flex-wrap items-baseline gap-x-2">
+            {nextArea !== null && (
+              <span className="text-foreground">{nextArea}</span>
+            )}
+            <VenueLink performance={nextPerformance} />
+          </p>
+        )}
+      </div>
+    </section>
+  );
+
+  // context 時のツアー全体 overview（#346）: fallback のカードグリッドより静かな
+  // hairline 区切りの行リスト。visual weight を この公演 > 次の公演 > ツアー全体 に保つ。
+  const quietScheduleSection = live.performances.length > 0 && (
+    <section className="space-y-2">
+      <h2 className="text-sm font-semibold text-foreground">
+        {useVenueGrid ? "公演・日程" : "会場・日程"}
+      </h2>
+      <div className="divide-y divide-foreground/10">
+        {venueGroups.map((group) => (
+          <div key={group.venueId ?? "none"} className="py-3 first:pt-0 last:pb-0">
+            <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
+              {group.venuePrefecture ? (
+                <>
+                  <span className="font-medium text-foreground">
+                    {performanceAreaLabel(group.venuePrefecture)}
+                  </span>
+                  {group.venueId && group.venueName && (
+                    <TextLink
+                      href={`/venues/${group.venueId}`}
+                      className="text-xs"
+                    >
+                      {group.venueName}
+                    </TextLink>
+                  )}
+                </>
+              ) : group.venueId && group.venueName ? (
+                <TextLink
+                  href={`/venues/${group.venueId}`}
+                  className="text-sm font-medium"
+                >
+                  {group.venueName}
+                </TextLink>
+              ) : (
+                <span className="text-foreground/50">会場未定</span>
+              )}
+            </p>
+            <div className="mt-1 space-y-0.5 text-xs text-foreground/70">
+              {group.performances.map((performance) => (
+                <p key={performance.id}>
+                  {formatScheduleLine(live.liveType, performance)}
+                </p>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -440,7 +586,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         <>
           {thisPerformanceSection}
           {nextPerformanceSection}
-          {scheduleSection}
+          {quietScheduleSection}
           {membersSection}
         </>
       ) : (
