@@ -103,14 +103,16 @@ export function Header({ isAdmin }: HeaderProps) {
                   stroke="currentColor"
                   strokeWidth="2"
                   aria-hidden="true"
-                  className="transition-transform duration-150 group-data-[open]:rotate-180"
+                  className="transition-transform duration-150 group-data-[open]:rotate-180 motion-reduce:transition-none"
                 >
                   <path d="M3 4.5l3 3 3-3" />
                 </svg>
               </MenuButton>
+              {/* 前面の操作面は境界か影の一方だけで定義する（DESIGN.md The One Edge Rule）。
+                  ダークでは影が視認できないため、light=影のみ / dark=境界のみで面を分離する。 */}
               <MenuItems
                 anchor={{ to: "bottom start", gap: 4 }}
-                className="z-50 min-w-36 rounded-lg border border-foreground/10 bg-background py-1 shadow-lg focus:outline-none"
+                className="z-50 min-w-36 rounded-lg bg-background py-1 shadow-lg focus:outline-none dark:border dark:border-foreground/10 dark:shadow-none"
               >
                 {ARCHIVE_NAV_ITEMS.map((item) => (
                   <MenuItem key={item.href} as={Fragment}>
