@@ -8,17 +8,19 @@ import type { CalendarEvent } from "@/types/event";
 // 代表選定ロジックなし、並び先頭から3件）。
 const VISIBLE_LIMIT = 3;
 
-type TodayScheduleProps = {
+type DayScheduleProps = {
   events: CalendarEvent[];
+  emptyMessage: string;
 };
 
-// トップページ「今日の予定」（#344）。ライブ/誕生日/リリース/動画/カスタムイベントを
-// 同じ一覧で混在表示し、特定の1件を主役化しない。
-export function TodaySchedule({ events }: TodayScheduleProps) {
+// トップページの日次予定一覧（#344、#345 で選択日にも対応）。
+// 今日または選択日のライブ/誕生日/リリース/動画/カスタムイベントを同じ一覧で
+// 混在表示し、特定の1件を主役化しない。
+export function DaySchedule({ events, emptyMessage }: DayScheduleProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (events.length === 0) {
-    return <p className="text-sm text-foreground/60">今日の予定はありません</p>;
+    return <p className="text-sm text-foreground/60">{emptyMessage}</p>;
   }
 
   const hasMore = events.length > VISIBLE_LIMIT;

@@ -1,11 +1,11 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { EventCalendar } from "@/components/events/EventCalendar";
-import { EventList } from "@/components/events/EventList";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { NextEvents } from "@/components/top/NextEvents";
 import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
-import { TodaySchedule } from "@/components/top/TodaySchedule";
+import { DaySchedule } from "@/components/top/DaySchedule";
 import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
@@ -35,8 +35,6 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const { year, month, day } = parseCalendarDateParams(params, now);
   const selectedDateStr = `${year}-${pad(month)}-${pad(day)}`;
   const isSelectedToday = selectedDateStr === todayDateStr;
-  const eventListTitle = `${month}/${day}のイベント`;
-  const eventListEmptyMessage = `${month}/${day}のイベントはありません`;
   const pastSameDayTitle = isSelectedToday
     ? "過去の今日"
     : `過去の${month}月${day}日`;
@@ -60,18 +58,42 @@ export default async function TopPage({ searchParams }: TopPageProps) {
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="space-y-8">
         <section className="space-y-5">
-          <div>
-            <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
-            <p className="mt-1 text-sm text-foreground/60">
-              {formatMonthDayKanjiWithWeekday(todayDateStr)}
-            </p>
-          </div>
+          {isSelectedToday ? (
+            <div>
+              <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
+              <p className="mt-1 text-sm text-foreground/60">
+                {formatMonthDayKanjiWithWeekday(todayDateStr)}
+              </p>
+            </div>
+          ) : (
+            <div>
+              <p className="text-sm text-foreground/60">選んだ日のSakalog</p>
+              <h1 className="mt-1 text-xl font-bold text-foreground">
+                {year}年{formatMonthDayKanjiWithWeekday(selectedDateStr)}
+              </h1>
+              <p className="mt-2">
+                <Link
+                  href="/"
+                  className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+                >
+                  ← 今日へ戻る
+                </Link>
+              </p>
+            </div>
+          )}
 
           <div className="space-y-3">
             <h2 className="text-sm font-semibold text-foreground">
-              今日の予定
+              {isSelectedToday ? "今日の予定" : `${month}月${day}日の予定`}
             </h2>
-            <TodaySchedule events={todayEvents} />
+            <DaySchedule
+              events={isSelectedToday ? todayEvents : selectedDateEvents}
+              emptyMessage={
+                isSelectedToday
+                  ? "今日の予定はありません"
+                  : `${month}月${day}日の予定はありません`
+              }
+            />
           </div>
         </section>
 
@@ -113,14 +135,6 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             month={month}
             selectedDateStr={selectedDateStr}
           />
-
-          {!isSelectedToday && (
-            <EventList
-              events={selectedDateEvents}
-              title={eventListTitle}
-              emptyMessage={eventListEmptyMessage}
-            />
-          )}
         </section>
       </div>
 
