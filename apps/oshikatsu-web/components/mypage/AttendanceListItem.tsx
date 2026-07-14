@@ -9,6 +9,8 @@ type AttendanceListItemProps = {
   entry: MyAttendanceEntry;
   // 一覧を開いたページ（マイページ / 記録を見る）を戻り先にする。
   backHref?: string;
+  // トップページ「最近の参加記録」（#344）用: 短い記録（note）を1行で添える。
+  showNote?: boolean;
 };
 
 // 参戦記録の1行リスト表示（VenueDetailPage の公演一覧と同じトーン）。
@@ -16,6 +18,7 @@ type AttendanceListItemProps = {
 export function AttendanceListItem({
   entry,
   backHref = APP_ROUTES.mypage,
+  showNote = false,
 }: AttendanceListItemProps) {
   return (
     <li className="rounded-lg border border-foreground/10 p-3">
@@ -36,6 +39,9 @@ export function AttendanceListItem({
         ))}
         <AttendedTypeBadge attendedType={entry.attendedType} />
       </PendingLink>
+      {showNote && entry.note && (
+        <p className="mt-1 truncate text-xs text-foreground/60">{entry.note}</p>
+      )}
     </li>
   );
 }

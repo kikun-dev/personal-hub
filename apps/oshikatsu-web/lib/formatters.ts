@@ -16,6 +16,13 @@ export function formatMonthDayWithWeekday(dateStr: string): string {
   return `${date.getMonth() + 1}/${date.getDate()}(${weekday})`;
 }
 
+// 7月13日(月) のように月日(曜日)を漢字区切りで表示する（トップページ見出し用）
+export function formatMonthDayKanjiWithWeekday(dateStr: string): string {
+  const date = new Date(dateStr + "T00:00:00");
+  const weekday = WEEKDAY_LABELS[date.getDay()];
+  return `${date.getMonth() + 1}月${date.getDate()}日(${weekday})`;
+}
+
 export function formatBirthday(dateStr: string): string {
   const date = new Date(dateStr + "T00:00:00");
   return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;

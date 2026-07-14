@@ -40,7 +40,17 @@ const loadTopPageData = createSharedReadLoader(
     ORBIT_CACHE_TAGS.releases,
     ORBIT_CACHE_TAGS.songs,
   ],
-  async (year: number, month: number, day: number) =>
+  // 今日の日付（todayYear/Month/Day）を unstable_cache の引数に含めることで、
+  // 日付跨ぎ後の再訪問時にキャッシュキーが変わり todayEvents / nextEvents が
+  // 陳腐化した古いキャッシュを再利用してしまうのを防ぐ（#344）。
+  async (
+    year: number,
+    month: number,
+    day: number,
+    todayYear: number,
+    todayMonth: number,
+    todayDay: number
+  ) =>
     withOrbitReadClient(async (supabase) => {
       return getTopPageContent(
         createEventRepository(supabase),
@@ -50,7 +60,10 @@ const loadTopPageData = createSharedReadLoader(
         createSongRepository(supabase),
         year,
         month,
-        day
+        day,
+        todayYear,
+        todayMonth,
+        todayDay
       );
     })
 );
@@ -244,9 +257,12 @@ const loadReleaseDetailPageData = createSharedReadLoader(
 export async function getTopPageData(
   year: number,
   month: number,
-  day: number
+  day: number,
+  todayYear: number,
+  todayMonth: number,
+  todayDay: number
 ) {
-  return loadTopPageData(year, month, day);
+  return loadTopPageData(year, month, day, todayYear, todayMonth, todayDay);
 }
 
 export async function getMembersPageData(filters: MemberFiltersType) {
