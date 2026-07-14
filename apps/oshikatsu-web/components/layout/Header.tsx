@@ -1,14 +1,25 @@
 "use client";
 
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { Dialog, DialogBackdrop, DialogPanel, DialogTitle } from "@headlessui/react";
+import {
+  Dialog,
+  DialogBackdrop,
+  DialogPanel,
+  DialogTitle,
+  Menu,
+  MenuButton,
+  MenuItem,
+  MenuItems,
+} from "@headlessui/react";
 import { createClient } from "@personal-hub/supabase/client";
 import { PendingLink } from "@/components/ui/PendingLink";
 import {
-  HEADER_NAV_ITEMS,
-  TOP_NAV_ITEMS,
+  ACCOUNT_NAV_ITEMS,
+  ARCHIVE_NAV_ITEMS,
+  NAV_SECTIONS,
+  PRIMARY_NAV_ITEMS,
   filterNavItemsForRole,
   isNavigationItemActive,
 } from "@/lib/navigation";
@@ -22,8 +33,10 @@ export function Header({ isAdmin }: HeaderProps) {
   const router = useRouter();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const headerNavItems = filterNavItemsForRole(HEADER_NAV_ITEMS, isAdmin);
-  const mobileNavItems = filterNavItemsForRole(TOP_NAV_ITEMS, isAdmin);
+  const accountNavItems = filterNavItemsForRole(ACCOUNT_NAV_ITEMS, isAdmin);
+  const isArchiveActive = ARCHIVE_NAV_ITEMS.some((item) =>
+    isNavigationItemActive(pathname, item.href)
+  );
 
   const closeMenu = () => setIsMenuOpen(false);
 
@@ -55,9 +68,69 @@ export function Header({ isAdmin }: HeaderProps) {
               className="hidden h-8 w-auto dark:block"
             />
           </PendingLink>
-          {/* デスクトップナビ */}
-          <nav className="hidden gap-4 md:flex">
-            {headerNavItems.map((item) => (
+          {/* デスクトップナビ: 主要閲覧 → アーカイブ(dropdown) → アカウント */}
+          <nav className="hidden items-center gap-4 md:flex">
+            {PRIMARY_NAV_ITEMS.map((item) => (
+              <PendingLink
+                key={item.href}
+                href={item.href}
+                feedback="global"
+                className={`text-sm transition-colors ${
+                  isNavigationItemActive(pathname, item.href)
+                    ? "font-medium text-foreground"
+                    : "text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                {item.label}
+              </PendingLink>
+            ))}
+
+            {/* アーカイブ: 制作陣 / 会場 / 聖地マップ / Wiki をまとめた dropdown */}
+            <Menu as="div" className="relative">
+              <MenuButton
+                className={`group inline-flex items-center gap-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-md data-[open]:text-foreground ${
+                  isArchiveActive
+                    ? "font-medium text-foreground"
+                    : "text-foreground/60 hover:text-foreground"
+                }`}
+              >
+                アーカイブ
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  aria-hidden="true"
+                  className="transition-transform duration-150 group-data-[open]:rotate-180"
+                >
+                  <path d="M3 4.5l3 3 3-3" />
+                </svg>
+              </MenuButton>
+              <MenuItems
+                anchor={{ to: "bottom start", gap: 4 }}
+                className="z-50 min-w-36 rounded-lg border border-foreground/10 bg-background py-1 shadow-lg focus:outline-none"
+              >
+                {ARCHIVE_NAV_ITEMS.map((item) => (
+                  <MenuItem key={item.href} as={Fragment}>
+                    <PendingLink
+                      href={item.href}
+                      feedback="global"
+                      className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors data-[focus]:bg-foreground/10 ${
+                        isNavigationItemActive(pathname, item.href)
+                          ? "font-medium text-foreground"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </PendingLink>
+                  </MenuItem>
+                ))}
+              </MenuItems>
+            </Menu>
+
+            {accountNavItems.map((item) => (
               <PendingLink
                 key={item.href}
                 href={item.href}
@@ -126,20 +199,31 @@ export function Header({ isAdmin }: HeaderProps) {
           </div>
 
           <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
-            {mobileNavItems.map((item) => (
-              <PendingLink
-                key={item.href}
-                href={item.href}
-                feedback="global"
-                onClick={closeMenu}
-                className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                  isNavigationItemActive(pathname, item.href)
-                    ? "bg-foreground/5 font-medium text-foreground"
-                    : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
-                }`}
-              >
-                {item.label}
-              </PendingLink>
+            {NAV_SECTIONS.map((section, index) => (
+              <Fragment key={section.label}>
+                <p
+                  className={`px-3 pb-1 text-xs font-medium text-foreground/60 ${
+                    index === 0 ? "pt-1" : "pt-4"
+                  }`}
+                >
+                  {section.label}
+                </p>
+                {filterNavItemsForRole(section.items, isAdmin).map((item) => (
+                  <PendingLink
+                    key={item.href}
+                    href={item.href}
+                    feedback="global"
+                    onClick={closeMenu}
+                    className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                      isNavigationItemActive(pathname, item.href)
+                        ? "bg-foreground/5 font-medium text-foreground"
+                        : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
+                    }`}
+                  >
+                    {item.label}
+                  </PendingLink>
+                ))}
+              </Fragment>
             ))}
           </nav>
 

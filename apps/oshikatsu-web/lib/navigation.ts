@@ -6,41 +6,46 @@ export type AppNavigationItem = {
   adminOnly?: boolean;
 };
 
-const ADMIN_NAV_ITEM: AppNavigationItem = {
-  href: APP_ROUTES.admin,
-  label: "管理",
-  adminOnly: true,
+// Mobile ドロワー用の IA グループ（見出し + 配下 item）。
+export type AppNavigationSection = {
+  label: string;
+  items: AppNavigationItem[];
 };
 
-// マイページはユーザー別データ（ADR 0009）で admin / viewer 共通のため adminOnly なし。
-// 閲覧系ナビの最後・管理の直前に置く。
-const MYPAGE_NAV_ITEM: AppNavigationItem = {
-  href: APP_ROUTES.mypage,
-  label: "マイページ",
-};
-
-// 管理を除いた閲覧系ナビ（管理は常に末尾に置く）
-const CONTENT_NAV_ITEMS: AppNavigationItem[] = [
+// 主要閲覧: メンバー / 楽曲 / リリース / ライブ。Header ではフラットに並べる。
+export const PRIMARY_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.members, label: "メンバー" },
   { href: APP_ROUTES.songs, label: "楽曲" },
   { href: APP_ROUTES.releases, label: "リリース" },
   { href: APP_ROUTES.lives, label: "ライブ" },
 ];
 
-export const HEADER_NAV_ITEMS: AppNavigationItem[] = [
-  ...CONTENT_NAV_ITEMS,
-  MYPAGE_NAV_ITEM,
-  ADMIN_NAV_ITEM,
-];
-
-export const TOP_NAV_ITEMS: AppNavigationItem[] = [
-  ...CONTENT_NAV_ITEMS,
+// アーカイブ: 制作陣 / 会場 / 聖地マップ / Wiki。Header では「アーカイブ」dropdown に格納する。
+export const ARCHIVE_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.people, label: "制作陣" },
   { href: APP_ROUTES.venues, label: "会場" },
   { href: APP_ROUTES.spots, label: "聖地マップ" },
   { href: APP_ROUTES.wiki, label: "Wiki" },
-  MYPAGE_NAV_ITEM,
-  ADMIN_NAV_ITEM,
+];
+
+// アカウント: マイページ（ADR 0009: ユーザー別データで admin / viewer 共通のため adminOnly なし） / 管理。
+export const ACCOUNT_NAV_ITEMS: AppNavigationItem[] = [
+  { href: APP_ROUTES.mypage, label: "マイページ" },
+  { href: APP_ROUTES.admin, label: "管理", adminOnly: true },
+];
+
+// Mobile ドロワー用のセクション配列（主要閲覧 → アーカイブ → アカウントの順）。
+export const NAV_SECTIONS: AppNavigationSection[] = [
+  { label: "主要閲覧", items: PRIMARY_NAV_ITEMS },
+  { label: "アーカイブ", items: ARCHIVE_NAV_ITEMS },
+  { label: "アカウント", items: ACCOUNT_NAV_ITEMS },
+];
+
+// 右側パネル（TopNavigationPanel）用のフラット一覧。既存と完全に同一の内容・順序を維持する。
+export const TOP_NAV_ITEMS: AppNavigationItem[] = [
+  ...PRIMARY_NAV_ITEMS,
+  ...ARCHIVE_NAV_ITEMS,
+  ...ACCOUNT_NAV_ITEMS,
 ];
 
 export function isNavigationItemActive(pathname: string, href: string): boolean {
