@@ -152,6 +152,7 @@ export type WikiRepository = {
 };
 
 export type LiveCalendarPerformance = {
+  id: string;
   liveId: string;
   liveName: string;
   date: string;

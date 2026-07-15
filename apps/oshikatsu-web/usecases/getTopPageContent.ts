@@ -157,9 +157,12 @@ export async function getTopPageContent(
 
   // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する（#344 レビュー対応）。
   // 集約前は Map で最後の1件が任意に残る不具合があったため、全公演を畳み込む形に変更した。
+  // #346: 集約はカレンダー（event dot）用に限定。日次系（selectedDateEvents 等）は
+  // performance 単位（1行 = 1公演）で扱うため uniqueLivePerformances は使わない。
   const performancesByKey = new Map<
     string,
     {
+      id: string;
       liveId: string;
       liveName: string;
       date: string;
@@ -193,6 +196,8 @@ export async function getTopPageContent(
           : null;
 
       return {
+        // 代表値（#346）。集約イベントのリンク描画には使われない。
+        performanceId: first.id,
         liveId: first.liveId,
         liveName: first.liveName,
         date: first.date,
@@ -214,15 +219,39 @@ export async function getTopPageContent(
     startsAt: string | null;
     venueName: string | null;
     performanceCount: number;
+    // 集約後の代表公演の id（#346）。月間カレンダーの event dot はリンク描画に
+    // performanceId を使わないため、どの公演を代表にしても表示上の影響はない。
+    performanceId: string;
   }): LiveCalendarEvent => ({
     type: "live",
     id: `${p.liveId}:${p.date}`,
+    performanceId: p.performanceId,
     liveId: p.liveId,
     name: p.liveName,
     date: p.date,
     startsAt: p.startsAt,
     venueName: p.venueName,
     performanceCount: p.performanceCount,
+  });
+
+  // 日次系リスト用（#346）: 1行 = 1公演。昼夜公演も別行として自身の時刻・会場を持つ。
+  const toLivePerformanceEvent = (p: {
+    id: string;
+    liveId: string;
+    liveName: string;
+    date: string;
+    startsAt: string | null;
+    venueName: string | null;
+  }): LiveCalendarEvent => ({
+    type: "live",
+    id: p.id,
+    performanceId: p.id,
+    liveId: p.liveId,
+    name: p.liveName,
+    date: p.date,
+    startsAt: p.startsAt,
+    venueName: p.venueName,
+    performanceCount: 1,
   });
 
   const toReleaseEvent = (r: {
@@ -270,9 +299,9 @@ export async function getTopPageContent(
   }
   monthEvents.sort((a, b) => a.date.localeCompare(b.date));
 
-  // 選択日
-  for (const p of uniqueLivePerformances) {
-    if (p.date === dateStr) selectedDateEvents.push(toLiveEvent(p));
+  // 選択日（#346: performance 単位。1行 = 1公演）
+  for (const p of livePerformances) {
+    if (p.date === dateStr) selectedDateEvents.push(toLivePerformanceEvent(p));
   }
   for (const v of videoEvents) {
     if (v.date === dateStr) selectedDateEvents.push(v);
@@ -287,9 +316,9 @@ export async function getTopPageContent(
     ...e,
     type: "event" as const,
   }));
-  for (const p of uniqueLivePerformances) {
+  for (const p of livePerformances) {
     if (p.date.endsWith(monthDaySuffix) && p.date < dateStr) {
-      onThisDayEvents.push(toLiveEvent(p));
+      onThisDayEvents.push(toLivePerformanceEvent(p));
     }
   }
   for (const r of releaseItems) {
@@ -307,9 +336,10 @@ export async function getTopPageContent(
   );
 
   // 今日の予定（#344）: selectedDateEvents と同一ロジックを「今日」の日付で計算する。
+  // #346: performance 単位（1行 = 1公演）。
   const todayEvents: CalendarEvent[] = todayBaseEvents.slice();
-  for (const p of uniqueLivePerformances) {
-    if (p.date === todayStr) todayEvents.push(toLiveEvent(p));
+  for (const p of livePerformances) {
+    if (p.date === todayStr) todayEvents.push(toLivePerformanceEvent(p));
   }
   for (const v of videoEvents) {
     if (v.date === todayStr) todayEvents.push(v);
@@ -330,10 +360,11 @@ export async function getTopPageContent(
   );
   const windowEndStr = `${windowEnd.year}-${pad(windowEnd.month)}-01`;
 
+  // #346: performance 単位（1行 = 1公演）。
   const nextEventCandidates: CalendarEvent[] = [];
-  for (const p of uniqueLivePerformances) {
+  for (const p of livePerformances) {
     if (p.date > todayStr && p.date < windowEndStr) {
-      nextEventCandidates.push(toLiveEvent(p));
+      nextEventCandidates.push(toLivePerformanceEvent(p));
     }
   }
   for (const r of releaseItems) {

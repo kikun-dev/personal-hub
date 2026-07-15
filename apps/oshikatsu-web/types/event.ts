@@ -51,6 +51,9 @@ export type BirthdayEvent = {
 export type LiveCalendarEvent = {
   type: "live";
   id: string;
+  // 日次系リストでは該当公演の id（1行 = 1公演、#346）。月間カレンダー用の集約イベントでは
+  // 代表公演の id で、リンク描画には使われない。
+  performanceId: string;
   liveId: string;
   name: string;
   date: string;
