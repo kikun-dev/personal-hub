@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, useTransition, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { LiveAttendance, UpsertAttendanceInput } from "@/types/attendance";
 import { ATTENDED_TYPE_LABELS, ATTENDED_TYPE_VALUES } from "@/types/attendance";
@@ -53,6 +53,9 @@ export function AttendanceControl({
   const [notice, setNotice] = useState("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
+  const [isRefreshing, startRefresh] = useTransition();
+  // refresh 中に読み上げ/表示する処理中文言を選ぶための原因。isRefreshing が true の間だけ参照する
+  const refreshCauseRef = useRef<"save" | "delete" | null>(null);
 
   const { values, update, errors, setValues, setErrors, isSubmitting, handleSubmit } =
     useAdminForm<UpsertAttendanceInput>({
@@ -63,13 +66,16 @@ export function AttendanceControl({
           setIsEditing(false);
           setNotice("参戦記録を保存しました");
           setPendingFocus("edit");
-          router.refresh();
+          refreshCauseRef.current = "save";
+          startRefresh(() => {
+            router.refresh();
+          });
         }
         return result;
       },
     });
 
-  const isPending = isSubmitting || isDeleting;
+  const isPending = isSubmitting || isDeleting || isRefreshing;
 
   // 新規登録の保存直後は router.refresh() が完了するまで attendance prop が null のままで
   // 「編集」ボタンが存在しないため、対象ボタンが mount されるまで pendingFocus を保持し、
@@ -77,13 +83,15 @@ export function AttendanceControl({
   // 解除成功→「参戦を記録」も同じ仕組みで refresh 後に focus される。
   useEffect(() => {
     if (pendingFocus === null) return;
+    // disabled のボタンは focus を受けられないため、pending（refresh 反映含む）解消後に当てる
+    if (isPending) return;
     const el =
       pendingFocus === "edit" ? editButtonRef.current : recordButtonRef.current;
     if (el !== null) {
       el.focus();
       setPendingFocus(null);
     }
-  }, [pendingFocus, attendance, isEditing]);
+  }, [pendingFocus, attendance, isEditing, isPending]);
 
   const openForm = () => {
     if (isPending) return;
@@ -115,7 +123,10 @@ export function AttendanceControl({
         return;
       }
       setPendingFocus("record");
-      router.refresh();
+      refreshCauseRef.current = "delete";
+      startRefresh(() => {
+        router.refresh();
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -186,6 +197,7 @@ export function AttendanceControl({
           ref={recordButtonRef}
           type="button"
           variant="secondary"
+          disabled={isPending}
           onClick={openForm}
           className="text-xs"
         >
@@ -214,7 +226,7 @@ export function AttendanceControl({
             ref={editButtonRef}
             type="button"
             variant="secondary"
-            disabled={isDeleting}
+            disabled={isPending}
             onClick={openForm}
             className="text-xs"
           >
@@ -223,11 +235,13 @@ export function AttendanceControl({
           <Button
             type="button"
             variant="danger"
-            disabled={isDeleting}
+            disabled={isPending}
             onClick={handleDelete}
             className="text-xs"
           >
-            {isDeleting ? "解除中..." : "解除"}
+            {isDeleting || (isRefreshing && refreshCauseRef.current === "delete")
+              ? "解除中..."
+              : "解除"}
           </Button>
         </div>
         {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
@@ -236,16 +250,17 @@ export function AttendanceControl({
   }
 
   return (
-    <div
-      className="space-y-2 border-t border-foreground/10 pt-3"
-      aria-busy={isPending}
-    >
+    <div className="space-y-2 border-t border-foreground/10 pt-3">
       <p className="text-xs font-medium text-foreground/70">参戦記録</p>
-      {content}
+      {/* aria-busy はコンテンツ側に限定する。aria-busy=true の subtree 内の live region は
+          支援技術が busy 解除までアナウンスを保留し得るため、role=status は busy の外に置く */}
+      <div className="space-y-2" aria-busy={isPending}>
+        {content}
+      </div>
       <p role="status" className="sr-only">
         {isSubmitting
           ? "参戦記録を保存しています"
-          : isDeleting
+          : isDeleting || (isRefreshing && refreshCauseRef.current === "delete")
             ? "参戦記録を解除しています"
             : notice}
       </p>
