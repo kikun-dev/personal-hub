@@ -11,6 +11,10 @@
 # testing
 /coverage
 
+# local design audit capture staging
+/design-qa-evidence/
+/technical-audit-evidence/
+
 # next.js
 /.next/
 /out/
