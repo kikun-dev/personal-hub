@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { LiveAttendance, UpsertAttendanceInput } from "@/types/attendance";
 import { ATTENDED_TYPE_LABELS, ATTENDED_TYPE_VALUES } from "@/types/attendance";
@@ -92,11 +92,14 @@ export function AttendanceControl({
     }
   };
 
+  let content: ReactNode;
+
   if (isEditing) {
-    return (
+    content = (
       <form
         onSubmit={handleSubmit}
-        className="space-y-3 rounded-lg border border-foreground/10 p-3"
+        aria-busy={isSubmitting}
+        className="space-y-3"
       >
         <FormErrorBanner message={errors._form} />
 
@@ -147,56 +150,71 @@ export function AttendanceControl({
         </div>
       </form>
     );
-  }
-
-  if (!attendance) {
-    return (
-      <Button
-        type="button"
-        variant="secondary"
-        onClick={openForm}
-        className="text-xs"
-      >
-        参戦を記録
-      </Button>
-    );
-  }
-
-  return (
-    <div className="space-y-1.5 rounded-lg border border-foreground/10 p-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <AttendedTypeBadge attendedType={attendance.attendedType} />
-        {attendance.seatNote && (
-          <span className="text-xs text-foreground/70">
-            座席: {attendance.seatNote}
-          </span>
-        )}
-      </div>
-      {attendance.note && (
-        <p className="whitespace-pre-wrap text-xs text-foreground/70">
-          {attendance.note}
-        </p>
-      )}
-      <div className="flex gap-2">
+  } else if (!attendance) {
+    content = (
+      <>
+        <p className="text-sm text-foreground/70">参戦記録はまだありません</p>
         <Button
           type="button"
           variant="secondary"
           onClick={openForm}
           className="text-xs"
         >
-          編集
+          参戦を記録
         </Button>
-        <Button
-          type="button"
-          variant="danger"
-          disabled={isDeleting}
-          onClick={handleDelete}
-          className="text-xs"
-        >
-          {isDeleting ? "解除中..." : "解除"}
-        </Button>
-      </div>
-      {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+      </>
+    );
+  } else {
+    content = (
+      <>
+        <div className="flex flex-wrap items-center gap-2">
+          <AttendedTypeBadge attendedType={attendance.attendedType} />
+          {attendance.seatNote && (
+            <span className="text-xs text-foreground/70">
+              座席: {attendance.seatNote}
+            </span>
+          )}
+        </div>
+        {attendance.note && (
+          <p className="whitespace-pre-wrap text-xs text-foreground/70">
+            {attendance.note}
+          </p>
+        )}
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={openForm}
+            className="text-xs"
+          >
+            編集
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
+            disabled={isDeleting}
+            onClick={handleDelete}
+            className="text-xs"
+          >
+            {isDeleting ? "解除中..." : "解除"}
+          </Button>
+        </div>
+        {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-2 border-t border-foreground/10 pt-3">
+      <p className="text-xs font-medium text-foreground/70">参戦記録</p>
+      {content}
+      <p role="status" className="sr-only">
+        {isSubmitting
+          ? "参戦記録を保存しています"
+          : isDeleting
+            ? "参戦記録を解除しています"
+            : ""}
+      </p>
     </div>
   );
 }
