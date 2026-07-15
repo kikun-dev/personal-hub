@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import type { LiveAttendance, UpsertAttendanceInput } from "@/types/attendance";
 import { ATTENDED_TYPE_LABELS, ATTENDED_TYPE_VALUES } from "@/types/attendance";
@@ -47,6 +47,12 @@ export function AttendanceControl({
   const [isEditing, setIsEditing] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
+  const [pendingFocus, setPendingFocus] = useState<"edit" | "record" | null>(
+    null
+  );
+  const [notice, setNotice] = useState("");
+  const editButtonRef = useRef<HTMLButtonElement>(null);
+  const recordButtonRef = useRef<HTMLButtonElement>(null);
 
   const { values, update, errors, setValues, setErrors, isSubmitting, handleSubmit } =
     useAdminForm<UpsertAttendanceInput>({
@@ -55,23 +61,44 @@ export function AttendanceControl({
         const result = await upsertAttendanceAction(input);
         if (!result.errors) {
           setIsEditing(false);
+          setNotice("参戦記録を保存しました");
+          setPendingFocus("edit");
           router.refresh();
         }
         return result;
       },
     });
 
+  const isPending = isSubmitting || isDeleting;
+
+  // 新規登録の保存直後は router.refresh() が完了するまで attendance prop が null のままで
+  // 「編集」ボタンが存在しないため、対象ボタンが mount されるまで pendingFocus を保持し、
+  // attendance の変化で effect を再評価して focus を当てる。
+  // 解除成功→「参戦を記録」も同じ仕組みで refresh 後に focus される。
+  useEffect(() => {
+    if (pendingFocus === null) return;
+    const el =
+      pendingFocus === "edit" ? editButtonRef.current : recordButtonRef.current;
+    if (el !== null) {
+      el.focus();
+      setPendingFocus(null);
+    }
+  }, [pendingFocus, attendance, isEditing]);
+
   const openForm = () => {
+    if (isPending) return;
     // 開くたびに現在の登録内容（未登録ならデフォルト値）へ揃え、前回の入力が残らないようにする
     setValues(toFormValues(performanceId, attendance));
     setErrors({});
     setDeleteError(undefined);
+    setNotice("");
     setIsEditing(true);
   };
 
   const closeForm = () => {
     setErrors({});
     setIsEditing(false);
+    setPendingFocus(attendance !== null ? "edit" : "record");
   };
 
   const handleDelete = async () => {
@@ -79,6 +106,7 @@ export function AttendanceControl({
 
     setIsDeleting(true);
     setDeleteError(undefined);
+    setNotice("");
 
     try {
       const result = await deleteAttendanceAction(performanceId);
@@ -86,6 +114,7 @@ export function AttendanceControl({
         setDeleteError(result.error);
         return;
       }
+      setPendingFocus("record");
       router.refresh();
     } finally {
       setIsDeleting(false);
@@ -96,11 +125,7 @@ export function AttendanceControl({
 
   if (isEditing) {
     content = (
-      <form
-        onSubmit={handleSubmit}
-        aria-busy={isSubmitting}
-        className="space-y-3"
-      >
+      <form onSubmit={handleSubmit} className="space-y-3">
         <FormErrorBanner message={errors._form} />
 
         <Select
@@ -116,6 +141,7 @@ export function AttendanceControl({
             )
           }
           error={errors.attendedType}
+          disabled={isSubmitting}
         />
 
         <Input
@@ -124,6 +150,7 @@ export function AttendanceControl({
           value={values.seatNote}
           onChange={(e) => update("seatNote", e.target.value)}
           error={errors.seatNote}
+          disabled={isSubmitting}
         />
 
         <Textarea
@@ -132,6 +159,7 @@ export function AttendanceControl({
           value={values.note}
           onChange={(e) => update("note", e.target.value)}
           error={errors.note}
+          disabled={isSubmitting}
         />
 
         <div className="flex gap-2">
@@ -155,6 +183,7 @@ export function AttendanceControl({
       <>
         <p className="text-sm text-foreground/70">参戦記録はまだありません</p>
         <Button
+          ref={recordButtonRef}
           type="button"
           variant="secondary"
           onClick={openForm}
@@ -182,8 +211,10 @@ export function AttendanceControl({
         )}
         <div className="flex gap-2">
           <Button
+            ref={editButtonRef}
             type="button"
             variant="secondary"
+            disabled={isDeleting}
             onClick={openForm}
             className="text-xs"
           >
@@ -205,7 +236,10 @@ export function AttendanceControl({
   }
 
   return (
-    <div className="space-y-2 border-t border-foreground/10 pt-3">
+    <div
+      className="space-y-2 border-t border-foreground/10 pt-3"
+      aria-busy={isPending}
+    >
       <p className="text-xs font-medium text-foreground/70">参戦記録</p>
       {content}
       <p role="status" className="sr-only">
@@ -213,7 +247,7 @@ export function AttendanceControl({
           ? "参戦記録を保存しています"
           : isDeleting
             ? "参戦記録を解除しています"
-            : ""}
+            : notice}
       </p>
     </div>
   );
