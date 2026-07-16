@@ -334,7 +334,10 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       live.performances.length > 0 && (
         <section className="space-y-2">
           <h2 className="text-sm font-semibold text-foreground">公演ごとの情報</h2>
-          <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
+          <div
+            data-testid="live-performance-carousel"
+            className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
+          >
             {live.performances.map((performance) => (
               <PerformanceCard
                 key={performance.id}
