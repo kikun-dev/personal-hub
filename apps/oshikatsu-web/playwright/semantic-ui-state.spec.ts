@@ -316,11 +316,15 @@ for (const theme of themes) {
       "live date"
     );
 
-    const liveCard = page.locator('[data-ui="live-card"]').first();
-    await expect(liveCard).toBeVisible();
-    const liveHref = await liveCard.getAttribute("href");
+    const singleVenueLiveCard = page.getByRole("link", {
+      name: /ひなたフェス2026/,
+    });
+    await expect(singleVenueLiveCard).toBeVisible();
+    const liveHref = await singleVenueLiveCard.getAttribute("href");
     if (liveHref === null) {
-      throw new Error("Secondary Button検証用のライブURLを取得できませんでした。");
+      throw new Error(
+        "単一会場リンク検証用のひなたフェス2026 URLを取得できませんでした。"
+      );
     }
 
     await page.goto("/lives?groupId=__contrast-test-empty__");
