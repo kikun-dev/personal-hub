@@ -20,6 +20,13 @@ type AttendanceControlProps = {
   performanceId: string;
   // 未登録は null（RLSにより自分の行しか返らないため「無い」と「未取得」は区別不要）
   attendance: LiveAttendance | null;
+  // #363: fallback carouselの展開領域（PerformanceAttendanceArea）内でmountする際、
+  // 呼び出し側が既に「参戦記録」ラベルと区切り線を描画しているため二重表示を避ける。
+  // デフォルトtrueは既存呼び出し元（この公演セクション）の見た目を維持するため。
+  showHeading?: boolean;
+  // #363: 展開領域の親（AttendanceExpansionProvider）が「編集中に別cardへ切り替える」
+  // 操作を確認ダイアログでguardするための通知。ロジック分岐やstate構造は変えない。
+  onEditingChange?: (isEditing: boolean) => void;
 };
 
 const ATTENDED_TYPE_OPTIONS = ATTENDED_TYPE_VALUES.map((value) => ({
@@ -45,6 +52,8 @@ function toFormValues(
 export function AttendanceControl({
   performanceId,
   attendance,
+  showHeading = true,
+  onEditingChange,
 }: AttendanceControlProps) {
   const router = useRouter();
   const [isEditing, setIsEditing] = useState(false);
@@ -70,6 +79,7 @@ export function AttendanceControl({
         const result = await upsertAttendanceAction(input);
         if (!result.errors) {
           setIsEditing(false);
+          onEditingChange?.(false);
           setNotice("参戦記録を保存しました");
           setPendingFocus("edit");
           refreshCauseRef.current = "save";
@@ -124,6 +134,7 @@ export function AttendanceControl({
     setDeleteError(undefined);
     setNotice("");
     setIsEditing(true);
+    onEditingChange?.(true);
     // form 専用の heading が無いため first field（参戦種別）方式で focus を当てる
     setFormFocusTarget(`attendedType-${performanceId}`);
   };
@@ -131,6 +142,7 @@ export function AttendanceControl({
   const closeForm = () => {
     setErrors({});
     setIsEditing(false);
+    onEditingChange?.(false);
     setFormFocusTarget(null);
     setPendingFocus(attendance !== null ? "edit" : "record");
   };
@@ -260,7 +272,7 @@ export function AttendanceControl({
           </Button>
           <Button
             type="button"
-            variant="danger"
+            variant="danger-ghost"
             disabled={isPending}
             onClick={handleDelete}
             className="text-xs"
@@ -280,8 +292,14 @@ export function AttendanceControl({
   }
 
   return (
-    <div className="space-y-2 border-t border-border-subtle pt-3">
-      <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
+    <div
+      className={
+        showHeading ? "space-y-2 border-t border-border-subtle pt-3" : "space-y-2"
+      }
+    >
+      {showHeading && (
+        <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
+      )}
       {/* aria-busy はコンテンツ側に限定する。aria-busy=true の subtree 内の live region は
           支援技術が busy 解除までアナウンスを保留し得るため、role=status は busy の外に置く */}
       <div className="space-y-2" aria-busy={isPending}>

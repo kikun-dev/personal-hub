@@ -15,17 +15,30 @@ async function resolveLiveHref(page: Page): Promise<string> {
   return href;
 }
 
-// AttendanceControl のroot divに固有のclass組み合わせ。
-// 参戦登録の有無（「参戦を記録」/「編集」）どちらの状態でも一覧最初の公演を一意に指す。
+// PerformanceAttendanceArea（#363）のroot divに固有のclass組み合わせ。
+// 参戦登録の有無（「参戦を記録」/「記録を開く」）どちらの状態でも一覧最初の公演を一意に指す。
 function firstAttendanceControl(page: Page): Locator {
   return page
     .locator("div.space-y-2.border-t.border-border-subtle.pt-3")
     .first();
 }
 
+// #363: fallback carouselの各cardは展開するまでAttendanceControl（form/state/effect持ち）が
+// mountされない。開閉トグル（未登録「参戦を記録」/登録済み「記録を開く」）を押して展開する。
+async function expandAttendanceArea(attendanceControl: Locator): Promise<void> {
+  const disclosureButton = attendanceControl.getByRole("button", {
+    name: /^(参戦を記録|記録を開く)$/,
+  });
+  await expect(disclosureButton).toBeVisible();
+  await disclosureButton.click();
+}
+
 async function openFirstAttendanceForm(
   attendanceControl: Locator
 ): Promise<Locator> {
+  await expandAttendanceArea(attendanceControl);
+  // 展開後はdisclosureが「閉じる」になり、AttendanceControl自身のボタン
+  // （未登録「参戦を記録」/登録済み「編集」）のみがこの名前で一致する
   const trigger = attendanceControl.getByRole("button", {
     name: /^(参戦を記録|編集)$/,
   });
@@ -34,12 +47,13 @@ async function openFirstAttendanceForm(
   return trigger;
 }
 
-// ライブ詳細ページ内のAttendanceControlすべてを列挙する。firstAttendanceControlと同じclass組み合わせ
+// ライブ詳細ページ内のPerformanceAttendanceAreaすべてを列挙する。firstAttendanceControlと同じclass組み合わせ
 function allAttendanceControls(page: Page): Locator {
   return page.locator("div.space-y-2.border-t.border-border-subtle.pt-3");
 }
 
-// 「参戦を記録」ボタンを持つ = 未登録の公演のAttendanceControlを探す。無ければnull
+// 展開前のdisclosureラベルが「参戦を記録」= 未登録の公演を探す。無ければnull
+// （#363: 未展開時はAttendanceControlがmountされないため、compact表示のラベルで判定する）
 async function findUnregisteredAttendanceControl(
   page: Page
 ): Promise<{ control: Locator; index: number } | null> {
@@ -47,8 +61,10 @@ async function findUnregisteredAttendanceControl(
   const count = await controls.count();
   for (let index = 0; index < count; index += 1) {
     const control = controls.nth(index);
-    const recordButton = control.getByRole("button", { name: "参戦を記録" });
-    if ((await recordButton.count()) > 0) {
+    const disclosureButton = control.getByRole("button", {
+      name: "参戦を記録",
+    });
+    if ((await disclosureButton.count()) > 0) {
       return { control, index };
     }
   }
@@ -122,6 +138,7 @@ test("キャンセルするとfocusが元のボタンへ戻る", async ({ page }
   await page.goto(liveHref);
 
   const attendanceControl = firstAttendanceControl(page);
+  await expandAttendanceArea(attendanceControl);
   const trigger = attendanceControl.getByRole("button", {
     name: /^(参戦を記録|編集)$/,
   });
@@ -219,6 +236,9 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
   const { control: attendanceControl, index: attendanceControlIndex } =
     attendanceControlMatch;
 
+  // #363: 展開してAttendanceControlをmountしてから内側の「参戦を記録」を押す。
+  // 展開中はdisclosureが「閉じる」になるため、以降この名前はAttendanceControl自身を指す
+  await expandAttendanceArea(attendanceControl);
   const recordButton = attendanceControl.getByRole("button", {
     name: "参戦を記録",
   });
@@ -254,6 +274,13 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
       const cleanupControl = allAttendanceControls(page).nth(
         attendanceControlIndex
       );
+      // reloadでcollapseに戻っているため、解除操作の前に再度展開する
+      const cleanupDisclosure = cleanupControl.getByRole("button", {
+        name: /^(参戦を記録|記録を開く)$/,
+      });
+      if (await cleanupDisclosure.isVisible()) {
+        await cleanupDisclosure.click();
+      }
       const deleteButton = cleanupControl.getByRole("button", { name: "解除" });
       if (await deleteButton.isVisible()) {
         await deleteAttendanceViaUi(page, cleanupControl);

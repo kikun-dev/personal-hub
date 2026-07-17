@@ -4,6 +4,8 @@ import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
+import { AttendanceExpansionProvider } from "@/components/lives/AttendanceExpansion";
+import { PerformanceAttendanceArea } from "@/components/lives/PerformanceAttendanceArea";
 import { TourOverview } from "@/components/lives/TourOverview";
 import { TextLink } from "@/components/ui/TextLink";
 import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
@@ -163,14 +165,22 @@ function PerformanceCard({
   attendance: LiveAttendance | null;
   className?: string;
 }) {
+  // #363: card containerをrole="group"としてaccessible name（日付）を持たせるため、
+  // 日付見出しをh3化してidで参照する。performance.idで一意化する
+  const headingId = `performance-heading-${performance.id}`;
+
   return (
-    <div className={`space-y-2 rounded-lg border border-border-subtle p-4 ${className ?? ""}`}>
+    <div
+      role="group"
+      aria-labelledby={headingId}
+      className={`space-y-2 rounded-lg border border-border-subtle p-4 ${className ?? ""}`}
+    >
       <div className="flex flex-wrap items-center gap-2 text-sm">
-        <span className="font-medium text-foreground">
+        <h3 id={headingId} className="font-medium text-foreground">
           {performance.performanceDate
             ? formatMonthDayWithWeekday(performance.performanceDate)
             : "日付未定"}
-        </span>
+        </h3>
         <VenueLink performance={performance} />
       </div>
 
@@ -218,7 +228,10 @@ function PerformanceCard({
         <PerformanceSetlistSummary performance={performance} />
       </div>
 
-      <AttendanceControl performanceId={performance.id} attendance={attendance} />
+      <PerformanceAttendanceArea
+        performanceId={performance.id}
+        attendance={attendance}
+      />
     </div>
   );
 }
@@ -331,25 +344,38 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       )
   );
 
+  const performancesSectionHeadingId = "performances-section-heading";
+
   const performancesSection = (
       /* 当日情報: 1日ごとのカードを横スライド */
       live.performances.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-sm font-semibold text-foreground">公演ごとの情報</h2>
-          <div
-            data-testid="live-performance-carousel"
-            className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
+          <h2
+            id={performancesSectionHeadingId}
+            className="text-sm font-semibold text-foreground"
           >
-            {live.performances.map((performance) => (
-              <PerformanceCard
-                key={performance.id}
-                className="w-[85%] shrink-0 snap-start sm:w-80"
-                live={live}
-                performance={performance}
-                attendance={myAttendances[performance.id] ?? null}
-              />
-            ))}
-          </div>
+            公演ごとの情報
+          </h2>
+          {/* #363: 展開状態はAttendanceExpansionProviderで共有し、展開中の最大1公演だけ
+              AttendanceControlをconditional mountする（59 focus targetの解消） */}
+          <AttendanceExpansionProvider>
+            <div
+              data-testid="live-performance-carousel"
+              role="region"
+              aria-labelledby={performancesSectionHeadingId}
+              className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
+            >
+              {live.performances.map((performance) => (
+                <PerformanceCard
+                  key={performance.id}
+                  className="w-[85%] shrink-0 snap-start sm:w-80"
+                  live={live}
+                  performance={performance}
+                  attendance={myAttendances[performance.id] ?? null}
+                />
+              ))}
+            </div>
+          </AttendanceExpansionProvider>
         </section>
       )
   );
@@ -442,6 +468,15 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           </p>
         )}
 
+        {/* #363: 自分の参戦記録がsetlistより下に押されると「解除」が「編集」より
+            視覚的に強く見える問題があったため、基本情報・配信badge・休演の直後、
+            setlistブロックより前に配置する（D5）。この公演セクションはprovider不要で
+            AttendanceControlを直接mountする（fallback carouselと異なり常に1公演のみ表示） */}
+        <AttendanceControl
+          performanceId={targetPerformance.id}
+          attendance={myAttendances[targetPerformance.id] ?? null}
+        />
+
         {/* セットリストは存在する場合のみ描画する（未来公演では無いのが自然で、
             「未登録」表示は管理状態に見えるため section ごと出さない）。
             fallback の carousel は #261 の決定（0件でも導線常時表示）のまま変更しない。 */}
@@ -459,11 +494,6 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             <PerformanceSetlistSummary performance={targetPerformance} />
           </div>
         )}
-
-        <AttendanceControl
-          performanceId={targetPerformance.id}
-          attendance={myAttendances[targetPerformance.id] ?? null}
-        />
       </div>
     </section>
   );
