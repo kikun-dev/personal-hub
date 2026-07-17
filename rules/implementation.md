@@ -51,6 +51,19 @@
 
 ---
 
+## テスト
+
+- 対象は `usecases/` / `lib/` の純関数のみ（UIコンポーネント・repository は対象外）
+  - E2E は Playwright で別管理する（本節の対象外）
+- 置き場所は実装ファイルと同階層の colocated `*.test.ts`
+- ランナーは Vitest。実行は `pnpm --filter <app> test:unit`
+  - `pnpm --filter oshikatsu-web test:unit` / `pnpm --filter household-web test:unit`
+- 新規実装・既存関数の変更時にテストを足す運用とし、既存全コードへの遡及はしない
+- テスト対象の純関数は `next/*` や `server-only` などのserver専用importを
+  import チェーンに巻き込まない（巻き込む場合はテスト対象から外す）
+
+---
+
 ## 言語ポリシー
 
 - PR 本文は日本語ベースで記載する
