@@ -27,6 +27,9 @@ const ATTENDED_TYPE_OPTIONS = ATTENDED_TYPE_VALUES.map((value) => ({
   label: ATTENDED_TYPE_LABELS[value],
 }));
 
+// フォーム内の表示順。validation エラー時に focus すべき最初のフィールドを決めるのに使う
+const FORM_FIELD_ORDER = ["attendedType", "seatNote", "note"] as const;
+
 function toFormValues(
   performanceId: string,
   attendance: LiveAttendance | null
@@ -50,6 +53,9 @@ export function AttendanceControl({
   const [pendingFocus, setPendingFocus] = useState<"edit" | "record" | null>(
     null
   );
+  // #347 の pendingFocus（編集/記録ボタンへの復帰）とは別の focus 遷移。
+  // フォーム内フィールドへの focus（初期表示時の先頭フィールド・validation エラー時のエラーフィールド）を扱う。
+  const [formFocusTarget, setFormFocusTarget] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
@@ -73,6 +79,15 @@ export function AttendanceControl({
         }
         return result;
       },
+      onErrors: (formErrors) => {
+        // _form のみのエラーなら focus を動かさず FormErrorBanner の role="alert" に委ねる
+        const firstErrorField = FORM_FIELD_ORDER.find(
+          (field) => formErrors[field] !== undefined
+        );
+        if (firstErrorField) {
+          setFormFocusTarget(`${firstErrorField}-${performanceId}`);
+        }
+      },
     });
 
   const isPending = isSubmitting || isDeleting || isRefreshing;
@@ -93,6 +108,14 @@ export function AttendanceControl({
     }
   }, [pendingFocus, attendance, isEditing, isPending]);
 
+  // フォーム内フィールドへの focus。aria-invalid/aria-describedby が反映された後（render 後）に
+  // focus を当てるため、値の設定と同時ではなく effect 経由で消化する
+  useEffect(() => {
+    if (!isEditing || formFocusTarget === null) return;
+    document.getElementById(formFocusTarget)?.focus();
+    setFormFocusTarget(null);
+  }, [isEditing, formFocusTarget]);
+
   const openForm = () => {
     if (isPending) return;
     // 開くたびに現在の登録内容（未登録ならデフォルト値）へ揃え、前回の入力が残らないようにする
@@ -101,11 +124,14 @@ export function AttendanceControl({
     setDeleteError(undefined);
     setNotice("");
     setIsEditing(true);
+    // form 専用の heading が無いため first field（参戦種別）方式で focus を当てる
+    setFormFocusTarget(`attendedType-${performanceId}`);
   };
 
   const closeForm = () => {
     setErrors({});
     setIsEditing(false);
+    setFormFocusTarget(null);
     setPendingFocus(attendance !== null ? "edit" : "record");
   };
 
@@ -244,7 +270,11 @@ export function AttendanceControl({
               : "解除"}
           </Button>
         </div>
-        {deleteError && <p className="text-xs text-danger-text">{deleteError}</p>}
+        {deleteError && (
+          <p role="alert" className="text-xs text-danger-text">
+            {deleteError}
+          </p>
+        )}
       </>
     );
   }
