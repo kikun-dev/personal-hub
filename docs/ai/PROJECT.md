@@ -35,7 +35,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - チャート：recharts（household-web で導入済み）
 - Markdown レンダリング：react-markdown + remark-gfm（oshikatsu-web の Wiki で導入済み、ADR 0011）
 - リポジトリ：GitHub（private）
-- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / build、oshikatsu-web は migration の db-verify）
+- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / unit test（純関数・Vitest）/ build、oshikatsu-web は migration の db-verify）
 - デプロイ：Vercel（household-web / oshikatsu-web）
 - IDE：VS Code（Remote WSL）
 

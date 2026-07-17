@@ -1,0 +1,28 @@
+# ci-household-web.yml の path filter 対象外の PR（docs のみ等）で、Ruleset の
+# required check が pending のまま残らないよう、同名 check を成功として報告する。
+# paths-ignore は本体 workflow の pull_request.paths と同一リストを維持する。
+name: CI - household-web
+
+on:
+  pull_request:
+    paths-ignore:
+      - "apps/household-web/**"
+      - "packages/supabase/**"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".nvmrc"
+      - ".github/workflows/ci-household-web.yml"
+      - ".github/actions/setup/**"
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Typecheck / Lint / Unit Test / Build (household-web)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Skip
+        run: echo "household-web の対象パスに変更が無いため成功として報告する"
