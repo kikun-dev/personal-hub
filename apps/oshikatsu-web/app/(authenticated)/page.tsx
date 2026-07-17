@@ -2,6 +2,8 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { MonthSelector } from "@/components/events/MonthSelector";
+import { DailyStoryHeading } from "@/components/home/DailyStoryHeading";
+import { ReturnToCalendarLink } from "@/components/home/ReturnToCalendarLink";
 import { NextEvents } from "@/components/top/NextEvents";
 import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
@@ -38,6 +40,8 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const pastSameDayTitle = isSelectedToday
     ? "過去の今日"
     : `過去の${month}月${day}日`;
+  // URLへdayが明示されている場合のみ「カレンダーへ戻る」導線を出す（today表示でも同様）。
+  const hasDayParam = params.day !== undefined;
 
   const {
     monthEvents,
@@ -60,24 +64,40 @@ export default async function TopPage({ searchParams }: TopPageProps) {
         <section className="space-y-5">
           {isSelectedToday ? (
             <div>
-              <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
+              <DailyStoryHeading
+                selectedDateStr={selectedDateStr}
+                className="text-xl font-bold text-foreground"
+              >
+                今日のSakalog
+              </DailyStoryHeading>
               <p className="mt-1 text-sm text-foreground-secondary">
                 {formatMonthDayKanjiWithWeekday(todayDateStr)}
               </p>
+              {hasDayParam && (
+                <p className="mt-2">
+                  <ReturnToCalendarLink />
+                </p>
+              )}
             </div>
           ) : (
             <div>
               <p className="text-sm text-foreground-secondary">選んだ日のSakalog</p>
-              <h1 className="mt-1 text-xl font-bold text-foreground">
+              <DailyStoryHeading
+                selectedDateStr={selectedDateStr}
+                className="mt-1 text-xl font-bold text-foreground"
+              >
                 {year}年{formatMonthDayKanjiWithWeekday(selectedDateStr)}
-              </h1>
-              <p className="mt-2">
+              </DailyStoryHeading>
+              <p className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
                 <Link
                   href="/"
                   className="text-sm text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                   ← 今日へ戻る
                 </Link>
+                {hasDayParam && (
+                  <ReturnToCalendarLink />
+                )}
               </p>
             </div>
           )}
@@ -117,7 +137,8 @@ export default async function TopPage({ searchParams }: TopPageProps) {
         </div>
 
         <section className="space-y-6">
-          <h2 id="calendar" className="text-sm font-semibold text-foreground">
+          {/* 戻り導線からのprogrammatic focusを受けるためtabIndex={-1}にする */}
+          <h2 id="calendar" tabIndex={-1} className="text-sm font-semibold text-foreground">
             日付から探す
           </h2>
 
