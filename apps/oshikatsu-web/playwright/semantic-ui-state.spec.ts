@@ -329,6 +329,25 @@ for (const theme of themes) {
     await expectRenderedTextContrast(emptyState, bodyBackground, "live empty state");
 
     await page.goto(liveHref);
+    const singleVenueLink = page.locator('[data-ui="single-venue-link"]');
+    await expect(singleVenueLink).toBeVisible();
+    await focusWithKeyboard(page, singleVenueLink);
+    const venueFocusStyles = await singleVenueLink.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        outlineColor: style.outlineColor,
+        outlineStyle: style.outlineStyle,
+        outlineWidth: style.outlineWidth,
+      };
+    });
+    expect(venueFocusStyles.outlineWidth).toBe("2px");
+    expect(venueFocusStyles.outlineStyle).not.toBe("none");
+    expectAaContrast(
+      venueFocusStyles.outlineColor,
+      bodyBackground,
+      "single venue link focus indicator"
+    );
+
     const secondaryButton = page
       .locator('[data-ui="button"][data-variant="secondary"]')
       .first();

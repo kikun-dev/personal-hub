@@ -290,12 +290,13 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                 会場・日程
               </h2>
               {venueGroups[0]?.venueId && venueGroups[0]?.venueName && (
-                <Link
+                <TextLink
+                  data-ui="single-venue-link"
                   href={`/venues/${venueGroups[0].venueId}`}
-                  className="block text-foreground hover:underline"
+                  className="block"
                 >
                   {venueGroups[0].venueName}
-                </Link>
+                </TextLink>
               )}
               <div className="space-y-0.5 text-sm text-foreground-secondary">
                 {live.performances.map((performance) => (
