@@ -20,6 +20,7 @@ export function Select({
   id,
   className = "",
   "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: SelectProps) {
   const generatedId = useId();
@@ -28,6 +29,8 @@ export function Select({
   const describedBy = error
     ? [ariaDescribedBy, errorId].filter(Boolean).join(" ")
     : ariaDescribedBy;
+  // エラー時は内部契約を優先し、それ以外は呼び出し側の指定を維持する
+  const invalid = error ? ("true" as const) : ariaInvalid;
 
   return (
     <div>
@@ -36,7 +39,7 @@ export function Select({
       </label>
       <select
         id={fieldId}
-        aria-invalid={error ? "true" : undefined}
+        aria-invalid={invalid}
         aria-describedby={describedBy}
         className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
           error ? "border-red-400" : "border-foreground/10"

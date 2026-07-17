@@ -13,6 +13,7 @@ export function Input({
   id,
   className = "",
   "aria-describedby": ariaDescribedBy,
+  "aria-invalid": ariaInvalid,
   ...props
 }: InputProps) {
   const pickerRef = useRef<HTMLInputElement>(null);
@@ -22,6 +23,8 @@ export function Input({
   const describedBy = error
     ? [ariaDescribedBy, errorId].filter(Boolean).join(" ")
     : ariaDescribedBy;
+  // エラー時は内部契約を優先し、それ以外は呼び出し側の指定を維持する
+  const invalid = error ? ("true" as const) : ariaInvalid;
   const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
     error ? "border-red-400" : "border-foreground/10"
   } ${className}`;
@@ -54,7 +57,7 @@ export function Input({
             value={dateValue}
             onChange={onChange}
             type="text"
-            aria-invalid={error ? "true" : undefined}
+            aria-invalid={invalid}
             aria-describedby={describedBy}
           />
           <button
@@ -94,7 +97,7 @@ export function Input({
       </label>
       <input
         id={fieldId}
-        aria-invalid={error ? "true" : undefined}
+        aria-invalid={invalid}
         aria-describedby={describedBy}
         className={inputClassName}
         {...props}
