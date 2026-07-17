@@ -347,9 +347,11 @@
   - seed 登録を glob 化して開発データを再現（036〜039 の登録漏れも解消）
   - CI（`db-verify.yml`）に `supabase db reset` を追加し、migration の適用可能性を
     マージ前に自動検証する
-- [ ] **P2-1: テスト基盤（Vitest）**（Issue #323 / フレームワーク選定は ADR）
-  - usecases / lib の純関数（validate 系・集計系・`markdownHeadings` 等）から着手し、CI に組み込む
-  - 「テストは対象外」としてきた方針の転換。対象範囲（純関数のみ / コンポーネントまで）を Decision で確定してから始める
+- [x] **P2-1: テスト基盤（Vitest）**（Issue #323 / ADR 0014）
+  - usecases / lib の純関数のみを対象に Vitest を両アプリへ導入し、見本テスト
+    （validate 系・集計系・`markdownHeadings` 等 27 件）と CI の Unit Test step を整備した
+  - 「テストは対象外」としてきた方針の転換。規約は `rules/implementation.md`「テスト」節、
+    選定理由と対象範囲（純関数のみ、コンポーネントは需要発生時に別 Issue）は ADR 0014 を正とする
 - [ ] **P2-2: エラー監視**（Issue #324）
   - まず「サーバーエラーに気づける」最小構成として Vercel Runtime Logs / Observability の運用手順を整備する
 - P3（テスト・環境が定着してから検討）:

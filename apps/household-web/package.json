@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@personal-hub/supabase": "workspace:*",
@@ -24,6 +25,7 @@
     "eslint": "^9.39.4",
     "eslint-config-next": "16.1.6",
     "tailwindcss": "^4.3.2",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.10"
   }
 }

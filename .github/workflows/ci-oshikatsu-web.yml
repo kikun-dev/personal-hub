@@ -13,14 +13,6 @@ on:
       - ".github/workflows/ci-oshikatsu-web.yml"
       - ".github/actions/setup/**"
   pull_request:
-    paths:
-      - "apps/oshikatsu-web/**"
-      - "packages/supabase/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".nvmrc"
-      - ".github/workflows/ci-oshikatsu-web.yml"
-      - ".github/actions/setup/**"
 
 permissions:
   contents: read
@@ -32,7 +24,7 @@ concurrency:
 
 jobs:
   check:
-    name: Typecheck / Lint / Build
+    name: CI / oshikatsu-web
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -49,6 +41,9 @@ jobs:
 
       - name: Lint
         run: pnpm --filter oshikatsu-web lint
+
+      - name: Unit Test
+        run: pnpm --filter oshikatsu-web test:unit
 
       - name: Restore Next.js build cache
         uses: actions/cache@v6
