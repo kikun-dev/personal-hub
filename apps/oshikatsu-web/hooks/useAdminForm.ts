@@ -13,6 +13,8 @@ export type UseAdminFormOptions<TValues> = {
   onSubmit?: (values: TValues) => Promise<{ errors?: ValidationError[] }>;
   /** submit 前の UI 層バリデーション。エラーを返すと送信を中断してエラー表示する */
   validate?: (values: TValues) => Record<string, string> | null;
+  /** setErrors 直後に発火するフィールドエラー通知。呼び出し側の focus 制御などに使う */
+  onErrors?: (errors: Record<string, string>) => void;
 };
 
 export type UseAdminFormResult<TValues> = {
@@ -49,6 +51,7 @@ export function useAdminForm<TValues>({
   initialValues,
   onSubmit,
   validate,
+  onErrors,
 }: UseAdminFormOptions<TValues>): UseAdminFormResult<TValues> {
   const [values, setValues] = useState<TValues>(initialValues);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -70,6 +73,7 @@ export function useAdminForm<TValues>({
       const validationErrors = validate(values);
       if (validationErrors) {
         setErrors(validationErrors);
+        onErrors?.(validationErrors);
         return;
       }
     }
@@ -80,7 +84,9 @@ export function useAdminForm<TValues>({
     try {
       const result = onSubmit ? await onSubmit(values) : {};
       if (result.errors) {
-        setErrors(toErrorMap(result.errors));
+        const errorMap = toErrorMap(result.errors);
+        setErrors(errorMap);
+        onErrors?.(errorMap);
       }
     } finally {
       setIsSubmitting(false);
