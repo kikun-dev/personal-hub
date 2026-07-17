@@ -13,14 +13,6 @@ on:
       - ".github/workflows/ci-household-web.yml"
       - ".github/actions/setup/**"
   pull_request:
-    paths:
-      - "apps/household-web/**"
-      - "packages/supabase/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".nvmrc"
-      - ".github/workflows/ci-household-web.yml"
-      - ".github/actions/setup/**"
 
 permissions:
   contents: read

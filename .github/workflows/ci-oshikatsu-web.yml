@@ -13,14 +13,6 @@ on:
       - ".github/workflows/ci-oshikatsu-web.yml"
       - ".github/actions/setup/**"
   pull_request:
-    paths:
-      - "apps/oshikatsu-web/**"
-      - "packages/supabase/**"
-      - "pnpm-lock.yaml"
-      - "pnpm-workspace.yaml"
-      - ".nvmrc"
-      - ".github/workflows/ci-oshikatsu-web.yml"
-      - ".github/actions/setup/**"
 
 permissions:
   contents: read
