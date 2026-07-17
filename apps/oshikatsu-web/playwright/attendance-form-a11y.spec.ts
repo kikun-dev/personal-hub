@@ -42,17 +42,27 @@ function allAttendanceControls(page: Page): Locator {
 // 「参戦を記録」ボタンを持つ = 未登録の公演のAttendanceControlを探す。無ければnull
 async function findUnregisteredAttendanceControl(
   page: Page
-): Promise<Locator | null> {
+): Promise<{ control: Locator; index: number } | null> {
   const controls = allAttendanceControls(page);
   const count = await controls.count();
   for (let index = 0; index < count; index += 1) {
     const control = controls.nth(index);
     const recordButton = control.getByRole("button", { name: "参戦を記録" });
     if ((await recordButton.count()) > 0) {
-      return control;
+      return { control, index };
     }
   }
   return null;
+}
+
+async function deleteAttendanceViaUi(
+  page: Page,
+  attendanceControl: Locator
+): Promise<void> {
+  await Promise.all([
+    page.waitForEvent("dialog").then((dialog) => dialog.accept()),
+    attendanceControl.getByRole("button", { name: "解除" }).click(),
+  ]);
 }
 
 test("フォームを開くと参戦種別へfocusが移る", async ({ page }) => {
@@ -201,11 +211,13 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
   const liveHref = await resolveLiveHref(page);
   await page.goto(liveHref);
 
-  const attendanceControl = await findUnregisteredAttendanceControl(page);
-  test.skip(attendanceControl === null, "未登録の公演が無いためskip");
-  if (attendanceControl === null) {
+  const attendanceControlMatch = await findUnregisteredAttendanceControl(page);
+  test.skip(attendanceControlMatch === null, "未登録の公演が無いためskip");
+  if (attendanceControlMatch === null) {
     throw new Error("未登録の公演のAttendanceControlを取得できませんでした。");
   }
+  const { control: attendanceControl, index: attendanceControlIndex } =
+    attendanceControlMatch;
 
   const recordButton = attendanceControl.getByRole("button", {
     name: "参戦を記録",
@@ -217,20 +229,38 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
   );
   await expect(attendedTypeSelect).toBeFocused();
   await attendedTypeSelect.selectOption({ index: 1 });
-  await attendanceControl.getByRole("button", { name: "保存" }).click();
+  let saveAttempted = false;
+  let restored = false;
 
-  // 保存成功→router.refresh()完了後に「編集」ボタンへfocusが復帰する（#347のpendingFocus機構）
-  const editButton = attendanceControl.getByRole("button", { name: "編集" });
-  await expect(editButton).toBeFocused({ timeout: 15000 });
+  try {
+    saveAttempted = true;
+    await attendanceControl.getByRole("button", { name: "保存" }).click();
 
-  // window.confirmが出るため、クリック前にdialog handlerを登録してacceptする
-  page.once("dialog", (dialog) => {
-    void dialog.accept();
-  });
-  await attendanceControl.getByRole("button", { name: "解除" }).click();
+    // 保存成功→router.refresh()完了後に「編集」ボタンへfocusが復帰する（#347のpendingFocus機構）
+    const editButton = attendanceControl.getByRole("button", { name: "編集" });
+    await expect(editButton).toBeFocused({ timeout: 15000 });
 
-  // 解除成功→router.refresh()完了後に「参戦を記録」ボタンへfocusが復帰する
-  await expect(recordButton).toBeFocused({ timeout: 15000 });
-  // DBが試験開始前の未登録状態へ戻っていることを原状復帰の確認として合わせてassertする
-  await expect(recordButton).toBeVisible();
+    await deleteAttendanceViaUi(page, attendanceControl);
+
+    // 解除成功→router.refresh()完了後に「参戦を記録」ボタンへfocusが復帰する
+    await expect(recordButton).toBeFocused({ timeout: 15000 });
+    // DBが試験開始前の未登録状態へ戻っていることを原状復帰の確認として合わせてassertする
+    await expect(recordButton).toBeVisible();
+    restored = true;
+  } finally {
+    if (saveAttempted && !restored) {
+      // focus assertionやrouter.refreshが失敗しても、再読込した永続状態を基準に必ず原状復帰を試みる
+      await page.goto(liveHref);
+      const cleanupControl = allAttendanceControls(page).nth(
+        attendanceControlIndex
+      );
+      const deleteButton = cleanupControl.getByRole("button", { name: "解除" });
+      if (await deleteButton.isVisible()) {
+        await deleteAttendanceViaUi(page, cleanupControl);
+        await expect(
+          cleanupControl.getByRole("button", { name: "参戦を記録" })
+        ).toBeVisible({ timeout: 15000 });
+      }
+    }
+  }
 });
