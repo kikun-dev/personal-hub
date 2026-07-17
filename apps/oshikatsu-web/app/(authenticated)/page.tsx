@@ -61,20 +61,20 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           {isSelectedToday ? (
             <div>
               <h1 className="text-xl font-bold text-foreground">今日のSakalog</h1>
-              <p className="mt-1 text-sm text-foreground/60">
+              <p className="mt-1 text-sm text-foreground-secondary">
                 {formatMonthDayKanjiWithWeekday(todayDateStr)}
               </p>
             </div>
           ) : (
             <div>
-              <p className="text-sm text-foreground/60">選んだ日のSakalog</p>
+              <p className="text-sm text-foreground-secondary">選んだ日のSakalog</p>
               <h1 className="mt-1 text-xl font-bold text-foreground">
                 {year}年{formatMonthDayKanjiWithWeekday(selectedDateStr)}
               </h1>
               <p className="mt-2">
                 <Link
                   href="/"
-                  className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+                  className="text-sm text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
                 >
                   ← 今日へ戻る
                 </Link>

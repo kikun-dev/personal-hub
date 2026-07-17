@@ -1,110 +1,200 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-12T17:29:46Z",
+  "generatedAt": "2026-07-17T01:16:02Z",
   "title": "Design System: Sakalog",
   "extensions": {
     "colorMeta": {
       "background-light": {
         "role": "neutral",
         "displayName": "ライト背景",
-        "canonical": "oklch(100% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#7A7A7A", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#FFFFFF"]
       },
       "foreground-light": {
         "role": "neutral",
-        "displayName": "ライト文字",
-        "canonical": "oklch(20.5% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "displayName": "ライト通常文字",
+        "canonical": "#171717",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#7A7A7A", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#FFFFFF"]
+      },
+      "foreground-secondary-light": {
+        "role": "neutral",
+        "displayName": "ライト補助文字",
+        "canonical": "#595959",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#7A7A7A", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#FFFFFF"]
       },
       "background-dark": {
         "role": "neutral",
         "displayName": "ダーク背景",
-        "canonical": "oklch(14.5% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "canonical": "#0A0A0A",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
       },
       "foreground-dark": {
         "role": "neutral",
-        "displayName": "ダーク文字",
-        "canonical": "oklch(94.6% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "displayName": "ダーク通常文字",
+        "canonical": "#EDEDED",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
       },
-      "surface-hover-light": {
+      "foreground-secondary-dark": {
         "role": "neutral",
-        "displayName": "ライトホバー面",
-        "canonical": "oklch(96.1% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "displayName": "ダーク補助文字",
+        "canonical": "#B3B3B3",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
+      },
+      "surface-subtle-light": {
+        "role": "neutral",
+        "displayName": "ライト控えめ面",
+        "canonical": "#F3F3F3",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#F3F3F3", "#FFFFFF"]
+      },
+      "surface-subtle-dark": {
+        "role": "neutral",
+        "displayName": "ダーク控えめ面",
+        "canonical": "#1C1C1C",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
       },
       "surface-selected-light": {
         "role": "neutral",
         "displayName": "ライト選択面",
-        "canonical": "oklch(92.2% 0 0)",
-        "tonalRamp": ["oklch(15% 0 0)", "oklch(27% 0 0)", "oklch(39% 0 0)", "oklch(51% 0 0)", "oklch(63% 0 0)", "oklch(75% 0 0)", "oklch(87% 0 0)", "oklch(95% 0 0)"]
+        "canonical": "#E8E8E8",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#E8E8E8", "#FFFFFF"]
+      },
+      "surface-selected-dark": {
+        "role": "neutral",
+        "displayName": "ダーク選択面",
+        "canonical": "#2A2A2A",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
+      },
+      "border-subtle-light": {
+        "role": "neutral",
+        "displayName": "ライト控えめ境界",
+        "canonical": "#D4D4D4",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#E8E8E8", "#FFFFFF"]
+      },
+      "border-subtle-dark": {
+        "role": "neutral",
+        "displayName": "ダーク控えめ境界",
+        "canonical": "#3F3F3F",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
+      },
+      "border-strong-light": {
+        "role": "neutral",
+        "displayName": "ライト操作境界",
+        "canonical": "#8A8A8A",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#7A7A7A", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#FFFFFF"]
+      },
+      "border-strong-dark": {
+        "role": "neutral",
+        "displayName": "ダーク操作境界",
+        "canonical": "#7A7A7A",
+        "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
+      },
+      "danger-light": {
+        "role": "tertiary",
+        "displayName": "ライト破壊的操作",
+        "canonical": "#B42318",
+        "tonalRamp": ["#3B0A05", "#64130C", "#8C1B12", "#B42318", "#D92D20", "#F97066", "#FDA29B", "#FEE4E2"]
+      },
+      "danger-dark": {
+        "role": "tertiary",
+        "displayName": "ダーク破壊的操作",
+        "canonical": "#D92D20",
+        "tonalRamp": ["#3B0A05", "#64130C", "#8C1B12", "#B42318", "#D92D20", "#F97066", "#FDA29B", "#FEE4E2"]
+      },
+      "danger-foreground": {
+        "role": "neutral",
+        "displayName": "破壊的操作文字",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#171717", "#3F3F3F", "#595959", "#8A8A8A", "#B3B3B3", "#D4D4D4", "#EDEDED", "#FFFFFF"]
+      },
+      "danger-text-light": {
+        "role": "tertiary",
+        "displayName": "ライト危険文字",
+        "canonical": "#B42318",
+        "tonalRamp": ["#3B0A05", "#64130C", "#8C1B12", "#B42318", "#D92D20", "#F97066", "#FDA29B", "#FEE4E2"]
+      },
+      "danger-text-dark": {
+        "role": "tertiary",
+        "displayName": "ダーク危険文字",
+        "canonical": "#FFB4AB",
+        "tonalRamp": ["#3B0A05", "#64130C", "#8C1B12", "#B42318", "#D92D20", "#F97066", "#FFB4AB", "#FEE4E2"]
+      },
+      "focus-ring-light": {
+        "role": "secondary",
+        "displayName": "ライトフォーカスリング",
+        "canonical": "#1D4ED8",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#2563EB", "#60A5FA", "#93C5FD", "#DBEAFE"]
+      },
+      "focus-ring-dark": {
+        "role": "secondary",
+        "displayName": "ダークフォーカスリング",
+        "canonical": "#93C5FD",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#2563EB", "#60A5FA", "#93C5FD", "#DBEAFE"]
       },
       "nogizaka": {
         "role": "primary",
         "displayName": "乃木坂パープル",
-        "canonical": "oklch(45.3% 0.164 319.2)",
-        "tonalRamp": ["oklch(15% 0.164 319.2)", "oklch(27% 0.164 319.2)", "oklch(39% 0.164 319.2)", "oklch(51% 0.164 319.2)", "oklch(63% 0.164 319.2)", "oklch(75% 0.164 319.2)", "oklch(87% 0.164 319.2)", "oklch(95% 0.164 319.2)"]
+        "canonical": "#7B2D8E",
+        "tonalRamp": ["#311238", "#4A1B55", "#622472", "#7B2D8E", "#9A45AE", "#B96DCF", "#D99EE7", "#F2DDF7"]
       },
       "nogizaka-soft": {
         "role": "primary",
         "displayName": "乃木坂パープル淡色",
-        "canonical": "oklch(45.3% 0.164 319.2 / 0.125)",
-        "tonalRamp": ["oklch(15% 0.164 319.2 / 0.125)", "oklch(27% 0.164 319.2 / 0.125)", "oklch(39% 0.164 319.2 / 0.125)", "oklch(51% 0.164 319.2 / 0.125)", "oklch(63% 0.164 319.2 / 0.125)", "oklch(75% 0.164 319.2 / 0.125)", "oklch(87% 0.164 319.2 / 0.125)", "oklch(95% 0.164 319.2 / 0.125)"]
+        "canonical": "#7B2D8E20",
+        "tonalRamp": ["#31123820", "#4A1B5520", "#62247220", "#7B2D8E20", "#9A45AE20", "#B96DCF20", "#D99EE720", "#F2DDF720"]
       },
       "sakurazaka": {
         "role": "primary",
         "displayName": "櫻坂ピンク",
-        "canonical": "oklch(65.5% 0.193 359.4)",
-        "tonalRamp": ["oklch(15% 0.193 359.4)", "oklch(27% 0.193 359.4)", "oklch(39% 0.193 359.4)", "oklch(51% 0.193 359.4)", "oklch(63% 0.193 359.4)", "oklch(75% 0.193 359.4)", "oklch(87% 0.193 359.4)", "oklch(95% 0.193 359.4)"]
+        "canonical": "#E8518D",
+        "tonalRamp": ["#5C2038", "#8B3155", "#BA4171", "#E8518D", "#ED74A4", "#F297BA", "#F7BAD1", "#FCDEE8"]
       },
       "hinatazaka": {
         "role": "primary",
         "displayName": "日向坂スカイ",
-        "canonical": "oklch(77.1% 0.120 228.7)",
-        "tonalRamp": ["oklch(15% 0.120 228.7)", "oklch(27% 0.120 228.7)", "oklch(39% 0.120 228.7)", "oklch(51% 0.120 228.7)", "oklch(63% 0.120 228.7)", "oklch(75% 0.120 228.7)", "oklch(87% 0.120 228.7)", "oklch(95% 0.120 228.7)"]
+        "canonical": "#54C3F1",
+        "tonalRamp": ["#214E60", "#327591", "#439CC1", "#54C3F1", "#76CFF4", "#98DBF7", "#BAE7FA", "#DCF3FD"]
       },
       "keyakizaka": {
         "role": "secondary",
         "displayName": "欅坂グリーン",
-        "canonical": "oklch(53.6% 0.146 150.6)",
-        "tonalRamp": ["oklch(15% 0.146 150.6)", "oklch(27% 0.146 150.6)", "oklch(39% 0.146 150.6)", "oklch(51% 0.146 150.6)", "oklch(63% 0.146 150.6)", "oklch(75% 0.146 150.6)", "oklch(87% 0.146 150.6)", "oklch(95% 0.146 150.6)"]
+        "canonical": "#00843D",
+        "tonalRamp": ["#003518", "#005025", "#006A31", "#00843D", "#33A064", "#66B98B", "#99D1B1", "#CCE8D8"]
       },
       "hiragana-keyakizaka": {
         "role": "secondary",
         "displayName": "ひらがなけやきグリーン",
-        "canonical": "oklch(73.0% 0.138 144.3)",
-        "tonalRamp": ["oklch(15% 0.138 144.3)", "oklch(27% 0.138 144.3)", "oklch(39% 0.138 144.3)", "oklch(51% 0.138 144.3)", "oklch(63% 0.138 144.3)", "oklch(75% 0.138 144.3)", "oklch(87% 0.138 144.3)", "oklch(95% 0.138 144.3)"]
+        "canonical": "#6DBE6E",
+        "tonalRamp": ["#2B4C2C", "#417243", "#579858", "#6DBE6E", "#8ACA8B", "#A7D8A8", "#C4E5C5", "#E2F2E2"]
       },
       "birthday": {
         "role": "tertiary",
         "displayName": "誕生日マゼンタ",
-        "canonical": "oklch(66.7% 0.259 322.1)",
-        "tonalRamp": ["oklch(15% 0.259 322.1)", "oklch(27% 0.259 322.1)", "oklch(39% 0.259 322.1)", "oklch(51% 0.259 322.1)", "oklch(63% 0.259 322.1)", "oklch(75% 0.259 322.1)", "oklch(87% 0.259 322.1)", "oklch(95% 0.259 322.1)"]
+        "canonical": "#D946EF",
+        "tonalRamp": ["#581C87", "#7E22CE", "#A21CAF", "#D946EF", "#E879F9", "#F0ABFC", "#F5D0FE", "#FAE8FF"]
       },
       "live": {
         "role": "tertiary",
         "displayName": "ライブオレンジ",
-        "canonical": "oklch(70.5% 0.187 47.6)",
-        "tonalRamp": ["oklch(15% 0.187 47.6)", "oklch(27% 0.187 47.6)", "oklch(39% 0.187 47.6)", "oklch(51% 0.187 47.6)", "oklch(63% 0.187 47.6)", "oklch(75% 0.187 47.6)", "oklch(87% 0.187 47.6)", "oklch(95% 0.187 47.6)"]
+        "canonical": "#F97316",
+        "tonalRamp": ["#431407", "#7C2D12", "#C2410C", "#F97316", "#FB923C", "#FDBA74", "#FED7AA", "#FFEDD5"]
       },
       "release": {
         "role": "tertiary",
         "displayName": "リリースブルー",
-        "canonical": "oklch(62.3% 0.188 259.8)",
-        "tonalRamp": ["oklch(15% 0.188 259.8)", "oklch(27% 0.188 259.8)", "oklch(39% 0.188 259.8)", "oklch(51% 0.188 259.8)", "oklch(63% 0.188 259.8)", "oklch(75% 0.188 259.8)", "oklch(87% 0.188 259.8)", "oklch(95% 0.188 259.8)"]
+        "canonical": "#3B82F6",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1D4ED8", "#3B82F6", "#60A5FA", "#93C5FD", "#BFDBFE", "#DBEAFE"]
       },
       "video": {
         "role": "tertiary",
         "displayName": "動画グリーン",
-        "canonical": "oklch(69.6% 0.149 162.5)",
-        "tonalRamp": ["oklch(15% 0.149 162.5)", "oklch(27% 0.149 162.5)", "oklch(39% 0.149 162.5)", "oklch(51% 0.149 162.5)", "oklch(63% 0.149 162.5)", "oklch(75% 0.149 162.5)", "oklch(87% 0.149 162.5)", "oklch(95% 0.149 162.5)"]
+        "canonical": "#10B981",
+        "tonalRamp": ["#022C22", "#064E3B", "#047857", "#10B981", "#34D399", "#6EE7B7", "#A7F3D0", "#D1FAE5"]
       },
       "error": {
         "role": "tertiary",
         "displayName": "エラーレッド",
-        "canonical": "oklch(63.7% 0.208 25.3)",
-        "tonalRamp": ["oklch(15% 0.208 25.3)", "oklch(27% 0.208 25.3)", "oklch(39% 0.208 25.3)", "oklch(51% 0.208 25.3)", "oklch(63% 0.208 25.3)", "oklch(75% 0.208 25.3)", "oklch(87% 0.208 25.3)", "oklch(95% 0.208 25.3)"]
+        "canonical": "#EF4444",
+        "tonalRamp": ["#450A0A", "#7F1D1D", "#B91C1C", "#EF4444", "#F87171", "#FCA5A5", "#FECACA", "#FEE2E2"]
       }
     },
     "typographyMeta": {
@@ -151,63 +241,63 @@
       "refersTo": "button-primary",
       "description": "画面の主要操作に使う、白黒反転のボタン。",
       "html": "<button class=\"ds-btn-primary\">保存する</button>",
-      "css": ".ds-btn-primary { background: var(--foreground, #171717); color: var(--background, #fff); padding: 10px 16px; border: 0; border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { background: color-mix(in srgb, var(--foreground, #171717) 90%, var(--background, #fff)); } .ds-btn-primary:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-primary:active { opacity: 0.85; }"
+      "css": ".ds-btn-primary { appearance: none; border: 1px solid transparent; border-radius: 8px; background: var(--foreground, #171717); color: var(--background, #fff); padding: 10px 16px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-btn-primary:disabled { cursor: not-allowed; opacity: 0.5; }"
     },
     {
       "name": "Secondary Button",
       "kind": "button",
       "refersTo": "button-secondary",
-      "description": "主要操作を競合させない、境界線付きの補助ボタン。",
-      "html": "<button class=\"ds-btn-secondary\">キャンセル</button>",
-      "css": ".ds-btn-secondary { background: var(--background, #fff); color: var(--foreground, #171717); padding: 10px 16px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: color-mix(in srgb, var(--foreground, #171717) 5%, var(--background, #fff)); } .ds-btn-secondary:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-secondary:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); }"
+      "description": "非focus時も3:1以上のstrong境界で操作部品として識別できるボタン。",
+      "html": "<button class=\"ds-btn-secondary\">参戦を記録</button>",
+      "css": ".ds-btn-secondary { appearance: none; border: 1px solid var(--border-strong, #8A8A8A); border-radius: 8px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 10px 16px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-secondary:hover { background: var(--surface-subtle, #F3F3F3); } .ds-btn-secondary:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-btn-secondary:disabled { cursor: not-allowed; opacity: 0.5; }"
     },
     {
       "name": "Ghost Button",
       "kind": "button",
       "refersTo": "button-ghost",
-      "description": "ナビゲーションや低優先度の操作に使う軽いボタン。",
-      "html": "<button class=\"ds-btn-ghost\">戻る</button>",
-      "css": ".ds-btn-ghost { background: transparent; color: color-mix(in srgb, var(--foreground, #171717) 60%, transparent); padding: 10px 16px; border: 0; border-radius: 8px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: color 150ms cubic-bezier(0.4, 0, 0.2, 1), background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { color: var(--foreground, #171717); background: color-mix(in srgb, var(--foreground, #171717) 5%, transparent); } .ds-btn-ghost:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-btn-ghost:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, transparent); }"
+      "description": "補助文字tokenと控えめなhover面を使う境界なしのボタン。",
+      "html": "<button class=\"ds-btn-ghost\">キャンセル</button>",
+      "css": ".ds-btn-ghost { appearance: none; border: 0; border-radius: 8px; background: transparent; color: var(--foreground-secondary, #595959); padding: 10px 16px; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-btn-ghost:hover { background: var(--surface-subtle, #F3F3F3); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-btn-ghost:disabled { cursor: not-allowed; opacity: 0.5; }"
     },
     {
       "name": "Text Field",
       "kind": "input",
       "refersTo": "input",
-      "description": "フォーム全体で共通の、コンパクトな入力欄。",
-      "html": "<label class=\"ds-field-label\" for=\"ds-field\">タイトル</label><input class=\"ds-field\" id=\"ds-field\" placeholder=\"タイトルを入力\">",
-      "css": ".ds-field-label { display: block; margin-bottom: 4px; color: color-mix(in srgb, var(--foreground, #171717) 70%, transparent); font: 500 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field { width: 100%; background: var(--background, #fff); color: var(--foreground, #171717); padding: 8px 12px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; font: 400 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field::placeholder { color: color-mix(in srgb, var(--foreground, #171717) 30%, transparent); } .ds-field:hover { border-color: color-mix(in srgb, var(--foreground, #171717) 20%, transparent); } .ds-field:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 0; }"
+      "description": "subtle境界とsemantic focus ringを組み合わせる標準入力欄。",
+      "html": "<label class=\"ds-field\"><span>メモ</span><input type=\"text\" placeholder=\"思い出を入力\"></label>",
+      "css": ".ds-field { display: grid; gap: 4px; color: var(--foreground, #171717); font: 500 12px/1.33 Arial, Helvetica, sans-serif; } .ds-field input { border: 1px solid var(--border-subtle, #D4D4D4); border-radius: 8px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 8px 12px; font: 400 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field input::placeholder { color: var(--foreground-secondary, #595959); } .ds-field input:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-field input:disabled { cursor: not-allowed; opacity: 0.5; }"
     },
     {
       "name": "Interactive Card",
       "kind": "card",
       "refersTo": "card-interactive",
-      "description": "メンバー、楽曲、ライブ、リリース一覧の共通カード。",
-      "html": "<a class=\"ds-card\" href=\"#\"><strong>6th YEAR BIRTHDAY LIVE</strong><span>2018年7月6日</span></a>",
-      "css": ".ds-card { display: flex; flex-direction: column; gap: 4px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 16px; border: 1px solid color-mix(in srgb, var(--foreground, #171717) 10%, transparent); border-radius: 8px; text-decoration: none; font: 400 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-card strong { font-weight: 500; } .ds-card span { color: color-mix(in srgb, var(--foreground, #171717) 50%, transparent); font-size: 12px; } .ds-card:hover { background: color-mix(in srgb, var(--foreground, #171717) 5%, var(--background, #fff)); } .ds-card:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-card:active { background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); }"
+      "description": "通常は影を持たず、補助文字とfocusをsemantic tokenで表すカード。",
+      "html": "<a class=\"ds-card\" href=\"#\"><strong>ライブ名</strong><span>2026年7月17日</span></a>",
+      "css": ".ds-card { display: grid; gap: 4px; border: 1px solid var(--border-subtle, #D4D4D4); border-radius: 8px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 16px; text-decoration: none; font: 400 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-card strong { font-weight: 500; } .ds-card span { color: var(--foreground-secondary, #595959); font-size: 12px; } .ds-card:hover { background: var(--surface-subtle, #F3F3F3); } .ds-card:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; }"
     },
     {
-      "name": "Nogizaka Group Badge",
+      "name": "Semantic Group Badge",
       "kind": "chip",
       "refersTo": "badge-nogizaka",
-      "description": "所属グループを色と文字の両方で示すバッジ。",
-      "html": "<span class=\"ds-badge-nogizaka\">乃木坂46 3期生</span>",
-      "css": ".ds-badge-nogizaka { display: inline-flex; align-items: center; white-space: nowrap; background: #7B2D8E20; color: #7B2D8E; padding: 2px 10px; border-radius: 9999px; font: 500 12px/1.33 Arial, Helvetica, sans-serif; }"
+      "description": "グループ色は淡い面に限定し、文字はtheme別の通常文字色で読ませるバッジ。",
+      "html": "<span class=\"ds-badge\">乃木坂46 3期生</span>",
+      "css": ".ds-badge { display: inline-flex; align-items: center; white-space: nowrap; border-radius: 9999px; background: color-mix(in srgb, var(--badge-color, #7B2D8E) 12.5%, var(--background, #fff)); color: var(--foreground, #171717); padding: 2px 10px; font: 500 12px/1.33 Arial, Helvetica, sans-serif; }"
     },
     {
       "name": "Active Navigation Item",
       "kind": "nav",
       "refersTo": "navigation-active",
-      "description": "現在地を面と文字の太さで示すナビゲーション項目。",
+      "description": "現在地をaria-current、選択面、文字の太さで重ねて示すナビゲーション項目。",
       "html": "<a class=\"ds-nav-active\" href=\"#\" aria-current=\"page\">メンバー</a>",
-      "css": ".ds-nav-active { display: block; background: color-mix(in srgb, var(--foreground, #171717) 10%, var(--background, #fff)); color: var(--foreground, #171717); padding: 8px 12px; border-radius: 8px; text-decoration: none; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-active:hover { background: color-mix(in srgb, var(--foreground, #171717) 15%, var(--background, #fff)); } .ds-nav-active:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 20%, transparent); outline-offset: 2px; } .ds-nav-active:active { background: color-mix(in srgb, var(--foreground, #171717) 20%, var(--background, #fff)); }"
+      "css": ".ds-nav-active { display: block; border-radius: 8px; background: var(--surface-selected, #E8E8E8); color: var(--foreground, #171717); padding: 8px 12px; text-decoration: none; font: 500 14px/1.43 Arial, Helvetica, sans-serif; transition: background-color 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-nav-active:hover { background: var(--surface-subtle, #F3F3F3); } .ds-nav-active:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; }"
     },
     {
       "name": "Selected Calendar Day",
       "kind": "custom",
       "refersTo": "calendar-day-selected",
-      "description": "選択日を白黒反転で明確に示すカレンダーセル。",
+      "description": "選択日を反転し、キーボードfocusをtheme別ringで示すカレンダーセル。",
       "html": "<button class=\"ds-calendar-day\" aria-pressed=\"true\">13</button>",
-      "css": ".ds-calendar-day { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; background: var(--foreground, #171717); color: var(--background, #fff); border: 0; border-radius: 9999px; font: 700 12px/1 Arial, Helvetica, sans-serif; transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-calendar-day:hover { opacity: 0.9; } .ds-calendar-day:focus-visible { outline: 2px solid color-mix(in srgb, var(--foreground, #171717) 40%, transparent); outline-offset: 2px; } .ds-calendar-day:active { opacity: 0.8; }"
+      "css": ".ds-calendar-day { display: inline-flex; width: 24px; height: 24px; align-items: center; justify-content: center; border: 0; border-radius: 9999px; background: var(--foreground, #171717); color: var(--background, #fff); font: 700 12px/1 Arial, Helvetica, sans-serif; transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1); } .ds-calendar-day:hover { opacity: 0.9; } .ds-calendar-day:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -223,6 +313,7 @@
     "rules": [
       { "name": "The Meaningful Color Rule", "body": "色は所属、イベント種別、エラー、選択状態のいずれかを示さなければならない。意味のない彩色は禁止する。", "section": "colors" },
       { "name": "The Group Ownership Rule", "body": "グループ色は対応するグループの情報だけが所有する。主要ボタンや汎用ナビゲーションのブランド装飾には流用しない。", "section": "colors" },
+      { "name": "The Semantic Contrast Rule", "body": "文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。", "section": "colors" },
       { "name": "The Compact Clarity Rule", "body": "14pxを標準に密度を保つ代わりに、主要本文のコントラストは WCAG 2.2 AA を下回らせない。", "section": "typography" },
       { "name": "The One-Family Rule", "body": "プロダクトUIへ装飾用ディスプレイ書体を追加しない。親しみやすさは色、余白、言葉でつくる。", "section": "typography" },
       { "name": "The Earned Lift Rule", "body": "影は階層または操作上の重要度を伝える要素だけが使える。通常カードの反復へ影を付けない。", "section": "elevation" },
@@ -233,14 +324,16 @@
       "**Do** 8pxの角丸、14px本文、16pxカード余白を共通語彙として再利用する。",
       "**Do** 今日の出来事、今後の予定、過去の記録を近い導線でつなぎ、「毎日ひらく、育っていく推し活アーカイブ」を実感できる構成にする。",
       "**Do** ホバー、フォーカス、選択、無効、読み込み、エラーの各状態を実装し、動きは状態変化を伝える用途に限定する。",
-      "**Do** OSのダークモードとreduced motionを尊重し、WCAG 2.2 AA相当のコントラストとキーボード操作を維持する。"
+      "**Do** OSのダークモードとreduced motionを尊重し、WCAG 2.2 AA相当のコントラストとキーボード操作を維持する。",
+      "**Do** 読ませる文字と操作状態にはtheme別semantic tokenを使い、通常/補助文字4.5:1、操作境界/focus 3:1以上を自動検証する。"
     ],
     "donts": [
       "**Don't** 「装飾を重ねて情報が騒がしくなったファンサイト」のような見せ方にする。色、バッジ、カード、アイコンを意味なく増やさない。",
       "**Don't** 「目的のない動きや過剰な演出」を加える。ページ読み込みの連続アニメーション、バウンス、常時点滅は禁止する。",
       "**Don't** グループ色を汎用ボタンや無関係な画面の装飾へ流用する。",
       "**Don't** 通常カードへ境界線と広いぼかし影を同時に付ける。カードの角丸は16pxを超えさせない。",
-      "**Don't** 小さく薄い文字だけで重要情報を伝える。色だけでイベント種別、選択状態、エラーを区別しない。"
+      "**Don't** 小さく薄い文字だけで重要情報を伝える。色だけでイベント種別、選択状態、エラーを区別しない。",
+      "**Don't** foreground alphaを直接読ませる文字、Secondary Button境界、focus indicatorの契約として再導入しない。"
     ]
   }
 }

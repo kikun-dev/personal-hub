@@ -30,7 +30,7 @@ export function RecentAttendance({ overview }: RecentAttendanceProps) {
       </div>
       {entries.length === 0 ? (
         // 未来の予定だけが登録済みのケースもあるため「過去の」と明示する
-        <p className="text-sm text-foreground/60">
+        <p className="text-sm text-foreground-secondary">
           過去の参加記録はまだありません
         </p>
       ) : (

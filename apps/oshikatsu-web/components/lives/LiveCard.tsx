@@ -23,6 +23,7 @@ export function LiveCard({ live }: LiveCardProps) {
     <PendingLink
       href={`/lives/${live.id}`}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      data-ui="live-card"
       listBackFallbackHref={APP_ROUTES.lives}
     >
       <p className="text-sm font-medium text-foreground">{live.name}</p>
@@ -34,11 +35,11 @@ export function LiveCard({ live }: LiveCardProps) {
             groupColor={group.groupColor}
           />
         ))}
-        <span className="text-xs text-foreground/50">
+        <span className="text-xs text-foreground-secondary" data-ui="live-type">
           {LIVE_TYPE_LABELS[live.liveType]}
         </span>
       </div>
-      <p className="mt-1 text-xs text-foreground/50">
+      <p className="mt-1 text-xs text-foreground-secondary" data-ui="live-date">
         {formatDateRange(live.firstDate, live.lastDate)}
         {live.performanceCount > 0 ? `（${live.performanceCount}公演）` : ""}
       </p>

@@ -4,10 +4,25 @@ description: "坂道グループの情報と推し活の記録を、毎日楽し
 colors:
   background-light: "#FFFFFF"
   foreground-light: "#171717"
+  foreground-secondary-light: "#595959"
   background-dark: "#0A0A0A"
   foreground-dark: "#EDEDED"
-  surface-hover-light: "#F3F3F3"
+  foreground-secondary-dark: "#B3B3B3"
+  surface-subtle-light: "#F3F3F3"
+  surface-subtle-dark: "#1C1C1C"
   surface-selected-light: "#E8E8E8"
+  surface-selected-dark: "#2A2A2A"
+  border-subtle-light: "#D4D4D4"
+  border-subtle-dark: "#3F3F3F"
+  border-strong-light: "#8A8A8A"
+  border-strong-dark: "#7A7A7A"
+  danger-light: "#B42318"
+  danger-dark: "#D92D20"
+  danger-foreground: "#FFFFFF"
+  danger-text-light: "#B42318"
+  danger-text-dark: "#FFB4AB"
+  focus-ring-light: "#1D4ED8"
+  focus-ring-dark: "#93C5FD"
   nogizaka: "#7B2D8E"
   nogizaka-soft: "#7B2D8E20"
   sakurazaka: "#E8518D"
@@ -65,48 +80,58 @@ components:
   button-primary:
     backgroundColor: "{colors.foreground-light}"
     textColor: "{colors.background-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "10px 16px"
   button-secondary:
     backgroundColor: "{colors.background-light}"
     textColor: "{colors.foreground-light}"
+    borderColor: "{colors.border-strong-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "10px 16px"
   button-ghost:
     backgroundColor: "{colors.background-light}"
-    textColor: "{colors.foreground-light}"
+    textColor: "{colors.foreground-secondary-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "10px 16px"
   input:
     backgroundColor: "{colors.background-light}"
     textColor: "{colors.foreground-light}"
+    borderColor: "{colors.border-subtle-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "8px 12px"
   card-interactive:
     backgroundColor: "{colors.background-light}"
     textColor: "{colors.foreground-light}"
+    borderColor: "{colors.border-subtle-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "16px"
   badge-nogizaka:
     backgroundColor: "{colors.nogizaka-soft}"
-    textColor: "{colors.nogizaka}"
+    textColor: "{colors.foreground-light}"
     typography: "{typography.label}"
     rounded: "{rounded.full}"
     padding: "2px 10px"
   navigation-active:
     backgroundColor: "{colors.surface-selected-light}"
     textColor: "{colors.foreground-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
     padding: "8px 12px"
   calendar-day-selected:
     backgroundColor: "{colors.foreground-light}"
     textColor: "{colors.background-light}"
+    focusColor: "{colors.focus-ring-light}"
     typography: "{typography.label}"
     rounded: "{rounded.full}"
     size: "24px"
@@ -155,15 +180,20 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 ### Neutral
 
-- **ライト背景** (`#FFFFFF`) と **ライト文字** (`#171717`): 通常の明色テーマ。文字色の透明度を 70%、60%、50%、40% と段階的に下げ、階層をつくる。
-- **ダーク背景** (`#0A0A0A`) と **ダーク文字** (`#EDEDED`): OS設定に従う暗色テーマ。グレーを別に足さず、同じ透明度の体系を維持する。
-- **ライトホバー面** (`#F3F3F3`) と **ライト選択面** (`#E8E8E8`): ホバー、選択、境界の強弱に使う。常設の装飾背景として広げない。
+- **背景 / 通常文字**: ライトは `#FFFFFF` / `#171717`、ダークは `#0A0A0A` / `#EDEDED`。本文と主要ラベルに使う。
+- **補助文字**: ライトは `#595959`、ダークは `#B3B3B3`。小さい補助情報を含め、各テーマの背景に対して4.5:1以上を保つ。直接読ませる文字へ未検証のforeground alphaを使わない。
+- **控えめな面 / 選択面**: ライトは `#F3F3F3` / `#E8E8E8`、ダークは `#1C1C1C` / `#2A2A2A`。hoverとcurrent/selected stateに使い、常設の装飾背景として広げない。
+- **境界**: subtleはライト `#D4D4D4` / ダーク `#3F3F3F`、strongはライト `#8A8A8A` / ダーク `#7A7A7A`。コンテナ分離にはsubtle、境界自体が操作部品の識別に必要な場合は背景に対して3:1以上のstrongを使う。
+- **破壊的操作**: 背景はライト `#B42318` / ダーク `#D92D20`、前景は `#FFFFFF`。背景なしのdanger textはライト `#B42318` / ダーク `#FFB4AB`を使う。
+- **フォーカスリング**: ライトは `#1D4ED8`、ダークは `#93C5FD`。背景と隣接色に対して識別可能な2px outlineとして使う。
 
 ### Named Rules
 
 **The Meaningful Color Rule.** 色は所属、イベント種別、エラー、選択状態のいずれかを示さなければならない。意味のない彩色は禁止する。
 
 **The Group Ownership Rule.** グループ色は対応するグループの情報だけが所有する。主要ボタンや汎用ナビゲーションのブランド装飾には流用しない。
+
+**The Semantic Contrast Rule.** 文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。
 
 ## Typography
 
@@ -208,37 +238,37 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 - **Shape:** 親しみやすい小さな丸み（8px）。タグ以外をピル形状にしない。
 - **Primary:** 文字色と背景色を反転し、14px・500、上下10px・左右16px。画面の主要操作だけに使う。
-- **Hover / Focus:** ホバーは同色の90%。フォーカスは背景文字色20%の2pxリング。色変化は150msを基本とし、無効時は不透明度50%と禁止カーソルを併用する。
-- **Secondary / Ghost:** Secondary は10%境界、Ghost は境界なし。どちらもホバー面は文字色5%。
+- **Hover / Focus:** ホバーは同色の90%。フォーカスはライト `#1D4ED8` / ダーク `#93C5FD`の2px outlineと2px offsetを使う。色変化は150msを基本とし、無効時は不透明度50%と禁止カーソルを併用する。
+- **Secondary / Ghost:** Secondaryは背景に対して3:1以上となるstrong境界（ライト `#8A8A8A` / ダーク `#7A7A7A`）、Ghostは境界なし。Ghostの通常文字はtheme別の補助文字、hover面はsubtle surfaceを使う。
 
 ### Chips
 
-- **Style:** グループ色を12.5%の淡い背景へ使い、文字は元のグループ色。12px・500、上下2px・左右10px、完全なピル形状。
+- **Style:** グループ色やイベント色を12.5%の淡い背景へ使い、文字はtheme別の通常文字色に分離する。色名を表すvisible labelを必ず残し、12px・500、上下2px・左右10px、完全なピル形状とする。
 - **State:** チップは所属や種別の表示を優先する。操作可能なフィルタでは選択状態を背景だけでなく文字の太さでも示す。
 
 ### Cards / Containers
 
 - **Corner Style:** 小さく一貫した丸み（8px）。モーダルだけ12pxを許可する。
-- **Background:** テーマの背景色と同じ面。ホバー時だけ5%の文字色を重ねる。
+- **Background:** テーマの背景色と同じ面。ホバー時はtheme別のsubtle surfaceへ切り替える。
 - **Shadow Strategy:** 通常カードは影なし。重要な操作面だけ `Interactive Lift` を使う。
-- **Border:** 文字色10%の1px境界。影を使う面では装飾的な境界を外す。
+- **Border:** theme別のsubtle tokenによる1px境界。影を使う面では装飾的な境界を外す。
 - **Internal Padding:** 標準16px。密な一覧では12px、独立した空状態では24pxまで。
 
 ### Inputs / Fields
 
-- **Style:** 8pxの丸み、文字色10%の1px境界、背景色と同じ面、上下8px・左右12px、14px本文。
-- **Focus:** 既定の境界に加え、文字色20%の2pxリングを表示する。フォーカスを色だけで表現しない。
+- **Style:** 8pxの丸み、theme別subtle tokenの1px境界、背景色と同じ面、上下8px・左右12px、14px本文。
+- **Focus:** 既定の境界に加え、ライト `#1D4ED8` / ダーク `#93C5FD`の2pxリングを表示する。フォーカスを色だけで表現しない。
 - **Error / Disabled:** エラーは赤い境界と説明文を併用する。無効状態は不透明度とカーソルを変え、操作不能であることを視覚と挙動の両方で示す。
 
 ### Navigation
 
-- **Style:** 14pxの通常文字を基本に、非選択は文字色60–70%、選択は通常文字色と500ウェイトで示す。サイドナビの選択面は文字色10%。
+- **Style:** 14pxの通常文字を基本に、非選択はtheme別の補助文字、選択は通常文字色・500ウェイト・selected surface・`aria-current="page"`で示す。
 - **Responsive behavior:** 768px未満ではヘッダーナビを右側ドロワーへ移し、背景タップ、Esc、フォーカストラップ、スクロールロックを維持する。
 - **Motion:** ドロワーは200msのease-out。reduced motionでは移動を除き、即時切替または短いクロスフェードにする。
 
 ### Calendar Day
 
-選択日は24pxの円で文字色と背景色を反転する。今日の日付は1pxリング、イベントは最大3個の色ドットで示す。色ドットだけに依存せず、選択後のイベント一覧で種別ラベルと名称を必ず表示する。
+選択日は24pxの円で文字色と背景色を反転する。今日の日付は1pxリング、イベントは最大3個の色ドットで示す。操作focusはtheme別focus colorの2px outlineを使う。色ドットだけに依存せず、選択後のイベント一覧で種別ラベルと名称を必ず表示する。
 
 ## Do's and Don'ts
 
@@ -249,6 +279,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **Do** 今日の出来事、今後の予定、過去の記録を近い導線でつなぎ、「毎日ひらく、育っていく推し活アーカイブ」を実感できる構成にする。
 - **Do** ホバー、フォーカス、選択、無効、読み込み、エラーの各状態を実装し、動きは状態変化を伝える用途に限定する。
 - **Do** OSのダークモードとreduced motionを尊重し、WCAG 2.2 AA相当のコントラストとキーボード操作を維持する。
+- **Do** 読ませる文字と操作状態にはtheme別semantic tokenを使い、通常/補助文字4.5:1、操作境界/focus 3:1以上を自動検証する。
 
 ### Don't:
 
@@ -257,3 +288,4 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **Don't** グループ色を汎用ボタンや無関係な画面の装飾へ流用する。
 - **Don't** 通常カードへ境界線と広いぼかし影を同時に付ける。カードの角丸は16pxを超えさせない。
 - **Don't** 小さく薄い文字だけで重要情報を伝える。色だけでイベント種別、選択状態、エラーを区別しない。
+- **Don't** foreground alphaを直接読ませる文字、Secondary Button境界、focus indicatorの契約として再導入しない。

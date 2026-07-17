@@ -20,7 +20,7 @@ export function DaySchedule({ events, emptyMessage }: DayScheduleProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   if (events.length === 0) {
-    return <p className="text-sm text-foreground/60">{emptyMessage}</p>;
+    return <p className="text-sm text-foreground-secondary">{emptyMessage}</p>;
   }
 
   const hasMore = events.length > VISIBLE_LIMIT;
@@ -41,7 +41,7 @@ export function DaySchedule({ events, emptyMessage }: DayScheduleProps) {
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
           aria-expanded={isExpanded}
-          className="rounded-lg border border-foreground/10 px-3 py-1.5 text-xs text-foreground/60 hover:bg-foreground/5"
+          className="rounded-lg border border-border-subtle px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
           {isExpanded ? "折りたたむ" : `残り${restCount}件を表示`}
         </button>

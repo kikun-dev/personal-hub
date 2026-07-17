@@ -192,7 +192,7 @@ export function AttendanceControl({
   } else if (!attendance) {
     content = (
       <>
-        <p className="text-sm text-foreground/70">参戦記録はまだありません</p>
+        <p className="text-sm text-foreground-secondary">参戦記録はまだありません</p>
         <Button
           ref={recordButtonRef}
           type="button"
@@ -211,13 +211,13 @@ export function AttendanceControl({
         <div className="flex flex-wrap items-center gap-2">
           <AttendedTypeBadge attendedType={attendance.attendedType} />
           {attendance.seatNote && (
-            <span className="text-xs text-foreground/70">
+            <span className="text-xs text-foreground-secondary">
               座席: {attendance.seatNote}
             </span>
           )}
         </div>
         {attendance.note && (
-          <p className="whitespace-pre-wrap text-xs text-foreground/70">
+          <p className="whitespace-pre-wrap text-xs text-foreground-secondary">
             {attendance.note}
           </p>
         )}
@@ -244,14 +244,14 @@ export function AttendanceControl({
               : "解除"}
           </Button>
         </div>
-        {deleteError && <p className="text-xs text-red-500">{deleteError}</p>}
+        {deleteError && <p className="text-xs text-danger-text">{deleteError}</p>}
       </>
     );
   }
 
   return (
-    <div className="space-y-2 border-t border-foreground/10 pt-3">
-      <p className="text-xs font-medium text-foreground/70">参戦記録</p>
+    <div className="space-y-2 border-t border-border-subtle pt-3">
+      <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
       {/* aria-busy はコンテンツ側に限定する。aria-busy=true の subtree 内の live region は
           支援技術が busy 解除までアナウンスを保留し得るため、role=status は busy の外に置く */}
       <div className="space-y-2" aria-busy={isPending}>

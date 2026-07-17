@@ -13,6 +13,9 @@ import { registerListBackNavigation } from "@/components/ui/listBackNavigation";
 
 type PendingLinkFeedback = "inline" | "global" | "none";
 
+export const LINK_FOCUS_CLASS =
+  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
+
 type PendingLinkProps = LinkProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps> & {
     children: ReactNode;
@@ -71,7 +74,7 @@ function PendingLinkContent({
       {isPending && (
         <span
           aria-label={pendingLabel}
-          className="absolute right-3 top-3 h-3 w-3 animate-spin rounded-full border border-foreground/20 border-t-foreground/70"
+          className="absolute right-3 top-3 h-3 w-3 animate-spin rounded-full border border-border-subtle border-t-foreground-secondary"
           role="status"
         />
       )}
@@ -155,7 +158,7 @@ export function PendingLink({
       {...props}
       aria-busy={isInlineNavigating}
       aria-disabled={isInlineNavigating}
-      className={`${className} relative ${navigatingClassName}`.trim()}
+      className={`${className} relative ${LINK_FOCUS_CLASS} ${navigatingClassName}`.trim()}
       onClick={handleClick}
       target={target}
     >

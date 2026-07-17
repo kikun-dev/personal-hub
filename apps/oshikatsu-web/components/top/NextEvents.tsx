@@ -53,10 +53,10 @@ export function NextEvents({ events, today, frame = "card" }: NextEventsProps) {
 
   const header = (
     <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-medium text-foreground/70">次のイベント</h2>
+      <h2 className="text-sm font-medium text-foreground-secondary">次のイベント</h2>
       <a
         href="#calendar"
-        className="text-xs text-foreground/60 hover:text-foreground hover:underline"
+        className="text-xs text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
       >
         カレンダーで探す
       </a>
@@ -65,12 +65,12 @@ export function NextEvents({ events, today, frame = "card" }: NextEventsProps) {
 
   const body =
     events.length === 0 ? (
-      <p className="text-sm text-foreground/60">今後の予定はありません</p>
+      <p className="text-sm text-foreground-secondary">今後の予定はありません</p>
     ) : frame === "plain" ? (
-      <div className="divide-y divide-foreground/10">
+      <div className="divide-y divide-border-subtle">
         {groups.map((group) => (
           <div key={group.date} className="py-3 first:pt-0 last:pb-0">
-            <p className="text-xs text-foreground/60">
+            <p className="text-xs text-foreground-secondary">
               {formatMonthDayWithWeekday(group.date)}・あと
               {daysUntil(group.date, todayStr)}日
             </p>
@@ -88,7 +88,7 @@ export function NextEvents({ events, today, frame = "card" }: NextEventsProps) {
       <ul className="space-y-3">
         {groups.map((group) => (
           <li key={group.date}>
-            <p className="text-xs text-foreground/60">
+            <p className="text-xs text-foreground-secondary">
               {formatMonthDayWithWeekday(group.date)}・あと
               {daysUntil(group.date, todayStr)}日
             </p>
@@ -114,7 +114,7 @@ export function NextEvents({ events, today, frame = "card" }: NextEventsProps) {
   }
 
   return (
-    <div className="rounded-lg border border-foreground/10 bg-background p-4">
+    <div className="rounded-lg border border-border-subtle bg-background p-4">
       {header}
       {body}
     </div>

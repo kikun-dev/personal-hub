@@ -59,9 +59,9 @@ export function PastSameDay({ events, title, currentYear }: PastSameDayProps) {
     <section className="space-y-3">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {groups.length === 0 ? (
-        <p className="text-sm text-foreground/60">過去の出来事はまだありません</p>
+        <p className="text-sm text-foreground-secondary">過去の出来事はまだありません</p>
       ) : (
-        <div className="rounded-lg border border-foreground/10 bg-background p-4">
+        <div className="rounded-lg border border-border-subtle bg-background p-4">
           <div>
             {visibleGroups.map((group, index) => (
               <div
@@ -76,14 +76,14 @@ export function PastSameDay({ events, title, currentYear }: PastSameDayProps) {
                   <p className="text-sm font-medium text-foreground">
                     {currentYear - group.year}年前
                   </p>
-                  <p className="text-xs text-foreground/60">{group.year}年</p>
+                  <p className="text-xs text-foreground-secondary">{group.year}年</p>
                 </div>
                 {/* timeline rail: 年を示す dot と、次の年group へつなぐ縦線（複数年のときのみ） */}
                 {showRail && (
                   <div aria-hidden="true" className="relative">
-                    <span className="absolute left-1/2 top-2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-foreground/30" />
+                    <span className="absolute left-1/2 top-2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-border-strong" />
                     {index < visibleGroups.length - 1 && (
-                      <span className="absolute bottom-0 left-1/2 top-4 w-px -translate-x-1/2 bg-foreground/10" />
+                      <span className="absolute bottom-0 left-1/2 top-4 w-px -translate-x-1/2 bg-border-subtle" />
                     )}
                   </div>
                 )}
@@ -98,12 +98,12 @@ export function PastSameDay({ events, title, currentYear }: PastSameDayProps) {
             ))}
           </div>
           {hasMore && (
-            <div className="mt-3 border-t border-foreground/10 pt-3">
+            <div className="mt-3 border-t border-border-subtle pt-3">
               <button
                 type="button"
                 onClick={() => setIsExpanded((prev) => !prev)}
                 aria-expanded={isExpanded}
-                className="rounded-lg border border-foreground/10 px-3 py-1.5 text-xs text-foreground/60 hover:bg-foreground/5"
+                className="rounded-lg border border-border-subtle px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               >
                 {isExpanded ? "折りたたむ" : `残り${restYearCount}年分を見る`}
               </button>
