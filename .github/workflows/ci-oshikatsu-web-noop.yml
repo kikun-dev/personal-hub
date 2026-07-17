@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   check:
-    name: Typecheck / Lint / Unit Test / Build (oshikatsu-web)
+    name: CI / oshikatsu-web
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
