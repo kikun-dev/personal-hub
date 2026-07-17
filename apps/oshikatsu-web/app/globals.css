@@ -3,6 +3,16 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --foreground-secondary: #595959;
+  --surface-subtle: #f3f3f3;
+  --surface-selected: #e8e8e8;
+  --border-subtle: #d4d4d4;
+  --border-strong: #8a8a8a;
+  --danger: #b42318;
+  --danger-hover: #8f1c13;
+  --danger-foreground: #ffffff;
+  --danger-text: #b42318;
+  --focus-ring: #1d4ed8;
 
   /* Orbit brand colors (group) */
   --orbit-nogizaka: #7B2D8E;
@@ -15,6 +25,16 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-foreground-secondary: var(--foreground-secondary);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-surface-selected: var(--surface-selected);
+  --color-border-subtle: var(--border-subtle);
+  --color-border-strong: var(--border-strong);
+  --color-danger: var(--danger);
+  --color-danger-hover: var(--danger-hover);
+  --color-danger-foreground: var(--danger-foreground);
+  --color-danger-text: var(--danger-text);
+  --color-focus-ring: var(--focus-ring);
   --color-orbit-nogizaka: var(--orbit-nogizaka);
   --color-orbit-sakurazaka: var(--orbit-sakurazaka);
   --color-orbit-hinatazaka: var(--orbit-hinatazaka);
@@ -28,6 +48,16 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --foreground-secondary: #b3b3b3;
+    --surface-subtle: #1c1c1c;
+    --surface-selected: #2a2a2a;
+    --border-subtle: #3f3f3f;
+    --border-strong: #7a7a7a;
+    --danger: #d92d20;
+    --danger-hover: #b42318;
+    --danger-foreground: #ffffff;
+    --danger-text: #ffb4ab;
+    --focus-ring: #93c5fd;
   }
 }
 

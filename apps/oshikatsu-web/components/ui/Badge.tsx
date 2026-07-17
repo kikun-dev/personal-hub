@@ -7,10 +7,11 @@ type BadgeProps = {
 export function Badge({ label, color, className = "" }: BadgeProps) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${className}`}
+      data-ui="badge"
+      className={`inline-flex shrink-0 items-center whitespace-nowrap rounded-full bg-surface-subtle px-2.5 py-0.5 text-xs font-medium text-foreground ${className}`}
       style={
         color
-          ? { backgroundColor: `${color}20`, color }
+          ? { backgroundColor: `${color}20` }
           : undefined
       }
     >

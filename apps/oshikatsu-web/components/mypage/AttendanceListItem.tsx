@@ -21,18 +21,18 @@ export function AttendanceListItem({
   showNote = false,
 }: AttendanceListItemProps) {
   return (
-    <li className="rounded-lg border border-foreground/10 p-3">
+    <li className="rounded-lg border border-border-subtle p-3">
       <PendingLink
         href={`/lives/${entry.liveId}`}
         className="flex flex-wrap items-center gap-2 text-sm text-foreground hover:underline"
         listBackFallbackHref={backHref}
       >
-        <span className="text-xs text-foreground/50">
+        <span className="text-xs text-foreground-secondary">
           {entry.performanceDate ? formatDate(entry.performanceDate) : "日付未定"}
         </span>
         <span>{entry.liveName}</span>
         {entry.venueName && (
-          <span className="text-xs text-foreground/60">{entry.venueName}</span>
+          <span className="text-xs text-foreground-secondary">{entry.venueName}</span>
         )}
         {entry.groups.map((g) => (
           <GroupBadge key={g.id} groupName={g.nameJa} groupColor={g.color} />
@@ -40,7 +40,7 @@ export function AttendanceListItem({
         <AttendedTypeBadge attendedType={entry.attendedType} />
       </PendingLink>
       {showNote && entry.note && (
-        <p className="mt-1 truncate text-xs text-foreground/60">{entry.note}</p>
+        <p className="mt-1 truncate text-xs text-foreground-secondary">{entry.note}</p>
       )}
     </li>
   );

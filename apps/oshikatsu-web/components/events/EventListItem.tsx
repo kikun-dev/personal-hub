@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
+import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
 import { formatTime } from "@/lib/formatters";
 import {
   BIRTHDAY_COLOR,
@@ -30,7 +31,7 @@ type EventListItemProps = {
 };
 
 // 補足の1断片。emphasis は inline 表示時のクラス分けに使う
-// （"primary" = 時刻など先頭の断片で text-foreground/60、"secondary" = それ以外で text-xs 付き）。
+// （"primary" = 時刻など先頭の断片、"secondary" = それ以外で text-xs 付き）。
 type DetailPart = {
   key: string;
   text: string;
@@ -81,7 +82,7 @@ function getEventPresentation(event: CalendarEvent): EventPresentation {
           // カレンダー下の一覧はすべてこの1箇所を共用している。
           <Link
             href={`/lives/${event.liveId}?date=${event.date}&performance=${event.performanceId}`}
-            className="text-foreground hover:underline"
+            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.name}
           </Link>
@@ -96,7 +97,7 @@ function getEventPresentation(event: CalendarEvent): EventPresentation {
         nameLink: (
           <Link
             href={`/releases/${event.releaseId}`}
-            className="text-foreground hover:underline"
+            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.title}
           </Link>
@@ -112,7 +113,7 @@ function getEventPresentation(event: CalendarEvent): EventPresentation {
             href={event.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-foreground hover:underline"
+            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.trackTitle}（{event.videoLabel}）
           </a>
@@ -139,7 +140,7 @@ function getEventPresentation(event: CalendarEvent): EventPresentation {
         nameLink: (
           <Link
             href={`/members/${event.memberId}`}
-            className="text-foreground hover:underline"
+            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.memberName}
           </Link>
@@ -184,8 +185,8 @@ function InlineDetailSpan({ detail }: { detail: DetailPart }) {
     <span
       className={
         detail.emphasis === "primary"
-          ? "ml-1 text-foreground/60"
-          : "ml-1 text-xs text-foreground/60"
+          ? "ml-1 text-foreground-secondary"
+          : "ml-1 text-xs text-foreground-secondary"
       }
     >
       {detail.text}
@@ -212,7 +213,7 @@ export function EventListItem({
           {presentation.nameLink}
         </div>
         {presentation.details.length > 0 && (
-          <p className="mt-0.5 text-xs text-foreground/60">
+          <p className="mt-0.5 text-xs text-foreground-secondary">
             {presentation.details.map((d) => d.text).join(" ")}
           </p>
         )}

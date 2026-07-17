@@ -54,13 +54,19 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span
+          className="ml-auto shrink-0 text-sm text-foreground-secondary"
+          data-ui="live-count"
+        >
           {filteredLives.length}件
         </span>
       </div>
 
       {filteredLives.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p
+          className="py-12 text-center text-sm text-foreground-secondary"
+          data-ui="live-empty"
+        >
           ライブが見つかりません
         </p>
       ) : (

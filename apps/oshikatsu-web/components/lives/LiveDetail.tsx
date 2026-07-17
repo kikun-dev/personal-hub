@@ -6,6 +6,7 @@ import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
 import { TourOverview } from "@/components/lives/TourOverview";
 import { TextLink } from "@/components/ui/TextLink";
+import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { numberSetlistItems } from "@/usecases/setlistNumbering";
@@ -131,15 +132,15 @@ function PerformanceSetlistSummary({
         return (
           <li
             key={`${performance.id}-${index}`}
-            className="flex gap-2 text-xs text-foreground/80"
+            className="flex gap-2 text-xs text-foreground-secondary"
           >
-            <span className="w-5 shrink-0 text-right text-foreground/40">
+            <span className="w-5 shrink-0 text-right text-foreground-secondary">
               {numberLabel}
             </span>
             <span>
               {songTitleLabel(item)}
               {centers.length > 0 && (
-                <span className="ml-1 text-foreground/50">
+                <span className="ml-1 text-foreground-secondary">
                   C:{centers.map((member) => member.memberNameJa).join("・")}
                 </span>
               )}
@@ -163,7 +164,7 @@ function PerformanceCard({
   className?: string;
 }) {
   return (
-    <div className={`space-y-2 rounded-lg border border-foreground/10 p-4 ${className ?? ""}`}>
+    <div className={`space-y-2 rounded-lg border border-border-subtle p-4 ${className ?? ""}`}>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="font-medium text-foreground">
           {performance.performanceDate
@@ -175,19 +176,19 @@ function PerformanceCard({
 
       <div className="flex flex-wrap gap-2 text-xs">
         {performance.hasStreaming && (
-          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+          <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-foreground">
             配信あり
           </span>
         )}
         {performance.hasLiveViewing && (
-          <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+          <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-foreground">
             ライブビューイング
           </span>
         )}
       </div>
 
       {performance.absences.length > 0 && (
-        <p className="text-xs text-foreground/70">
+        <p className="text-xs text-foreground-secondary">
           休演:{" "}
           {performance.absences
             .map((absence) =>
@@ -201,7 +202,7 @@ function PerformanceCard({
 
       <div className="space-y-1">
         <div className="flex items-baseline justify-between gap-2">
-          <p className="text-xs font-medium text-foreground/70">セットリスト</p>
+          <p className="text-xs font-medium text-foreground-secondary">セットリスト</p>
           {/* #261: セトリ詳細の参照ビューへの導線。セトリ0件でも空状態の
               参照ページへ辿れるよう、導線は常に表示する（レビュー指摘）。
               既存のセトリ表示自体は変更しない（簡素化は#262） */}
@@ -255,7 +256,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                 {venueGroups.map((group) => (
                   <div
                     key={group.venueId ?? "none"}
-                    className="space-y-2 rounded-lg border border-foreground/10 p-4 text-center"
+                    className="space-y-2 rounded-lg border border-border-subtle p-4 text-center"
                   >
                     <p className="font-medium text-foreground">
                       {group.venuePrefecture
@@ -270,9 +271,9 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                         {group.venueName}
                       </TextLink>
                     ) : (
-                      <p className="text-sm text-foreground/50">会場未定</p>
+                      <p className="text-sm text-foreground-secondary">会場未定</p>
                     )}
-                    <div className="space-y-0.5 text-xs text-foreground/70">
+                    <div className="space-y-0.5 text-xs text-foreground-secondary">
                       {group.performances.map((performance) => (
                         <p key={performance.id}>
                           {formatScheduleLine(live.liveType, performance)}
@@ -296,7 +297,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                   {venueGroups[0].venueName}
                 </Link>
               )}
-              <div className="space-y-0.5 text-sm text-foreground/70">
+              <div className="space-y-0.5 text-sm text-foreground-secondary">
                 {live.performances.map((performance) => (
                   <p key={performance.id}>
                     {formatScheduleLine(live.liveType, performance)}
@@ -314,13 +315,13 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         <section className="space-y-2">
           <div className="flex items-baseline justify-between gap-2">
             <h2 className="text-sm font-semibold text-foreground">出演メンバー</h2>
-            <span className="text-xs text-foreground/60">
+            <span className="text-xs text-foreground-secondary">
               {formatMemberCountSummary(
                 live.performerMembers.map((member) => member.generation)
               )}
             </span>
           </div>
-          <p className="text-sm text-foreground/80">
+          <p className="text-sm text-foreground-secondary">
             {live.performerMembers
               .map((member) => member.memberNameJa)
               .join(" / ")}
@@ -371,14 +372,14 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       <h2 className="text-sm font-semibold text-foreground">この公演</h2>
       {/* 選択状態は色ではなく中立の境界強度（/25）で表現する（Meaningful Color Rule）。
           影は使わない（Earned Lift / One Edge Rule）。 */}
-      <div className="space-y-3 rounded-lg border border-foreground/25 bg-background p-4">
+      <div className="space-y-3 rounded-lg border border-border-strong bg-background p-4">
         <div className="space-y-1">
           {/* 主役行: 都道府県から意味のある「○○公演」を作れる場合のみ使用し、
               作れない場合は会場名、それも無ければ日付+時刻を主役行にする
               （表示のために存在しない公演名を推測・生成しない）。 */}
           {targetArea !== null ? (
             <>
-              <p className="text-sm text-foreground/70">
+              <p className="text-sm text-foreground-secondary">
                 {targetDateLabel}
                 {targetTime !== null && <span className="ml-2">{targetTime}</span>}
               </p>
@@ -389,7 +390,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             </>
           ) : targetPerformance.venueId && targetPerformance.venueName ? (
             <>
-              <p className="text-sm text-foreground/70">
+              <p className="text-sm text-foreground-secondary">
                 {targetDateLabel}
                 {targetTime !== null && <span className="ml-2">{targetTime}</span>}
               </p>
@@ -404,7 +405,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             <p className="text-base font-semibold text-foreground">
               {targetDateLabel}
               {targetTime !== null && (
-                <span className="ml-2 text-sm font-normal text-foreground/70">
+                <span className="ml-2 text-sm font-normal text-foreground-secondary">
                   {targetTime}
                 </span>
               )}
@@ -415,12 +416,12 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         {(targetPerformance.hasStreaming || targetPerformance.hasLiveViewing) && (
           <div className="flex flex-wrap gap-2 text-xs">
             {targetPerformance.hasStreaming && (
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+              <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-foreground">
                 配信あり
               </span>
             )}
             {targetPerformance.hasLiveViewing && (
-              <span className="rounded-full bg-foreground/10 px-2 py-0.5 text-foreground">
+              <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-foreground">
                 ライブビューイング
               </span>
             )}
@@ -428,7 +429,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         )}
 
         {targetPerformance.absences.length > 0 && (
-          <p className="text-xs text-foreground/70">
+          <p className="text-xs text-foreground-secondary">
             休演:{" "}
             {targetPerformance.absences
               .map((absence) =>
@@ -444,9 +445,9 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             「未登録」表示は管理状態に見えるため section ごと出さない）。
             fallback の carousel は #261 の決定（0件でも導線常時表示）のまま変更しない。 */}
         {targetHasSetlistSongs && (
-          <div className="space-y-1 border-t border-foreground/10 pt-3">
+          <div className="space-y-1 border-t border-border-subtle pt-3">
             <div className="flex items-baseline justify-between gap-2">
-              <p className="text-xs font-medium text-foreground/70">セットリスト</p>
+              <p className="text-xs font-medium text-foreground-secondary">セットリスト</p>
               <TextLink
                 href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
                 className="text-xs"
@@ -478,7 +479,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       <h2 className="text-sm font-semibold text-foreground">次の公演</h2>
       {/* secondary surface: この公演より薄い境界と密な padding。
           「あとN日」は表示しない（次の公演は選択公演基準の相対時間軸のため。#346 Decision） */}
-      <div className="space-y-1 rounded-lg border border-foreground/10 p-3 text-sm">
+      <div className="space-y-1 rounded-lg border border-border-subtle p-3 text-sm">
         <p>
           <span className="font-medium text-foreground">
             {nextPerformance.performanceDate
@@ -486,7 +487,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
               : "日付未定"}
           </span>
           {nextTime !== null && (
-            <span className="ml-2 text-foreground/70">{nextTime}</span>
+            <span className="ml-2 text-foreground-secondary">{nextTime}</span>
           )}
         </p>
         {(nextArea !== null || nextPerformance.venueName) && (
@@ -502,7 +503,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
   );
 
   const descriptionBlock = live.description && (
-    <p className="whitespace-pre-wrap text-sm text-foreground/80">
+    <p className="whitespace-pre-wrap text-sm text-foreground-secondary">
       {live.description}
     </p>
   );
@@ -533,14 +534,14 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         {context !== null && targetPerformance !== null ? (
           <Link
             href={topPageDateHref(context.date)}
-            className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
           </Link>
         ) : (
           <Link
             href="/lives"
-            className="text-sm text-foreground/60 hover:text-foreground hover:underline"
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             ← ライブ一覧へ戻る
           </Link>
@@ -548,7 +549,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
       </p>
 
       <div className="space-y-2">
-        <p className="text-xs text-foreground/50">{LIVE_TYPE_LABELS[live.liveType]}</p>
+        <p className="text-xs text-foreground-secondary">{LIVE_TYPE_LABELS[live.liveType]}</p>
         <h1 className="text-xl font-bold text-foreground">{live.name}</h1>
         {live.performerGroups.length > 0 && (
           <div className="flex flex-wrap gap-2">

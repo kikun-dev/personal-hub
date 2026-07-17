@@ -51,17 +51,13 @@ export function EventCalendar({
   }
 
   return (
-    <div className="rounded-lg border border-foreground/10 bg-background p-4">
+    <div className="rounded-lg border border-border-subtle bg-background p-4">
       <div className="grid grid-cols-7 gap-px">
         {WEEKDAYS.map((day, i) => (
           <div
             key={day}
             className={`py-1 text-center text-xs font-medium ${
-              i === 0
-                ? "text-red-400"
-                : i === 6
-                  ? "text-blue-400"
-                  : "text-foreground/50"
+              i === 0 ? "text-danger-text" : "text-foreground-secondary"
             }`}
           >
             {day}
@@ -83,16 +79,16 @@ export function EventCalendar({
               className={`min-h-[40px] p-1 text-center ${
                 day.isCurrentMonth
                   ? "text-foreground"
-                  : "text-foreground/20"
+                  : "text-foreground-secondary"
               }`}
             >
               <Link
                 href={href}
-                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs transition-colors hover:bg-foreground/10 ${
+                className={`inline-flex h-6 w-6 items-center justify-center rounded-full text-xs transition-colors hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring ${
                   isSelected
                     ? "bg-foreground font-bold text-background"
                     : isToday
-                      ? "ring-1 ring-foreground/40"
+                      ? "ring-1 ring-border-strong"
                       : ""
                 }`}
               >

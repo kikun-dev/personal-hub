@@ -103,7 +103,7 @@ export function MonthSelector({
       <button
         onClick={handlePrev}
         disabled={isAtMin}
-        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
       >
         ← 前月
       </button>
@@ -113,7 +113,7 @@ export function MonthSelector({
       <button
         onClick={handleNext}
         disabled={isAtMax}
-        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
       >
         翌月 →
       </button>
@@ -125,7 +125,7 @@ export function MonthSelector({
       <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
         <button
           onClick={handleToday}
-          className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
           Today
         </button>
@@ -139,7 +139,7 @@ export function MonthSelector({
       {showTodayButton && (
         <button
           onClick={handleToday}
-          className="rounded-md border border-foreground/20 px-3 py-1.5 text-sm text-foreground/70 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
         >
           Today
         </button>

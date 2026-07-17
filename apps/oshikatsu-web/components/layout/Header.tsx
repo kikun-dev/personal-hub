@@ -47,10 +47,15 @@ export function Header({ isAdmin }: HeaderProps) {
   };
 
   return (
-    <header className="border-b border-foreground/10 bg-background">
+    <header className="border-b border-border-subtle bg-background">
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <div className="flex items-center gap-6">
-          <PendingLink href="/" feedback="global" className="flex items-center">
+          <PendingLink
+            href="/"
+            feedback="global"
+            aria-current={pathname === "/" ? "page" : undefined}
+            className="flex items-center rounded-md"
+          >
             {/* 横型ロゴをライト/ダークで出し分け（dark: は prefers-color-scheme 準拠、ダーク版は透過PNG） */}
             <Image
               src="/Sakalog_header.png"
@@ -70,28 +75,32 @@ export function Header({ isAdmin }: HeaderProps) {
           </PendingLink>
           {/* デスクトップナビ: 主要閲覧 → アーカイブ(dropdown) → アカウント */}
           <nav className="hidden items-center gap-4 md:flex">
-            {PRIMARY_NAV_ITEMS.map((item) => (
-              <PendingLink
-                key={item.href}
-                href={item.href}
-                feedback="global"
-                className={`text-sm transition-colors ${
-                  isNavigationItemActive(pathname, item.href)
-                    ? "font-medium text-foreground"
-                    : "text-foreground/60 hover:text-foreground"
-                }`}
-              >
-                {item.label}
-              </PendingLink>
-            ))}
+            {PRIMARY_NAV_ITEMS.map((item) => {
+              const isActive = isNavigationItemActive(pathname, item.href);
+              return (
+                <PendingLink
+                  key={item.href}
+                  href={item.href}
+                  feedback="global"
+                  aria-current={isActive ? "page" : undefined}
+                  className={`rounded-md px-2 py-1 text-sm transition-colors ${
+                    isActive
+                      ? "bg-surface-selected font-medium text-foreground"
+                      : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
+                  }`}
+                >
+                  {item.label}
+                </PendingLink>
+              );
+            })}
 
             {/* アーカイブ: 制作陣 / 会場 / 聖地マップ / Wiki をまとめた dropdown */}
             <Menu as="div" className="relative">
               <MenuButton
-                className={`group inline-flex items-center gap-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground/20 rounded-md data-[open]:text-foreground ${
+                className={`group inline-flex items-center gap-1 rounded-md px-2 py-1 text-sm transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring data-[open]:text-foreground ${
                   isArchiveActive
-                    ? "font-medium text-foreground"
-                    : "text-foreground/60 hover:text-foreground"
+                    ? "bg-surface-selected font-medium text-foreground"
+                    : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
                 }`}
               >
                 アーカイブ
@@ -112,47 +121,55 @@ export function Header({ isAdmin }: HeaderProps) {
                   ダークでは影が視認できないため、light=影のみ / dark=境界のみで面を分離する。 */}
               <MenuItems
                 anchor={{ to: "bottom start", gap: 4 }}
-                className="z-50 min-w-36 rounded-lg bg-background py-1 shadow-lg focus:outline-none dark:border dark:border-foreground/10 dark:shadow-none"
+                className="z-50 min-w-36 rounded-lg bg-background py-1 shadow-lg focus:outline-none dark:border dark:border-border-subtle dark:shadow-none"
               >
-                {ARCHIVE_NAV_ITEMS.map((item) => (
-                  <MenuItem key={item.href} as={Fragment}>
-                    <PendingLink
-                      href={item.href}
-                      feedback="global"
-                      className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors data-[focus]:bg-foreground/10 ${
-                        isNavigationItemActive(pathname, item.href)
-                          ? "font-medium text-foreground"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {item.label}
-                    </PendingLink>
-                  </MenuItem>
-                ))}
+                {ARCHIVE_NAV_ITEMS.map((item) => {
+                  const isActive = isNavigationItemActive(pathname, item.href);
+                  return (
+                    <MenuItem key={item.href} as={Fragment}>
+                      <PendingLink
+                        href={item.href}
+                        feedback="global"
+                        aria-current={isActive ? "page" : undefined}
+                        className={`flex w-full items-center px-3 py-1.5 text-sm transition-colors data-[focus]:bg-surface-subtle ${
+                          isActive
+                            ? "bg-surface-selected font-medium text-foreground"
+                            : "text-foreground"
+                        }`}
+                      >
+                        {item.label}
+                      </PendingLink>
+                    </MenuItem>
+                  );
+                })}
               </MenuItems>
             </Menu>
 
-            {accountNavItems.map((item) => (
-              <PendingLink
-                key={item.href}
-                href={item.href}
-                feedback="global"
-                className={`text-sm transition-colors ${
-                  isNavigationItemActive(pathname, item.href)
-                    ? "font-medium text-foreground"
-                    : "text-foreground/60 hover:text-foreground"
-                }`}
-              >
-                {item.label}
-              </PendingLink>
-            ))}
+            {accountNavItems.map((item) => {
+              const isActive = isNavigationItemActive(pathname, item.href);
+              return (
+                <PendingLink
+                  key={item.href}
+                  href={item.href}
+                  feedback="global"
+                  aria-current={isActive ? "page" : undefined}
+                  className={`rounded-md px-2 py-1 text-sm transition-colors ${
+                    isActive
+                      ? "bg-surface-selected font-medium text-foreground"
+                      : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
+                  }`}
+                >
+                  {item.label}
+                </PendingLink>
+              );
+            })}
           </nav>
         </div>
 
         <div className="hidden items-center gap-4 md:flex">
           <button
             onClick={handleLogout}
-            className="text-sm text-foreground/60 transition-colors hover:text-foreground"
+            className="rounded-md text-sm text-foreground-secondary transition-colors hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
           >
             ログアウト
           </button>
@@ -161,7 +178,7 @@ export function Header({ isAdmin }: HeaderProps) {
         {/* モバイル: ハンバーガーボタン（押下でドロワーを開く） */}
         <button
           onClick={() => setIsMenuOpen(true)}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground md:hidden"
+          className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring md:hidden"
           aria-label="メニューを開く"
         >
           <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -183,15 +200,15 @@ export function Header({ isAdmin }: HeaderProps) {
         />
         <DialogPanel
           transition
-          className="fixed inset-y-0 right-0 flex w-72 max-w-[80%] flex-col border-l border-foreground/10 bg-background shadow-xl transition duration-200 ease-out data-[closed]:translate-x-full"
+          className="fixed inset-y-0 right-0 flex w-72 max-w-[80%] flex-col border-l border-border-subtle bg-background shadow-xl transition duration-200 ease-out data-[closed]:translate-x-full"
         >
-          <div className="flex items-center justify-between border-b border-foreground/10 px-4 py-3">
-            <DialogTitle className="text-sm font-medium text-foreground/70">
+          <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
+            <DialogTitle className="text-sm font-medium text-foreground-secondary">
               メニュー
             </DialogTitle>
             <button
               onClick={closeMenu}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="メニューを閉じる"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -204,35 +221,39 @@ export function Header({ isAdmin }: HeaderProps) {
             {NAV_SECTIONS.map((section, index) => (
               <Fragment key={section.label}>
                 <p
-                  className={`px-3 pb-1 text-xs font-medium text-foreground/60 ${
+                  className={`px-3 pb-1 text-xs font-medium text-foreground-secondary ${
                     index === 0 ? "pt-1" : "pt-4"
                   }`}
                 >
                   {section.label}
                 </p>
-                {filterNavItemsForRole(section.items, isAdmin).map((item) => (
-                  <PendingLink
-                    key={item.href}
-                    href={item.href}
-                    feedback="global"
-                    onClick={closeMenu}
-                    className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                      isNavigationItemActive(pathname, item.href)
-                        ? "bg-foreground/5 font-medium text-foreground"
-                        : "text-foreground/60 hover:bg-foreground/5 hover:text-foreground"
-                    }`}
-                  >
-                    {item.label}
-                  </PendingLink>
-                ))}
+                {filterNavItemsForRole(section.items, isAdmin).map((item) => {
+                  const isActive = isNavigationItemActive(pathname, item.href);
+                  return (
+                    <PendingLink
+                      key={item.href}
+                      href={item.href}
+                      feedback="global"
+                      onClick={closeMenu}
+                      aria-current={isActive ? "page" : undefined}
+                      className={`rounded-md px-3 py-2 text-sm transition-colors ${
+                        isActive
+                          ? "bg-surface-selected font-medium text-foreground"
+                          : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
+                      }`}
+                    >
+                      {item.label}
+                    </PendingLink>
+                  );
+                })}
               </Fragment>
             ))}
           </nav>
 
-          <div className="border-t border-foreground/10 px-4 py-3">
+          <div className="border-t border-border-subtle px-4 py-3">
             <button
               onClick={handleLogout}
-              className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground/60 transition-colors hover:bg-foreground/5 hover:text-foreground"
+              className="w-full rounded-md px-3 py-2 text-left text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
             >
               ログアウト
             </button>
