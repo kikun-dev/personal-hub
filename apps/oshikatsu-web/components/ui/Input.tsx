@@ -1,14 +1,27 @@
 "use client";
 
-import { type InputHTMLAttributes, useRef } from "react";
+import { type InputHTMLAttributes, useId, useRef } from "react";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
   error?: string;
 };
 
-export function Input({ label, error, id, className = "", ...props }: InputProps) {
+export function Input({
+  label,
+  error,
+  id,
+  className = "",
+  "aria-describedby": ariaDescribedBy,
+  ...props
+}: InputProps) {
   const pickerRef = useRef<HTMLInputElement>(null);
+  const generatedId = useId();
+  const fieldId = id ?? generatedId;
+  const errorId = `${fieldId}-error`;
+  const describedBy = error
+    ? [ariaDescribedBy, errorId].filter(Boolean).join(" ")
+    : ariaDescribedBy;
   const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
     error ? "border-red-400" : "border-foreground/10"
   } ${className}`;
@@ -29,18 +42,20 @@ export function Input({ label, error, id, className = "", ...props }: InputProps
 
     return (
       <div>
-        <label htmlFor={id} className="mb-1 block text-sm font-medium text-foreground/70">
+        <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground/70">
           {label}
         </label>
         <div className="flex items-center gap-2">
           <input
             {...dateProps}
-            id={id}
+            id={fieldId}
             placeholder={placeholder ?? "YYYY-MM-DD"}
             className={inputClassName}
             value={dateValue}
             onChange={onChange}
             type="text"
+            aria-invalid={error ? "true" : undefined}
+            aria-describedby={describedBy}
           />
           <button
             type="button"
@@ -67,22 +82,24 @@ export function Input({ label, error, id, className = "", ...props }: InputProps
             aria-hidden="true"
           />
         </div>
-        {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+        {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
       </div>
     );
   }
 
   return (
     <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-foreground/70">
+      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground/70">
         {label}
       </label>
       <input
-        id={id}
+        id={fieldId}
+        aria-invalid={error ? "true" : undefined}
+        aria-describedby={describedBy}
         className={inputClassName}
         {...props}
       />
-      {error && <p className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
     </div>
   );
 }
