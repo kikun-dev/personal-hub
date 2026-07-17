@@ -3,6 +3,7 @@ import Link from "next/link";
 import { EventCalendar } from "@/components/events/EventCalendar";
 import { MonthSelector } from "@/components/events/MonthSelector";
 import { DailyStoryHeading } from "@/components/home/DailyStoryHeading";
+import { ReturnToCalendarLink } from "@/components/home/ReturnToCalendarLink";
 import { NextEvents } from "@/components/top/NextEvents";
 import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
@@ -74,12 +75,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
               </p>
               {hasDayParam && (
                 <p className="mt-2">
-                  <Link
-                    href="#calendar"
-                    className="text-sm text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                  >
-                    ↓ カレンダーへ戻る
-                  </Link>
+                  <ReturnToCalendarLink />
                 </p>
               )}
             </div>
@@ -100,12 +96,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
                   ← 今日へ戻る
                 </Link>
                 {hasDayParam && (
-                  <Link
-                    href="#calendar"
-                    className="text-sm text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-                  >
-                    ↓ カレンダーへ戻る
-                  </Link>
+                  <ReturnToCalendarLink />
                 )}
               </p>
             </div>
@@ -146,7 +137,8 @@ export default async function TopPage({ searchParams }: TopPageProps) {
         </div>
 
         <section className="space-y-6">
-          <h2 id="calendar" className="text-sm font-semibold text-foreground">
+          {/* 戻り導線からのprogrammatic focusを受けるためtabIndex={-1}にする */}
+          <h2 id="calendar" tabIndex={-1} className="text-sm font-semibold text-foreground">
             日付から探す
           </h2>
 

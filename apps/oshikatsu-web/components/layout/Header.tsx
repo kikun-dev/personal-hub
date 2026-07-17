@@ -209,7 +209,7 @@ export function Header({ isAdmin }: HeaderProps) {
             </DialogTitle>
             <button
               onClick={closeMenu}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+              className="-m-1.5 flex h-11 w-11 items-center justify-center rounded-md text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
               aria-label="メニューを閉じる"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2">

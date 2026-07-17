@@ -58,8 +58,9 @@ export function EventCalendar({
     selectedDateStr,
   });
 
+  // 320pxでdate link幅40px以上を確保するため、390px未満は左右paddingを最小化する（#362 P2）
   return (
-    <div className="rounded-lg border border-border-subtle bg-background p-4">
+    <div className="rounded-lg border border-border-subtle bg-background px-0.5 py-4 min-[390px]:px-4">
       <table className="w-full table-fixed border-collapse">
         <caption className="sr-only">
           {year}年{month}月のカレンダー
