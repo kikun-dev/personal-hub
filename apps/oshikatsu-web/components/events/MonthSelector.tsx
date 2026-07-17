@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatMonthLabel } from "@/lib/formatters";
 import { getDaysInMonth, getTodayInAppTimeZone } from "@/lib/dateParams";
@@ -25,6 +26,8 @@ export function MonthSelector({
   const searchParams = useSearchParams();
   // day を使う画面（トップ）と使わない画面（管理）を同一コンポーネントで扱う。
   const hasDayContext = searchParams.has("day") || day !== undefined;
+  // 月変更のannouncement（#358 Decision）。初期mountでは通知しないため空文字始まり。
+  const [announcement, setAnnouncement] = useState("");
 
   const navigate = (newYear: number, newMonth: number, newDay?: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -36,6 +39,19 @@ export function MonthSelector({
       params.delete("day");
     }
     router.push(`${basePath}?${params.toString()}`);
+  };
+
+  const announceNavigation = (
+    targetYear: number,
+    targetMonth: number,
+    targetDay?: number
+  ) => {
+    const monthPart = `${targetYear}年${targetMonth}月`;
+    setAnnouncement(
+      hasDayContext && targetDay !== undefined
+        ? `${monthPart}、${targetDay}日を選択中`
+        : monthPart
+    );
   };
 
   const clampDay = (targetYear: number, targetMonth: number, targetDay: number) => {
@@ -58,93 +74,126 @@ export function MonthSelector({
   const handlePrev = () => {
     if (isAtMin) return;
     if (month === 1) {
-      navigate(
-        year - 1,
-        12,
-        hasDayContext ? clampDay(year - 1, 12, currentDay) : undefined
-      );
+      const targetDay = hasDayContext ? clampDay(year - 1, 12, currentDay) : undefined;
+      navigate(year - 1, 12, targetDay);
+      announceNavigation(year - 1, 12, targetDay);
     } else {
-      navigate(
-        year,
-        month - 1,
-        hasDayContext ? clampDay(year, month - 1, currentDay) : undefined
-      );
+      const targetDay = hasDayContext ? clampDay(year, month - 1, currentDay) : undefined;
+      navigate(year, month - 1, targetDay);
+      announceNavigation(year, month - 1, targetDay);
     }
   };
 
   const handleNext = () => {
     if (isAtMax) return;
     if (month === 12) {
-      navigate(
-        year + 1,
-        1,
-        hasDayContext ? clampDay(year + 1, 1, currentDay) : undefined
-      );
+      const targetDay = hasDayContext ? clampDay(year + 1, 1, currentDay) : undefined;
+      navigate(year + 1, 1, targetDay);
+      announceNavigation(year + 1, 1, targetDay);
     } else {
-      navigate(
-        year,
-        month + 1,
-        hasDayContext ? clampDay(year, month + 1, currentDay) : undefined
-      );
+      const targetDay = hasDayContext ? clampDay(year, month + 1, currentDay) : undefined;
+      navigate(year, month + 1, targetDay);
+      announceNavigation(year, month + 1, targetDay);
     }
   };
 
   const handleToday = () => {
     const now = getTodayInAppTimeZone();
-    navigate(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      hasDayContext ? now.getDate() : undefined
-    );
+    const targetDay = hasDayContext ? now.getDate() : undefined;
+    navigate(now.getFullYear(), now.getMonth() + 1, targetDay);
+    announceNavigation(now.getFullYear(), now.getMonth() + 1, targetDay);
   };
 
-  const navigationControls = (
-    <div className="flex items-center gap-2 sm:gap-4">
-      <button
-        onClick={handlePrev}
-        disabled={isAtMin}
-        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
-      >
-        ← 前月
-      </button>
-      <span className="min-w-[6rem] whitespace-nowrap text-center text-lg font-bold text-foreground sm:min-w-[8rem]">
-        {formatMonthLabel(year, month)}
-      </span>
-      <button
-        onClick={handleNext}
-        disabled={isAtMax}
-        className="whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
-      >
-        翌月 →
-      </button>
+  // Today / 前月 / 翌月 は320pxで40px、390px以上で44pxのhit areaを持つ
+  // （24pxのvisual circleとは無関係にbutton自体の当たり判定として確保する）。
+  const todayButton = showTodayButton ? (
+    <button
+      onClick={handleToday}
+      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
+    >
+      Today
+    </button>
+  ) : null;
+
+  const prevButton = (
+    <button
+      onClick={handlePrev}
+      disabled={isAtMin}
+      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+    >
+      ← 前月
+    </button>
+  );
+
+  const nextButton = (
+    <button
+      onClick={handleNext}
+      disabled={isAtMax}
+      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+    >
+      翌月 →
+    </button>
+  );
+
+  // sm未満: 2行構成（1行目: Today + 月label、2行目: 前月/翌月）。
+  // whitespace-nowrapとmin-widthのlabelを1行目全幅で使い、2行目はbutton間隔を広く取ることで
+  // 320/390pxでのoverflowとタップ誤操作を避ける。
+  const mobileLayout = (
+    <div className="flex w-full flex-col gap-2 sm:hidden">
+      <div className="flex items-center gap-2">
+        {todayButton}
+        <span className="flex-1 whitespace-nowrap text-center text-lg font-bold text-foreground">
+          {formatMonthLabel(year, month)}
+        </span>
+      </div>
+      <div className="flex items-center justify-between gap-2">
+        {prevButton}
+        {nextButton}
+      </div>
     </div>
+  );
+
+  const monthLabel = (
+    <span className="min-w-[6rem] whitespace-nowrap text-center text-lg font-bold text-foreground sm:min-w-[8rem]">
+      {formatMonthLabel(year, month)}
+    </span>
+  );
+
+  const statusAnnouncement = (
+    <p role="status" className="sr-only">
+      {announcement}
+    </p>
   );
 
   if (showTodayButton && splitTodayButton) {
     return (
-      <div className="flex w-full items-center justify-between gap-2 sm:gap-4">
-        <button
-          onClick={handleToday}
-          className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-        >
-          Today
-        </button>
-        {navigationControls}
-      </div>
+      <>
+        {mobileLayout}
+        <div className="hidden w-full items-center justify-between gap-2 sm:flex sm:gap-4">
+          {todayButton}
+          <div className="flex items-center gap-2 sm:gap-4">
+            {prevButton}
+            {monthLabel}
+            {nextButton}
+          </div>
+        </div>
+        {statusAnnouncement}
+      </>
     );
   }
 
   return (
-    <div className="flex items-center gap-2 sm:gap-4">
-      {showTodayButton && (
-        <button
-          onClick={handleToday}
-          className="rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-        >
-          Today
-        </button>
-      )}
-      {navigationControls}
-    </div>
+    <>
+      {mobileLayout}
+      <div className="hidden items-center gap-2 sm:flex sm:gap-4">
+        {todayButton}
+        <div className="flex items-center gap-2 sm:gap-4">
+          {prevButton}
+          {monthLabel}
+          {nextButton}
+        </div>
+      </div>
+      {statusAnnouncement}
+    </>
   );
 }
