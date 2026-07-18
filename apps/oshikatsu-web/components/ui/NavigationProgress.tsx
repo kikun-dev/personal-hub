@@ -111,7 +111,9 @@ export function NavigationProgressBar() {
       className="fixed left-0 top-0 z-50 h-0.5 w-full overflow-hidden bg-foreground/10"
       role="status"
     >
-      <div className="h-full w-1/3 animate-pulse bg-foreground/70" />
+      {/* reduced motion では pulse を止める。1/3幅のまま静止すると停滞した進捗に誤読されるため、
+          reduce時は静的な全幅バーにして「完了間近」ではなく「実行中の合図」として読めるようにする（#364）。 */}
+      <div className="h-full w-1/3 animate-pulse bg-foreground/70 motion-reduce:w-full motion-reduce:animate-none" />
     </div>
   );
 }

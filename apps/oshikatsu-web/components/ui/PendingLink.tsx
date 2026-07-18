@@ -74,7 +74,7 @@ function PendingLinkContent({
       {isPending && (
         <span
           aria-label={pendingLabel}
-          className="absolute right-3 top-3 h-3 w-3 animate-spin rounded-full border border-border-subtle border-t-foreground-secondary"
+          className="absolute right-3 top-3 h-3 w-3 animate-spin rounded-full border border-border-subtle border-t-foreground-secondary motion-reduce:animate-none"
           role="status"
         />
       )}

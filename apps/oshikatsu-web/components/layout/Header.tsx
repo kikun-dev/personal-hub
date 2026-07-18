@@ -195,13 +195,16 @@ export function Header({ isAdmin }: HeaderProps) {
         onClose={closeMenu}
         className="relative z-50 md:hidden"
       >
+        {/* reduced motion では移動を除き即時切替にする（DESIGN.md Navigation Motion / #364）。
+            motion-reduce:transition-none は transition-property を none にするため CSSTransition が
+            生成されず、Headless UI（getAnimations ベースの完了待ち）が close を即時完了させる。 */}
         <DialogBackdrop
           transition
-          className="fixed inset-0 bg-foreground/30 backdrop-blur-sm transition duration-200 ease-out data-[closed]:opacity-0"
+          className="fixed inset-0 bg-foreground/30 backdrop-blur-sm transition duration-200 ease-out data-[closed]:opacity-0 motion-reduce:transition-none"
         />
         <DialogPanel
           transition
-          className="fixed inset-y-0 right-0 flex w-72 max-w-[80%] flex-col border-l border-border-subtle bg-background shadow-xl transition duration-200 ease-out data-[closed]:translate-x-full"
+          className="fixed inset-y-0 right-0 flex w-72 max-w-[80%] flex-col border-l border-border-subtle bg-background shadow-xl transition duration-200 ease-out data-[closed]:translate-x-full motion-reduce:transition-none"
         >
           <div className="flex items-center justify-between border-b border-border-subtle px-4 py-3">
             <DialogTitle className="text-sm font-medium text-foreground-secondary">
