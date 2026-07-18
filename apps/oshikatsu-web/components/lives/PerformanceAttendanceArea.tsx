@@ -18,41 +18,37 @@ export function PerformanceAttendanceArea({
   performanceId,
   attendance,
 }: PerformanceAttendanceAreaProps) {
-  const { isActive, toggle, notifyEditing } =
+  const { isActive, isLocked, toggle, notifyEditing, notifyPending } =
     useAttendanceExpansion(performanceId);
-  const panelId = `attendance-panel-${performanceId}`;
+  // #375レビュー指摘: detail regionは常にmountしてidを安定させ、collapsed時はhiddenにする。
+  // aria-expandedとdetail regionの可視性を常に一致させるための構造（AttendanceControl自体の
+  // conditional mountは維持する）
+  const detailId = `attendance-panel-${performanceId}`;
 
   return (
     <div className="space-y-2 border-t border-border-subtle pt-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
         {/* disclosureのfocusはtoggle button自身に残す（プログラムでfocusを移動しない）。
-            展開/collapseはclick時のnative focusのみに委ねる */}
+            展開/collapseはclick時のnative focusのみに委ねる。
+            #375レビュー指摘: 保存/削除処理中（isLocked）は同時編集による迂回を防ぐため無効化する */}
         <Button
           type="button"
           variant="ghost"
           aria-expanded={isActive}
-          aria-controls={panelId}
+          aria-controls={detailId}
+          disabled={isLocked}
           onClick={toggle}
-          className="text-xs"
+          className="min-h-11 text-xs"
         >
           {isActive ? "閉じる" : attendance ? "記録を開く" : "参戦を記録"}
         </Button>
       </div>
 
-      {isActive ? (
-        <div id={panelId}>
-          {/* showHeading=false: このコンポーネント側で既に「参戦記録」ラベルと
-              区切り線を描画しているため、AttendanceControl自身の見出しは出さない */}
-          <AttendanceControl
-            performanceId={performanceId}
-            attendance={attendance}
-            showHeading={false}
-            onEditingChange={notifyEditing}
-          />
-        </div>
-      ) : (
-        <div id={panelId} className="flex flex-wrap items-center gap-2">
+      {/* #375レビュー指摘: compact summaryはcontrolled region（detail div）の外に置く。
+          展開中はAttendanceControlが同じ情報を表示するため、二重表示を避けてここでは出さない */}
+      {!isActive && (
+        <div className="flex flex-wrap items-center gap-2">
           {attendance ? (
             <>
               <AttendedTypeBadge attendedType={attendance.attendedType} />
@@ -67,6 +63,23 @@ export function PerformanceAttendanceArea({
           )}
         </div>
       )}
+
+      <div id={detailId} hidden={!isActive}>
+        {isActive && (
+          // showHeading=false: このコンポーネント側で既に「参戦記録」ラベルと
+          // 区切り線を描画しているため、AttendanceControl自身の見出しは出さない
+          <AttendanceControl
+            performanceId={performanceId}
+            attendance={attendance}
+            showHeading={false}
+            // #375レビュー指摘: 未登録の公演は展開直後にformを直接開く
+            // （「参戦を記録」→「参戦を記録」の二段階CTAを解消）
+            defaultEditing={attendance === null}
+            onEditingChange={notifyEditing}
+            onPendingChange={notifyPending}
+          />
+        )}
+      </div>
     </div>
   );
 }

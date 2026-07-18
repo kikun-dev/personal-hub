@@ -16,8 +16,12 @@ import {
 type AttendanceExpansionContextValue = {
   activePerformanceId: string | null;
   editingPerformanceId: string | null;
+  // #375レビュー指摘: 保存/削除処理中（pending）にunmountを挟んでAttendanceControlの
+  // pendingFocus/router.refreshが迂回されるのを防ぐため、pending中は全disclosureをlockする
+  pendingPerformanceId: string | null;
   toggle: (performanceId: string) => void;
   setEditing: (performanceId: string, isEditing: boolean) => void;
+  setPending: (performanceId: string, isPending: boolean) => void;
 };
 
 const AttendanceExpansionContext =
@@ -36,11 +40,19 @@ export function AttendanceExpansionProvider({
   const [editingPerformanceId, setEditingPerformanceId] = useState<
     string | null
   >(null);
+  const [pendingPerformanceId, setPendingPerformanceId] = useState<
+    string | null
+  >(null);
 
   // AttendanceControlは展開中card（activePerformanceId）にしかmountされないため、
-  // editingPerformanceIdはnull、またはactivePerformanceIdと同値のいずれかにしかならない。
+  // editingPerformanceId/pendingPerformanceIdはnull、またはactivePerformanceIdと
+  // 同値のいずれかにしかならない。
   const toggle = useCallback(
     (performanceId: string) => {
+      // #375レビュー指摘: 保存/削除処理中に別cardへ切り替える・collapseすると、
+      // AttendanceControlがunmountされ pendingFocus/router.refresh の反映を
+      // 迂回してしまうため、pending中はtoggle自体を無効化する
+      if (pendingPerformanceId !== null) return;
       const isEditingActiveCard =
         editingPerformanceId !== null &&
         editingPerformanceId === activePerformanceId;
@@ -54,7 +66,7 @@ export function AttendanceExpansionProvider({
         current === performanceId ? null : performanceId
       );
     },
-    [activePerformanceId, editingPerformanceId]
+    [activePerformanceId, editingPerformanceId, pendingPerformanceId]
   );
 
   const setEditing = useCallback(
@@ -67,9 +79,33 @@ export function AttendanceExpansionProvider({
     []
   );
 
+  const setPending = useCallback(
+    (performanceId: string, isPending: boolean) => {
+      setPendingPerformanceId((current) => {
+        if (isPending) return performanceId;
+        return current === performanceId ? null : current;
+      });
+    },
+    []
+  );
+
   const value = useMemo(
-    () => ({ activePerformanceId, editingPerformanceId, toggle, setEditing }),
-    [activePerformanceId, editingPerformanceId, toggle, setEditing]
+    () => ({
+      activePerformanceId,
+      editingPerformanceId,
+      pendingPerformanceId,
+      toggle,
+      setEditing,
+      setPending,
+    }),
+    [
+      activePerformanceId,
+      editingPerformanceId,
+      pendingPerformanceId,
+      toggle,
+      setEditing,
+      setPending,
+    ]
   );
 
   return (
@@ -87,8 +123,11 @@ export function useAttendanceExpansion(performanceId: string) {
     );
   }
 
-  const { activePerformanceId, toggle, setEditing } = context;
+  const { activePerformanceId, pendingPerformanceId, toggle, setEditing, setPending } =
+    context;
   const isActive = activePerformanceId === performanceId;
+  // #375レビュー指摘: pending中は（自身/他cardを問わず）全disclosureをlockする表示に使う
+  const isLocked = pendingPerformanceId !== null;
 
   const toggleThis = useCallback(
     () => toggle(performanceId),
@@ -98,6 +137,10 @@ export function useAttendanceExpansion(performanceId: string) {
     (isEditing: boolean) => setEditing(performanceId, isEditing),
     [setEditing, performanceId]
   );
+  const notifyPending = useCallback(
+    (isPending: boolean) => setPending(performanceId, isPending),
+    [setPending, performanceId]
+  );
 
-  return { isActive, toggle: toggleThis, notifyEditing };
+  return { isActive, isLocked, toggle: toggleThis, notifyEditing, notifyPending };
 }
