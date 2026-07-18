@@ -116,6 +116,39 @@ for (const viewport of drawerReduceViewports) {
       await assertFocusWithinPanel(page);
     }
 
+    // focus trapの境界循環（#378 P2）: 数回のTabでは末尾/先頭境界へ到達せず、trapを
+    // 外しても通ってしまう。末尾要素からTabで先頭へ、先頭からShift+Tabで末尾へ
+    // 循環することを、panel内tabbable一覧のindexで直接assertする
+    const panelTabbableIndex = (p: Page) =>
+      p.evaluate(() => {
+        const panel = document.querySelector('[id^="headlessui-dialog-panel-"]');
+        if (panel === null) return { index: -1, count: 0 };
+        const tabbables = Array.from(
+          panel.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")
+        );
+        return {
+          index: tabbables.indexOf(document.activeElement as HTMLElement),
+          count: tabbables.length,
+        };
+      });
+
+    const tabbableCount = await page.evaluate(() => {
+      const panel = document.querySelector('[id^="headlessui-dialog-panel-"]');
+      if (panel === null) return 0;
+      const tabbables = Array.from(
+        panel.querySelectorAll<HTMLElement>("a[href], button:not([disabled])")
+      );
+      tabbables[tabbables.length - 1]?.focus();
+      return tabbables.length;
+    });
+    expect(tabbableCount).toBeGreaterThan(2);
+
+    await page.keyboard.press("Tab");
+    expect((await panelTabbableIndex(page)).index).toBe(0);
+
+    await page.keyboard.press("Shift+Tab");
+    expect((await panelTabbableIndex(page)).index).toBe(tabbableCount - 1);
+
     // scroll lock: Headless UIはopen中にroot（html）へoverflow: hiddenを設定して
     // ユーザー入力のscrollを止める。CSS仕様上、rootのoverflow: hiddenはprogrammaticな
     // scrollTo()を妨げないため挙動ベースでは検証できず、wheelシミュレーションは
@@ -289,6 +322,29 @@ test("NavigationProgress（reduce）: barが静止し全幅になる。可視sta
     // 静止barだけではpendingの意味が読めないため、可視statusが表示されていること
     const visibleStatus = progressBar.getByText("画面を読み込み中…");
     await expect(visibleStatus).toBeVisible();
+
+    // hit testing（#378 P1）: pill追加でwrapperが高さを持つため、pointer-events-noneで
+    // overlayがpending中（失敗時最大10秒）に直下のHeader操作を塞がないことをassertする。
+    // elementFromPointはpointer-eventsを尊重するため、pill中心のクリック対象が
+    // status overlay配下でないことを確認する
+    const pillBox = await visibleStatus.boundingBox();
+    if (pillBox === null) {
+      throw new Error("可視statusのboundingBoxを取得できませんでした。");
+    }
+    const hitTargetInOverlay = await page.evaluate(
+      ({ x, y }) => {
+        const element = document.elementFromPoint(x, y);
+        return (
+          element !== null &&
+          element.closest('[role="status"][aria-label="画面遷移中"]') !== null
+        );
+      },
+      {
+        x: pillBox.x + pillBox.width / 2,
+        y: pillBox.y + pillBox.height / 2,
+      }
+    );
+    expect(hitTargetInOverlay).toBe(false);
 
     await expect(page).toHaveURL(/\/members/, { timeout: 15000 });
   } finally {
