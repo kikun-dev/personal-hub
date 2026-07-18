@@ -22,6 +22,7 @@ import {
   toNumbering,
   toBonusVideoRpcInput,
 } from "./releaseMapper";
+import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
 
 const RELEASE_CALENDAR_SELECT = "id, title, release_date" as const;
 
@@ -201,6 +202,43 @@ export function createReleaseRepository(
         // 列自体のnull許容（string | null）をそのまま反映するため、クエリによる絞り込みを
         // 反映した cast として残す。
         date: row.release_date as string,
+      }));
+    },
+
+    async findCalendarItemsInRanges(ranges) {
+      if (ranges.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("orbit_releases")
+        .select(RELEASE_CALENDAR_SELECT)
+        .not("release_date", "is", null)
+        .or(buildCalendarDateRangeFilter("release_date", ranges));
+
+      if (error) {
+        throw new RepositoryError("カレンダー用リリースの取得に失敗しました", error);
+      }
+
+      return data.map((row) => ({
+        releaseId: row.id,
+        title: row.title,
+        date: row.release_date as string,
+      }));
+    },
+
+    async findCalendarItemsOnThisDay(month, day) {
+      const { data, error } = await supabase.rpc(
+        "find_orbit_releases_on_this_day",
+        { target_month: month, target_day: day }
+      );
+
+      if (error) {
+        throw new RepositoryError("過去のリリースの取得に失敗しました", error);
+      }
+
+      return data.map((row) => ({
+        releaseId: row.release_id,
+        title: row.title,
+        date: row.date,
       }));
     },
 

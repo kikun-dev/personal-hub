@@ -24,6 +24,7 @@ import {
   parseVideos,
   parseCostumes,
 } from "./songMapper";
+import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
 
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
@@ -539,6 +540,83 @@ export function createSongRepository(
           videoType: row.video_type,
           url: row.video_url,
           date: row.published_on as string,
+        });
+      }
+      return items;
+    },
+
+    async findCalendarVideoItemsInRanges(ranges) {
+      if (ranges.length === 0) return [];
+
+      const rangeFilter = buildCalendarDateRangeFilter("published_on", ranges);
+      const [mvResult, videoResult] = await Promise.all([
+        supabase
+          .from("orbit_track_mvs")
+          .select(MV_CALENDAR_SELECT)
+          .not("published_on", "is", null)
+          .or(rangeFilter),
+        supabase
+          .from("orbit_track_videos")
+          .select(VIDEO_CALENDAR_SELECT)
+          .not("published_on", "is", null)
+          .or(rangeFilter),
+      ]);
+
+      if (mvResult.error) {
+        throw new RepositoryError(
+          "カレンダー用MVの取得に失敗しました",
+          mvResult.error
+        );
+      }
+      if (videoResult.error) {
+        throw new RepositoryError(
+          "カレンダー用動画の取得に失敗しました",
+          videoResult.error
+        );
+      }
+
+      const items: CalendarVideoItem[] = mvResult.data.map((row) => ({
+        trackId: row.orbit_tracks.id,
+        trackTitle: row.orbit_tracks.title,
+        groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
+        videoType: "mv",
+        url: row.mv_url,
+        date: row.published_on as string,
+      }));
+      for (const row of videoResult.data) {
+        if (!isSongVideoType(row.video_type)) continue;
+        items.push({
+          trackId: row.orbit_tracks.id,
+          trackTitle: row.orbit_tracks.title,
+          groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
+          videoType: row.video_type,
+          url: row.video_url,
+          date: row.published_on as string,
+        });
+      }
+      return items;
+    },
+
+    async findCalendarVideoItemsOnThisDay(month, day) {
+      const { data, error } = await supabase.rpc(
+        "find_orbit_calendar_videos_on_this_day",
+        { target_month: month, target_day: day }
+      );
+
+      if (error) {
+        throw new RepositoryError("過去の動画の取得に失敗しました", error);
+      }
+
+      const items: CalendarVideoItem[] = [];
+      for (const row of data) {
+        if (row.video_type !== "mv" && !isSongVideoType(row.video_type)) continue;
+        items.push({
+          trackId: row.track_id,
+          trackTitle: row.track_title,
+          groupNameJa: row.group_name_ja,
+          videoType: row.video_type,
+          url: row.url,
+          date: row.date,
         });
       }
       return items;

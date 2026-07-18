@@ -1,4 +1,5 @@
 import type {
+  BirthdayEvent,
   CalendarEvent,
   LiveCalendarEvent,
   OnThisDayItem,
@@ -6,17 +7,17 @@ import type {
   VideoCalendarEvent,
 } from "@/types/event";
 import type {
+  CalendarDateRange,
   EventRepository,
   LiveRepository,
   MemberRepository,
   ReleaseRepository,
   SongRepository,
 } from "@/types/repositories";
+import type { BirthdayMember } from "@/types/member";
 import type { CalendarVideoItem } from "@/types/song";
 import { formatSongVideoTypeLabel } from "@/types/song";
-import { getEventsForDate } from "@/usecases/getEventsForDate";
-import { getEventsForMonth } from "@/usecases/getEventsForMonth";
-import { getOnThisDay } from "@/usecases/getOnThisDay";
+import { calculateAge } from "@/lib/formatters";
 
 export type TopPageContent = {
   monthEvents: CalendarEvent[];
@@ -47,9 +48,69 @@ const NEXT_EVENTS_LIMIT = 4;
 // ライブ/リリース/動画/カスタムイベント/誕生日のすべての候補をこの窓でフィルタし、
 // 窓外のイベントが窓内のイベントを押しのけないようにする。
 const NEXT_EVENTS_WINDOW_MONTHS = 12;
-// カスタムイベント・誕生日はバッチ1（今日の月+2か月=3か月）→ バッチ2（残り9か月）の
-// 最大2回の並列取得で窓全体をカバーする。
-const NEXT_EVENTS_BATCH1_MONTHS = 3;
+
+function toMonthStart(year: number, month: number): string {
+  return `${year}-${pad(month)}-01`;
+}
+
+function buildCalendarRanges(
+  selectedYear: number,
+  selectedMonth: number,
+  todayYear: number,
+  todayMonth: number
+): CalendarDateRange[] {
+  const selectedEnd = addMonths(selectedYear, selectedMonth, 1);
+  const windowEnd = addMonths(todayYear, todayMonth, NEXT_EVENTS_WINDOW_MONTHS);
+  const ranges: CalendarDateRange[] = [
+    {
+      startDate: toMonthStart(selectedYear, selectedMonth),
+      endDate: toMonthStart(selectedEnd.year, selectedEnd.month),
+    },
+    {
+      startDate: toMonthStart(todayYear, todayMonth),
+      endDate: toMonthStart(windowEnd.year, windowEnd.month),
+    },
+  ].sort((a, b) => a.startDate.localeCompare(b.startDate));
+
+  const [first, second] = ranges;
+  if (second.startDate <= first.endDate) {
+    return [
+      {
+        startDate: first.startDate,
+        endDate:
+          first.endDate >= second.endDate ? first.endDate : second.endDate,
+      },
+    ];
+  }
+  return ranges;
+}
+
+function toBirthdayEvent(
+  member: BirthdayMember,
+  year: number,
+  month: number
+): BirthdayEvent {
+  const day = Number(member.dateOfBirth.slice(8, 10));
+  const date = `${year}-${pad(month)}-${pad(day)}`;
+  return {
+    type: "birthday",
+    memberId: member.id,
+    memberName: member.nameJa,
+    date,
+    age: calculateAge(member.dateOfBirth, new Date(`${date}T00:00:00`)),
+    groupNames: member.groupNames,
+  };
+}
+
+function findBirthdayEventsForMonth(
+  members: BirthdayMember[],
+  year: number,
+  month: number
+): BirthdayEvent[] {
+  return members
+    .filter((member) => Number(member.dateOfBirth.slice(5, 7)) === month)
+    .map((member) => toBirthdayEvent(member, year, month));
+}
 
 // 日次一覧（今日の予定・選択日・Next Events 同日内）の並び規則（#344 レビュー対応）:
 // 1. 時刻の無い予定が先。種別順: 誕生日 → リリース → 動画 → ライブ → カスタムイベント
@@ -120,40 +181,57 @@ export async function getTopPageContent(
   todayMonth: number,
   todayDay: number
 ): Promise<TopPageContent> {
-  const selectedDate = new Date(year, month - 1, day);
-  const todayDate = new Date(todayYear, todayMonth - 1, todayDay);
   const todayStr = `${todayYear}-${pad(todayMonth)}-${pad(todayDay)}`;
-
-  // 選択日=今日のとき、下段の重複フェッチを避けるための判定（#344 レビュー対応）。
-  const isSelectedDateToday =
-    year === todayYear && month === todayMonth && day === todayDay;
+  const dateStr = `${year}-${pad(month)}-${pad(day)}`;
+  const monthPrefix = `${year}-${pad(month)}`;
+  const ranges = buildCalendarRanges(year, month, todayYear, todayMonth);
 
   const [
-    monthEventsRaw,
+    calendarBaseEvents,
     onThisDayBaseEvents,
+    birthdayMembers,
     livePerformances,
+    onThisDayLivePerformances,
     releaseItems,
+    onThisDayReleaseItems,
     videoItems,
-    todayBaseEvents,
-    selectedDateEventsRaw,
+    onThisDayVideoItems,
   ] = await Promise.all([
-    getEventsForMonth(eventRepo, memberRepo, year, month),
-    getOnThisDay(eventRepo, selectedDate),
-    liveRepo.findCalendarPerformances(),
-    releaseRepo.findCalendarItems(),
-    songRepo.findCalendarVideoItems(),
-    getEventsForDate(eventRepo, memberRepo, todayDate),
-    // 選択日が今日と同じ場合は todayBaseEvents 側の結果を共有するため、ここでは取得しない。
-    isSelectedDateToday
-      ? Promise.resolve<CalendarEvent[]>([])
-      : getEventsForDate(eventRepo, memberRepo, selectedDate),
+    eventRepo.findCalendarEventsInRanges(ranges),
+    eventRepo.findOnThisDay(month, day),
+    memberRepo.findAllBirthdays(),
+    liveRepo.findCalendarPerformancesInRanges(ranges),
+    liveRepo.findCalendarPerformancesOnThisDay(month, day),
+    releaseRepo.findCalendarItemsInRanges(ranges),
+    releaseRepo.findCalendarItemsOnThisDay(month, day),
+    songRepo.findCalendarVideoItemsInRanges(ranges),
+    songRepo.findCalendarVideoItemsOnThisDay(month, day),
   ]);
 
-  // 共有の有無に関わらず、以降で push するため必ず clone してから使う。
-  const monthEvents = monthEventsRaw.slice();
-  const selectedDateEvents = (
-    isSelectedDateToday ? todayBaseEvents : selectedDateEventsRaw
-  ).slice();
+  const monthEvents: CalendarEvent[] = calendarBaseEvents
+    .filter((event) => event.date.startsWith(monthPrefix))
+    .map((event) => ({ ...event, type: "event" as const }));
+  monthEvents.push(...findBirthdayEventsForMonth(birthdayMembers, year, month));
+
+  const selectedDateEvents: CalendarEvent[] = calendarBaseEvents
+    .filter((event) => event.date === dateStr)
+    .map((event) => ({ ...event, type: "event" as const }));
+  selectedDateEvents.push(
+    ...findBirthdayEventsForMonth(birthdayMembers, year, month).filter(
+      (event) => event.date === dateStr
+    )
+  );
+
+  const todayEvents: CalendarEvent[] = calendarBaseEvents
+    .filter((event) => event.date === todayStr)
+    .map((event) => ({ ...event, type: "event" as const }));
+  todayEvents.push(
+    ...findBirthdayEventsForMonth(
+      birthdayMembers,
+      todayYear,
+      todayMonth
+    ).filter((event) => event.date === todayStr)
+  );
 
   // 同一ライブ・同一日（昼夜公演など）はカレンダー上で1件に集約する（#344 レビュー対応）。
   // 集約前は Map で最後の1件が任意に残る不具合があったため、全公演を畳み込む形に変更した。
@@ -208,8 +286,6 @@ export async function getTopPageContent(
     }
   );
 
-  const monthPrefix = `${year}-${pad(month)}`;
-  const dateStr = `${year}-${pad(month)}-${pad(day)}`;
   const monthDaySuffix = `-${pad(month)}-${pad(day)}`;
 
   const toLiveEvent = (p: {
@@ -286,6 +362,9 @@ export async function getTopPageContent(
   const videoEvents = videoItems
     .map(toVideoEvent)
     .filter((event): event is VideoCalendarEvent => event !== null);
+  const onThisDayVideoEvents = onThisDayVideoItems
+    .map(toVideoEvent)
+    .filter((event): event is VideoCalendarEvent => event !== null);
 
   // 月のカレンダー
   for (const p of uniqueLivePerformances) {
@@ -312,21 +391,23 @@ export async function getTopPageContent(
   selectedDateEvents.sort(compareDailyEvents);
 
   // 今日はなんの日（過去・同じ月日）
-  const onThisDayEvents: OnThisDayItem[] = onThisDayBaseEvents.map((e) => ({
-    ...e,
-    type: "event" as const,
-  }));
-  for (const p of livePerformances) {
+  const onThisDayEvents: OnThisDayItem[] = onThisDayBaseEvents
+    .filter((event) => event.date < dateStr)
+    .map((e) => ({
+      ...e,
+      type: "event" as const,
+    }));
+  for (const p of onThisDayLivePerformances) {
     if (p.date.endsWith(monthDaySuffix) && p.date < dateStr) {
       onThisDayEvents.push(toLivePerformanceEvent(p));
     }
   }
-  for (const r of releaseItems) {
+  for (const r of onThisDayReleaseItems) {
     if (r.date.endsWith(monthDaySuffix) && r.date < dateStr) {
       onThisDayEvents.push(toReleaseEvent(r));
     }
   }
-  for (const v of videoEvents) {
+  for (const v of onThisDayVideoEvents) {
     if (v.date.endsWith(monthDaySuffix) && v.date < dateStr) {
       onThisDayEvents.push(v);
     }
@@ -337,7 +418,6 @@ export async function getTopPageContent(
 
   // 今日の予定（#344）: selectedDateEvents と同一ロジックを「今日」の日付で計算する。
   // #346: performance 単位（1行 = 1公演）。
-  const todayEvents: CalendarEvent[] = todayBaseEvents.slice();
   for (const p of livePerformances) {
     if (p.date === todayStr) todayEvents.push(toLivePerformanceEvent(p));
   }
@@ -349,10 +429,8 @@ export async function getTopPageContent(
   }
   todayEvents.sort(compareDailyEvents);
 
-  // Next Events rail（#344 レビュー対応）: 探索窓 = 今日の月を含む12 calendar months。
-  // 窓終端（exclusive）= 今日の月の12か月後の月初日。ライブ/リリース/動画は無制限 horizon の
-  // 全件取得済みリストから拾えるが、窓外の候補がカスタムイベント・誕生日（窓内の月しか
-  // 取得しない）を押しのけないよう、ここで同じ窓条件（date > todayStr && date < 窓終端）を適用する。
+  // Next Events rail（#344）: 探索窓 = 今日の月を含む12 calendar months。
+  // Repository から受け取る行自体を selected 月 + この窓に限定し、archive 全件 scan を避ける。
   const windowEnd = addMonths(
     todayYear,
     todayMonth,
@@ -378,55 +456,26 @@ export async function getTopPageContent(
     }
   }
 
-  // カスタムイベント・誕生日は月単位のメソッドしか無いため、窓（12か月）を
-  // バッチ1（今日の月+2か月=3か月）→ バッチ2（残り9か月）の最大2回の Promise.all で取得する。
-  // 走査月が選択月（引数 year/month）と一致する場合は monthEventsRaw を再利用し、
-  // 重複取得を避ける（バッチ1・バッチ2のどちらでも成立し得る）。
-  const fetchMonthEvents = (coord: {
-    year: number;
-    month: number;
-  }): Promise<CalendarEvent[]> =>
-    coord.year === year && coord.month === month
-      ? Promise.resolve(monthEventsRaw)
-      : getEventsForMonth(eventRepo, memberRepo, coord.year, coord.month);
-
-  const batch1Coords = Array.from({ length: NEXT_EVENTS_BATCH1_MONTHS }, (_, i) =>
-    addMonths(todayYear, todayMonth, i)
-  );
-  const batch1Results = await Promise.all(batch1Coords.map(fetchMonthEvents));
-  for (const monthlyEvents of batch1Results) {
-    for (const e of monthlyEvents) {
-      if (e.date > todayStr) nextEventCandidates.push(e);
+  for (const event of calendarBaseEvents) {
+    if (event.date > todayStr && event.date < windowEndStr) {
+      nextEventCandidates.push({ ...event, type: "event" as const });
     }
   }
-  nextEventCandidates.sort(compareForNextEvents);
-
-  // バッチ1確定条件: 上位4件の4件目の日付が「バッチ1終端の翌月初日」より前であること。
-  const batch1End = addMonths(
-    todayYear,
-    todayMonth,
-    NEXT_EVENTS_BATCH1_MONTHS
-  );
-  const batch1EndStr = `${batch1End.year}-${pad(batch1End.month)}-01`;
-  const confirmedAfterBatch1 =
-    nextEventCandidates.length >= NEXT_EVENTS_LIMIT &&
-    nextEventCandidates[NEXT_EVENTS_LIMIT - 1].date < batch1EndStr;
-
-  if (!confirmedAfterBatch1) {
-    // バッチ2 = 残り9か月（窓全体を走査し終えるため、以降の追加判定は不要）。
-    const batch2Coords = Array.from(
-      { length: NEXT_EVENTS_WINDOW_MONTHS - NEXT_EVENTS_BATCH1_MONTHS },
-      (_, i) => addMonths(todayYear, todayMonth, NEXT_EVENTS_BATCH1_MONTHS + i)
+  for (let offset = 0; offset < NEXT_EVENTS_WINDOW_MONTHS; offset += 1) {
+    const coord = addMonths(todayYear, todayMonth, offset);
+    const birthdays = findBirthdayEventsForMonth(
+      birthdayMembers,
+      coord.year,
+      coord.month
     );
-    const batch2Results = await Promise.all(batch2Coords.map(fetchMonthEvents));
-    for (const monthlyEvents of batch2Results) {
-      for (const e of monthlyEvents) {
-        if (e.date > todayStr) nextEventCandidates.push(e);
+    for (const birthday of birthdays) {
+      if (birthday.date > todayStr && birthday.date < windowEndStr) {
+        nextEventCandidates.push(birthday);
       }
     }
-    nextEventCandidates.sort(compareForNextEvents);
   }
 
+  nextEventCandidates.sort(compareForNextEvents);
   const nextEvents = nextEventCandidates.slice(0, NEXT_EVENTS_LIMIT);
 
   return {

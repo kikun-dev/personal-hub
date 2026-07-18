@@ -47,6 +47,18 @@ export function orbitReadClientTypeTest(
     target_month: 1,
     target_day: 1,
   });
+  void client.rpc("find_orbit_live_performances_on_this_day", {
+    target_month: 1,
+    target_day: 1,
+  });
+  void client.rpc("find_orbit_releases_on_this_day", {
+    target_month: 1,
+    target_day: 1,
+  });
+  void client.rpc("find_orbit_calendar_videos_on_this_day", {
+    target_month: 1,
+    target_day: 1,
+  });
 
   // --- 異常系: 書き込みメソッドは from() の戻り値（select のみ）に存在せずコンパイルエラーになる ---
   // @ts-expect-error insert は ReadOnlyQueryBuilder に存在しない

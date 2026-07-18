@@ -10,6 +10,9 @@ import type { Database, ReadOnlySupabaseClient } from "@personal-hub/supabase";
 export type OrbitReadRpcFunction = Extract<
   keyof Database["public"]["Functions"],
   | "find_orbit_events_on_this_day"
+  | "find_orbit_live_performances_on_this_day"
+  | "find_orbit_releases_on_this_day"
+  | "find_orbit_calendar_videos_on_this_day"
   | "find_orbit_birthdays_by_month"
   | "find_orbit_birthdays_by_date"
 >;
