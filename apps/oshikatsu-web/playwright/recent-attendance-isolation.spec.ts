@@ -151,6 +151,11 @@ test("2 user isolation: 別ユーザーの参加記録がRecent Attendanceへ漏
       email: userBEmail,
       password: userBPassword,
       email_confirm: true,
+      // attendance/performanceのSELECT policyはhas_orbit_read_role()（JWTの
+      // app_metadata.roleがadmin/viewer）を要求するため（migration 045: 新規ユーザーへの
+      // roleは手動付与）、付与しないとpositive controlのbounded queryが常に空配列になる。
+      // sign-in前の作成時点で最小権限のviewerを付与し、roleを含むJWTを取得させる（#380 P1）
+      app_metadata: { role: "viewer" },
     });
 
   if (createUserError || !userBData.user) {
