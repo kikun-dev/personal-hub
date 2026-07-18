@@ -43,13 +43,21 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   // URLへdayが明示されている場合のみ「カレンダーへ戻る」導線を出す（today表示でも同様）。
   const hasDayParam = params.day !== undefined;
 
-  const {
-    monthEvents,
-    selectedDateEvents,
-    onThisDayEvents,
-    todayEvents,
-    nextEvents,
-  } = await getTopPageData(year, month, day, todayYear, todayMonth, todayDay);
+  // global shared read（getTopPageData）と personal auth chain（requireOrbitUser →
+  // 参加記録取得）を同じ page phase で並列開始する（#366）。personal chain 内の
+  // auth → attendance の順序自体は維持し、global 側とのみ並列化する。
+  const topPageDataPromise = getTopPageData(
+    year,
+    month,
+    day,
+    todayYear,
+    todayMonth,
+    todayDay
+  );
+  // requireOrbitUser が未認証時に redirect（NEXT_REDIRECT throw）した場合、
+  // 並列開始した global promise が reject しても誰も await しない unhandled rejection に
+  // ならないよう no-op catch を付ける（本流は下の await topPageDataPromise で処理する）。
+  topPageDataPromise.catch(() => undefined);
 
   // 参加記録は本人限定データ（ADR 0009）のため、グローバルデータの shared read
   // cache 経路（readOrbitMusicData.ts）ではなく、mypage と同じ認証付き入口から
@@ -57,6 +65,14 @@ export default async function TopPage({ searchParams }: TopPageProps) {
   const { supabase } = await requireOrbitUser();
   const attendanceRepo = createAttendanceRepository(supabase);
   const recentAttendance = await getRecentAttendance(attendanceRepo);
+
+  const {
+    monthEvents,
+    selectedDateEvents,
+    onThisDayEvents,
+    todayEvents,
+    nextEvents,
+  } = await topPageDataPromise;
 
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">

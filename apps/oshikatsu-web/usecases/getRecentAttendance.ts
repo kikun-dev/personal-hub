@@ -20,26 +20,27 @@ function getTodayDateStr(): string {
   return `${year}-${month}-${day}`;
 }
 
+const RECENT_ATTENDANCE_LIMIT = 3;
+
 /**
- * 自分の参加記録全件（findAllForUser、降順で返る）から、過去分
- * （performanceDate < 今日）を日付降順で先頭3件に絞る（#344）。
+ * 自分の過去の参加記録（performanceDate < 今日）を日付降順で先頭3件に絞る（#344）。
+ * #366 で findAllForUser（全件取得 + JSでフィルタ・スライス）から
+ * findRecentForUser（DB側で bounded に絞り込み）へ置換した。
  * getMyAttendanceHistory の thisYearPast は今年限定のため使わず、
  * ここでは年で絞らない全期間の直近実績を返す。
  */
 export async function getRecentAttendance(
   repo: AttendanceRepository
 ): Promise<RecentAttendanceOverview> {
-  const entries = await repo.findAllForUser();
   const todayStr = getTodayDateStr();
-
-  // repository は日付降順（新しい順、日程未定は末尾）で返すため、フィルタのみで
-  // 順序はそのまま活かせる。
-  const pastEntries = entries.filter(
-    (entry) => entry.performanceDate !== null && entry.performanceDate < todayStr
-  );
+  const entries = await repo.findRecentForUser(todayStr, RECENT_ATTENDANCE_LIMIT);
 
   return {
-    entries: pastEntries.slice(0, 3),
-    hasAnyPastAttendance: pastEntries.length > 0,
+    entries,
+    // findRecentForUser は「performance_date が非null かつ todayStr 未満」の行のみを
+    // 対象に limit 件だけ返す。limit は件数を減らす方向にのみ働くため、
+    // entries が1件以上あれば過去分が存在すること・0件なら存在しないことの
+    // 両方をそのまま導出できる（追加の count query は不要）。
+    hasAnyPastAttendance: entries.length > 0,
   };
 }

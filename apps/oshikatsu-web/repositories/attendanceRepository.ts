@@ -73,7 +73,44 @@ type MyAttendanceRow = SelectRows<
   typeof MY_ATTENDANCE_SELECT
 >[number];
 
-function mapMyAttendanceEntry(row: MyAttendanceRow): MyAttendanceEntry {
+// トップページ「最近の参加記録」（#366）用。MY_ATTENDANCE_SELECT と選択列は同一だが、
+// orbit_live_performances の埋め込みを !inner にする。performance_id は NOT NULL FK
+// のため通常の埋め込み（LEFT JOIN相当）でも常に1件対1件になるが、!inner にすることで
+// 埋め込み列（performance_date）へのトップレベルfilter（.not/.lt）が「埋め込み側だけ
+// 絞る」のではなく「条件を満たさない参加記録行そのものを除外する」INNER JOIN 相当の
+// 挙動になる。また #366 で実機検証済み: to-one（1対1/多対1）の埋め込みは
+// order("<table>(<column>)") 形式でトップレベル行を直接ソートできる（findAllForUser
+// 冒頭コメントの「埋め込みリレーション列でトップレベル行を直接ソートできない」は
+// 一般の embed に対する制約で、to-one かつ !inner 済みの場合はこの制約に当たらない）。
+// これにより DB 側で「performance_date が非null かつ beforeDateStr 未満」の行を
+// 日付降順に並べ、limit で必要件数だけ取得できる（RPC/migration 不要、#366 Decision）。
+const RECENT_ATTENDANCE_SELECT = `
+  id,
+  attended_type,
+  seat_note,
+  note,
+  orbit_live_performances!inner(
+    id,
+    performance_date,
+    starts_at,
+    orbit_lives(
+      id,
+      name,
+      live_type,
+      orbit_live_performer_groups(orbit_groups(id, name_ja, color))
+    ),
+    orbit_venues(id, name, prefecture)
+  )
+` as const;
+
+type RecentAttendanceRow = SelectRows<
+  "orbit_live_attendances",
+  typeof RECENT_ATTENDANCE_SELECT
+>[number];
+
+function mapMyAttendanceEntry(
+  row: MyAttendanceRow | RecentAttendanceRow
+): MyAttendanceEntry {
   const performance = row.orbit_live_performances;
   const live = performance.orbit_lives;
   const venue = performance.orbit_venues;
@@ -196,6 +233,24 @@ export function createAttendanceRepository(
         if (!b.performanceDate) return -1;
         return b.performanceDate.localeCompare(a.performanceDate);
       });
+    },
+
+    async findRecentForUser(beforeDateStr, limit) {
+      const { data, error } = await supabase
+        .from("orbit_live_attendances")
+        .select(RECENT_ATTENDANCE_SELECT)
+        .not("orbit_live_performances.performance_date", "is", null)
+        .lt("orbit_live_performances.performance_date", beforeDateStr)
+        // to-one embed + !inner のため、この order がトップレベル行の並びに反映される
+        // （#366 検証済み。RECENT_ATTENDANCE_SELECT 側のコメント参照）。
+        .order("orbit_live_performances(performance_date)", { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        throw new RepositoryError("直近の参戦記録の取得に失敗しました", error);
+      }
+
+      return data.map(mapMyAttendanceEntry);
     },
 
     async findSongEncounters() {
