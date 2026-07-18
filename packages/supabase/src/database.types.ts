@@ -1848,6 +1848,33 @@ export type Database = {
           name_ja: string
         }[]
       }
+      find_orbit_calendar_videos_on_this_day: {
+        Args: { target_day: number; target_month: number }
+        Returns: {
+          date: string
+          group_name_ja: string
+          track_id: string
+          track_title: string
+          url: string
+          video_type: string
+        }[]
+      }
+      find_orbit_calendar_videos_in_ranges: {
+        Args: {
+          range_1_end: string
+          range_1_start: string
+          range_2_end: string | null
+          range_2_start: string | null
+        }
+        Returns: {
+          date: string
+          group_name_ja: string
+          track_id: string
+          track_title: string
+          url: string
+          video_type: string
+        }[]
+      }
       find_orbit_events_on_this_day: {
         Args: { target_day: number; target_month: number }
         Returns: {
@@ -1863,6 +1890,25 @@ export type Database = {
           start_time: string
           title: string
           venue: string
+        }[]
+      }
+      find_orbit_live_performances_on_this_day: {
+        Args: { target_day: number; target_month: number }
+        Returns: {
+          date: string
+          id: string
+          live_id: string
+          live_name: string
+          starts_at: string
+          venue_name: string
+        }[]
+      }
+      find_orbit_releases_on_this_day: {
+        Args: { target_day: number; target_month: number }
+        Returns: {
+          date: string
+          release_id: string
+          title: string
         }[]
       }
       has_orbit_read_role: { Args: never; Returns: boolean }

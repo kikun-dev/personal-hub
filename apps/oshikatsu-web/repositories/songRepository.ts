@@ -24,6 +24,7 @@ import {
   parseVideos,
   parseCostumes,
 } from "./songMapper";
+import { validateCalendarDateRanges } from "./calendarDateRanges";
 
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
@@ -539,6 +540,71 @@ export function createSongRepository(
           videoType: row.video_type,
           url: row.video_url,
           date: row.published_on as string,
+        });
+      }
+      return items;
+    },
+
+    async findCalendarVideoItemsInRanges(ranges) {
+      if (ranges.length === 0) return [];
+      if (ranges.length > 2) {
+        throw new RepositoryError(
+          "カレンダー用動画の取得範囲は2件までです",
+          null
+        );
+      }
+      validateCalendarDateRanges(ranges);
+
+      const [range1, range2] = ranges;
+      const { data, error } = await supabase.rpc(
+        "find_orbit_calendar_videos_in_ranges",
+        {
+          range_1_start: range1.startDate,
+          range_1_end: range1.endDate,
+          range_2_start: range2?.startDate ?? null,
+          range_2_end: range2?.endDate ?? null,
+        }
+      );
+
+      if (error) {
+        throw new RepositoryError("カレンダー用動画の取得に失敗しました", error);
+      }
+
+      const items: CalendarVideoItem[] = [];
+      for (const row of data) {
+        if (row.video_type !== "mv" && !isSongVideoType(row.video_type)) continue;
+        items.push({
+          trackId: row.track_id,
+          trackTitle: row.track_title,
+          groupNameJa: row.group_name_ja,
+          videoType: row.video_type,
+          url: row.url,
+          date: row.date,
+        });
+      }
+      return items;
+    },
+
+    async findCalendarVideoItemsOnThisDay(month, day) {
+      const { data, error } = await supabase.rpc(
+        "find_orbit_calendar_videos_on_this_day",
+        { target_month: month, target_day: day }
+      );
+
+      if (error) {
+        throw new RepositoryError("過去の動画の取得に失敗しました", error);
+      }
+
+      const items: CalendarVideoItem[] = [];
+      for (const row of data) {
+        if (row.video_type !== "mv" && !isSongVideoType(row.video_type)) continue;
+        items.push({
+          trackId: row.track_id,
+          trackTitle: row.track_title,
+          groupNameJa: row.group_name_ja,
+          videoType: row.video_type,
+          url: row.url,
+          date: row.date,
         });
       }
       return items;

@@ -18,6 +18,7 @@ import {
   extractHttpUrlsFromText,
   splitTrailingPunctuation,
 } from "@/lib/linkParser";
+import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
 
 const EVENT_SELECT = `
   *,
@@ -335,6 +336,23 @@ export function createEventRepository(
       }
 
       return data.map(mapToOnThisDayEvent);
+    },
+
+    async findCalendarEventsInRanges(ranges) {
+      if (ranges.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("orbit_events")
+        .select(EVENT_SUMMARY_SELECT)
+        .or(buildCalendarDateRangeFilter("date", ranges))
+        .order("date")
+        .order("start_time", { nullsFirst: false });
+
+      if (error) {
+        throw new RepositoryError("イベントの取得に失敗しました", error);
+      }
+
+      return data.map(mapToEventSummary);
     },
 
     async findOptions() {

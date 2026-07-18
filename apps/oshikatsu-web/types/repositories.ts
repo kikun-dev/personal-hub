@@ -90,7 +90,15 @@ export type MemberRepository = {
   delete(id: string): Promise<void>;
   findBirthdaysByMonth(month: number): Promise<BirthdayMember[]>;
   findBirthdaysByDate(month: number, day: number): Promise<BirthdayMember[]>;
+  findAllBirthdays(): Promise<BirthdayMember[]>;
   findActiveMemberIdsByGroups(groupIds: string[], date: string): Promise<string[]>;
+};
+
+// Top Page の read 窓。startDate を含み、endDate を含まない。
+// exclusive 終端に統一して月境界・Next Events の窓終端を一意に扱う。
+export type CalendarDateRange = {
+  startDate: string;
+  endDate: string;
 };
 
 export type EventRepository = {
@@ -102,6 +110,7 @@ export type EventRepository = {
   update(id: string, input: UpdateEventInput): Promise<Event>;
   delete(id: string): Promise<void>;
   findOnThisDay(month: number, day: number): Promise<Event[]>;
+  findCalendarEventsInRanges(ranges: CalendarDateRange[]): Promise<Event[]>;
   // スポットの出典セレクタ（イベント）用の軽量候補一覧
   findOptions(): Promise<EventOption[]>;
 };
@@ -170,6 +179,13 @@ export type ReleaseCalendarItem = {
 export type LiveRepository = {
   findPublicList(): Promise<LiveListItem[]>;
   findCalendarPerformances(): Promise<LiveCalendarPerformance[]>;
+  findCalendarPerformancesInRanges(
+    ranges: CalendarDateRange[]
+  ): Promise<LiveCalendarPerformance[]>;
+  findCalendarPerformancesOnThisDay(
+    month: number,
+    day: number
+  ): Promise<LiveCalendarPerformance[]>;
   findOptions(): Promise<LiveOption[]>;
   findById(id: string): Promise<Live | null>;
   findPerformancesByVenue(venueId: string): Promise<VenuePerformanceSummary[]>;
@@ -183,6 +199,13 @@ export type ReleaseRepository = {
   findAll(filters?: ReleaseFilters): Promise<Release[]>;
   findPublicList(filters?: ReleaseFilters): Promise<ReleaseListItem[]>;
   findCalendarItems(): Promise<ReleaseCalendarItem[]>;
+  findCalendarItemsInRanges(
+    ranges: CalendarDateRange[]
+  ): Promise<ReleaseCalendarItem[]>;
+  findCalendarItemsOnThisDay(
+    month: number,
+    day: number
+  ): Promise<ReleaseCalendarItem[]>;
   findOptions(): Promise<ReleaseOption[]>;
   findById(id: string): Promise<Release | null>;
   findSelectionPositionsByMemberId(
@@ -207,6 +230,13 @@ export type SongRepository = {
   findByMemberId(memberId: string): Promise<Song[]>;
   findCenterTrackIdsByMemberId(memberId: string): Promise<string[]>;
   findCalendarVideoItems(): Promise<CalendarVideoItem[]>;
+  findCalendarVideoItemsInRanges(
+    ranges: CalendarDateRange[]
+  ): Promise<CalendarVideoItem[]>;
+  findCalendarVideoItemsOnThisDay(
+    month: number,
+    day: number
+  ): Promise<CalendarVideoItem[]>;
   // 楽曲詳細ページの「総披露回数」用（Issue #281）。全ユーザー共通の客観集計のため
   // shared read cache 経路（readOrbitMusicData.ts）から呼ぶ。
   findPerformanceOccurrences(songId: string): Promise<SongPerformanceOccurrence[]>;

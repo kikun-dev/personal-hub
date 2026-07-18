@@ -17,6 +17,7 @@ import {
   compareByGenerationThenName,
   pickMembershipGeneration,
 } from "@/lib/memberOrder";
+import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
 
 const DETAIL_SELECT = `
   id,
@@ -323,6 +324,49 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
         date: row.performance_date as string,
         startsAt: row.starts_at,
         venueName: row.orbit_venues?.name ?? null,
+      }));
+    },
+
+    async findCalendarPerformancesInRanges(ranges) {
+      if (ranges.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("orbit_live_performances")
+        .select(CALENDAR_PERFORMANCE_SELECT)
+        .not("performance_date", "is", null)
+        .or(buildCalendarDateRangeFilter("performance_date", ranges));
+
+      if (error) {
+        throw new RepositoryError("カレンダー用ライブの取得に失敗しました", error);
+      }
+
+      return data.map((row) => ({
+        id: row.id,
+        liveId: row.live_id,
+        liveName: row.orbit_lives.name,
+        date: row.performance_date as string,
+        startsAt: row.starts_at,
+        venueName: row.orbit_venues?.name ?? null,
+      }));
+    },
+
+    async findCalendarPerformancesOnThisDay(month, day) {
+      const { data, error } = await supabase.rpc(
+        "find_orbit_live_performances_on_this_day",
+        { target_month: month, target_day: day }
+      );
+
+      if (error) {
+        throw new RepositoryError("過去のライブ公演の取得に失敗しました", error);
+      }
+
+      return data.map((row) => ({
+        id: row.id,
+        liveId: row.live_id,
+        liveName: row.live_name,
+        date: row.date,
+        startsAt: row.starts_at,
+        venueName: row.venue_name,
       }));
     },
 

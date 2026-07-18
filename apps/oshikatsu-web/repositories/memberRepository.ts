@@ -93,6 +93,18 @@ const MEMBER_OPTION_SELECT = `
 
 const MEMBER_ACTIVE_IDS_SELECT = "member_id, joined_at, graduated_at" as const;
 
+const ALL_BIRTHDAYS_SELECT = `
+  id,
+  name_ja,
+  name_kana,
+  date_of_birth,
+  orbit_member_groups(
+    id,
+    joined_at,
+    orbit_groups(name_ja, sort_order)
+  )
+` as const;
+
 // findAll は MEMBER_LIST_SELECT（sns embed なし）、findById/create/update は
 // MEMBER_DETAIL_SELECT（sns embed あり）の行を同じ mapToMemberWithGroups に渡すため、
 // orbit_member_sns はオプショナルにして両方の select 結果を受け付けられるようにする。
@@ -107,6 +119,11 @@ type MemberGroupRow = MemberRow["orbit_member_groups"][number];
 
 type BirthdayMemberRow =
   Database["public"]["Functions"]["find_orbit_birthdays_by_month"]["Returns"][number];
+
+type AllBirthdayMemberRow = SelectRows<
+  "orbit_members",
+  typeof ALL_BIRTHDAYS_SELECT
+>[number];
 
 type MemberOptionRow = SelectRows<
   "orbit_members",
@@ -261,6 +278,30 @@ function mapToBirthdayMember(row: BirthdayMemberRow): BirthdayMember {
     nameJa: row.name_ja,
     dateOfBirth: row.date_of_birth,
     groupNames: row.group_names ?? [],
+  };
+}
+
+function mapToAllBirthdayMember(row: AllBirthdayMemberRow): BirthdayMember {
+  const groups = row.orbit_member_groups.slice().sort((a, b) => {
+    const sortOrderDiff =
+      (a.orbit_groups?.sort_order ?? Number.MAX_SAFE_INTEGER) -
+      (b.orbit_groups?.sort_order ?? Number.MAX_SAFE_INTEGER);
+    if (sortOrderDiff !== 0) return sortOrderDiff;
+    if (a.joined_at !== b.joined_at) {
+      if (a.joined_at === null) return 1;
+      if (b.joined_at === null) return -1;
+      return a.joined_at.localeCompare(b.joined_at);
+    }
+    return a.id.localeCompare(b.id);
+  });
+
+  return {
+    id: row.id,
+    nameJa: row.name_ja,
+    dateOfBirth: row.date_of_birth as string,
+    groupNames: groups
+      .map((group) => group.orbit_groups?.name_ja ?? "")
+      .filter(Boolean),
   };
 }
 
@@ -606,6 +647,32 @@ export function createMemberRepository(
       }
 
       return data.map(mapToBirthdayMember);
+    },
+
+    async findAllBirthdays() {
+      const { data, error } = await supabase
+        .from("orbit_members")
+        .select(ALL_BIRTHDAYS_SELECT)
+        .not("date_of_birth", "is", null);
+
+      if (error) {
+        throw new RepositoryError("誕生日メンバーの取得に失敗しました", error);
+      }
+
+      // 028 の月別RPCと同じ規則（誕生月日 → かな → id）に揃える。
+      // 生年を含む date_of_birth 自体の昇順では、同じ表示月内の順序が変わるため
+      // 月日部分を明示的に比較する。
+      return data
+        .slice()
+        .sort((a, b) => {
+          const monthDayDiff = (a.date_of_birth ?? "").slice(5).localeCompare(
+            (b.date_of_birth ?? "").slice(5)
+          );
+          if (monthDayDiff !== 0) return monthDayDiff;
+          const nameDiff = a.name_kana.localeCompare(b.name_kana);
+          return nameDiff !== 0 ? nameDiff : a.id.localeCompare(b.id);
+        })
+        .map(mapToAllBirthdayMember);
     },
 
     async findActiveMemberIdsByGroups(groupIds, date) {
