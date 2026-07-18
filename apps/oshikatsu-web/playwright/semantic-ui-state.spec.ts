@@ -352,6 +352,23 @@ for (const theme of themes) {
       "single venue link focus indicator"
     );
 
+    // #363/#375: fallback cardのAttendanceControlはconditional mountになり、secondary button
+    // （参戦を記録/編集）は展開するまで存在しない。disclosureで展開してから検証する。
+    // 未登録cardは展開と同時にformが直接開く（保存=primary/キャンセル=ghost）ため、
+    // キャンセルで非編集状態（「参戦を記録」= secondary）へ戻してから対象を取る
+    const attendanceDisclosure = page
+      .getByTestId("live-performance-carousel")
+      .locator("button[aria-controls]")
+      .first();
+    await attendanceDisclosure.click();
+    await expect(
+      page.getByRole("button", { name: /^(編集|キャンセル)$/ }).first()
+    ).toBeVisible();
+    const cancelButton = page.getByRole("button", { name: "キャンセル" });
+    if ((await cancelButton.count()) > 0) {
+      await cancelButton.click();
+    }
+
     const secondaryButton = page
       .locator('[data-ui="button"][data-variant="secondary"]')
       .first();

@@ -72,11 +72,20 @@ function PendingLinkContent({
     <>
       {children}
       {isPending && (
-        <span
-          aria-label={pendingLabel}
-          className="absolute right-3 top-3 h-3 w-3 animate-spin rounded-full border border-border-subtle border-t-foreground-secondary"
-          role="status"
-        />
+        <span aria-label={pendingLabel} className="absolute right-3 top-3" role="status">
+          <span
+            aria-hidden="true"
+            className="block h-3 w-3 animate-spin rounded-full border border-border-subtle border-t-foreground-secondary motion-reduce:hidden"
+          />
+          {/* reduce時: 静止ringでは pending の意味が読めないため、可視テキストで示す（#378 P1）。
+              accessible name は親の aria-label が担うため、二重読み上げ防止で aria-hidden にする */}
+          <span
+            aria-hidden="true"
+            className="hidden whitespace-nowrap rounded border border-border-subtle bg-background px-1 text-xs text-foreground-secondary motion-reduce:block"
+          >
+            {pendingLabel}…
+          </span>
+        </span>
       )}
     </>
   );
