@@ -20,6 +20,22 @@ type AttendanceControlProps = {
   performanceId: string;
   // 未登録は null（RLSにより自分の行しか返らないため「無い」と「未取得」は区別不要）
   attendance: LiveAttendance | null;
+  // #363: fallback carouselの展開領域（PerformanceAttendanceArea）内でmountする際、
+  // 呼び出し側が既に「参戦記録」ラベルと区切り線を描画しているため二重表示を避ける。
+  // デフォルトtrueは既存呼び出し元（この公演セクション）の見た目を維持するため。
+  showHeading?: boolean;
+  // #363: 展開領域の親（AttendanceExpansionProvider）が「編集中に別cardへ切り替える」
+  // 操作を確認ダイアログでguardするための通知。ロジック分岐やstate構造は変えない。
+  // #375レビュー指摘: 手動呼び出しだと通知漏れの経路が残るため、isEditingを監視するeffect
+  // から通知する（mount/unmountを含め常にisEditingの実値と一致させる）。
+  onEditingChange?: (isEditing: boolean) => void;
+  // #375レビュー指摘: pending中（保存/削除/refresh中）にunmountされると
+  // pendingFocus/router.refreshの反映を迂回してしまうため、親（AttendanceExpansionProvider）が
+  // pending中は展開領域自体をlockできるようにする通知。effectから通知する。
+  onPendingChange?: (isPending: boolean) => void;
+  // #375レビュー指摘: 未登録の公演は展開直後にformを直接開く（二段階CTAの解消）ための初期値。
+  // trueの場合、isEditingの初期値とform先頭フィールドへのfocus対象を最初から設定する。
+  defaultEditing?: boolean;
 };
 
 const ATTENDED_TYPE_OPTIONS = ATTENDED_TYPE_VALUES.map((value) => ({
@@ -45,9 +61,13 @@ function toFormValues(
 export function AttendanceControl({
   performanceId,
   attendance,
+  showHeading = true,
+  onEditingChange,
+  onPendingChange,
+  defaultEditing = false,
 }: AttendanceControlProps) {
   const router = useRouter();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditing, setIsEditing] = useState(defaultEditing);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string>();
   const [pendingFocus, setPendingFocus] = useState<"edit" | "record" | null>(
@@ -55,7 +75,11 @@ export function AttendanceControl({
   );
   // #347 の pendingFocus（編集/記録ボタンへの復帰）とは別の focus 遷移。
   // フォーム内フィールドへの focus（初期表示時の先頭フィールド・validation エラー時のエラーフィールド）を扱う。
-  const [formFocusTarget, setFormFocusTarget] = useState<string | null>(null);
+  // #375レビュー指摘: defaultEditing=trueの場合、mount直後にこのeffectが解決され
+  // 参戦種別へfocusする（未登録の二段階CTA解消）。
+  const [formFocusTarget, setFormFocusTarget] = useState<string | null>(
+    defaultEditing ? `attendedType-${performanceId}` : null
+  );
   const [notice, setNotice] = useState("");
   const editButtonRef = useRef<HTMLButtonElement>(null);
   const recordButtonRef = useRef<HTMLButtonElement>(null);
@@ -91,6 +115,21 @@ export function AttendanceControl({
     });
 
   const isPending = isSubmitting || isDeleting || isRefreshing;
+
+  // #375レビュー指摘: pending中のunmountでonPendingChange(false)通知が飛ばずlockが
+  // 解除されない事態を防ぐため、手動呼び出しではなくisPendingを監視するeffectで通知する。
+  // unmount cleanupでも必ずfalseを通知する。
+  useEffect(() => {
+    onPendingChange?.(isPending);
+    return () => onPendingChange?.(false);
+  }, [isPending, onPendingChange]);
+
+  // #375レビュー指摘: onEditingChangeも同様に手動呼び出し（openForm/closeForm/保存成功）を
+  // 撤去し、isEditingを監視するeffectへ一本化する（通知漏れ経路をなくすため）。
+  useEffect(() => {
+    onEditingChange?.(isEditing);
+    return () => onEditingChange?.(false);
+  }, [isEditing, onEditingChange]);
 
   // 新規登録の保存直後は router.refresh() が完了するまで attendance prop が null のままで
   // 「編集」ボタンが存在しないため、対象ボタンが mount されるまで pendingFocus を保持し、
@@ -200,7 +239,7 @@ export function AttendanceControl({
         />
 
         <div className="flex gap-2">
-          <Button type="submit" disabled={isSubmitting} className="text-xs">
+          <Button type="submit" disabled={isSubmitting} className="min-h-11 text-xs">
             {isSubmitting ? "保存中..." : "保存"}
           </Button>
           <Button
@@ -208,7 +247,7 @@ export function AttendanceControl({
             variant="ghost"
             disabled={isSubmitting}
             onClick={closeForm}
-            className="text-xs"
+            className="min-h-11 text-xs"
           >
             キャンセル
           </Button>
@@ -225,7 +264,7 @@ export function AttendanceControl({
           variant="secondary"
           disabled={isPending}
           onClick={openForm}
-          className="text-xs"
+          className="min-h-11 text-xs"
         >
           参戦を記録
         </Button>
@@ -254,16 +293,16 @@ export function AttendanceControl({
             variant="secondary"
             disabled={isPending}
             onClick={openForm}
-            className="text-xs"
+            className="min-h-11 text-xs"
           >
             編集
           </Button>
           <Button
             type="button"
-            variant="danger"
+            variant="danger-ghost"
             disabled={isPending}
             onClick={handleDelete}
-            className="text-xs"
+            className="min-h-11 text-xs"
           >
             {isDeleting || (isRefreshing && refreshCauseRef.current === "delete")
               ? "解除中..."
@@ -280,8 +319,14 @@ export function AttendanceControl({
   }
 
   return (
-    <div className="space-y-2 border-t border-border-subtle pt-3">
-      <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
+    <div
+      className={
+        showHeading ? "space-y-2 border-t border-border-subtle pt-3" : "space-y-2"
+      }
+    >
+      {showHeading && (
+        <p className="text-xs font-medium text-foreground-secondary">参戦記録</p>
+      )}
       {/* aria-busy はコンテンツ側に限定する。aria-busy=true の subtree 内の live region は
           支援技術が busy 解除までアナウンスを保留し得るため、role=status は busy の外に置く */}
       <div className="space-y-2" aria-busy={isPending}>

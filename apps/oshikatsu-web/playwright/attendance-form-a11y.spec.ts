@@ -15,31 +15,58 @@ async function resolveLiveHref(page: Page): Promise<string> {
   return href;
 }
 
-// AttendanceControl のroot divに固有のclass組み合わせ。
-// 参戦登録の有無（「参戦を記録」/「編集」）どちらの状態でも一覧最初の公演を一意に指す。
+// PerformanceAttendanceArea（#363）のroot divに固有のclass組み合わせ。
+// 参戦登録の有無（「参戦を記録」/「記録を開く」）どちらの状態でも一覧最初の公演を一意に指す。
 function firstAttendanceControl(page: Page): Locator {
   return page
     .locator("div.space-y-2.border-t.border-border-subtle.pt-3")
     .first();
 }
 
+// #363: fallback carouselの各cardは展開するまでAttendanceControl（form/state/effect持ち）が
+// mountされない。開閉トグル（未登録「参戦を記録」/登録済み「記録を開く」）を押して展開する。
+async function expandAttendanceArea(attendanceControl: Locator): Promise<void> {
+  const disclosureButton = attendanceControl.getByRole("button", {
+    name: /^(参戦を記録|記録を開く)$/,
+  });
+  await expect(disclosureButton).toBeVisible();
+  await disclosureButton.click();
+}
+
+// #375レビュー指摘: 未登録の公演はdefaultEditingにより展開と同時にformが直接開くため
+// （二段階CTAの解消）、内側の「参戦を記録」をクリックする操作は登録済みcardの場合のみ必要。
+// 返り値は「cancel後にfocusが戻るべきボタン」を指すlocator（登録済み=「編集」、
+// 未登録=closeFormのpendingFocus="record"が復帰させる「参戦を記録」）。
+// 未登録側はform表示中DOMに存在しないが、Locatorは遅延評価されるため問題ない。
 async function openFirstAttendanceForm(
   attendanceControl: Locator
 ): Promise<Locator> {
-  const trigger = attendanceControl.getByRole("button", {
-    name: /^(参戦を記録|編集)$/,
-  });
-  await expect(trigger).toBeVisible();
-  await trigger.click();
-  return trigger;
+  await expandAttendanceArea(attendanceControl);
+
+  // 展開後のrender完了を待ってから分岐する（登録済み=「編集」/未登録=form直接表示の
+  // 「キャンセル」のどちらかが必ず現れる。待たずにcount()で分岐するとレースになる）
+  await expect(
+    attendanceControl.getByRole("button", { name: /^(編集|キャンセル)$/ }).first()
+  ).toBeVisible();
+
+  const editButton = attendanceControl.getByRole("button", { name: "編集" });
+  if ((await editButton.count()) > 0) {
+    await expect(editButton).toBeVisible();
+    await editButton.click();
+    return editButton;
+  }
+
+  // 未登録: formは既に開いている。クリック操作は不要
+  return attendanceControl.getByRole("button", { name: "参戦を記録" });
 }
 
-// ライブ詳細ページ内のAttendanceControlすべてを列挙する。firstAttendanceControlと同じclass組み合わせ
+// ライブ詳細ページ内のPerformanceAttendanceAreaすべてを列挙する。firstAttendanceControlと同じclass組み合わせ
 function allAttendanceControls(page: Page): Locator {
   return page.locator("div.space-y-2.border-t.border-border-subtle.pt-3");
 }
 
-// 「参戦を記録」ボタンを持つ = 未登録の公演のAttendanceControlを探す。無ければnull
+// 展開前のdisclosureラベルが「参戦を記録」= 未登録の公演を探す。無ければnull
+// （#363: 未展開時はAttendanceControlがmountされないため、compact表示のラベルで判定する）
 async function findUnregisteredAttendanceControl(
   page: Page
 ): Promise<{ control: Locator; index: number } | null> {
@@ -47,8 +74,10 @@ async function findUnregisteredAttendanceControl(
   const count = await controls.count();
   for (let index = 0; index < count; index += 1) {
     const control = controls.nth(index);
-    const recordButton = control.getByRole("button", { name: "参戦を記録" });
-    if ((await recordButton.count()) > 0) {
+    const disclosureButton = control.getByRole("button", {
+      name: "参戦を記録",
+    });
+    if ((await disclosureButton.count()) > 0) {
       return { control, index };
     }
   }
@@ -122,21 +151,12 @@ test("キャンセルするとfocusが元のボタンへ戻る", async ({ page }
   await page.goto(liveHref);
 
   const attendanceControl = firstAttendanceControl(page);
-  const trigger = attendanceControl.getByRole("button", {
-    name: /^(参戦を記録|編集)$/,
-  });
-  await expect(trigger).toBeVisible();
-  const triggerName = (await trigger.textContent())?.trim();
-  if (!triggerName) {
-    throw new Error("トリガーボタンのラベルを取得できませんでした。");
-  }
+  // #375レビュー指摘: 未登録cardはformが直接開くため、openFirstAttendanceFormが返す
+  // locator（登録済み=「編集」、未登録=「参戦を記録」）をそのままcancel後のfocus復帰先として使う
+  const triggerAfterCancel = await openFirstAttendanceForm(attendanceControl);
 
-  await trigger.click();
   await attendanceControl.getByRole("button", { name: "キャンセル" }).click();
 
-  const triggerAfterCancel = attendanceControl.getByRole("button", {
-    name: triggerName,
-  });
   await expect(triggerAfterCancel).toBeFocused();
 });
 
@@ -219,10 +239,14 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
   const { control: attendanceControl, index: attendanceControlIndex } =
     attendanceControlMatch;
 
+  // #375レビュー指摘: 未登録cardはdefaultEditingにより展開と同時にformが直接開くため、
+  // 内側の「参戦を記録」を押す操作は不要になった。recordButtonはform表示中DOMに存在しないが、
+  // 解除成功後にcloseFormのpendingFocus="record"が復帰させる対象としてLocatorだけ用意しておく
+  // （Locatorは遅延評価されるため、後段のtoBeFocused()呼び出し時点で解決すればよい）
+  await expandAttendanceArea(attendanceControl);
   const recordButton = attendanceControl.getByRole("button", {
     name: "参戦を記録",
   });
-  await recordButton.click();
 
   const attendedTypeSelect = attendanceControl.locator(
     'select[id^="attendedType-"]'
@@ -254,6 +278,13 @@ test("保存と解除の完了後にfocusがトリガーボタンへ復帰する
       const cleanupControl = allAttendanceControls(page).nth(
         attendanceControlIndex
       );
+      // reloadでcollapseに戻っているため、解除操作の前に再度展開する
+      const cleanupDisclosure = cleanupControl.getByRole("button", {
+        name: /^(参戦を記録|記録を開く)$/,
+      });
+      if (await cleanupDisclosure.isVisible()) {
+        await cleanupDisclosure.click();
+      }
       const deleteButton = cleanupControl.getByRole("button", { name: "解除" });
       if (await deleteButton.isVisible()) {
         await deleteAttendanceViaUi(page, cleanupControl);
