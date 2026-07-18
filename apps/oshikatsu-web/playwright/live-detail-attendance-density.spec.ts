@@ -5,11 +5,13 @@ import { expect, test, type Locator, type Page } from "@playwright/test";
 // 押される自分の参戦記録」を、展開disclosure + 最大1公演のconditional mountで解消したことの
 // 回帰検証。既存 live-detail-overflow.spec.ts と同じfixture（乃木坂46 真夏の全国ツアー2026）を使う。
 //
-// #375レビュー指摘: 「有効context」テストはseed（supabase/seeds/035_seed_sakamichi_lives_2026.sql）に
-// setlist行が無い環境がある前提のまま、先頭cardの日付を固定定数として使っていた。
-// seedの並び順に依存すると環境差でずれるため、carousel内でセトリ簡易表示（ol要素）を持つcardを
-// 走査して対象を選ぶ方式へ変更する。日付はcard自身のh3テキスト（M/D）から、年はライブ名の
-// 4桁西暦から組み立てる。該当cardが1つも無い環境ではtest.skipする（silent passにしない）。
+// #375レビュー指摘: 「有効context」テストはcarousel内でセトリ簡易表示（ol要素）を持つcardを
+// 走査して対象を選ぶ（seedの並び順・固定日付への依存を避ける）。日付はcard自身のh3テキスト
+// （M/D）から、年はライブ名の4桁西暦から組み立てる。
+// canonical seedだけの環境ではseeds/040_seed_e2e_setlist_fixture.sqlが対象ツアーの先頭公演へ
+// setlist 1曲を投入するため、このテストはskipされずに必ず実行される。実データ運用中のDBでは
+// ユーザー入力のsetlistが対象になる。走査で該当cardが見つからない場合のtest.skipは、
+// fixture未適用環境向けの防御として残す（silent passにしない）。
 
 const fallbackLiveName = /乃木坂46 真夏の全国ツアー2026/;
 
