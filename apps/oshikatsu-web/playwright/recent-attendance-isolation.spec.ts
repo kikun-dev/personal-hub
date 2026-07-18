@@ -143,11 +143,13 @@ test("2 user isolation: 別ユーザーの参加記録がRecent Attendanceへ漏
 
   const marker = `e2e-isolation-marker-${randomUUID()}`;
   const userBEmail = `e2e-isolation-${randomUUID()}@example.invalid`;
+  // positive control（Bとして同じbounded queryを実行する）でsign-inに使うため保持する
+  const userBPassword = randomUUID();
 
   const { data: userBData, error: createUserError } =
     await writable.auth.admin.createUser({
       email: userBEmail,
-      password: randomUUID(),
+      password: userBPassword,
       email_confirm: true,
     });
 
@@ -159,6 +161,9 @@ test("2 user isolation: 別ユーザーの参加記録がRecent Attendanceへ漏
   const userBId: string = userBData.user.id;
 
   let attendanceInserted = false;
+  // #380 P2: cleanup失敗（共有Supabaseへの一時user/fixture残留）を握り潰さないための収集先。
+  // finally内でthrowすると本体assertの失敗をmaskするため、finally後のassertで可視化する
+  const cleanupErrors: string[] = [];
 
   try {
     const { error: insertError } = await writable
@@ -175,9 +180,52 @@ test("2 user isolation: 別ユーザーの参加記録がRecent Attendanceへ漏
     }
     attendanceInserted = true;
 
+    // positive control（#380 P1）: 所有者であるB自身がRecent Attendanceと同形のbounded query
+    // （!inner + 過去日filter + 降順order + limit）でmarker行を取得**できる**ことを先に確認する。
+    // これが通らない場合はquery/fixture自体が壊れており、後段の「Aに見えない」assertが
+    // 空振りで成立してしまうため、分離の検証として無効になる。
+    const tokenResponse = await fetch(
+      `${SUPABASE_URL}/auth/v1/token?grant_type=password`,
+      {
+        method: "POST",
+        headers: {
+          apikey: SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email: userBEmail, password: userBPassword }),
+      }
+    );
+    expect(tokenResponse.status).toBe(200);
+    const tokenBody = (await tokenResponse.json()) as { access_token?: string };
+    if (!tokenBody.access_token) {
+      throw new Error("検証用ユーザーBのaccess tokenを取得できませんでした。");
+    }
+
+    const boundedQuery =
+      `${SUPABASE_URL}/rest/v1/orbit_live_attendances` +
+      `?select=note,orbit_live_performances!inner(performance_date)` +
+      `&orbit_live_performances.performance_date=not.is.null` +
+      `&orbit_live_performances.performance_date=lt.${todayDateStr()}` +
+      `&order=orbit_live_performances(performance_date).desc&limit=3`;
+    const userBResponse = await fetch(boundedQuery, {
+      headers: {
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${tokenBody.access_token}`,
+      },
+    });
+    expect(userBResponse.status).toBe(200);
+    const userBRows = (await userBResponse.json()) as { note: string | null }[];
+    expect(userBRows.some((row) => row.note === marker)).toBe(true);
+
     // storageStateはuser A（playwright.config.tsのauthFile）。Bのnoteがトップページの
     // どこにも表示されないことを確認する（shared read cache経路への誤混入がないか）。
+    // #380 P1: session失効等で/loginへredirectされてもmarker不在で偽成功してしまうため、
+    // 「Aとして認証済みでRecent Attendanceが実際に描画されている」ことを先にassertする。
     await page.goto("/");
+    await expect(page).not.toHaveURL(/\/login/);
+    await expect(
+      page.getByRole("heading", { name: "最近の参加記録" })
+    ).toBeVisible();
     await expect(page.locator("body")).not.toContainText(marker);
   } finally {
     if (attendanceInserted) {
@@ -197,7 +245,15 @@ test("2 user isolation: 別ユーザーの参加記録がRecent Attendanceへ漏
     // 何らかの理由で失敗していてもここで最終的に片付く。
     const { error: deleteUserError } = await writable.auth.admin.deleteUser(userBId);
     if (deleteUserError) {
-      console.error(`検証用ユーザーBの削除に失敗しました: ${deleteUserError.message}`);
+      // attendance削除の失敗はCASCADEで救済されるためconsole.errorに留めるが、
+      // user削除の失敗は残留が確定するためテスト失敗として可視化する（#380 P2）
+      const message = `検証用ユーザーBの削除に失敗しました（共有DBへ残留）: ${deleteUserError.message}`;
+      cleanupErrors.push(message);
+      console.error(message);
     }
   }
+
+  // 本体assertが成功した場合のみ到達する（本体が失敗した場合はその失敗が優先され、
+  // cleanup失敗はconsole.errorへ記録済み）。user残留があればここで失敗させる
+  expect(cleanupErrors).toEqual([]);
 });
