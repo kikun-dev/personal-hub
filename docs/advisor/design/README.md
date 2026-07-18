@@ -10,6 +10,7 @@ Product DesignとImpeccableによる監査を統合した、正式なDesign Audi
 | 2026-07-15 | Sakalog | #343〜#347実装後のPrimary Journey Integrated Design QA | [Design QA](./2026-07-15-sakalog-primary-journey-design-qa.md) |
 | 2026-07-15 | Sakalog | #343〜#347実装後のPrimary Journey Impeccable Technical Audit | [Technical Audit](./2026-07-15-sakalog-primary-journey-technical-audit.md) |
 | 2026-07-16 | Sakalog | #343〜#347実装後のPrimary Journey Consolidated Findings / Roadmap | [Consolidated Findings](./2026-07-16-sakalog-primary-journey-consolidated-findings.md) |
+| 2026-07-19 | Sakalog | #365 / #366完了後のDaily Story Top Page read performance | [Performance Audit](./2026-07-19-sakalog-daily-story-top-page-read-performance-audit.md) |
 
 2026-07-15〜16の3 reportは、2026-07-13 Auditを置換しない実装後follow-up snapshotである。Consolidated Findingsに示す13件のRecommended Issue Boundariesは未起票であり、Issue Decisionまたは確定仕様ではない。
 
