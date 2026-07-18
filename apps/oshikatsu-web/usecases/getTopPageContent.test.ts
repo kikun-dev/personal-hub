@@ -175,12 +175,23 @@ describe("getTopPageContent bounded read", () => {
     ["today", today],
     ["selected≠today（同じ月）", { year: 2026, month: 7, day: 9 }],
     ["selected≠today（探索窓外）", { year: 2025, month: 1, day: 5 }],
-  ])("%sでも単一batchの9 repository callsに固定する", async (_, selected) => {
+  ])("%sでも単一batchの9 physical data callsに固定する", async (_, selected) => {
     const repositories = makeCountingRepositories();
 
     const resultPromise = runScenario(repositories, selected, today);
 
     expect(repositories.calls).toHaveLength(9);
+    expect(repositories.calls.map((call) => call.name)).toEqual([
+      "event.findCalendarEventsInRanges",
+      "event.findOnThisDay",
+      "member.findAllBirthdays",
+      "live.findCalendarPerformancesInRanges",
+      "live.findCalendarPerformancesOnThisDay",
+      "release.findCalendarItemsInRanges",
+      "release.findCalendarItemsOnThisDay",
+      "song.findCalendarVideoItemsInRanges",
+      "song.findCalendarVideoItemsOnThisDay",
+    ]);
     await resultPromise;
   });
 

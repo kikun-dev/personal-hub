@@ -24,7 +24,7 @@ import {
   parseVideos,
   parseCostumes,
 } from "./songMapper";
-import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
+import { validateCalendarDateRanges } from "./calendarDateRanges";
 
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
@@ -547,51 +547,39 @@ export function createSongRepository(
 
     async findCalendarVideoItemsInRanges(ranges) {
       if (ranges.length === 0) return [];
-
-      const rangeFilter = buildCalendarDateRangeFilter("published_on", ranges);
-      const [mvResult, videoResult] = await Promise.all([
-        supabase
-          .from("orbit_track_mvs")
-          .select(MV_CALENDAR_SELECT)
-          .not("published_on", "is", null)
-          .or(rangeFilter),
-        supabase
-          .from("orbit_track_videos")
-          .select(VIDEO_CALENDAR_SELECT)
-          .not("published_on", "is", null)
-          .or(rangeFilter),
-      ]);
-
-      if (mvResult.error) {
+      if (ranges.length > 2) {
         throw new RepositoryError(
-          "カレンダー用MVの取得に失敗しました",
-          mvResult.error
+          "カレンダー用動画の取得範囲は2件までです",
+          null
         );
       }
-      if (videoResult.error) {
-        throw new RepositoryError(
-          "カレンダー用動画の取得に失敗しました",
-          videoResult.error
-        );
+      validateCalendarDateRanges(ranges);
+
+      const [range1, range2] = ranges;
+      const { data, error } = await supabase.rpc(
+        "find_orbit_calendar_videos_in_ranges",
+        {
+          range_1_start: range1.startDate,
+          range_1_end: range1.endDate,
+          range_2_start: range2?.startDate ?? null,
+          range_2_end: range2?.endDate ?? null,
+        }
+      );
+
+      if (error) {
+        throw new RepositoryError("カレンダー用動画の取得に失敗しました", error);
       }
 
-      const items: CalendarVideoItem[] = mvResult.data.map((row) => ({
-        trackId: row.orbit_tracks.id,
-        trackTitle: row.orbit_tracks.title,
-        groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
-        videoType: "mv",
-        url: row.mv_url,
-        date: row.published_on as string,
-      }));
-      for (const row of videoResult.data) {
-        if (!isSongVideoType(row.video_type)) continue;
+      const items: CalendarVideoItem[] = [];
+      for (const row of data) {
+        if (row.video_type !== "mv" && !isSongVideoType(row.video_type)) continue;
         items.push({
-          trackId: row.orbit_tracks.id,
-          trackTitle: row.orbit_tracks.title,
-          groupNameJa: row.orbit_tracks.orbit_groups.name_ja,
+          trackId: row.track_id,
+          trackTitle: row.track_title,
+          groupNameJa: row.group_name_ja,
           videoType: row.video_type,
-          url: row.video_url,
-          date: row.published_on as string,
+          url: row.url,
+          date: row.date,
         });
       }
       return items;

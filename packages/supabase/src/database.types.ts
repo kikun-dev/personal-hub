@@ -1859,6 +1859,22 @@ export type Database = {
           video_type: string
         }[]
       }
+      find_orbit_calendar_videos_in_ranges: {
+        Args: {
+          range_1_end: string
+          range_1_start: string
+          range_2_end: string | null
+          range_2_start: string | null
+        }
+        Returns: {
+          date: string
+          group_name_ja: string
+          track_id: string
+          track_title: string
+          url: string
+          video_type: string
+        }[]
+      }
       find_orbit_events_on_this_day: {
         Args: { target_day: number; target_month: number }
         Returns: {
