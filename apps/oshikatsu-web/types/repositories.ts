@@ -254,6 +254,10 @@ export type AttendanceRepository = {
   // マイページ（#247）用。自分の参加記録全件を、公演・ライブ・会場を合成した
   // read model として取得する（対象は RLS が本人分のみに絞る）。
   findAllForUser(): Promise<MyAttendanceEntry[]>;
+  // トップページ「最近の参加記録」（#344/#366）用。beforeDateStr（YYYY-MM-DD）未満かつ
+  // 非nullの performance_date を持つ自分の参加記録のみを、日付降順で先頭 limit 件だけ
+  // DB 側で絞って取得する（対象は RLS が本人分のみに絞る）。
+  findRecentForUser(beforeDateStr: string, limit: number): Promise<MyAttendanceEntry[]>;
   // セットリストカウント（#249）用。自分の参加記録から、セトリの登録曲を
   // 1遭遇=1件に展開した read model を全件取得する（対象は RLS が本人分のみに絞る）。
   findSongEncounters(): Promise<SongEncounter[]>;
