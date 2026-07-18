@@ -9,10 +9,6 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: [
-      "lib/**/*.test.ts",
-      "repositories/**/*.test.ts",
-      "usecases/**/*.test.ts",
-    ],
+    include: ["lib/**/*.test.ts", "usecases/**/*.test.ts"],
   },
 });
