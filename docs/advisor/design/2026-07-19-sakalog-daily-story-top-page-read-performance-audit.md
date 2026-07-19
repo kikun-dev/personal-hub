@@ -39,13 +39,14 @@
 - transport instrumentationでもglobal readの実call数は9 callsだった。
 - large archive stubの返却rows相当は318から16へ減り、archive全体の増加に比例しない。
 - on-this-dayとrange queryをDB境界へ移し、video rangeは最大2つのhalf-open windowを`UNION ALL`するRPCへ集約した。
+- 追加したbounded read RPCは`SECURITY INVOKER`を維持し、RLS / authenticated user境界を弱めていない。
 
 ### #366 — Bounded personal read and page-level parallelism
 
 - Recent Attendanceは1 call、最大3 rowsとなり、全attendance履歴をpageへ返さない。
 - Top routeはglobal contentとpersonal attendanceを同一page phaseで並列実行する。
 - shared global cacheへpersonal dataを混入しない境界を維持した。
-- RPCは`SECURITY INVOKER`を維持し、RLS / authenticated user境界を弱めていない。
+- Recent Attendanceは新規RPCを追加せず、認証付きSupabase clientからのqueryとattendance RLS（`has_orbit_read_role()` + `user_id = auth.uid()`）を維持し、service-role / shared cache経路へ載せていない。
 
 ## 4. Runtime Evidence
 
