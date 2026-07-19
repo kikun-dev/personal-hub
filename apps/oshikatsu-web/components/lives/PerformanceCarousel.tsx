@@ -119,6 +119,21 @@ export function PerformanceCarousel({
     setFirstVisible(first);
     setLastVisible(last);
     applyRoving();
+
+    // #377 P1: tabindex=-1 では focus 済み要素は blur されないため、card内の操作へ focus した
+    // まま Arrow/native scroll で可視範囲が変わると、focus が offscreen card に残り画面外へ出る。
+    // focus 中 card が非可視になったら、先頭可視 card の対応操作へ focus を移し viewport 内に保つ。
+    // preventScroll で focus 起点の再 scroll（snap 競合）を避ける。
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && container.contains(active)) {
+      const activeCard = active.closest<HTMLElement>('[role="group"]');
+      const activeIndex = activeCard === null ? -1 : cards.indexOf(activeCard);
+      if (activeIndex >= 0 && !visible.has(activeIndex)) {
+        const focusTarget =
+          cards[first]?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? null;
+        focusTarget?.focus({ preventScroll: true });
+      }
+    }
   }, [getCards, applyRoving]);
 
   // native touch/trackpad/snap の scroll と viewportサイズ変化から可視レンジを更新する。
