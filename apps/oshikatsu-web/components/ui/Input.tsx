@@ -1,6 +1,7 @@
 "use client";
 
 import { type InputHTMLAttributes, useId, useRef } from "react";
+import { focusRingClass } from "@/components/ui/focusRing";
 
 type InputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;
@@ -25,7 +26,7 @@ export function Input({
     : ariaDescribedBy;
   // エラー時は内部契約を優先し、それ以外は呼び出し側の指定を維持する
   const invalid = error ? ("true" as const) : ariaInvalid;
-  const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
+  const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
     error ? "border-red-400" : "border-foreground/10"
   } ${className}`;
 
@@ -63,7 +64,7 @@ export function Input({
           <button
             type="button"
             onClick={openPicker}
-            className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${
+            className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${focusRingClass} ${
               error
                 ? "border-red-400 text-red-500"
                 : "border-foreground/10 text-foreground/70 hover:bg-foreground/5"
