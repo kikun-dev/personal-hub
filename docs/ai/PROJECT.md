@@ -210,6 +210,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0012 | Supabase ローカル環境（Docker）の導入と migration 検証フロー | Accepted |
 | 0013 | Sakalog主要閲覧ジャーニーのDaily Story方針 | Accepted |
 | 0014 | テスト基盤としての Vitest 導入と純関数のみのテスト対象範囲 | Accepted |
+| 0015 | Top routeのauth検証境界とremote call budget | Accepted |
 
 ---
 
