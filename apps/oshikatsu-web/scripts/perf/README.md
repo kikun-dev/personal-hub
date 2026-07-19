@@ -59,7 +59,11 @@ grep -n "__perf_scenario_marker__" /tmp/perf-plans.log
   `../../supabase/perf-fixtures/README.md` と共有する定数（コード内に
   ローカル専用であることを明記した上でハードコード。環境変数
   `PERF_SUPABASE_URL` / `PERF_SUPABASE_ANON_KEY` /
-  `PERF_SUPABASE_SERVICE_ROLE_KEY` で上書き可能）。
+  `PERF_SUPABASE_SERVICE_ROLE_KEY` は **別ポート等のローカル設定専用**）。
+  driver は service-role で fixture ユーザー作成まで行うため、接続先 URL を
+  実行前に検証し **http://127.0.0.1 / http://localhost 以外は即時エラー**にする
+  （fail closed。https・Hosted Supabase・remote hostname は不可。port は固定しない。
+  回避フラグは用意しない — Constraint「production data へ write しない」の保証）。
 - `beforeAll` で service_role client を作り、3固定ユーザーが
   存在することを保証する（`ensureFixedUser`。通常は fixture が
   既に作成済みのため `getUserById` がヒットして no-op）。続けて

@@ -34,6 +34,39 @@ const SUPABASE_SERVICE_ROLE_KEY =
   process.env.PERF_SUPABASE_SERVICE_ROLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU";
 
+/**
+ * 接続先がローカル Supabase であることを検証する（fail closed）。
+ * この driver は service-role key で auth.admin.createUser() まで実行するため、
+ * 接続先の誤設定が Constraint「production data へ write しない」の違反に直結する。
+ * 許可するのは http の 127.0.0.1 / localhost のみ（port は supabase start の
+ * 構成次第で変わり得るため固定しない）。https・Hosted Supabase・remote hostname は
+ * 即時エラーとし、これを回避するフラグは意図的に用意しない。
+ */
+function assertLocalSupabaseUrl(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    throw new Error(
+      `perf:driver はローカル Supabase 専用です。PERF_SUPABASE_URL が URL として不正です: ${url}`
+    );
+  }
+
+  const isLocalHttp =
+    parsed.protocol === "http:" &&
+    (parsed.hostname === "127.0.0.1" || parsed.hostname === "localhost");
+  if (!isLocalHttp) {
+    throw new Error(
+      `perf:driver はローカル Supabase 専用です。接続先は http://127.0.0.1 または ` +
+        `http://localhost のみ許可されます（service-role での fixture ユーザー作成を伴うため、` +
+        `Hosted Supabase 等の remote へは接続しません）: ${url}`
+    );
+  }
+}
+
+// service-role client 生成・ensureFixedUser より前（モジュールロード時）に検証する。
+assertLocalSupabaseUrl(SUPABASE_URL);
+
 // supabase/perf-fixtures/*.sql と共有する固定値。fixture 側で auth.users /
 // auth.identities を直接 INSERT しているため、通常このファイルの
 // ensureFixedUser() は no-op になる（fixture 未適用など想定外の状態への
