@@ -6,6 +6,7 @@ import { GroupBadge } from "@/components/ui/GroupBadge";
 import { AttendanceControl } from "@/components/lives/AttendanceControl";
 import { AttendanceExpansionProvider } from "@/components/lives/AttendanceExpansion";
 import { PerformanceAttendanceArea } from "@/components/lives/PerformanceAttendanceArea";
+import { PerformanceCarousel } from "@/components/lives/PerformanceCarousel";
 import { TourOverview } from "@/components/lives/TourOverview";
 import { TextLink } from "@/components/ui/TextLink";
 import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
@@ -327,24 +328,34 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             公演ごとの情報
           </h2>
           {/* #363: 展開状態はAttendanceExpansionProviderで共有し、展開中の最大1公演だけ
-              AttendanceControlをconditional mountする（59 focus targetの解消） */}
+              AttendanceControlをconditional mountする（59 focus targetの解消）。
+              #377: carouselのkeyboard focus densityをactive-card modelへ再設計する。
+              offscreen cardの操作をTab順から外し、位置contextを role=status で通知する
+              （venue/setlist/attendance ×18枚 = 54 linear targetの解消）。 */}
           <AttendanceExpansionProvider>
-            <div
-              data-testid="live-performance-carousel"
-              role="region"
-              aria-labelledby={performancesSectionHeadingId}
-              className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
+            <PerformanceCarousel
+              headingId={performancesSectionHeadingId}
+              items={live.performances.map((performance) => ({
+                id: performance.id,
+                label: formatScheduleLine(live.liveType, performance),
+              }))}
             >
-              {live.performances.map((performance) => (
+              {live.performances.map((performance, index) => (
                 <PerformanceCard
                   key={performance.id}
-                  className="w-[85%] shrink-0 snap-start sm:w-80"
+                  // #377: 最終cardだけ snap-end。snap-mandatory + peek幅では最終cardを
+                  // snap-start で全面表示できず末尾が到達不能になるため、右端整列で常に到達可能にする。
+                  className={`w-[85%] shrink-0 sm:w-80 ${
+                    index === live.performances.length - 1
+                      ? "snap-end"
+                      : "snap-start"
+                  }`}
                   live={live}
                   performance={performance}
                   attendance={myAttendances[performance.id] ?? null}
                 />
               ))}
-            </div>
+            </PerformanceCarousel>
           </AttendanceExpansionProvider>
         </section>
       )

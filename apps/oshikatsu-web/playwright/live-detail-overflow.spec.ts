@@ -66,24 +66,6 @@ async function swipeCarouselWithTouch(
   }
 }
 
-async function focusWithKeyboard(page: Page, target: Locator): Promise<void> {
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  });
-
-  for (let index = 0; index < 120; index += 1) {
-    await page.keyboard.press("Tab");
-    await page.waitForTimeout(25);
-    if (await target.evaluate((element) => element === document.activeElement)) {
-      return;
-    }
-  }
-
-  throw new Error("keyboardでcarousel末尾のリンクへ到達できませんでした。");
-}
-
 async function expectFallbackScrollOwnership(
   page: Page,
   browserName: string
@@ -121,12 +103,21 @@ async function expectFallbackScrollOwnership(
   });
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
 
-  await carousel.hover();
-  await page.mouse.wheel(600, 0);
-  await expect
-    .poll(() => carousel.evaluate((element) => element.scrollLeft))
-    .toBeGreaterThan(0);
-  expect(await page.evaluate(() => window.scrollX)).toBe(0);
+  // trackpad/mouse wheel は mobile WebKit で未サポート（page.mouse.wheel が throw する）。
+  // mobileの水平scrollは後段のCDP touch stepが担うため、wheel検証はChromiumに限定する。
+  await test.step("Chromium-only wheel validation", async (step) => {
+    step.skip(
+      browserName !== "chromium",
+      "Chromium-only: page.mouse.wheel is unsupported in mobile WebKit."
+    );
+
+    await carousel.hover();
+    await page.mouse.wheel(600, 0);
+    await expect
+      .poll(() => carousel.evaluate((element) => element.scrollLeft))
+      .toBeGreaterThan(0);
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
+  });
 
   await test.step("Chromium-only CDP touch validation", async (step) => {
     step.skip(
@@ -152,39 +143,27 @@ async function expectFallbackScrollOwnership(
     element.scrollLeft = 0;
   });
 
-  const lastSetlistLink = carousel
-    .getByRole("link", { name: "詳細を見る →" })
-    .last();
-  await focusWithKeyboard(page, lastSetlistLink);
-  await expect(lastSetlistLink).toBeFocused();
+  // #377: keyboard操作（ArrowRight）で active-card model が inner carousel を scroll する。
+  // root（window）は動かず inner だけが右へ進むこと（containment）を確認する。
+  await carousel.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  const nextButton = page.getByRole("button", { name: "次の公演" });
+  await expect(nextButton).toBeVisible();
+  await nextButton.focus();
+  await expect(nextButton).toBeFocused();
+
+  for (let step = 0; step < 6; step += 1) {
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(80);
+    // 各押下の時点で root（window）は決して横スクロールしない
+    expect(await page.evaluate(() => window.scrollX)).toBe(0);
+  }
+  // 反復した ArrowRight の結果、inner carousel は先頭（0）から右へ進んでいる
   await expect
-    .poll(() =>
-      carousel.evaluate(
-        (element) =>
-          element.scrollLeft /
-          Math.max(element.scrollWidth - element.clientWidth, 1)
-      )
-    )
-    .toBeGreaterThan(0.8);
+    .poll(() => carousel.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(0);
   expect(await page.evaluate(() => window.scrollX)).toBe(0);
-
-  await expect
-    .poll(() =>
-      carousel.evaluate((element) => {
-        const activeElement = document.activeElement;
-        if (!(activeElement instanceof HTMLElement)) {
-          return false;
-        }
-
-        const carouselRect = element.getBoundingClientRect();
-        const focusRect = activeElement.getBoundingClientRect();
-        return (
-          focusRect.left >= carouselRect.left + 2 &&
-          focusRect.right <= carouselRect.right - 2
-        );
-      })
-    )
-    .toBe(true);
 }
 
 for (const viewport of viewports) {
@@ -193,6 +172,10 @@ for (const viewport of viewports) {
     browserName,
   }) => {
     await page.setViewportSize(viewport);
+    // #377: keyboardナビ（Arrow）の programmatic scroll を instant にして、smooth animation の
+    // 着地タイミング依存（並列実行時の負荷でフレーキーになる）を除く。containment/snap/touch の
+    // 検証内容は reduced-motion で変わらない（同じ scroll 位置・同じ snap 挙動）。
+    await page.emulateMedia({ reducedMotion: "reduce" });
     const liveHref = await resolveFallbackLiveHref(page);
 
     for (const fallbackContext of fallbackContexts) {
