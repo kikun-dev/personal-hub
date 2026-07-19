@@ -56,6 +56,147 @@ async function findGroupWithButton(
   return null;
 }
 
+// #377: linear Tab budget（54: venue18 + setlist18 + disclosure18）を可視card modelへ
+// 再設計した回帰。carousel内でTab順に残るのはviewport内の可視card分だけ（offscreen cardは
+// tabindex=-1でTab順から外す）で、可視外の公演へprev/next/Arrow/End で到達でき、位置contextを
+// role=status が通知することを検証する。
+test("carousel内のlinear Tab targetが可視card分だけに絞られる（baseline 54から削減）", async ({
+  page,
+}) => {
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  await expect(container).toBeVisible();
+
+  const groupCount = await container.getByRole("group").count();
+  expect(groupCount).toBeGreaterThan(1);
+
+  // carousel region内でtabindex=-1でないfocusable（= 可視card分の操作）を数える。
+  // prev/next controlは region の外にあるためここには含まれない。
+  const countTabbable = () =>
+    container.evaluate((element) => {
+      const focusable = element.querySelectorAll(
+        "a[href], button, select, input, textarea"
+      );
+      let count = 0;
+      focusable.forEach((node) => {
+        if ((node as HTMLElement).getAttribute("tabindex") !== "-1") {
+          count += 1;
+        }
+      });
+      return count;
+    });
+
+  // 実際にviewportに収まっている（過半可視の）cardだけがTab順に残ることを、可視card数の
+  // 実測から検証する。offscreen card分（= 大半）がTab順から外れ、baseline 54 から有意に減る。
+  const visibleGroupCount = await container.evaluate((element) => {
+    const cRect = element.getBoundingClientRect();
+    const groups = Array.from(
+      element.querySelectorAll(':scope > [role="group"]')
+    );
+    let visible = 0;
+    groups.forEach((g) => {
+      const r = (g as HTMLElement).getBoundingClientRect();
+      const overlap =
+        Math.min(r.right, cRect.right) - Math.max(r.left, cRect.left);
+      if (overlap >= r.width * 0.5) visible += 1;
+    });
+    return visible;
+  });
+  expect(visibleGroupCount).toBeGreaterThanOrEqual(1);
+  expect(visibleGroupCount).toBeLessThan(groupCount);
+
+  // 可視card（各最大3操作: venue任意 + setlist + disclosure）分に収まり、全card分（>= groupCount）
+  // より大幅に小さい
+  await expect
+    .poll(countTabbable)
+    .toBeLessThanOrEqual(visibleGroupCount * 3);
+  expect(await countTabbable()).toBeLessThan(groupCount);
+
+  // roving invariant: Tab対象（tabindex=-1でない操作）は必ず carousel viewport 内にある。
+  // これにより「focusがoffscreenへ移動せず viewport 内に保たれる」ことが構造的に保証される。
+  const allTabbableInViewport = await container.evaluate((element) => {
+    const cRect = element.getBoundingClientRect();
+    const focusable = Array.from(
+      element.querySelectorAll<HTMLElement>("a[href], button")
+    ).filter((node) => node.getAttribute("tabindex") !== "-1");
+    return focusable.every((node) => {
+      const r = node.getBoundingClientRect();
+      return r.left >= cRect.left - 2 && r.right <= cRect.right + 2;
+    });
+  });
+  expect(allTabbableInViewport).toBe(true);
+});
+
+test("prev/next/Arrowの反復で可視外の末尾公演へ到達でき、その公演のvenue/setlist/attendanceへkeyboard到達できる", async ({
+  page,
+}) => {
+  // Arrowの programmatic scroll を instant にして着地タイミング依存を除く（並列実行での
+  // フレーキー回避）。roving/aria-disabled/位置通知の検証内容は reduced-motion で変わらない。
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  const groups = container.getByRole("group");
+  const groupCount = await groups.count();
+  expect(groupCount).toBeGreaterThan(1);
+
+  const prevButton = page.getByRole("button", { name: "前の公演" });
+  const nextButton = page.getByRole("button", { name: "次の公演" });
+  // 先頭ではprevは境界（aria-disabled）。focus保持のため native disabled にはしない
+  await expect(prevButton).toHaveAttribute("aria-disabled", "true");
+
+  // 先頭cardは可視なので操作がTab順に残る。一方 末尾cardは初期状態ではoffscreenで -1
+  const firstGroup = groups.first();
+  const lastGroup = groups.nth(groupCount - 1);
+  await expect(
+    firstGroup.getByRole("link", { name: "詳細を見る →" })
+  ).not.toHaveAttribute("tabindex", "-1");
+  await expect(
+    lastGroup.getByRole("link", { name: "詳細を見る →" })
+  ).toHaveAttribute("tabindex", "-1");
+
+  // ArrowRightの反復で末尾の公演まで移動する（±1移動は snap 点へ確実に着地する）。
+  // 末尾可視で next が境界（aria-disabled）になるまで進める。各押下後に smooth scroll の
+  // 着地を十分待ってから次を押す（stale な firstVisible での空押しを避ける）。
+  await nextButton.focus();
+  for (let step = 0; step < groupCount + 3; step += 1) {
+    if ((await nextButton.getAttribute("aria-disabled")) === "true") break;
+    const before = await container.evaluate((el) => el.scrollLeft);
+    await page.keyboard.press("ArrowRight");
+    // ±1 の smooth scroll 着地を待つ（負荷で遅延しても poll が待つ）。末尾に達するまで
+    // 各押下は必ず scroll を進めるため、plateau で空振りせず atEnd で loop を抜ける。
+    await expect
+      .poll(() => container.evaluate((el) => el.scrollLeft))
+      .toBeGreaterThan(before);
+  }
+  await expect(nextButton).toHaveAttribute("aria-disabled", "true");
+  // 境界に達してもnextはfocusを保持する（native disabledではないため）
+  await expect(nextButton).toBeFocused();
+
+  // 位置announcement（role=status）が「n / total ・ 公演名」を通知している
+  const status = page.locator('[role="status"]').filter({
+    hasText: new RegExp(`\\d+ / ${groupCount}`),
+  });
+  await expect(status).toHaveCount(1);
+
+  // 末尾の公演がviewport内に入り、venue/setlist/attendanceがTab順に戻る（keyboard到達可能）
+  await expect(
+    lastGroup.getByRole("link", { name: "詳細を見る →" })
+  ).not.toHaveAttribute("tabindex", "-1");
+  await expect(lastGroup.locator("button[aria-controls]")).not.toHaveAttribute(
+    "tabindex",
+    "-1"
+  );
+
+  // 逆に先頭（今度はoffscreen）cardの操作はTab順から外れる
+  await expect(
+    firstGroup.getByRole("link", { name: "詳細を見る →" })
+  ).toHaveAttribute("tabindex", "-1");
+});
+
 test("fallback（直接訪問）はcarousel内にform要素も空状態copyも持たない", async ({
   page,
 }) => {
