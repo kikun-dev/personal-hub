@@ -14,6 +14,8 @@ Product DesignとImpeccableによる監査を統合した、正式なDesign Audi
 
 2026-07-15〜16の3 reportは、2026-07-13 Auditを置換しない実装後follow-up snapshotである。Consolidated Findingsに示す13件のRecommended Issue Boundariesは未起票であり、Issue Decisionまたは確定仕様ではない。
 
+次回のfinal Performance Auditは、#382で追加したshared cache contract test（`orbitReadLoader.test.ts` / `readOrbitMusicData.cache.test.ts`）がunit suiteに含まれpassしていることを実行条件とする。2026-07-19 Auditの`Shared cache enabled-path contract`未実施（Verification Record）は、この条件を満たすことで解消される。
+
 ## Audit Flow
 
 1. Product Design Audit
