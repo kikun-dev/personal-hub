@@ -30,9 +30,23 @@ type PerformanceCarouselProps = {
 
 // card内のTab対象になりうる操作要素。offscreen cardではこれらを tabindex=-1 にする
 const FOCUSABLE_SELECTOR = "a[href], button, select, input, textarea";
-// 先頭（左端）がviewport内で、かつ先頭からこの割合以上表示されているcardを「可視 = Tab対象」
-// とみなす。左端が切れたcard（操作が見切れる）や peek幅だけのcardをTab対象から除外する。
+// 先頭（左端）がviewport内で、かつ先頭からこの割合以上表示されているcardを
+// 位置通知・前後移動の「可視card」とみなす。Tab対象は操作要素自身のrectで別途絞り込む。
 const VISIBLE_MIN_FRACTION = 0.6;
+const VIEWPORT_TOLERANCE_PX = 1;
+
+function isFullyWithinHorizontalViewport(
+  element: HTMLElement,
+  viewportRect: DOMRect
+): boolean {
+  const rect = element.getBoundingClientRect();
+  return (
+    rect.width > 0 &&
+    rect.height > 0 &&
+    rect.left >= viewportRect.left - VIEWPORT_TOLERANCE_PX &&
+    rect.right <= viewportRect.right + VIEWPORT_TOLERANCE_PX
+  );
+}
 
 function prefersReducedMotion(): boolean {
   return (
@@ -56,6 +70,7 @@ export function PerformanceCarousel({
   const lastVisibleRef = useRef(0);
   // 現在Tab対象（可視）のindex集合。MutationObserverからの再適用でも参照する。
   const visibleRef = useRef<Set<number>>(new Set([0]));
+  const navigationButtonRef = useRef<HTMLButtonElement>(null);
 
   const getCards = useCallback((): HTMLElement[] => {
     const container = scrollRef.current;
@@ -65,13 +80,20 @@ export function PerformanceCarousel({
     );
   }, []);
 
-  // 可視card だけをTab順に残す（offscreen cardの操作は tabindex=-1）。a11y tree には残すため
-  // inert は使わない。自分が付けた tabindex=-1 のみ data-roving-off で識別して復元する。
+  // 可視card内でも、操作要素自身がviewport内に収まるものだけをTab順に残す。
+  // 60%以上見える部分cardの右端操作がoffscreenのままTab対象になることを防ぐ。
+  // a11y tree には残すため inert は使わない。自分が付けた tabindex=-1 のみ
+  // data-roving-off で識別して復元する。
   const applyRoving = useCallback(() => {
+    const container = scrollRef.current;
+    if (container === null) return;
+    const viewportRect = container.getBoundingClientRect();
     getCards().forEach((card, index) => {
-      const tabbable = visibleRef.current.has(index);
+      const isCardVisible = visibleRef.current.has(index);
       card.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR).forEach((el) => {
-        if (tabbable) {
+        const shouldBeTabbable =
+          isCardVisible && isFullyWithinHorizontalViewport(el, viewportRect);
+        if (shouldBeTabbable) {
           if (el.dataset.rovingOff === "true") {
             el.removeAttribute("tabindex");
             delete el.dataset.rovingOff;
@@ -85,10 +107,9 @@ export function PerformanceCarousel({
   }, [getCards]);
 
   // bounding rect から現在の可視レンジを算出し、roving と announcement基準を更新する。
-  // 「可視」= card の先頭（左端）がviewport内 かつ 先頭から VISIBLE_MIN_FRACTION 以上表示、
-  // と定義する。これにより Tab は必ず「操作（先頭側にあるvenue/setlist/disclosure）まで
-  // viewport内に見えているcard」へ入り、左端が切れたcardへfocusが飛ばない。snap-mandatoryや
-  // wide viewportの複数可視、peek幅とも競合しない（実際のrectに従うだけ）。
+  // 「可視」= card の先頭（左端）がviewport内 かつ先頭から VISIBLE_MIN_FRACTION 以上表示、
+  // と定義する。位置通知と前後移動はこのcard集合、Tab対象はapplyRovingで操作要素自身のrectを
+  // 基準にする。snap-mandatoryやwide viewportの複数可視、peek幅とも競合しない。
   const computeVisible = useCallback(() => {
     const container = scrollRef.current;
     const cards = getCards();
@@ -121,17 +142,39 @@ export function PerformanceCarousel({
     applyRoving();
 
     // #377 P1: tabindex=-1 では focus 済み要素は blur されないため、card内の操作へ focus した
-    // まま Arrow/native scroll で可視範囲が変わると、focus が offscreen card に残り画面外へ出る。
-    // focus 中 card が非可視になったら、先頭可視 card の対応操作へ focus を移し viewport 内に保つ。
+    // まま Arrow/native scroll で可視範囲が変わると、focus が画面外に残る。
+    // focus 中 card または操作自体が非可視になったら、可視 card 内で実際に viewport に収まる
+    // 操作へ focus を移す。該当操作がない場合は、常に可視の carousel navigation へ退避する。
     // preventScroll で focus 起点の再 scroll（snap 競合）を避ける。
     const active = document.activeElement;
     if (active instanceof HTMLElement && container.contains(active)) {
       const activeCard = active.closest<HTMLElement>('[role="group"]');
       const activeIndex = activeCard === null ? -1 : cards.indexOf(activeCard);
-      if (activeIndex >= 0 && !visible.has(activeIndex)) {
-        const focusTarget =
-          cards[first]?.querySelector<HTMLElement>(FOCUSABLE_SELECTOR) ?? null;
-        focusTarget?.focus({ preventScroll: true });
+      const isActiveWithinViewport = isFullyWithinHorizontalViewport(
+        active,
+        cRect
+      );
+      if (
+        activeIndex >= 0 &&
+        (!visible.has(activeIndex) || !isActiveWithinViewport)
+      ) {
+        let focusTarget: HTMLElement | null = null;
+        for (const index of visible) {
+          const candidates =
+            cards[index]?.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR) ?? [];
+          focusTarget =
+            Array.from(candidates).find(
+              (candidate) =>
+                !candidate.hasAttribute("disabled") &&
+                candidate.getAttribute("aria-disabled") !== "true" &&
+                candidate.getAttribute("tabindex") !== "-1" &&
+                isFullyWithinHorizontalViewport(candidate, cRect)
+            ) ?? null;
+          if (focusTarget !== null) break;
+        }
+        (focusTarget ?? navigationButtonRef.current)?.focus({
+          preventScroll: true,
+        });
       }
     }
   }, [getCards, applyRoving]);
@@ -249,6 +292,7 @@ export function PerformanceCarousel({
           {positionLabel}
         </span>
         <Button
+          ref={navigationButtonRef}
           type="button"
           variant="ghost"
           aria-label="前の公演"

@@ -129,6 +129,113 @@ test("carousel内のlinear Tab targetが可視card分だけに絞られる（bas
   expect(allTabbableInViewport).toBe(true);
 });
 
+test("中間viewportで部分表示cardの画面外操作はTab対象にならない", async ({
+  page,
+}) => {
+  // sm:w-80（320px）のcardが2枚全面表示され、3枚目が60%以上だけ見える幅を作る。
+  // card単位では可視でも右端のdisclosure/setlist操作が見切れる経路の回帰を検証する。
+  await page.setViewportSize({ width: 900, height: 800 });
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  await expect(container).toBeVisible();
+
+  const readVisibility = () =>
+    container.evaluate((element) => {
+      const cRect = element.getBoundingClientRect();
+      const groups = Array.from(
+        element.querySelectorAll<HTMLElement>(':scope > [role="group"]')
+      );
+      let partialCardIndex = -1;
+      let partialCardCount = 0;
+      let offscreenOperationCount = 0;
+      let offscreenTabbableCount = 0;
+
+      groups.forEach((group, index) => {
+        const groupRect = group.getBoundingClientRect();
+        const shownFromStart =
+          Math.min(groupRect.right, cRect.right) - groupRect.left;
+        const isRovingVisible =
+          groupRect.width > 0 &&
+          groupRect.left >= cRect.left - 1 &&
+          shownFromStart >= groupRect.width * 0.6;
+        if (!isRovingVisible || groupRect.right <= cRect.right + 1) return;
+
+        if (partialCardIndex === -1) partialCardIndex = index;
+        partialCardCount += 1;
+        group
+          .querySelectorAll<HTMLElement>(
+            "a[href], button, select, input, textarea"
+          )
+          .forEach((operation) => {
+            const rect = operation.getBoundingClientRect();
+            if (rect.right <= cRect.right + 1) return;
+            offscreenOperationCount += 1;
+            if (operation.getAttribute("tabindex") !== "-1") {
+              offscreenTabbableCount += 1;
+            }
+          });
+      });
+
+      return {
+        partialCardIndex,
+        partialCardCount,
+        offscreenOperationCount,
+        offscreenTabbableCount,
+      };
+    });
+
+  await expect
+    .poll(async () => (await readVisibility()).partialCardCount)
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await readVisibility()).offscreenOperationCount)
+    .toBeGreaterThan(0);
+  await expect
+    .poll(async () => (await readVisibility()).offscreenTabbableCount)
+    .toBe(0);
+
+  // 部分表示cardを一度全面表示して右端操作へfocusし、その後先頭へ戻す。
+  // card自体が60%以上見えていても操作がoffscreenになった時点で、viewport内操作へfocusを移す。
+  const { partialCardIndex } = await readVisibility();
+  expect(partialCardIndex).toBeGreaterThanOrEqual(0);
+  const partialGroup = container.getByRole("group").nth(partialCardIndex);
+  await container.evaluate((element, index) => {
+    const group = element.querySelectorAll<HTMLElement>(
+      ':scope > [role="group"]'
+    )[index];
+    if (group === undefined) return;
+    element.scrollLeft +=
+      group.getBoundingClientRect().left - element.getBoundingClientRect().left;
+  }, partialCardIndex);
+
+  const disclosure = partialGroup.locator("button[aria-controls]");
+  await expect(disclosure).not.toHaveAttribute("tabindex", "-1");
+  await disclosure.focus();
+  await expect(disclosure).toBeFocused();
+
+  await container.evaluate((element) => {
+    element.scrollLeft = 0;
+  });
+  await expect
+    .poll(() =>
+      container.evaluate((element) => {
+        const active = document.activeElement;
+        if (!(active instanceof HTMLElement) || !element.contains(active)) {
+          return false;
+        }
+        const cRect = element.getBoundingClientRect();
+        const activeRect = active.getBoundingClientRect();
+        return (
+          activeRect.left >= cRect.left - 1 &&
+          activeRect.right <= cRect.right + 1
+        );
+      })
+    )
+    .toBe(true);
+});
+
 test("prev/next/Arrowの反復で可視外の末尾公演へ到達でき、その公演のvenue/setlist/attendanceへkeyboard到達できる", async ({
   page,
 }) => {
