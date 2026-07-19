@@ -1,4 +1,5 @@
 import { type TextareaHTMLAttributes, useId } from "react";
+import { focusRingClass } from "@/components/ui/focusRing";
 
 type TextareaProps = TextareaHTMLAttributes<HTMLTextAreaElement> & {
   label: string;
@@ -32,7 +33,7 @@ export function Textarea({
         id={fieldId}
         aria-invalid={invalid}
         aria-describedby={describedBy}
-        className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
+        className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
           error ? "border-red-400" : "border-foreground/10"
         } ${className}`}
         rows={3}

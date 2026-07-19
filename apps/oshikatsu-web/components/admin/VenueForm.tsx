@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { focusRingClass } from "@/components/ui/focusRing";
 import { useAdminForm } from "@/hooks/useAdminForm";
 
 type VenueFormProps = {
@@ -19,8 +20,7 @@ type VenueFormProps = {
 };
 
 const OVERSEAS_VALUE = "__overseas__";
-const inputClass =
-  "w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20";
+const inputClass = `w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`;
 
 function getDefaultValues(): CreateVenueInput {
   return {

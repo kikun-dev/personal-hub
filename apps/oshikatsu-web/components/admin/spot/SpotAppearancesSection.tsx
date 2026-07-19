@@ -12,13 +12,13 @@ import { Textarea } from "@/components/ui/Textarea";
 import { Select } from "@/components/ui/Select";
 import { Button } from "@/components/ui/Button";
 import { Combobox } from "@/components/ui/Combobox";
+import { focusRingClass } from "@/components/ui/focusRing";
 import type {
   AppearanceField,
   SpotFormMasterData,
 } from "@/components/admin/spot/spotFormShared";
 
-const inputClass =
-  "w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20";
+const inputClass = `w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`;
 
 function formatVideoOptionLabel(option: SongVideoOption): string {
   const typeLabel = getSongVideoTypeLabel(option.videoType);

@@ -6,6 +6,7 @@ import type { CreateWikiPageInput } from "@/types/wiki";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
+import { focusRingClass } from "@/components/ui/focusRing";
 import { useAdminForm } from "@/hooks/useAdminForm";
 import { WikiPageContent } from "@/components/wiki/WikiPageContent";
 
@@ -111,7 +112,7 @@ export function WikiPageForm({ mode, initialValues, onSubmit }: WikiPageFormProp
             value={values.bodyMarkdown}
             onChange={(e) => update("bodyMarkdown", e.target.value)}
             rows={20}
-            className={`w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20 ${
+            className={`w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
               errors.bodyMarkdown ? "border-red-400" : "border-foreground/10"
             }`}
           />

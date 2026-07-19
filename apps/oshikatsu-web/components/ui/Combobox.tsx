@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { focusRingClass } from "@/components/ui/focusRing";
 
 export type ComboboxOption = {
   value: string;
@@ -113,7 +114,7 @@ export function Combobox({
           setHighlight(0);
         }}
         onKeyDown={handleKeyDown}
-        className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 focus:outline-none focus:ring-2 focus:ring-foreground/20"
+        className={`w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`}
       />
       {open && (
         <ul
