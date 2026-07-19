@@ -35,7 +35,7 @@ docker exec -i supabase_db_oshikatsu-web psql -U supabase_admin -d postgres \
 docker ps --format '{{.Names}}' | grep rest   # コンテナ名を確認
 docker restart supabase_rest_oshikatsu-web
 
-# 6. driver を実行（3シナリオ + attendance heavy/light）
+# 6. driver を実行（3シナリオ + attendance heavy/light/zero）
 pnpm perf:driver
 
 # 7. 実行計画を回収する
@@ -67,15 +67,16 @@ grep -n "__perf_scenario_marker__" /tmp/perf-plans.log
 - `beforeAll` で service_role client を作り、3固定ユーザーが
   存在することを保証する（`ensureFixedUser`。通常は fixture が
   既に作成済みのため `getUserById` がヒットして no-op）。続けて
-  heavy/light の2ユーザーで `signInWithPassword` する。
+  heavy/light/zero の3ユーザーで `signInWithPassword` する。
 - heavy user の client で `getTopPageContent(...)` を3シナリオ実行:
   - `today`: `(2026,7,19,2026,7,19)`
   - `same-month-selected`: `(2026,7,5,2026,7,19)`
   - `window-external-selected`: `(2024,3,10,2026,7,19)`
     （selected月とnext-events窓が重ならず、`buildCalendarRanges` が
     2つの disjoint range を `.or()` で問い合わせる経路を検証する）
-- heavy / light 両ユーザーの client で `getRecentAttendance(...)` を実行
-  （light はデータ量が少ない側の selectivity 比較用）。
+- heavy / light / zero 各ユーザーの client で `getRecentAttendance(...)` を実行
+  （light はデータ量が少ない側の selectivity 比較用、zero は空結果の
+  contract 確認用）。
 - 各シナリオの前後で `console.log` のマーカー（`=== SCENARIO: ... ===`）と、
   service_role client によるマーカー query（存在しない値で
   `orbit_event_types` を select し、そのフィルタ値がラベル文字列として
@@ -84,10 +85,13 @@ grep -n "__perf_scenario_marker__" /tmp/perf-plans.log
   `select 1 as "SCENARIO_..."` 相当を素朴に投げる手段が無く、この形に
   した（`docker logs` 上で `__perf_scenario_marker__<label>__` を
   grep すればシナリオの境目と実行計画を対応付けられる）。
+  マーカー query が失敗した場合は、stdout と DB ログの対応を保証できないため
+  driver を即時エラーにする。
 - 各シナリオ・attendance 実行後に結果件数（`monthEvents` 等の配列長、
-  `entries.length`）を `console.log` し、bounded であること
-  （`nextEvents.length <= 4`、attendance `entries.length <= 3`）を
-  `expect` でも確認する。
+  `entries.length`）を `console.log` する。Top Page は fixture が全シナリオで
+  データを保証する代表配列（month / selected / today / next）が空でないことと
+  bounded であること（`0 < nextEvents.length <= 4`）、attendance は heavy が
+  bounded かつ非空、light が3件、zero が0件であることを `expect` でも確認する。
 
 ### 実行方式について
 
@@ -105,13 +109,12 @@ transitive dependency を直接 import できないため。バージョンは
 
 ## 動作確認済みの内容（fixture_small で実施）
 
-- 3シナリオ + attendance(heavy/light) の計5テストが全てエラーなく完走
-  （`pnpm perf:driver`、`Tests 5 passed (5)`）。
-- 結果件数（例）: `today`: monthEvents=32 selectedDateEvents=8
-  onThisDayEvents=6 todayEvents=8 nextEvents=4 / attendance heavy:
-  entries=3（母数10件中）/ attendance light: entries=3（母数3件）。
-  `nextEvents` は常に4件以下、attendance の `entries` は常に3件以下
-  （bounded read の確認）。
+- 3シナリオ + attendance(heavy/light/zero) の計6テストが全てエラーなく完走
+  （`pnpm perf:driver`、`Tests 6 passed (6)`）。
+- 結果件数（例）: `today`: selectedDateEvents=8 / todayEvents=8 /
+  nextEvents=4、attendance heavy: entries=3（母数10件中）、light:
+  entries=3（母数3件）、zero: entries=0。Top Page の positive control と
+  `nextEvents <= 4`、attendance の bounded / empty contract を確認済み。
 - `docker logs supabase_db_oshikatsu-web` に auto_explain の plan が
   Query Text 付きで出力されることを確認済み。特に:
   - `orbit_live_attendances` の `!inner` embed クエリ

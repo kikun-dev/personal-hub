@@ -181,11 +181,16 @@ async function logScenarioMarker(
 ): Promise<void> {
   const marker = `__perf_scenario_marker__${label}__`;
   console.log(`=== SCENARIO MARKER: ${marker} ===`);
-  await serviceClient
+  const { error } = await serviceClient
     .from("orbit_event_types")
     .select("id")
     .eq("name", marker)
     .maybeSingle();
+  if (error) {
+    throw new Error(
+      `シナリオマーカー(${marker})の記録に失敗しました: ${error.message}`
+    );
+  }
 }
 
 async function runTopPageScenario(
@@ -225,6 +230,11 @@ async function runTopPageScenario(
       `nextEvents=${content.nextEvents.length}`
   );
 
+  // fixture の代表データが RLS・filter・join の回帰で全消失していないこと。
+  expect(content.monthEvents.length).toBeGreaterThan(0);
+  expect(content.selectedDateEvents.length).toBeGreaterThan(0);
+  expect(content.todayEvents.length).toBeGreaterThan(0);
+  expect(content.nextEvents.length).toBeGreaterThan(0);
   // Next Events rail は常に上限4件（getTopPageContent の NEXT_EVENTS_LIMIT）。
   expect(content.nextEvents.length).toBeLessThanOrEqual(4);
 
@@ -235,6 +245,7 @@ async function runTopPageScenario(
 describe("Top Page bounded read driver (#383)", () => {
   let heavyClient: SupabaseClient<Database>;
   let lightClient: SupabaseClient<Database>;
+  let zeroClient: SupabaseClient<Database>;
   let serviceClient: SupabaseClient<Database>;
 
   beforeAll(async () => {
@@ -269,6 +280,18 @@ describe("Top Page bounded read driver (#383)", () => {
     if (lightSignInError) {
       throw new Error(
         `light user のサインインに失敗しました: ${lightSignInError.message}`
+      );
+    }
+
+    zeroClient = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { error: zeroSignInError } =
+      await zeroClient.auth.signInWithPassword({
+        email: ZERO_USER.email,
+        password: FIXED_PASSWORD,
+      });
+    if (zeroSignInError) {
+      throw new Error(
+        `zero user のサインインに失敗しました: ${zeroSignInError.message}`
       );
     }
   });
@@ -310,7 +333,26 @@ describe("Top Page bounded read driver (#383)", () => {
     console.log(
       `[${label}] entries=${result.entries.length} hasAnyPastAttendance=${result.hasAnyPastAttendance}`
     );
-    expect(result.entries.length).toBeLessThanOrEqual(3);
+    expect(result.entries).toHaveLength(3);
+    expect(result.hasAnyPastAttendance).toBe(true);
+
+    await logScenarioMarker(serviceClient, `${label}:end`);
+    console.log(`=== SCENARIO: ${label} end ===`);
+  });
+
+  it("getRecentAttendance（zero user、空結果確認）", async () => {
+    const label = "attendance:zero";
+    console.log(`=== SCENARIO: ${label} start ===`);
+    await logScenarioMarker(serviceClient, `${label}:start`);
+
+    const repo = createAttendanceRepository(zeroClient);
+    const result = await getRecentAttendance(repo);
+
+    console.log(
+      `[${label}] entries=${result.entries.length} hasAnyPastAttendance=${result.hasAnyPastAttendance}`
+    );
+    expect(result.entries).toEqual([]);
+    expect(result.hasAnyPastAttendance).toBe(false);
 
     await logScenarioMarker(serviceClient, `${label}:end`);
     console.log(`=== SCENARIO: ${label} end ===`);
