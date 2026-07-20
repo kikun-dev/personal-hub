@@ -102,12 +102,13 @@ app/（UI層）→ usecases/（UseCase層）→ repositories/（Data層）
 - **トップページ**（Daily Story: 今日の予定 + 過去の同日 + 次の予定 + 最近の参加記録 + 日付から探す）
   - 通常イベント、誕生日、ライブ公演日、リリース日、MV/関連動画の配信日を集約表示する
   - 日次系のライブは公演（performance）単位で扱い、ライブ詳細へのリンクに選択日（`date`）と該当公演（`performance`）の context を引き継ぐ
+  - Calendarはsemantic HTML table + native date linkを使い、today / selected / event summaryをaccessible nameへ集約する。月移動・日付選択・戻り導線ではfocusを探索文脈内へ維持する
 - **メンバー一覧**（カードグリッド + グループ/ステータスフィルター）
 - **メンバー詳細**（プロフィール + グループ履歴 + 来歴 + 参加楽曲 + シングル別選抜ポジション）
 - **楽曲/リリース管理**（リリース中心モデル、クレジット、フォーメーション、MV、関連動画、衣装）
 - **ライブ/会場/セットリスト管理**（公演、出演メンバー、披露メンバー、披露タイプ）
   - 有効な `date` + `performance` context 付きのライブ詳細は「この公演」→「次の公演」→ツアー全体の順に表示し、元の日付へ戻る導線を持つ。直接訪問または不正な context では日付や公演を推測せず fallback 表示にする
-  - 参戦記録は該当公演 context 内の独立した submodule として近接表示する
+  - 参戦記録は該当公演 context 内の独立した submodule として近接表示する。fallback carouselでは可視公演だけをkeyboard対象にし、参戦記録のfull formはactive公演でだけ展開する
 - **制作陣管理**（人物マスタ、担当 role、担当楽曲一覧）
 - **聖地マップ**（活動で訪れた場所の登録・地図表示・スポット詳細・写真）
   - スポットは出来事（グループ・種別・サブ種別・出典FK・メンバー・リンク・メモ）を1件以上持ち、単一カテゴリは持たない（ADR 0010 追記）
@@ -128,7 +129,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 認証ガードは `proxy.ts` 側に集約する
 - 閲覧系は read model 経由で取得し、`SUPABASE_SERVICE_ROLE_KEY` がある環境では shared cache を有効化する
 - キーがない環境ではセッション付き server client にフォールバックし、機能優先で動作させる
-- Top は集約 usecase で取得し、誕生日 / OnThisDay は 1 往復 RPC を優先する
+- Top はbounded read modelで月 / 選択日 / 過去同日 / 次の予定を用途別に取得し、global readと認証付きRecent Attendanceを並列composeする。shared cacheのkey / tag / hit contractはunit testで固定する
 - 公開一覧は `findAll` とは別に public list DTO を使い、一覧表示に不要な join を避ける
 - メンバー/楽曲の一覧は、グループ絞り込みなしのとき `usecases/groupListSections.ts`（`createMemberSections` / `createSongSections`）でグループ別セクションに整形し、`GroupSectionHeading` + `*SectionList` / `*Grid` で表示する。グループ絞り込み時はフラットな `*Grid` にフォールバックする
 - リリース一覧はグループ別セクションではなく、リリース日降順のフラット表示を基本とする
