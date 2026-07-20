@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { ReactNode } from "react";
+import { focusRingClass } from "@/components/ui/focusRing";
 import { consumeCalendarNavigation } from "@/lib/calendarResultFocus";
 
 type DailyStoryHeadingProps = {
@@ -26,7 +27,11 @@ export function DailyStoryHeading({
   }, [selectedDateStr]);
 
   return (
-    <h1 ref={headingRef} tabIndex={-1} className={className}>
+    <h1
+      ref={headingRef}
+      tabIndex={-1}
+      className={`${className} ${focusRingClass}`}
+    >
       {children}
     </h1>
   );
