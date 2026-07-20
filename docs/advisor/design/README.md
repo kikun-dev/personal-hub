@@ -54,6 +54,7 @@ Product DesignとImpeccableによる監査を統合した、正式なDesign Audi
 - ファイル名は `YYYY-MM-DD-<product>-<scope>.md` とする。
 - 再監査は新しい日付のレポートとして追加し、本READMEのAudit一覧を更新する。
 - 監査指摘へ対応した場合は、既存レポートのFindingやScoreを現在状態へ書き換えず、Related Issuesへの追跡情報追加または再監査レポートで結果を記録する。
+- PUBLIC repositoryへ保存するevidenceには、認証済みユーザーの参加日・公演・会場・メモ等の個人記録を含めない。必要な状態はsynthetic / anonymized fixtureで再現し、実データを含むcaptureはcommitしない。
 
 ## Decision Boundary
 
