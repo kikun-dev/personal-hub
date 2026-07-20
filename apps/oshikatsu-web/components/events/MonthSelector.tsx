@@ -3,15 +3,13 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { formatMonthLabel } from "@/lib/formatters";
-import { getDaysInMonth, getTodayInAppTimeZone } from "@/lib/dateParams";
+import { getDaysInMonth } from "@/lib/dateParams";
 
 type MonthSelectorProps = {
   year: number;
   month: number;
   day?: number;
   basePath?: string;
-  showTodayButton?: boolean;
-  splitTodayButton?: boolean;
 };
 
 export function MonthSelector({
@@ -19,8 +17,6 @@ export function MonthSelector({
   month,
   day,
   basePath = "/",
-  showTodayButton = false,
-  splitTodayButton = false,
 }: MonthSelectorProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -97,24 +93,8 @@ export function MonthSelector({
     }
   };
 
-  const handleToday = () => {
-    const now = getTodayInAppTimeZone();
-    const targetDay = hasDayContext ? now.getDate() : undefined;
-    navigate(now.getFullYear(), now.getMonth() + 1, targetDay);
-    announceNavigation(now.getFullYear(), now.getMonth() + 1, targetDay);
-  };
-
-  // 今日 / 前月 / 翌月 は320pxで40px、390px以上で44pxのhit areaを持つ
+  // 前月 / 翌月 は320pxで40px、390px以上で44pxのhit areaを持つ
   // （24pxのvisual circleとは無関係にbutton自体の当たり判定として確保する）。
-  const todayButton = showTodayButton ? (
-    <button
-      onClick={handleToday}
-      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-    >
-      今日
-    </button>
-  ) : null;
-
   const prevButton = (
     <button
       onClick={handlePrev}
@@ -135,17 +115,14 @@ export function MonthSelector({
     </button>
   );
 
-  // sm未満: 2行構成（1行目: 今日 + 月label、2行目: 前月/翌月）。
-  // whitespace-nowrapとmin-widthのlabelを1行目全幅で使い、2行目はbutton間隔を広く取ることで
+  // sm未満: 2行構成（1行目: 月label、2行目: 前月/翌月）。
+  // whitespace-nowrapのlabelを1行目に置き、2行目はbutton間隔を広く取ることで
   // 320/390pxでのoverflowとタップ誤操作を避ける。
   const mobileLayout = (
     <div className="flex w-full flex-col gap-2 sm:hidden">
-      <div className="flex items-center gap-2">
-        {todayButton}
-        <span className="flex-1 whitespace-nowrap text-center text-lg font-bold text-foreground">
-          {formatMonthLabel(year, month)}
-        </span>
-      </div>
+      <span className="whitespace-nowrap text-center text-lg font-bold text-foreground">
+        {formatMonthLabel(year, month)}
+      </span>
       <div className="flex items-center justify-between gap-2">
         {prevButton}
         {nextButton}
@@ -165,33 +142,13 @@ export function MonthSelector({
     </p>
   );
 
-  if (showTodayButton && splitTodayButton) {
-    return (
-      <>
-        {mobileLayout}
-        <div className="hidden w-full items-center justify-between gap-2 sm:flex sm:gap-4">
-          {todayButton}
-          <div className="flex items-center gap-2 sm:gap-4">
-            {prevButton}
-            {monthLabel}
-            {nextButton}
-          </div>
-        </div>
-        {statusAnnouncement}
-      </>
-    );
-  }
-
   return (
     <>
       {mobileLayout}
       <div className="hidden items-center gap-2 sm:flex sm:gap-4">
-        {todayButton}
-        <div className="flex items-center gap-2 sm:gap-4">
-          {prevButton}
-          {monthLabel}
-          {nextButton}
-        </div>
+        {prevButton}
+        {monthLabel}
+        {nextButton}
       </div>
       {statusAnnouncement}
     </>

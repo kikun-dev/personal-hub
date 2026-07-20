@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-20T13:47:18Z",
+  "generatedAt": "2026-07-20T14:47:00Z",
   "title": "Design System: Sakalog",
   "extensions": {
     "colorMeta": {
@@ -129,6 +129,18 @@
         "displayName": "ダークフォーカスリング",
         "canonical": "#93C5FD",
         "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#2563EB", "#60A5FA", "#93C5FD", "#DBEAFE"]
+      },
+      "info-text-light": {
+        "role": "tertiary",
+        "displayName": "ライト補助文字",
+        "canonical": "#3557B7",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#3557B7", "#2563EB", "#93C5FD", "#DBEAFE"]
+      },
+      "info-text-dark": {
+        "role": "tertiary",
+        "displayName": "ダーク補助文字",
+        "canonical": "#93C5FD",
+        "tonalRamp": ["#172554", "#1E3A8A", "#1E40AF", "#1D4ED8", "#3557B7", "#2563EB", "#93C5FD", "#DBEAFE"]
       },
       "nogizaka": {
         "role": "primary",

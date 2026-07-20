@@ -23,6 +23,8 @@ colors:
   danger-text-dark: "#FFB4AB"
   focus-ring-light: "#1D4ED8"
   focus-ring-dark: "#93C5FD"
+  info-text-light: "#3557B7"
+  info-text-dark: "#93C5FD"
   nogizaka: "#7B2D8E"
   nogizaka-soft: "#7B2D8E20"
   sakurazaka: "#E8518D"
@@ -192,6 +194,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **控えめな面 / 選択面**: ライトは `#F3F3F3` / `#E8E8E8`、ダークは `#1C1C1C` / `#2A2A2A`。hoverとcurrent/selected stateに使い、常設の装飾背景として広げない。
 - **境界**: subtleはライト `#D4D4D4` / ダーク `#3F3F3F`、strongはライト `#8A8A8A` / ダーク `#7A7A7A`。コンテナ分離にはsubtle、境界自体が操作部品の識別に必要な場合は背景に対して3:1以上のstrongを使う。
 - **破壊的操作**: 背景はライト `#B42318` / ダーク `#D92D20`、前景は `#FFFFFF`。背景なしのdanger textはライト `#B42318` / ダーク `#FFB4AB`を使う。
+- **補助的な意味の文字（info text）**: 背景なしのinfo textはライト `#3557B7` / ダーク `#93C5FD`を使う。日曜のdanger textと対に、曜日ヘッダの土曜など「種別を色で補助する文字」へ用い、各テーマ背景に対して4.5:1以上を保つ。
 - **フォーカスリング**: ライトは `#1D4ED8`、ダークは `#93C5FD`。背景と隣接色に対して識別可能な2px outlineとして使う。
 
 ### Named Rules
