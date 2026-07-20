@@ -162,36 +162,6 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           </div>
           <RecentAttendance overview={recentAttendance} />
         </div>
-
-        <section className="space-y-6">
-          {/* 戻り導線からのprogrammatic focusを受けるためtabIndex={-1}にする */}
-          <h2
-            id="calendar"
-            tabIndex={-1}
-            className={`text-sm font-semibold text-foreground ${focusRingClass}`}
-          >
-            日付から探す
-          </h2>
-
-          <div className="flex items-center">
-            <Suspense fallback={<div className="h-10" />}>
-              <MonthSelector
-                year={year}
-                month={month}
-                day={day}
-                showTodayButton
-                splitTodayButton
-              />
-            </Suspense>
-          </div>
-
-          <EventCalendar
-            events={monthEvents}
-            year={year}
-            month={month}
-            selectedDateStr={selectedDateStr}
-          />
-        </section>
       </div>
 
       <aside className="hidden lg:block">
@@ -199,6 +169,32 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           <NextEvents events={nextEvents} today={now} />
         </div>
       </aside>
+
+      {/* カレンダーは2カラムの下に全幅で置く（Prototype整合）。lg:col-span-2でgridの
+          新しい行として左右rail幅を回収する。次の予定railは上の行に閉じるため干渉しない。 */}
+      <section className="space-y-6 lg:col-span-2">
+        {/* 戻り導線からのprogrammatic focusを受けるためtabIndex={-1}にする */}
+        <h2
+          id="calendar"
+          tabIndex={-1}
+          className={`text-sm font-semibold text-foreground ${focusRingClass}`}
+        >
+          日付から探す
+        </h2>
+
+        <div className="flex items-center justify-center">
+          <Suspense fallback={<div className="h-10" />}>
+            <MonthSelector year={year} month={month} day={day} />
+          </Suspense>
+        </div>
+
+        <EventCalendar
+          events={monthEvents}
+          year={year}
+          month={month}
+          selectedDateStr={selectedDateStr}
+        />
+      </section>
     </div>
   );
 }
