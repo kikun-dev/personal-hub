@@ -18,7 +18,7 @@ import { PendingLink } from "@/components/ui/PendingLink";
 import {
   ACCOUNT_NAV_ITEMS,
   ARCHIVE_NAV_ITEMS,
-  NAV_SECTIONS,
+  MOBILE_NAV_ITEMS,
   PRIMARY_NAV_ITEMS,
   filterNavItemsForRole,
   isNavigationItemActive,
@@ -221,37 +221,28 @@ export function Header({ isAdmin }: HeaderProps) {
             </button>
           </div>
 
+          {/* セクション見出しは持たず、項目をフラットに並べる（#403）。
+              各項目は390pxで44px以上のtouch areaを確保する（min-h-11）。 */}
           <nav className="flex flex-1 flex-col gap-2 overflow-y-auto px-4 py-3">
-            {NAV_SECTIONS.map((section, index) => (
-              <Fragment key={section.label}>
-                <p
-                  className={`px-3 pb-1 text-xs font-medium text-foreground-secondary ${
-                    index === 0 ? "pt-1" : "pt-4"
+            {filterNavItemsForRole(MOBILE_NAV_ITEMS, isAdmin).map((item) => {
+              const isActive = isNavigationItemActive(pathname, item.href);
+              return (
+                <PendingLink
+                  key={item.href}
+                  href={item.href}
+                  feedback="global"
+                  onClick={closeMenu}
+                  aria-current={isActive ? "page" : undefined}
+                  className={`flex min-h-11 items-center rounded-md px-3 py-2 text-sm transition-colors ${
+                    isActive
+                      ? "bg-surface-selected font-medium text-foreground"
+                      : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
                   }`}
                 >
-                  {section.label}
-                </p>
-                {filterNavItemsForRole(section.items, isAdmin).map((item) => {
-                  const isActive = isNavigationItemActive(pathname, item.href);
-                  return (
-                    <PendingLink
-                      key={item.href}
-                      href={item.href}
-                      feedback="global"
-                      onClick={closeMenu}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`rounded-md px-3 py-2 text-sm transition-colors ${
-                        isActive
-                          ? "bg-surface-selected font-medium text-foreground"
-                          : "text-foreground-secondary hover:bg-surface-subtle hover:text-foreground"
-                      }`}
-                    >
-                      {item.label}
-                    </PendingLink>
-                  );
-                })}
-              </Fragment>
-            ))}
+                  {item.label}
+                </PendingLink>
+              );
+            })}
           </nav>
 
           <div className="border-t border-border-subtle px-4 py-3">

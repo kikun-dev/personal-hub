@@ -6,12 +6,6 @@ export type AppNavigationItem = {
   adminOnly?: boolean;
 };
 
-// Mobile ドロワー用の IA グループ（見出し + 配下 item）。
-export type AppNavigationSection = {
-  label: string;
-  items: AppNavigationItem[];
-};
-
 // 主要閲覧: メンバー / 楽曲 / リリース / ライブ。Header ではフラットに並べる。
 export const PRIMARY_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.members, label: "メンバー" },
@@ -34,11 +28,12 @@ export const ACCOUNT_NAV_ITEMS: AppNavigationItem[] = [
   { href: APP_ROUTES.admin, label: "管理", adminOnly: true },
 ];
 
-// Mobile ドロワー用のセクション配列（主要閲覧 → アーカイブ → アカウントの順）。
-export const NAV_SECTIONS: AppNavigationSection[] = [
-  { label: "主要閲覧", items: PRIMARY_NAV_ITEMS },
-  { label: "アーカイブ", items: ARCHIVE_NAV_ITEMS },
-  { label: "アカウント", items: ACCOUNT_NAV_ITEMS },
+// Mobile ドロワー用のフラット項目リスト（見出しなし。主要閲覧 → アーカイブ → アカウントの順）。
+// Desktop は PRIMARY / ARCHIVE / ACCOUNT を個別に参照するため、それらの配列は分けたまま維持する。
+export const MOBILE_NAV_ITEMS: AppNavigationItem[] = [
+  ...PRIMARY_NAV_ITEMS,
+  ...ARCHIVE_NAV_ITEMS,
+  ...ACCOUNT_NAV_ITEMS,
 ];
 
 export function isNavigationItemActive(pathname: string, href: string): boolean {
