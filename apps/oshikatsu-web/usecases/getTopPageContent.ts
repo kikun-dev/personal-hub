@@ -43,7 +43,9 @@ function addMonths(
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
-const NEXT_EVENTS_LIMIT = 4;
+// #400 追補2: Next Events から「すべて見る」導線を廃止した代わりに、直近の予定を
+// 少し先まで見せるため 4→6 に増やす。
+const NEXT_EVENTS_LIMIT = 6;
 // Next Events rail の探索窓（今日の月を含む12 calendar months、#344 レビュー対応）。
 // ライブ/リリース/動画/カスタムイベント/誕生日のすべての候補をこの窓でフィルタし、
 // 窓外のイベントが窓内のイベントを押しのけないようにする。

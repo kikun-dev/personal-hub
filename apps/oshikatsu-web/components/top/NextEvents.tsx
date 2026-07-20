@@ -23,21 +23,6 @@ type NextEventsProps = {
   today: Date;
 };
 
-// 底部の全件導線（rail / mobile 共通）。遷移先は現行の #calendar アンカーを維持し、
-// 全件一覧ページは作らない（#400 Decision Option B）。ヘッダ右にあった重複リンクは
-// 廃止しこちらへ一本化する。矢印はコードベース既存パターン（MonthSelector/LiveDetail の
-// 「→」文字）を踏襲し、新規アイコンは追加しない。
-function ViewAllLink() {
-  return (
-    <a
-      href="#calendar"
-      className="block w-full border-t border-border-subtle px-4 py-2.5 text-center text-xs text-foreground-secondary hover:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-    >
-      次の予定をすべて見る →
-    </a>
-  );
-}
-
 // Desktop 右側 rail（Next Events）と Mobile 本文内の両方で使う共通コンポーネント（#344）。
 // 配置・表示切替はページ側（hidden lg:block / lg:hidden）で行う。
 // #400: 見出しを「次の予定」に統一し、rail と mobile を枠付き surface + 区切り線 +
@@ -85,16 +70,12 @@ export function NextEvents({ events, today }: NextEventsProps) {
     </ul>
   );
 
-  // #400: rail（card）/ mobile（plain）とも枠付き surface に統一し、#399 の DaySchedule と
-  // 同様に「本文 padding」と「border-t の全件導線」を分けた構造にする
-  // （events が 0 件のときは遷移先が空になるため導線を出さない）。
+  // #400: rail / mobile とも枠付き surface に統一する。#400 追補2: すぐ下にカレンダーが
+  // あるため「すべて見る」導線は冗長として廃止し、代わりに表示件数を増やす（usecase 側）。
   return (
-    <div className="rounded-lg border border-border-subtle bg-background">
-      <div className="p-4">
-        {header}
-        {body}
-      </div>
-      {hasEvents && <ViewAllLink />}
+    <div className="rounded-lg border border-border-subtle bg-background p-4">
+      {header}
+      {body}
     </div>
   );
 }

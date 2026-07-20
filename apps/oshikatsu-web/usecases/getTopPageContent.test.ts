@@ -482,6 +482,11 @@ describe("getTopPageContent bounded read", () => {
         releaseNext,
         videoNext,
         { ...eventNext, type: "event" },
+        // #400 追補2: NEXT_EVENTS_LIMIT を 4→6 に増やしたため、従来 slice(0,4) で
+        // 切られていた次の公演も候補全件に含まれる（並び順は日付昇順 + 同日規則）。
+        // Next Events は公演単位（raw performance）のため id は performanceId 側になり、
+        // monthEvents で使う集約形 liveNext（id=liveId:date）とは id だけ異なる。
+        { ...liveNext, id: "performance-next" },
       ],
     });
   });
