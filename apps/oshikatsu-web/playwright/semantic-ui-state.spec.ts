@@ -22,9 +22,10 @@ for (const theme of themes) {
       await page.emulateMedia({ colorScheme: theme });
 
       await page.goto("/");
-      await expect(
-        page.getByRole("heading", { name: "今日のSakalog" })
-      ).toBeVisible();
+      // #399: 主見出し(h1)は日付テキストになった。タイトル階層はテキスト非依存で
+      // level:1のみ確認し、eyebrowラベルの存在で「今日のSakalog」文脈を確認する。
+      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+      await expect(page.getByText("今日のSakalog")).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "日付から探す" })
       ).toBeVisible();
