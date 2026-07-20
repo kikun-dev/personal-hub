@@ -27,7 +27,8 @@ type EventListItemProps = {
   event: CalendarEvent;
   // "inline"（デフォルト）= 現行レイアウト（バッジ+名称+補足を1行に並べる）。
   // "stacked" = 主行（バッジ+名称）/ 補助行（補足をまとめた1行）の2行構成（#344 レビュー対応）。
-  variant?: "inline" | "stacked";
+  // "timeline" = 時刻 / バッジ / 内容を列で揃える「過去の今日」専用表示（#401）。
+  variant?: "inline" | "stacked" | "timeline";
 };
 
 // 補足の1断片。emphasis は inline 表示時のクラス分けに使う
@@ -204,20 +205,86 @@ export function EventListItem({
 }: EventListItemProps) {
   const presentation = getEventPresentation(event);
 
-  if (variant === "stacked") {
+  if (variant === "timeline") {
+    const timeDetail = presentation.details.find((detail) => detail.key === "time");
+    const supportingDetails = presentation.details.filter(
+      (detail) => detail.key !== "time"
+    );
+
     return (
-      <div className="text-sm">
-        <div className="flex items-center gap-2">
+      <div
+        data-ui="timeline-event"
+        className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-start gap-x-2 gap-y-1 text-sm min-[360px]:grid-cols-[2.5rem_auto_minmax(0,1fr)]"
+      >
+        <span
+          data-ui="timeline-time"
+          className="col-start-1 row-start-1 self-center whitespace-nowrap text-xs text-foreground-secondary"
+        >
+          {timeDetail?.text ?? "終日"}
+        </span>
+        <span
+          data-ui="timeline-badge"
+          className="col-start-2 row-start-1 inline-flex min-w-0 self-center"
+        >
           <Badge
             label={presentation.badge.label}
             color={presentation.badge.color}
           />
+        </span>
+        <span
+          data-ui="timeline-content"
+          className="col-span-2 col-start-1 row-start-2 min-w-0 min-[360px]:col-span-1 min-[360px]:col-start-3 min-[360px]:row-start-1"
+        >
+          <span className="block font-medium">{presentation.nameLink}</span>
+          {supportingDetails.length > 0 && (
+            <span className="mt-0.5 block text-xs text-foreground-secondary">
+              {supportingDetails.map((detail) => detail.text).join(" ")}
+            </span>
+          )}
+        </span>
+      </div>
+    );
+  }
+
+  if (variant === "stacked") {
+    const timeDetail = presentation.details.find((detail) => detail.key === "time");
+    const supportingDetails = presentation.details.filter(
+      (detail) => detail.key !== "time"
+    );
+
+    return (
+      <div
+        data-ui="stacked-event"
+        className="grid grid-cols-[2.5rem_minmax(0,1fr)] items-center gap-x-2 gap-y-1 text-sm min-[360px]:grid-cols-[2.5rem_auto_minmax(0,1fr)] md:grid-cols-[2.5rem_auto_minmax(0,1fr)_minmax(7rem,11.25rem)]"
+      >
+        <span
+          data-ui="stacked-time"
+          className="col-start-1 row-start-1 self-center whitespace-nowrap text-xs text-foreground-secondary min-[360px]:row-span-2 md:row-span-1"
+        >
+          {timeDetail?.text ?? "終日"}
+        </span>
+        <span
+          data-ui="stacked-badge"
+          className="col-start-2 row-start-1 inline-flex min-w-0 self-center min-[360px]:row-span-2 md:row-span-1"
+        >
+          <Badge
+            label={presentation.badge.label}
+            color={presentation.badge.color}
+          />
+        </span>
+        <span
+          data-ui="stacked-content"
+          className="col-span-2 col-start-1 row-start-2 min-w-0 font-medium min-[360px]:col-span-1 min-[360px]:col-start-3 min-[360px]:row-start-1"
+        >
           {presentation.nameLink}
-        </div>
-        {presentation.details.length > 0 && (
-          <p className="mt-0.5 text-xs text-foreground-secondary">
-            {presentation.details.map((d) => d.text).join(" ")}
-          </p>
+        </span>
+        {supportingDetails.length > 0 && (
+          <span
+            data-ui="stacked-details"
+            className="col-span-2 col-start-1 row-start-3 text-xs text-foreground-secondary min-[360px]:col-span-1 min-[360px]:col-start-3 min-[360px]:row-start-2 md:col-start-4 md:row-start-1 md:self-center"
+          >
+            {supportingDetails.map((detail) => detail.text).join(" ")}
+          </span>
         )}
       </div>
     );
