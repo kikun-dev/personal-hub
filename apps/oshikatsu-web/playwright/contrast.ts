@@ -40,6 +40,45 @@ export function parseColor(value: string): Rgba {
     };
   }
 
+  const oklchMatch = normalized.match(
+    /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)(?:deg)?(?:\s*\/\s*([\d.]+)%?)?\s*\)$/
+  );
+  if (oklchMatch) {
+    const lightness =
+      Number(oklchMatch[1]) / (oklchMatch[2] === "%" ? 100 : 1);
+    const chroma = Number(oklchMatch[3]);
+    const hue = (Number(oklchMatch[4]) * Math.PI) / 180;
+    const alpha = oklchMatch[5] ? Number(oklchMatch[5]) : 1;
+    const a = chroma * Math.cos(hue);
+    const b = chroma * Math.sin(hue);
+
+    const lRoot = lightness + 0.3963377774 * a + 0.2158037573 * b;
+    const mRoot = lightness - 0.1055613458 * a - 0.0638541728 * b;
+    const sRoot = lightness - 0.0894841775 * a - 1.291485548 * b;
+    const l = lRoot ** 3;
+    const m = mRoot ** 3;
+    const s = sRoot ** 3;
+    const linear = [
+      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+    ];
+    const toSrgb = (channel: number): number => {
+      const value =
+        channel <= 0.0031308
+          ? 12.92 * channel
+          : 1.055 * channel ** (1 / 2.4) - 0.055;
+      return Math.min(1, Math.max(0, value)) * 255;
+    };
+
+    return {
+      r: toSrgb(linear[0]),
+      g: toSrgb(linear[1]),
+      b: toSrgb(linear[2]),
+      a: alpha,
+    };
+  }
+
   const match = normalized.match(/^rgba?\(([^)]+)\)$/);
   if (!match) {
     throw new Error(`未対応のCSS colorです: ${value}`);

@@ -56,7 +56,7 @@ export function PastSameDay({ events, title, currentYear }: PastSameDayProps) {
   const showRail = groups.length > 1;
 
   return (
-    <section className="space-y-3">
+    <section data-ui="past-same-day" className="space-y-3">
       <h2 className="text-sm font-semibold text-foreground">{title}</h2>
       {groups.length === 0 ? (
         <p className="text-sm text-foreground-secondary">過去の出来事はまだありません</p>
@@ -87,10 +87,16 @@ export function PastSameDay({ events, title, currentYear }: PastSameDayProps) {
                     )}
                   </div>
                 )}
-                <ul className="space-y-2.5">
+                <ul
+                  data-ui="past-same-day-events"
+                  className="divide-y divide-border-subtle"
+                >
                   {group.events.map((event) => (
-                    <li key={eventKey(event)}>
-                      <EventListItem event={event} variant="stacked" />
+                    <li
+                      key={eventKey(event)}
+                      className="py-2.5 first:pt-0 last:pb-0"
+                    >
+                      <EventListItem event={event} variant="timeline" />
                     </li>
                   ))}
                 </ul>

@@ -59,6 +59,12 @@ typography:
     fontWeight: 500
     lineHeight: 1.33
     letterSpacing: "normal"
+  badge:
+    fontFamily: "Arial, Helvetica, sans-serif"
+    fontSize: "10px"
+    fontWeight: 600
+    lineHeight: 1.55
+    letterSpacing: "normal"
   mono:
     fontFamily: "Geist Mono, ui-monospace, monospace"
     fontSize: "14px"
@@ -116,11 +122,12 @@ components:
     rounded: "{rounded.lg}"
     padding: "16px"
   badge-nogizaka:
-    backgroundColor: "{colors.nogizaka-soft}"
-    textColor: "{colors.foreground-light}"
-    typography: "{typography.label}"
+    backgroundColor: "color-mix(in oklch, {colors.nogizaka} 24%, var(--background))"
+    textColor: "color-mix(in oklch, {colors.nogizaka} 38%, var(--foreground))"
+    typography: "{typography.badge}"
     rounded: "{rounded.full}"
-    padding: "2px 10px"
+    padding: "2px 8px"
+    border: "none"
   navigation-active:
     backgroundColor: "{colors.surface-selected-light}"
     textColor: "{colors.foreground-light}"
@@ -208,7 +215,8 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **Headline** (700、20px、1.4): ページ名と詳細画面の主題。1画面に原則1つだけ置く。
 - **Title** (700、18px、1.55): 月表示や独立した重要タイトル。
 - **Body** (400、14px、1.43): ナビゲーション、本文、フォーム、一覧の標準。長文は 65–75ch を上限にする。
-- **Label** (500、12px、1.33): バッジ、補助情報、カレンダー。重要な本文をこのサイズへ押し込まない。
+- **Label** (500、12px、1.33): 補助情報とカレンダー。重要な本文をこのサイズへ押し込まない。
+- **Badge** (600、10px、1.55): 所属・イベント種別・参加種別を示すピル専用。visible labelと4.5:1以上の文字contrastを必須とし、本文や操作ラベルには使わない。
 - **Mono** (400、14px、1.43): WikiのコードとMarkdown編集だけに限定する。
 
 ### Named Rules
@@ -243,7 +251,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 ### Chips
 
-- **Style:** グループ色やイベント色を12.5%の淡い背景へ使い、文字はtheme別の通常文字色に分離する。色名を表すvisible labelを必ず残し、12px・500、上下2px・左右10px、完全なピル形状とする。
+- **Style:** グループ色やイベント色を、`color-mix(in oklch, category 24%, var(--background))` の不透明なtheme-aware背景へ使う。文字は `color-mix(in oklch, category 38%, var(--foreground))` でcategory hueを明確に残し、light/darkとも背景に対して4.5:1以上を保つ。色名を表すvisible labelを必ず残し、Badge role（10px・600・line-height 1.55）、上下2px・左右8px、枠線なし、完全なピル形状とする。
 - **State:** チップは所属や種別の表示を優先する。操作可能なフィルタでは選択状態を背景だけでなく文字の太さでも示す。
 
 ### Cards / Containers

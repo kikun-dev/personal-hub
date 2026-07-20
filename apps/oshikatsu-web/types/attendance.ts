@@ -6,7 +6,7 @@ export type AttendedType = (typeof ATTENDED_TYPE_VALUES)[number];
 
 export const ATTENDED_TYPE_LABELS: Record<AttendedType, string> = {
   onsite: "現地",
-  live_viewing: "ライブビューイング",
+  live_viewing: "ライビュ",
   streaming: "配信",
 };
 

@@ -537,7 +537,7 @@ test("登録済みcardのcompact表示にAttendedTypeBadgeが見える", async (
     const targetGroup = carousel(page).getByRole("group").nth(targetIndex);
     // reload後（またはarrangeしていない場合はcollapsedのまま）でcompact表示を確認する
     await expect(
-      targetGroup.getByText(/^(現地|ライブビューイング|配信)$/)
+      targetGroup.getByText(/^(現地|ライビュ|配信)$/)
     ).toBeVisible();
   } finally {
     if (arranged) {
