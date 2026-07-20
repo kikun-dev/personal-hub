@@ -778,3 +778,179 @@ for (const width of [320, 390]) {
     }
   });
 }
+
+// #389 P2-001: wide viewport（1440px）では複数cardが同時にTab対象になるため、可視counter・
+// role=statusを常に先頭可視card（firstVisible）基準にすると、末尾cardの操作へTabしても
+// 位置通知が追従しない回帰があった。carousel region（scrollRef）内のcard操作にfocusがある間は
+// その card を active として同期し、focus が carousel 外（prev/next control 含む）へ出た時は
+// 先頭可視 card 基準の fallback へ戻ることを検証する。
+test("1440pxでfocusしたcard操作に可視counterとrole=statusが同期し、focusが外れると先頭可視fallbackへ戻る", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  // ArrowRightの programmatic scroll を instant にして着地タイミング依存を除く。
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  const groups = container.getByRole("group");
+  const groupCount = await groups.count();
+  expect(groupCount).toBeGreaterThan(2);
+
+  // 可視の位置表示span（aria-hidden）と、読み上げ用role=statusを両方確認する。
+  // role=statusはpage内に他コンポーネント由来のものも存在しうるため、carousel由来のものを
+  // 「n / groupCount」パターンで絞り込む（他テストと同じ手法）。
+  const positionSpan = page.locator('span[aria-hidden="true"].tabular-nums');
+  const status = page.locator('[role="status"]').filter({
+    hasText: new RegExp(`/ ${groupCount}`),
+  });
+  await expect(status).toHaveCount(1);
+
+  const nextButton = page.getByRole("button", { name: "次の公演" });
+  const prevButton = page.getByRole("button", { name: "前の公演" });
+
+  // ArrowRightの反復で末尾（境界でnextがaria-disabledになるまで）へ進める。
+  await nextButton.focus();
+  for (let step = 0; step < groupCount + 3; step += 1) {
+    if ((await nextButton.getAttribute("aria-disabled")) === "true") break;
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(80);
+  }
+  await expect(nextButton).toHaveAttribute("aria-disabled", "true");
+
+  // 末尾（groupCount件目）cardのsetlistリンクへfocusすると、可視counter・role=statusは
+  // 先頭可視card基準ではなく、focus中のこのcard（groupCount / groupCount）を示す。
+  const lastGroup = groups.nth(groupCount - 1);
+  const lastLink = lastGroup.getByRole("link", { name: "詳細を見る →" });
+  await lastLink.focus();
+  await expect(lastLink).toBeFocused();
+
+  await expect(positionSpan).toHaveText(`${groupCount} / ${groupCount}`);
+  await expect
+    .poll(() => status.textContent())
+    .toContain(`${groupCount} / ${groupCount}`);
+
+  // 17件目（末尾の一つ前）のcard操作へfocusを移すと、そのcardのindexへ追従する
+  const secondLastGroup = groups.nth(groupCount - 2);
+  const secondLastLink = secondLastGroup.getByRole("link", {
+    name: "詳細を見る →",
+  });
+  await secondLastLink.focus();
+  await expect(secondLastLink).toBeFocused();
+
+  await expect(positionSpan).toHaveText(`${groupCount - 1} / ${groupCount}`);
+  await expect
+    .poll(() => status.textContent())
+    .toContain(`${groupCount - 1} / ${groupCount}`);
+
+  // focusをcarousel外（prev control）へ移すと、先頭可視card基準のfallbackへ戻る
+  await prevButton.focus();
+  await expect(prevButton).toBeFocused();
+
+  const firstVisibleLabel = await container.evaluate((element) => {
+    const cRect = element.getBoundingClientRect();
+    const cards = Array.from(
+      element.querySelectorAll<HTMLElement>(':scope > [role="group"]')
+    );
+    for (let index = 0; index < cards.length; index += 1) {
+      const r = cards[index].getBoundingClientRect();
+      const startVisible = r.left >= cRect.left - 1;
+      const shownFromStart = Math.min(r.right, cRect.right) - r.left;
+      if (r.width > 0 && startVisible && shownFromStart >= r.width * 0.6) {
+        return index + 1;
+      }
+    }
+    return null;
+  });
+  expect(firstVisibleLabel).not.toBeNull();
+
+  await expect(positionSpan).toHaveText(`${firstVisibleLabel} / ${groupCount}`);
+  await expect
+    .poll(() => status.textContent())
+    .toContain(`${firstVisibleLabel} / ${groupCount}`);
+});
+
+// narrow viewportは複数card同時可視にならないため、focus起点/fallback起点のindexが常に一致する。
+// #389で位置通知の基準ロジックを変更したため、従来どおり先頭・中間・末尾で正しく動くことを軽く回帰する
+// （keyboard到達性そのものの検証は既存テストが担うため、ここではposition表示の正しさのみ見る）。
+test("320pxでも可視counterとrole=statusは従来どおり正しい（先頭・中間・末尾）", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  const groupCount = await container.getByRole("group").count();
+  expect(groupCount).toBeGreaterThan(2);
+
+  const positionSpan = page.locator('span[aria-hidden="true"].tabular-nums');
+  const status = page.locator('[role="status"]').filter({
+    hasText: new RegExp(`/ ${groupCount}`),
+  });
+  await expect(status).toHaveCount(1);
+
+  // 先頭
+  await expect(positionSpan).toHaveText(`1 / ${groupCount}`);
+  await expect.poll(() => status.textContent()).toContain(`1 / ${groupCount}`);
+
+  const nextButton = page.getByRole("button", { name: "次の公演" });
+  await nextButton.focus();
+
+  // 中間まで進める
+  const midSteps = Math.max(1, Math.floor(groupCount / 2));
+  for (let step = 0; step < midSteps; step += 1) {
+    if ((await nextButton.getAttribute("aria-disabled")) === "true") break;
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(80);
+  }
+  const midLabel = await positionSpan.textContent();
+  expect(midLabel).toMatch(new RegExp(`^\\d+ / ${groupCount}$`));
+  expect(midLabel).not.toBe(`1 / ${groupCount}`);
+  await expect
+    .poll(() => status.textContent())
+    .toContain(midLabel ?? "");
+
+  // 末尾（aria-disabledになるまで）へ進める
+  for (let step = 0; step < groupCount + 3; step += 1) {
+    if ((await nextButton.getAttribute("aria-disabled")) === "true") break;
+    await page.keyboard.press("ArrowRight");
+    await page.waitForTimeout(80);
+  }
+  await expect(nextButton).toHaveAttribute("aria-disabled", "true");
+  await expect(positionSpan).toHaveText(`${groupCount} / ${groupCount}`);
+  await expect
+    .poll(() => status.textContent())
+    .toContain(`${groupCount} / ${groupCount}`);
+});
+
+// #389 P2-002: flex rowのcross-axis stretchにより、setlistが短いcardも最長cardと同じ高さまで
+// borderが伸びていた回帰。items-startで各cardをcontent heightのままにしたことを検証する。
+// fixtureでは対象ツアーの先頭公演だけにsetlist 1曲がseedされる
+// （seeds/040_seed_e2e_setlist_fixture.sql）ため、先頭cardと他cardでheight差が出るはずである。
+test("1440pxでcardのheightがflex stretchで一律に揃わない", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  const liveHref = await resolveFallbackLiveHref(page);
+  await page.goto(liveHref);
+
+  const container = carousel(page);
+  await expect(container).toBeVisible();
+
+  const heights = await container.evaluate((element) => {
+    const groups = Array.from(
+      element.querySelectorAll<HTMLElement>(':scope > [role="group"]')
+    );
+    return groups.map((group) => group.getBoundingClientRect().height);
+  });
+  expect(heights.length).toBeGreaterThan(1);
+
+  const minHeight = Math.min(...heights);
+  const maxHeight = Math.max(...heights);
+  // items-start が効いていれば、setlistの有無等でcontent heightに差があるcard同士は
+  // 同一heightまでstretchされず、min < max になる。
+  expect(minHeight).toBeLessThan(maxHeight);
+});
