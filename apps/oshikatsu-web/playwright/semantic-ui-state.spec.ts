@@ -22,10 +22,20 @@ for (const theme of themes) {
       await page.emulateMedia({ colorScheme: theme });
 
       await page.goto("/");
-      // #399: 主見出し(h1)は日付テキストになった。タイトル階層はテキスト非依存で
-      // level:1のみ確認し、eyebrowラベルの存在で「今日のSakalog」文脈を確認する。
-      await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-      await expect(page.getByText("今日のSakalog")).toBeVisible();
+      // #399: タイトル階層の反転（eyebrow=非heading、h1=日付）を契約として固定する。
+      // #404レビュー対応: level:1の存在 + テキスト存在だけでは旧実装
+      // （<h1>今日のSakalog</h1>）でもpassしてしまうため、h1のaccessible nameが
+      // 日付形式であること、「今日のSakalog」がheadingではなくeyebrow（p要素）で
+      // あることまで検証する。
+      await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+        /^\d{1,2}月\d{1,2}日\([日月火水木金土]\)$/
+      );
+      await expect(
+        page.getByRole("heading", { name: "今日のSakalog" })
+      ).toHaveCount(0);
+      await expect(
+        page.locator("p").filter({ hasText: "今日のSakalog" })
+      ).toBeVisible();
       await expect(
         page.getByRole("heading", { name: "日付から探す" })
       ).toBeVisible();
@@ -144,6 +154,27 @@ for (const theme of themes) {
     });
   }
 }
+
+// #399 / #404レビュー対応: 選んだ日分岐にも今日分岐と同じタイトル階層契約を固定する
+// （eyebrow「選んだ日のSakalog」= 非heading、h1 = 年付き日付）。日付は固定し、
+// 曜日はformatMonthDayKanjiWithWeekdayと同じ規則でテスト内算出する。
+test("選んだ日分岐でもeyebrow + h1=日付のタイトル階層を維持する", async ({
+  page,
+}) => {
+  await page.goto("/?year=2026&month=7&day=16");
+  const weekday = ["日", "月", "火", "水", "木", "金", "土"][
+    new Date("2026-07-16T00:00:00").getDay()
+  ];
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    `2026年7月16日(${weekday})`
+  );
+  await expect(
+    page.getByRole("heading", { name: "選んだ日のSakalog" })
+  ).toHaveCount(0);
+  await expect(
+    page.locator("p").filter({ hasText: "選んだ日のSakalog" })
+  ).toBeVisible();
+});
 
 for (const theme of themes) {
   test(`${theme}でライブ本文とSecondary Buttonのrendered contrastを維持する`, async ({
