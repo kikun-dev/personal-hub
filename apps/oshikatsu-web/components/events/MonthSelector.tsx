@@ -104,22 +104,22 @@ export function MonthSelector({
     announceNavigation(now.getFullYear(), now.getMonth() + 1, targetDay);
   };
 
-  // Today / 前月 / 翌月 は320pxで40px、390px以上で44pxのhit areaを持つ
+  // 今日 / 前月 / 翌月 は320pxで40px、390px以上で44pxのhit areaを持つ
   // （24pxのvisual circleとは無関係にbutton自体の当たり判定として確保する）。
   const todayButton = showTodayButton ? (
     <button
       onClick={handleToday}
       className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center rounded-md border border-border-strong px-3 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
     >
-      Today
+      今日
     </button>
   ) : null;
 
   const prevButton = (
     <button
       onClick={handlePrev}
-      disabled={isAtMin}
-      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+      aria-disabled={isAtMin || undefined}
+      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-disabled:cursor-not-allowed aria-disabled:opacity-30 aria-disabled:hover:bg-transparent aria-disabled:hover:text-foreground-secondary sm:px-3"
     >
       ← 前月
     </button>
@@ -128,14 +128,14 @@ export function MonthSelector({
   const nextButton = (
     <button
       onClick={handleNext}
-      disabled={isAtMax}
-      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-30 sm:px-3"
+      aria-disabled={isAtMax || undefined}
+      className="inline-flex min-h-10 min-[390px]:min-h-11 items-center justify-center whitespace-nowrap rounded-md px-2 py-1.5 text-sm text-foreground-secondary transition-colors hover:bg-surface-subtle hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring aria-disabled:cursor-not-allowed aria-disabled:opacity-30 aria-disabled:hover:bg-transparent aria-disabled:hover:text-foreground-secondary sm:px-3"
     >
       翌月 →
     </button>
   );
 
-  // sm未満: 2行構成（1行目: Today + 月label、2行目: 前月/翌月）。
+  // sm未満: 2行構成（1行目: 今日 + 月label、2行目: 前月/翌月）。
   // whitespace-nowrapとmin-widthのlabelを1行目全幅で使い、2行目はbutton間隔を広く取ることで
   // 320/390pxでのoverflowとタップ誤操作を避ける。
   const mobileLayout = (

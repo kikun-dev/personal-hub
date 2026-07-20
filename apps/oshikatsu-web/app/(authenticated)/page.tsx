@@ -8,6 +8,7 @@ import { NextEvents } from "@/components/top/NextEvents";
 import { PastSameDay } from "@/components/top/PastSameDay";
 import { RecentAttendance } from "@/components/top/RecentAttendance";
 import { DaySchedule } from "@/components/top/DaySchedule";
+import { focusRingClass } from "@/components/ui/focusRing";
 import {
   getTodayInAppTimeZone,
   parseCalendarDateParams,
@@ -154,7 +155,11 @@ export default async function TopPage({ searchParams }: TopPageProps) {
 
         <section className="space-y-6">
           {/* 戻り導線からのprogrammatic focusを受けるためtabIndex={-1}にする */}
-          <h2 id="calendar" tabIndex={-1} className="text-sm font-semibold text-foreground">
+          <h2
+            id="calendar"
+            tabIndex={-1}
+            className={`text-sm font-semibold text-foreground ${focusRingClass}`}
+          >
             日付から探す
           </h2>
 
