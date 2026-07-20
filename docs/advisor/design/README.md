@@ -12,6 +12,8 @@ Product DesignとImpeccableによる監査を統合した、正式なDesign Audi
 | 2026-07-16 | Sakalog | #343〜#347実装後のPrimary Journey Consolidated Findings / Roadmap | [Consolidated Findings](./2026-07-16-sakalog-primary-journey-consolidated-findings.md) |
 | 2026-07-19 | Sakalog | #365 / #366完了後のDaily Story Top Page read performance | [Performance Audit](./2026-07-19-sakalog-daily-story-top-page-read-performance-audit.md) |
 | 2026-07-19 | Sakalog | #383 Top Page bounded readの実DB execution plan検証（validation-only完了） | [Plan Validation](./2026-07-19-sakalog-top-page-db-execution-plan-validation.md) |
+| 2026-07-20 | Sakalog | #357 / #363 / #376 / #377 Live Detail direct fallback carousel Focused Design QA | [Focused Design QA](./2026-07-20-sakalog-live-detail-carousel-focused-design-qa.md) |
+| 2026-07-20 | Sakalog | #361 / #362 Calendar primary date exploration Focused Design QA | [Focused Design QA](./2026-07-20-sakalog-calendar-primary-date-exploration-focused-design-qa.md) |
 
 2026-07-15〜16の3 reportは、2026-07-13 Auditを置換しない実装後follow-up snapshotである。Consolidated Findingsに示す13件のRecommended Issue Boundariesは未起票であり、Issue Decisionまたは確定仕様ではない。
 
