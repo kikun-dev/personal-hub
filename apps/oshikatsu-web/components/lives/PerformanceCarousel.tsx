@@ -5,6 +5,7 @@ import {
   useEffect,
   useRef,
   useState,
+  type FocusEvent as ReactFocusEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type ReactNode,
 } from "react";
@@ -71,6 +72,16 @@ export function PerformanceCarousel({
   // 現在Tab対象（可視）のindex集合。MutationObserverからの再適用でも参照する。
   const visibleRef = useRef<Set<number>>(new Set([0]));
   const navigationButtonRef = useRef<HTMLButtonElement>(null);
+  // #389 P2-001: wide viewportでは複数cardが同時に可視・Tab対象になるため、可視counter/
+  // role=statusを常に先頭可視card基準にすると末尾card操作へTabしても位置通知が追従しない。
+  // 「document.activeElementがcarousel region（scrollRef）内のcard操作にある間は、そのcardを
+  // activeとして位置通知を同期する（focus起点）」「scroll/pointer起点（card操作にfocusが無い時）
+  // は従来どおり先頭可視card（firstVisible）をfallbackとする。focusがcarousel外
+  // （prev/next control含む）へ出た時もfallbackへ戻す」という規則をfocusedCardIndexで表現する。
+  // prev/nextの境界判定（atStart/atEnd、aria-disabled）はfirstVisible/lastVisible基準のまま変えない。
+  const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(
+    null
+  );
 
   const getCards = useCallback((): HTMLElement[] => {
     const container = scrollRef.current;
@@ -270,9 +281,41 @@ export function PerformanceCarousel({
     }
   };
 
+  // #389 P2-001: carousel region（scrollRef）内のcard操作にfocusがある間はfocusedCardIndex、
+  // 無ければ先頭可視card（firstVisible）を表示用activeとする。
+  const activeIndex = focusedCardIndex ?? firstVisible;
+
+  // focusin/focusoutとしてバブルするReactのonFocus/onBlurをcarousel region直下のcard
+  // （:scope > [role="group"]）に対して解決する。offscreen cardの操作は#377のroving focus
+  // follow（computeVisible）が可視操作へ移すため、ここでは純粋に「今focusしているcard」だけ追う。
+  const handleCarouselFocus = (event: ReactFocusEvent<HTMLDivElement>) => {
+    const container = scrollRef.current;
+    if (container === null) return;
+    const target = event.target as HTMLElement;
+    const card = target.closest<HTMLElement>('[role="group"]');
+    if (card === null || !container.contains(card)) return;
+    const index = getCards().indexOf(card);
+    if (index >= 0) setFocusedCardIndex(index);
+  };
+
+  // focus先（relatedTarget）がcarousel region内のcard操作でなければfallback（firstVisible）へ
+  // 戻す。prev/next control（region外）へ出た場合や、focus自体がpageから外れる場合も含む。
+  const handleCarouselBlur = (event: ReactFocusEvent<HTMLDivElement>) => {
+    const container = scrollRef.current;
+    const related = event.relatedTarget;
+    if (
+      container === null ||
+      !(related instanceof HTMLElement) ||
+      !container.contains(related) ||
+      related.closest('[role="group"]') === null
+    ) {
+      setFocusedCardIndex(null);
+    }
+  };
+
   const positionLabel =
-    total === 0 ? "0 / 0" : `${firstVisible + 1} / ${total}`;
-  const activeLabel = items[firstVisible]?.label ?? "";
+    total === 0 ? "0 / 0" : `${activeIndex + 1} / ${total}`;
+  const activeLabel = items[activeIndex]?.label ?? "";
   const atStart = firstVisible <= 0;
   const atEnd = lastVisible >= total - 1;
 
@@ -283,7 +326,12 @@ export function PerformanceCarousel({
     "min-h-11 min-w-11 px-2 aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
 
   return (
-    <div onKeyDown={handleKeyDown} className="space-y-2">
+    <div
+      onKeyDown={handleKeyDown}
+      onFocus={handleCarouselFocus}
+      onBlur={handleCarouselBlur}
+      className="space-y-2"
+    >
       <div className="flex items-center justify-end gap-2">
         <span
           aria-hidden="true"
@@ -319,13 +367,15 @@ export function PerformanceCarousel({
       </div>
 
       {/* #357: root overflow を発生させず inner だけが scroll する containment を維持する。
-          data-testid / role=region / aria-labelledby / snap / contain は従来の carousel div と同一。 */}
+          data-testid / role=region / aria-labelledby / snap / contain は従来の carousel div と同一。
+          #389 P2-002: items-start でflex rowのcross-axis stretchを解除し、setlistが短いcardの
+          border が最長card高さまで伸びないようにする（各cardをcontent heightのままにする）。 */}
       <div
         ref={scrollRef}
         data-testid="live-performance-carousel"
         role="region"
         aria-labelledby={headingId}
-        className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
+        className="-mx-1 flex snap-x snap-mandatory items-start gap-3 overflow-x-auto px-1 pb-2 [contain:paint]"
       >
         {children}
       </div>
