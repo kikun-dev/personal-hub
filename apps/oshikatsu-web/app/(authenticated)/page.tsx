@@ -146,7 +146,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           </div>
         </section>
 
-        {/* Mobile: 過去の同日 → 次のイベント → 最近の参加記録 の縦積み。
+        {/* Mobile: 過去の同日 → 次の予定 → 最近の参加記録 の縦積み。
             Desktop(lg): NextEvents は rail 側にあるため隠し、過去の同日(広) + 参加記録(狭) の横並び。
             display:none はグリッドフローから外れるため単一 DOM で両順序を満たせる（#345）。 */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-6">
@@ -158,7 +158,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             currentYear={year}
           />
           <div className="lg:hidden">
-            <NextEvents events={nextEvents} today={now} frame="plain" />
+            <NextEvents events={nextEvents} today={now} />
           </div>
           <RecentAttendance overview={recentAttendance} />
         </div>

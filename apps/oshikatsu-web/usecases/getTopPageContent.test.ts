@@ -482,6 +482,11 @@ describe("getTopPageContent bounded read", () => {
         releaseNext,
         videoNext,
         { ...eventNext, type: "event" },
+        // #400 追補2: NEXT_EVENTS_LIMIT を 4→6 に増やしたため、従来 slice(0,4) で
+        // 切られていた次の公演も候補全件に含まれる（並び順は日付昇順 + 同日規則）。
+        // Next Events は公演単位（raw performance）のため id は performanceId 側になり、
+        // monthEvents で使う集約形 liveNext（id=liveId:date）とは id だけ異なる。
+        { ...liveNext, id: "performance-next" },
       ],
     });
   });
@@ -502,5 +507,30 @@ describe("getTopPageContent bounded read", () => {
         event.type === "release" ? event.id : null
       )
     ).toEqual(["inside"]);
+  });
+
+  it("Next Eventsを日付順の直近6件に制限する", async () => {
+    const repositories = makeCountingRepositories({
+      releases: Array.from({ length: 7 }, (_, index) => ({
+        releaseId: `release-${index + 1}`,
+        title: `新譜${index + 1}`,
+        date: `2026-07-${String(index + 11).padStart(2, "0")}`,
+      })),
+    });
+
+    const result = await runScenario(repositories, today, today);
+
+    expect(
+      result.nextEvents.map((event) =>
+        event.type === "release" ? event.id : null
+      )
+    ).toEqual([
+      "release-1",
+      "release-2",
+      "release-3",
+      "release-4",
+      "release-5",
+      "release-6",
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import type { CalendarEvent } from "@/types/event";
-import { EventListItem, eventKey } from "@/components/events/EventListItem";
+import { Badge } from "@/components/ui/Badge";
+import { eventKey, getEventPresentation } from "@/components/events/EventListItem";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 
 function pad(value: number): string {
@@ -17,102 +18,60 @@ function daysUntil(dateStr: string, todayStr: string): number {
   return Math.round((eventDate.getTime() - today.getTime()) / 86_400_000);
 }
 
-type EventDateGroup = {
-  date: string;
-  events: CalendarEvent[];
-};
-
-// events は usecase 側で日付昇順（同日内は並び規則）にソート済みのため、
-// 連続する同一日付をまとめるだけでよい（#344 レビュー対応: 日付グルーピング）。
-function groupByDate(events: CalendarEvent[]): EventDateGroup[] {
-  const groups: EventDateGroup[] = [];
-  for (const event of events) {
-    const lastGroup = groups[groups.length - 1];
-    if (lastGroup && lastGroup.date === event.date) {
-      lastGroup.events.push(event);
-    } else {
-      groups.push({ date: event.date, events: [event] });
-    }
-  }
-  return groups;
-}
-
 type NextEventsProps = {
   events: CalendarEvent[];
   today: Date;
-  // "card"（デフォルト）= 現行の枠付きカード表示。
-  // "plain" = 枠・padding無しの通常セクション表示（Mobile 用、#344 レビュー対応）。
-  frame?: "card" | "plain";
 };
 
 // Desktop 右側 rail（Next Events）と Mobile 本文内の両方で使う共通コンポーネント（#344）。
 // 配置・表示切替はページ側（hidden lg:block / lg:hidden）で行う。
-export function NextEvents({ events, today, frame = "card" }: NextEventsProps) {
+// #400: 見出しを「次の予定」に統一し、rail と mobile を枠付き surface + 区切り線で
+// 揃える（design prototype の upcoming-rail / mobile-upcoming 相当）。
+// #400 追補: prototype の per-item レイアウト（日付+バッジ同一行 / 主題独立行 / 補足 /
+// あとN日を右下）に揃えるため、日付グルーピング（旧 groupByDate）を廃止し1イベント=1アイテムに
+// する。rail/mobile で描画が同一になったため frame prop も廃止した。
+export function NextEvents({ events, today }: NextEventsProps) {
   const todayStr = toDateStr(today);
-  const groups = groupByDate(events);
+  const hasEvents = events.length > 0;
 
   const header = (
-    <div className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-medium text-foreground-secondary">次のイベント</h2>
-      <a
-        href="#calendar"
-        className="text-xs text-foreground-secondary hover:text-foreground hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring"
-      >
-        カレンダーで探す
-      </a>
-    </div>
+    <h2 className="mb-3 text-sm font-medium text-foreground-secondary">次の予定</h2>
   );
 
-  const body =
-    events.length === 0 ? (
-      <p className="text-sm text-foreground-secondary">今後の予定はありません</p>
-    ) : frame === "plain" ? (
-      <div className="divide-y divide-border-subtle">
-        {groups.map((group) => (
-          <div key={group.date} className="py-3 first:pt-0 last:pb-0">
-            <p className="text-xs text-foreground-secondary">
-              {formatMonthDayWithWeekday(group.date)}・あと
-              {daysUntil(group.date, todayStr)}日
+  const body = !hasEvents ? (
+    <p className="text-sm text-foreground-secondary">今後の予定はありません</p>
+  ) : (
+    <ul className="divide-y divide-border-subtle">
+      {events.map((event) => {
+        const presentation = getEventPresentation(event);
+        return (
+          <li key={eventKey(event)} className="py-3 first:pt-0 last:pb-0">
+            <div className="flex items-center gap-2">
+              <time className="text-xs text-foreground-secondary">
+                {formatMonthDayWithWeekday(event.date)}
+              </time>
+              <Badge
+                label={presentation.badge.label}
+                color={presentation.badge.color}
+              />
+            </div>
+            <div className="mt-1 text-sm">{presentation.nameLink}</div>
+            {presentation.details.length > 0 && (
+              <p className="mt-0.5 text-xs text-foreground-secondary">
+                {presentation.details.map((d) => d.text).join(" ")}
+              </p>
+            )}
+            <p className="mt-0.5 text-right text-xs text-foreground-secondary">
+              あと{daysUntil(event.date, todayStr)}日
             </p>
-            <ul className="mt-1 space-y-2.5">
-              {group.events.map((event) => (
-                <li key={eventKey(event)}>
-                  <EventListItem event={event} variant="stacked" />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    ) : (
-      <ul className="space-y-3">
-        {groups.map((group) => (
-          <li key={group.date}>
-            <p className="text-xs text-foreground-secondary">
-              {formatMonthDayWithWeekday(group.date)}・あと
-              {daysUntil(group.date, todayStr)}日
-            </p>
-            <ul className="mt-1 space-y-2.5">
-              {group.events.map((event) => (
-                <li key={eventKey(event)}>
-                  <EventListItem event={event} variant="stacked" />
-                </li>
-              ))}
-            </ul>
           </li>
-        ))}
-      </ul>
-    );
+        );
+      })}
+    </ul>
+  );
 
-  if (frame === "plain") {
-    return (
-      <div>
-        {header}
-        {body}
-      </div>
-    );
-  }
-
+  // #400: rail / mobile とも枠付き surface に統一する。#400 追補2: すぐ下にカレンダーが
+  // あるため「すべて見る」導線は冗長として廃止し、代わりに表示件数を増やす（usecase 側）。
   return (
     <div className="rounded-lg border border-border-subtle bg-background p-4">
       {header}

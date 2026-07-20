@@ -42,14 +42,16 @@ type DetailPart = {
 // 共有する（#344 レビュー対応: レイアウトのみを variant で分岐させ、分岐の重複を無くす）。
 // hasDetailsContainer: inline 表示で名称+補足を <div> で包むかどうか（release/video は包まない、
 // live/birthday/event は補足が0件でも包む＝現行 DOM 維持のため details.length とは独立の指定）。
-type EventPresentation = {
+// #400: NextEvents の per-item レイアウト（日付+バッジ同一行 / 主題独立行 / 補足 /
+// あとN日）が badge・nameLink・details を直接組み立てるため export する。
+export type EventPresentation = {
   badge: { label: string; color: string };
   nameLink: ReactNode;
   hasDetailsContainer: boolean;
   details: DetailPart[];
 };
 
-function getEventPresentation(event: CalendarEvent): EventPresentation {
+export function getEventPresentation(event: CalendarEvent): EventPresentation {
   switch (event.type) {
     case "live": {
       const details: DetailPart[] = [];

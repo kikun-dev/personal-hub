@@ -25,7 +25,7 @@ export type TopPageContent = {
   onThisDayEvents: OnThisDayItem[];
   // Daily Story 構成（#344）: 「今日の予定」用。選択日に関わらず常に「今日」の一覧。
   todayEvents: CalendarEvent[];
-  // Next Events rail（#344）用。今日より後の直近4件（日付昇順）。
+  // Next Events rail（#344、#400）用。今日より後の直近6件（日付昇順）。
   nextEvents: CalendarEvent[];
 };
 
@@ -43,7 +43,9 @@ function addMonths(
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 }
 
-const NEXT_EVENTS_LIMIT = 4;
+// #400 追補2: Next Events から「すべて見る」導線を廃止した代わりに、直近の予定を
+// 少し先まで見せるため 4→6 に増やす。
+const NEXT_EVENTS_LIMIT = 6;
 // Next Events rail の探索窓（今日の月を含む12 calendar months、#344 レビュー対応）。
 // ライブ/リリース/動画/カスタムイベント/誕生日のすべての候補をこの窓でフィルタし、
 // 窓外のイベントが窓内のイベントを押しのけないようにする。
