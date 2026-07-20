@@ -158,7 +158,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             currentYear={year}
           />
           <div className="lg:hidden">
-            <NextEvents events={nextEvents} today={now} frame="plain" />
+            <NextEvents events={nextEvents} today={now} />
           </div>
           <RecentAttendance overview={recentAttendance} />
         </div>
