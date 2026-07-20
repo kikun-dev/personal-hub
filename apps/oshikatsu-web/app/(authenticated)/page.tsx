@@ -75,21 +75,26 @@ export default async function TopPage({ searchParams }: TopPageProps) {
     nextEvents,
   } = await topPageDataPromise;
 
+  // 見出しの件数表示とDayScheduleへ渡すeventsで同じ選択ロジックを共有する（#399）。
+  const displayedEvents = isSelectedToday ? todayEvents : selectedDateEvents;
+
   return (
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="space-y-8">
         <section className="space-y-5">
+          {/* タイトル階層をprototype準拠に統一する（#399）: 小さなeyebrow + 主見出しh1=日付。
+              ブロック下端に区切り線を置き、後続の「今日の予定」との区画を明示する。 */}
           {isSelectedToday ? (
-            <div>
+            <div className="border-b border-border-subtle pb-4">
+              <p className="text-xs font-medium text-foreground-secondary">
+                今日のSakalog
+              </p>
               <DailyStoryHeading
                 selectedDateStr={selectedDateStr}
-                className="text-xl font-bold text-foreground"
+                className="mt-1 text-xl font-bold text-foreground"
               >
-                今日のSakalog
-              </DailyStoryHeading>
-              <p className="mt-1 text-sm text-foreground-secondary">
                 {formatMonthDayKanjiWithWeekday(todayDateStr)}
-              </p>
+              </DailyStoryHeading>
               {hasDayParam && (
                 <p className="mt-2">
                   <ReturnToCalendarLink />
@@ -97,8 +102,10 @@ export default async function TopPage({ searchParams }: TopPageProps) {
               )}
             </div>
           ) : (
-            <div>
-              <p className="text-sm text-foreground-secondary">選んだ日のSakalog</p>
+            <div className="border-b border-border-subtle pb-4">
+              <p className="text-xs font-medium text-foreground-secondary">
+                選んだ日のSakalog
+              </p>
               <DailyStoryHeading
                 selectedDateStr={selectedDateStr}
                 className="mt-1 text-xl font-bold text-foreground"
@@ -120,13 +127,16 @@ export default async function TopPage({ searchParams }: TopPageProps) {
           )}
 
           <div className="space-y-3">
-            <h2 className="text-sm font-semibold text-foreground">
+            <h2 className="flex items-baseline justify-between text-sm font-semibold text-foreground">
               {isSelectedToday ? "今日の予定" : `${month}月${day}日の予定`}
+              <span className="text-xs font-normal text-foreground-secondary">
+                {displayedEvents.length > 0 ? `${displayedEvents.length}件` : "なし"}
+              </span>
             </h2>
             {/* key: 日付変更時に再マウントし、展開状態が別日の文脈へ残らないよう初期化する */}
             <DaySchedule
               key={selectedDateStr}
-              events={isSelectedToday ? todayEvents : selectedDateEvents}
+              events={displayedEvents}
               emptyMessage={
                 isSelectedToday
                   ? "今日の予定はありません"
