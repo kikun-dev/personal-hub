@@ -25,7 +25,7 @@ export type TopPageContent = {
   onThisDayEvents: OnThisDayItem[];
   // Daily Story 構成（#344）: 「今日の予定」用。選択日に関わらず常に「今日」の一覧。
   todayEvents: CalendarEvent[];
-  // Next Events rail（#344）用。今日より後の直近4件（日付昇順）。
+  // Next Events rail（#344、#400）用。今日より後の直近6件（日付昇順）。
   nextEvents: CalendarEvent[];
 };
 

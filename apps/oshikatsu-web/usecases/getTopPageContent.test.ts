@@ -508,4 +508,29 @@ describe("getTopPageContent bounded read", () => {
       )
     ).toEqual(["inside"]);
   });
+
+  it("Next Eventsを日付順の直近6件に制限する", async () => {
+    const repositories = makeCountingRepositories({
+      releases: Array.from({ length: 7 }, (_, index) => ({
+        releaseId: `release-${index + 1}`,
+        title: `新譜${index + 1}`,
+        date: `2026-07-${String(index + 11).padStart(2, "0")}`,
+      })),
+    });
+
+    const result = await runScenario(repositories, today, today);
+
+    expect(
+      result.nextEvents.map((event) =>
+        event.type === "release" ? event.id : null
+      )
+    ).toEqual([
+      "release-1",
+      "release-2",
+      "release-3",
+      "release-4",
+      "release-5",
+      "release-6",
+    ]);
+  });
 });

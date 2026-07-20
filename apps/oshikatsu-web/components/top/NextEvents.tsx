@@ -25,8 +25,8 @@ type NextEventsProps = {
 
 // Desktop 右側 rail（Next Events）と Mobile 本文内の両方で使う共通コンポーネント（#344）。
 // 配置・表示切替はページ側（hidden lg:block / lg:hidden）で行う。
-// #400: 見出しを「次の予定」に統一し、rail と mobile を枠付き surface + 区切り線 +
-// 底部の全件導線で揃える（design prototype の upcoming-rail / mobile-upcoming 相当）。
+// #400: 見出しを「次の予定」に統一し、rail と mobile を枠付き surface + 区切り線で
+// 揃える（design prototype の upcoming-rail / mobile-upcoming 相当）。
 // #400 追補: prototype の per-item レイアウト（日付+バッジ同一行 / 主題独立行 / 補足 /
 // あとN日を右下）に揃えるため、日付グルーピング（旧 groupByDate）を廃止し1イベント=1アイテムに
 // する。rail/mobile で描画が同一になったため frame prop も廃止した。
