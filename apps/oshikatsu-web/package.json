@@ -5,10 +5,11 @@
   "scripts": {
     "dev": "next dev --port 3001",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 3001",
     "playwright:auth": "node playwright/auth-setup.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
+    "test:e2e": "playwright test",
     "test:unit": "vitest run",
     "perf:driver": "vitest run --config vitest.perf.config.ts"
   },
