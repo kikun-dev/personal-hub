@@ -3,7 +3,11 @@ import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
 import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
-import { formatTime } from "@/lib/formatters";
+import {
+  formatGroupNames,
+  formatTime,
+  formatVideoLinkAccessibleName,
+} from "@/lib/formatters";
 import {
   BIRTHDAY_COLOR,
   LIVE_COLOR,
@@ -116,6 +120,12 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
             href={event.url}
             target="_blank"
             rel="noopener noreferrer"
+            // 可視ラベルは曲名（種別）のまま、new-tab挙動はaccessible nameで伝える（#395）。
+            // aria-labelは可視ラベルを内包するためLabel-in-Name（WCAG 2.5.3）も満たす。
+            aria-label={formatVideoLinkAccessibleName(
+              event.trackTitle,
+              event.videoLabel
+            )}
             className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.trackTitle}（{event.videoLabel}）
@@ -135,7 +145,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
       }
       details.push({
         key: "groups",
-        text: event.groupNames.join(", "),
+        text: formatGroupNames(event.groupNames),
         emphasis: "secondary",
       });
       return {
@@ -170,7 +180,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
       }
       details.push({
         key: "groups",
-        text: event.groupNames.join(", "),
+        text: formatGroupNames(event.groupNames),
         emphasis: "secondary",
       });
       return {

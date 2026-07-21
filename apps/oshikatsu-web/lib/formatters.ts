@@ -45,3 +45,17 @@ export function calculateAge(dateOfBirth: string, baseDate?: Date): number | nul
 export function formatTime(timeStr: string): string {
   return timeStr.slice(0, 5);
 }
+
+// group名の区切りは日本語UIの読点（、）に統一する（#395）
+export function formatGroupNames(groupNames: string[]): string {
+  return groupNames.join("、");
+}
+
+// 動画linkは別タブで開くため、accessible nameに曲名・種別とnew-tab挙動を含める（#395）。
+// aria-label に用いることで、可視ラベル（曲名（種別））を変えずにscreen readerへ挙動を伝える。
+export function formatVideoLinkAccessibleName(
+  trackTitle: string,
+  videoLabel: string
+): string {
+  return `${trackTitle}（${videoLabel}）（新しいタブで開く）`;
+}
