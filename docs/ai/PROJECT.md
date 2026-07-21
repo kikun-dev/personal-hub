@@ -212,6 +212,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0013 | Sakalog主要閲覧ジャーニーのDaily Story方針 | Accepted |
 | 0014 | テスト基盤としての Vitest 導入と純関数のみのテスト対象範囲 | Accepted |
 | 0015 | Top routeのauth検証境界とremote call budget | Accepted |
+| 0016 | authenticated shellの最大幅(1280px)とwide surfaceの扱い | Accepted |
 
 ---
 
