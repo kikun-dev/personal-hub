@@ -42,6 +42,7 @@
   --color-orbit-hinatazaka: var(--orbit-hinatazaka);
   --color-orbit-keyakizaka: var(--orbit-keyakizaka);
   --color-orbit-hiragana-keyakizaka: var(--orbit-hiragana-keyakizaka);
+  --font-sans: Arial, Helvetica, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 

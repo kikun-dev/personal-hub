@@ -209,7 +209,8 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 **Display Font:** Arial（Helvetica、sans-serif フォールバック）
 **Body Font:** Arial（Helvetica、sans-serif フォールバック）
-**Label/Mono Font:** System monospace（ui-monospace、SFMono-Regular、Menlo、Consolas、monospace）
+**Label Font:** Arial（Helvetica、sans-serif フォールバック）
+**Mono Font:** System monospace（ui-monospace、SFMono-Regular、Menlo、Consolas、monospace）
 
 **Character:** 単一のサンセリフを中心に、情報の種類ではなくサイズとウェイトで階層をつくる。ロゴは画像資産として扱い、ロゴの書体をUIラベルへ模倣しない。
 

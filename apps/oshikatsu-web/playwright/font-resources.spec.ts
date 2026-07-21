@@ -6,8 +6,14 @@ import { expect, test, type Page } from "@playwright/test";
 async function collectFontRequests(page: Page, url: string): Promise<string[]> {
   const fonts: string[] = [];
   page.on("request", (request) => {
-    if (/\.(woff2?|ttf|otf|eot)(\?|$)/i.test(request.url())) {
-      fonts.push(request.url());
+    const requestUrl = request.url();
+    // Next.js の dev overlay / devtools が読む内部font（`__nextjs_font/*`）は
+    // フレームワーク由来でアプリのfontではなく、本番ビルドには含まれないため除外する。
+    if (requestUrl.includes("/__nextjs_font/")) {
+      return;
+    }
+    if (/\.(woff2?|ttf|otf|eot)(\?|$)/i.test(requestUrl)) {
+      fonts.push(requestUrl);
     }
   });
   await page.goto(url, { waitUntil: "networkidle" });
