@@ -389,7 +389,7 @@
 | ~~revalidateOrbit のタグ依存が手書き~~ | ~~エンティティ間の表示参照に伴う失効タグをコメント付きで手動管理~~ | ✅ Issue #305 で「タグ→表示エンティティ」の宣言表（`TAG_DISPLAY_SOURCES`）に再構成済み |
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |
 | migration 全件適用が冗長 | 61 本の migration に開発中の中間物が多く、`db reset`（ローカル / CI db-verify）が全件リプレイで遅い | Issue #329 で baseline 化を検討（本番 `schema_migrations` 整合が本丸。ADR 昇格候補） |
-| Primary routeの未使用Geist転送 | body正典はArialだがRootLayoutがGeist Sans / Monoを固定転送する | P3 Backlog: Issue #397でSansを除外し、Monoを実使用surfaceへ局所化する |
+| ~~Primary routeの未使用Geist転送~~ | ~~body正典はArialだがRootLayoutがGeist Sans / Monoを固定転送する~~ | ✅ Issue #397 で対応済み（Decision B: 局所化ではなくwebfontを全廃し、monoをsystem monospaceへ統一。Primary / Wiki含む全ルートでfont転送ゼロ） |
 | Primary journeyのcopy / external affordance残差 | 動画linkのnew-tab accessible hintと一部英語向け区切りが残る | P3 Backlog: Issue #395で日本語copyとexternal link contractを整える |
 | Mobile Next Eventsのread density | 390pxでNext EventsがToday Scheduleの約2.3倍の縦量を占める | P3 Backlog: Issue #396で件数・sort・read modelを変えずpresentationをpolishする |
 
