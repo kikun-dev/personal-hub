@@ -1,6 +1,38 @@
 import { defineConfig, devices } from "@playwright/test";
+import { parseStrictYmd } from "./lib/dateParams";
 
 const authFile = "playwright/.auth/user.json";
+
+// #412: E2E の「今日」を固定し、日付依存 spec（TOP）を実行日に依存させない。この1箇所が固定日の
+// 唯一の管理点。既定 2026-08-23 は seed のライブ公演日が 2024 / 2025 / 2026 に存在する MM-DD で、
+// 次を同時に満たす:
+//   - 今日(2026-08-23)のライブ → TOP「今日の予定」（`stacked-event`）が空にならない
+//   - 過去年(2024/2025-08-23)のライブ → TOP「過去の同日」（`past-same-day-events` / `timeline-event`）が出る
+//   - 実データの参加記録の多くより後の日付 → 「最近の参加記録」（過去分）が出る
+// server（getTodayInAppTimeZone の env seam）とテストランナー（spec 内の同関数）の双方で同じ「今日」を
+// 共有させるため、config プロセスの env にも設定し webServer.env にも渡す。
+function resolveFixedToday(): string {
+  const explicit = process.env.E2E_FIXED_TODAY;
+  // 再利用モード（E2E_REUSE_SERVER=1）では webServer.command が実行されず webServer.env が既存 server
+  // へ渡らないため、既定値を暗黙に使うと server（実日付）と spec（固定日）が食い違い、日付依存が再発する。
+  // 明示を必須にして fail-fast する（operator は同じ E2E_FIXED_TODAY で server も起動する。README 参照）。
+  if (process.env.E2E_REUSE_SERVER === "1" && !explicit) {
+    throw new Error(
+      "E2E_REUSE_SERVER=1 のときは E2E_FIXED_TODAY=YYYY-MM-DD を明示し、再利用する server も同じ値で起動してください（server と spec の『今日』を一致させるため）。"
+    );
+  }
+  const value = explicit ?? "2026-08-23";
+  // 不正な固定日（範囲外・存在しない日・形式違い）は実日付へ暗黙 fallback させず、ここで fail-fast する。
+  if (parseStrictYmd(value) === null) {
+    throw new Error(
+      `E2E_FIXED_TODAY が不正です: "${value}"。YYYY-MM-DD の実在日付を指定してください。`
+    );
+  }
+  return value;
+}
+
+const E2E_FIXED_TODAY = resolveFixedToday();
+process.env.E2E_FIXED_TODAY = E2E_FIXED_TODAY;
 
 export default defineConfig({
   testDir: "./playwright",
@@ -27,6 +59,8 @@ export default defineConfig({
     url: "http://localhost:3001",
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: 180_000,
+    // #412: server プロセスの getTodayInAppTimeZone が同じ固定「今日」を返すよう env を渡す。
+    env: { E2E_FIXED_TODAY },
   },
   projects: [
     {
