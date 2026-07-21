@@ -18,12 +18,14 @@ export default defineConfig({
   // production build を start して配信する。ここでの timeout は server 起動（build + start）の
   // budget であり、テスト自体の timeout は変更しない（フレークの原因は compile 遅延であって
   // timeout 不足ではないため）。
-  // reuseExistingServer（ローカルのみ true）: 既に 3001 で起動中のサーバがあれば再利用する。
-  // 安定した full run が欲しいときは dev server を止めてから実行し、build + start を使わせる。
+  // reuseExistingServer は既定で false。#413 の中核契約は「現在の HEAD の production build に対して
+  // 検証する」ことなので、3001 に残った dev server や別 build を再利用させない（port 使用中なら
+  // Playwright が明示 fail する）。開発中に dev server を再利用して素早く回したいときだけ
+  // `E2E_REUSE_SERVER=1` で opt-in する（この場合は production build 契約が外れる点に注意）。
   webServer: {
     command: "pnpm build && pnpm start",
     url: "http://localhost:3001",
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: 180_000,
   },
   projects: [
