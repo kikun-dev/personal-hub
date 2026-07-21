@@ -3,7 +3,7 @@ import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
 import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
-import { formatTime } from "@/lib/formatters";
+import { formatGroupNames, formatTime } from "@/lib/formatters";
 import {
   BIRTHDAY_COLOR,
   LIVE_COLOR,
@@ -119,6 +119,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
             className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.trackTitle}（{event.videoLabel}）
+            <span className="sr-only">（新しいタブで開く）</span>
           </a>
         ),
         hasDetailsContainer: false,
@@ -135,7 +136,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
       }
       details.push({
         key: "groups",
-        text: event.groupNames.join(", "),
+        text: formatGroupNames(event.groupNames),
         emphasis: "secondary",
       });
       return {
@@ -170,7 +171,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
       }
       details.push({
         key: "groups",
-        text: event.groupNames.join(", "),
+        text: formatGroupNames(event.groupNames),
         emphasis: "secondary",
       });
       return {

@@ -45,3 +45,8 @@ export function calculateAge(dateOfBirth: string, baseDate?: Date): number | nul
 export function formatTime(timeStr: string): string {
   return timeStr.slice(0, 5);
 }
+
+// group名の区切りは日本語UIの読点（、）に統一する（#395）
+export function formatGroupNames(groupNames: string[]): string {
+  return groupNames.join("、");
+}
