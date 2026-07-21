@@ -62,18 +62,25 @@ export function NextEvents({ events, today, variant = "rail" }: NextEventsProps)
 
         if (isCompact) {
           // Mobile: 日付 + バッジ + 「あとN日」を1行に畳み、主題を独立行にする。
-          // 320px でも競合しないよう、日付は min-w-0 truncate、あとN日は shrink-0。
+          // 320px でも競合しないよう、日付と「あとN日」は shrink-0 で常に全表示し、
+          // 可変長の Badge だけを truncate 可能にする（下の wrapper 参照）。
           return (
             <li key={eventKey(event)} className="py-2 first:pt-0 last:pb-0">
               <div className="flex items-center gap-2">
-                <time className="min-w-0 truncate text-xs text-foreground-secondary">
+                <time className="shrink-0 whitespace-nowrap text-xs text-foreground-secondary">
                   {formatMonthDayWithWeekday(event.date)}
                 </time>
-                <Badge
-                  label={presentation.badge.label}
-                  color={presentation.badge.color}
-                />
-                <span className="ml-auto shrink-0 whitespace-nowrap text-xs text-foreground-secondary">
+                {/* Badge のラベル（orbit_event_types.name）は長さ制限のない TEXT。長い
+                    カスタム種別でも日付・相対日を常に親幅へ収めるため、日付と「あとN日」を
+                    shrink-0 に保ち、Badge だけを min-w-0 wrapper 内で truncate 可能にする。
+                    wrapper の flex-1 が余白を吸収して「あとN日」を右端へ寄せる（#396 レビュー対応）。 */}
+                <span className="min-w-0 flex-1 overflow-hidden">
+                  <Badge
+                    label={presentation.badge.label}
+                    color={presentation.badge.color}
+                  />
+                </span>
+                <span className="shrink-0 whitespace-nowrap text-xs text-foreground-secondary">
                   あと{remainingDays}日
                 </span>
               </div>
