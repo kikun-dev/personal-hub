@@ -23,6 +23,10 @@ type TopPageProps = {
   searchParams: Promise<{ year?: string; month?: string; day?: string }>;
 };
 
+// Mobile の「次の予定」は縦密度を抑えるため先頭4件のみ表示する（#396）。
+// Desktop rail は usecase の NEXT_EVENTS_LIMIT（6件）をそのまま表示する。
+const MOBILE_NEXT_EVENTS_LIMIT = 4;
+
 function pad(value: number): string {
   return String(value).padStart(2, "0");
 }
@@ -158,8 +162,15 @@ export default async function TopPage({ searchParams }: TopPageProps) {
             title={pastSameDayTitle}
             currentYear={year}
           />
+          {/* Mobile: read density を下げるため compact 表示 + 先頭4件のみ（#396）。
+              Desktop rail は余白を活かして6件のまま。件数の出し分けは表示文脈を知る
+              ここで slice して行い、NextEvents 内部・variant には件数を持たせない。 */}
           <div className="lg:hidden">
-            <NextEvents events={nextEvents} today={now} />
+            <NextEvents
+              events={nextEvents.slice(0, MOBILE_NEXT_EVENTS_LIMIT)}
+              today={now}
+              variant="compact"
+            />
           </div>
           <RecentAttendance overview={recentAttendance} />
         </div>
