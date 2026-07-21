@@ -36,18 +36,39 @@ export function getDatePartsInTimeZone(
   };
 }
 
-// #412: E2E（Playwright）は実データの「今日」に暗黙依存すると、今日にイベントが無い日は
-// TOP「今日の予定」が空になり fail する。テストから「今日」を固定できるよう env seam を設ける。
+// #412: "YYYY-MM-DD" を厳密にパースする。範囲外（例 2026-13-01）や存在しない日（例 2026-02-30）は
+// JavaScript の Date が暗黙に別日へ繰り上げるため、生成後の year/month/day が入力と一致することまで
+// 検証し、一致しなければ null を返す。E2E の固定日 seam（下記）と playwright.config の検証で共有し、
+// パース・検証ロジックを1箇所に集約する。
+export function parseStrictYmd(value: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!match) return null;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const date = new Date(year, month - 1, day);
+  if (
+    date.getFullYear() !== year ||
+    date.getMonth() !== month - 1 ||
+    date.getDate() !== day
+  ) {
+    return null;
+  }
+  return date;
+}
+
+// #412: E2E（Playwright）が実データの「今日」に暗黙依存すると、今日にイベントが無い日は TOP
+// 「今日の予定」等が空になり fail する。テストから「今日」を固定できるよう env seam を設ける。
+// 有効条件（この2つを満たすときのみ override が効く。それ以外は通常どおり now を使う）:
+//   1. 本番デプロイでない（`process.env.VERCEL` が無い）… 本番挙動は常に不変
+//   2. `E2E_FIXED_TODAY` が実在する YYYY-MM-DD（parseStrictYmd が非 null）
 // E2E は production build（NODE_ENV=production）を start して検証するため NODE_ENV では分岐できず、
-// 専用 env `E2E_FIXED_TODAY`（YYYY-MM-DD）の有無で opt-in する。本番デプロイ（Vercel）では
-// `process.env.VERCEL` があるため常に無視し、production 挙動は不変に保つ。
+// 専用 env の有無・妥当性で opt-in する。
 function readFixedTodayOverride(): Date | null {
   if (process.env.VERCEL) return null;
   const raw = process.env.E2E_FIXED_TODAY;
   if (!raw) return null;
-  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
-  if (!match) return null;
-  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+  return parseStrictYmd(raw);
 }
 
 export function getTodayInAppTimeZone(now: Date = new Date()): Date {
