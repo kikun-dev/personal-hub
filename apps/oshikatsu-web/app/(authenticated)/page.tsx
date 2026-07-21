@@ -148,6 +148,7 @@ export default async function TopPage({ searchParams }: TopPageProps) {
 
         {/* Mobile: 過去の同日 → 次の予定 → 最近の参加記録 の縦積み。
             Desktop(lg): NextEvents は rail 側にあるため隠し、過去の同日(広) + 参加記録(狭) の横並び。
+            比率は 1.5fr : 1fr のまま保ち、shell 幅拡張時は両カラムが均等（比例）に広がる（#411）。
             display:none はグリッドフローから外れるため単一 DOM で両順序を満たせる（#345）。 */}
         <div className="grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] lg:gap-6">
           {/* key: DaySchedule と同様、日付変更時に展開状態を初期化する */}

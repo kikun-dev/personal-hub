@@ -66,6 +66,10 @@ export function PerformanceCarousel({
   // 可視レンジ。announcement は先頭可視card、境界（prev/next無効）は先頭/末尾可視で判定する。
   const [firstVisible, setFirstVisible] = useState(0);
   const [lastVisible, setLastVisible] = useState(0);
+  // #411: 末尾cardが完全にviewport内に収まっているか。shell幅拡張で複数card可視の幅が
+  // 広がると、末尾cardが60%可視（lastVisible=total-1）でも右側の操作はviewport外で
+  // tabindex=-1 のまま残るため、atEnd はこのフラグと併せて「末尾card完全可視」で判定する。
+  const [lastCardFullyVisible, setLastCardFullyVisible] = useState(false);
   // ナビ（Arrow/prev/next）は React state のlagを避けるため、同期更新される ref を基準にする。
   const firstVisibleRef = useRef(0);
   const lastVisibleRef = useRef(0);
@@ -78,7 +82,8 @@ export function PerformanceCarousel({
   // activeとして位置通知を同期する（focus起点）」「scroll/pointer起点（card操作にfocusが無い時）
   // は従来どおり先頭可視card（firstVisible）をfallbackとする。focusがcarousel外
   // （prev/next control含む）へ出た時もfallbackへ戻す」という規則をfocusedCardIndexで表現する。
-  // prev/nextの境界判定（atStart/atEnd、aria-disabled）はfirstVisible/lastVisible基準のまま変えない。
+  // prev/nextの境界判定（atStart/atEnd、aria-disabled）はfirstVisible/lastVisible基準を保つ。
+  // ただしatEndは末尾card操作へのkeyboard到達性のため lastCardFullyVisible も併せて見る（#411）。
   const [focusedCardIndex, setFocusedCardIndex] = useState<number | null>(
     null
   );
@@ -150,6 +155,12 @@ export function PerformanceCarousel({
     lastVisibleRef.current = last;
     setFirstVisible(first);
     setLastVisible(last);
+    // #411: 末尾cardが完全にviewport内かを geometry で判定し、atEnd の境界に使う。
+    // 末尾card操作へkeyboard到達できるまで next/ArrowRight を有効に保つ。
+    const lastCard = cards[cards.length - 1];
+    setLastCardFullyVisible(
+      lastCard !== undefined && isFullyWithinHorizontalViewport(lastCard, cRect)
+    );
     applyRoving();
 
     // #377 P1: tabindex=-1 では focus 済み要素は blur されないため、card内の操作へ focus した
@@ -317,7 +328,9 @@ export function PerformanceCarousel({
     total === 0 ? "0 / 0" : `${activeIndex + 1} / ${total}`;
   const activeLabel = items[activeIndex]?.label ?? "";
   const atStart = firstVisible <= 0;
-  const atEnd = lastVisible >= total - 1;
+  // #411: 末尾card操作へkeyboard到達できるよう、末尾cardが完全に可視になるまで atEnd としない
+  // （60%可視で境界にすると末尾cardの右側操作が tabindex=-1 のまま到達不能になる）。
+  const atEnd = lastVisible >= total - 1 && lastCardFullyVisible;
 
   // 境界のprev/nextは native disabled にしない。操作中のcontrolをdisabledにすると
   // End/ArrowRightで末尾へ到達した瞬間にfocusを失う（focusがbodyへ落ちる）ため、

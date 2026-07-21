@@ -35,7 +35,10 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
   const headings = extractHeadings(page.bodyMarkdown);
 
   return (
-    <div className="space-y-4">
+    // #411: shell を max-w-7xl(1280px) へ広げたため、prose 主体の Wiki 本文は読み幅を
+    // 制限する（1行が長すぎる間延びを防ぐ）。フォーム等 他の wide surface の幅は後続の
+    // ブラッシュアップで個別に扱う。
+    <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.wiki}

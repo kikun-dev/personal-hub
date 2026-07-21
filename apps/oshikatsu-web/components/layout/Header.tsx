@@ -48,7 +48,10 @@ export function Header({ isAdmin }: HeaderProps) {
 
   return (
     <header className="border-b border-border-subtle bg-background">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
+      <div
+        data-ui="app-shell-header"
+        className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3"
+      >
         <div className="flex items-center gap-6">
           <PendingLink
             href="/"
