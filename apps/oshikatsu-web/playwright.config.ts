@@ -2,6 +2,16 @@ import { defineConfig, devices } from "@playwright/test";
 
 const authFile = "playwright/.auth/user.json";
 
+// #412: E2E の「今日」を固定し、日付依存 spec（TOP）を実行日に依存させない。
+// 既定 2026-08-23 は seed のライブ公演日が 2024 / 2025 / 2026 に存在する MM-DD で、次を同時に満たす:
+//   - 今日(2026-08-23)のライブ → TOP「今日の予定」（`stacked-event`）が空にならない
+//   - 過去年(2024/2025-08-23)のライブ → TOP「過去の同日」（`past-same-day-events` / `timeline-event`）が出る
+//   - 実データの参加記録の多くより後の日付 → 「最近の参加記録」（過去分）が出る
+// server（getTodayInAppTimeZone の env seam）とテストランナー（spec 内の同関数呼び出し）の双方で
+// 同じ「今日」を共有させるため、config プロセスの env にも設定し webServer.env にも渡す。
+const E2E_FIXED_TODAY = process.env.E2E_FIXED_TODAY ?? "2026-08-23";
+process.env.E2E_FIXED_TODAY = E2E_FIXED_TODAY;
+
 export default defineConfig({
   testDir: "./playwright",
   // #413: spec ファイル間の並列実行が prod サーバ + ローカル Supabase の取得を過負荷にし
@@ -27,6 +37,8 @@ export default defineConfig({
     url: "http://localhost:3001",
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: 180_000,
+    // #412: server プロセスの getTodayInAppTimeZone が同じ固定「今日」を返すよう env を渡す。
+    env: { E2E_FIXED_TODAY },
   },
   projects: [
     {

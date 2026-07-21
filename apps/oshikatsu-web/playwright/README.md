@@ -30,8 +30,11 @@ E2E_REUSE_SERVER=1 pnpm test:e2e <spec名>
 - `workers: 1`（スイート全体を単一 worker で直列実行）。spec ファイル**間**の並列実行が prod
   サーバ + ローカル Supabase を過負荷にし、`RepositoryError` や timing 崩れでフレークの主因に
   なっていたため。全 test が順に走るので、失敗が「did not run」で隠れることもない。
-  ※ 現在 `recent-attendance-isolation` 等は「今日の予定」データ有無に依存して fail し得る
-  （#412 で解消予定）。それらは実失敗として表示される（他 test は隠さない）。
+- `E2E_FIXED_TODAY`（既定 `2026-08-23`）で E2E の「今日」を固定する（#412）。TOP「今日の予定」/
+  「過去の同日」やカレンダーの today セルが実行日に依存して fail するのを防ぐ。config が
+  webServer（server の `getTodayInAppTimeZone`）とテストランナー（spec 内の同関数）双方へ渡すため
+  両者の「今日」が一致する。別日で確認したいときは `E2E_FIXED_TODAY=YYYY-MM-DD pnpm test:e2e` で上書き。
+  本番（Vercel）では `process.env.VERCEL` により常に無視され、production 挙動は不変。
 - テスト自体の timeout は変更していない（フレークの原因は compile 遅延・並列競合であり
   timeout 不足ではない）。
 - 認証は下記 `storageState`（非 CI）を利用する。失効したら再作成する。

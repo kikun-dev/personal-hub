@@ -36,7 +36,23 @@ export function getDatePartsInTimeZone(
   };
 }
 
+// #412: E2E（Playwright）は実データの「今日」に暗黙依存すると、今日にイベントが無い日は
+// TOP「今日の予定」が空になり fail する。テストから「今日」を固定できるよう env seam を設ける。
+// E2E は production build（NODE_ENV=production）を start して検証するため NODE_ENV では分岐できず、
+// 専用 env `E2E_FIXED_TODAY`（YYYY-MM-DD）の有無で opt-in する。本番デプロイ（Vercel）では
+// `process.env.VERCEL` があるため常に無視し、production 挙動は不変に保つ。
+function readFixedTodayOverride(): Date | null {
+  if (process.env.VERCEL) return null;
+  const raw = process.env.E2E_FIXED_TODAY;
+  if (!raw) return null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
 export function getTodayInAppTimeZone(now: Date = new Date()): Date {
+  const fixed = readFixedTodayOverride();
+  if (fixed) return fixed;
   const { year, month, day } = getDatePartsInTimeZone(now, APP_TIME_ZONE);
   return new Date(year, month - 1, day);
 }
