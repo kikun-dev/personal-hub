@@ -9,6 +9,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["lib/**/*.test.ts", "usecases/**/*.test.ts"],
+    // playwright/ 配下はE2E本体（*.spec.ts）ではなく、その補助モジュールのunit testだけを拾う。
+    include: ["lib/**/*.test.ts", "usecases/**/*.test.ts", "playwright/**/*.test.ts"],
   },
 });

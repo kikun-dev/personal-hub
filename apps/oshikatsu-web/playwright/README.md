@@ -46,6 +46,11 @@ E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 pnpm test:e2e <spec名>    # test
 
 ### 既知の flaky test（解消済みではない）
 
+> **注記（#420）**: 下記の記録は、認証状態の失効による 429（後述「失効は config が実行前に
+> fail-fast する」）が判明する前のもの。「分離実行では pass するが full suite で単発 fail する」
+> という症状は 429 でも同じ形で出るため、**この一覧の一部はそれで説明できる可能性がある**。
+> 有効な認証状態で改めて観測し直すまで一覧は残す（未再観測のまま削除しない）。
+
 `workers: 1` + build+start でフレークは大幅に減ったが、focus / animation / carousel の timing に
 敏感な次の test は**まれに単発 fail する**（いずれも分離実行では pass。CI の `retries: 1` が吸収）。
 full suite が下記だけで FAIL 表示のときは、対象を単独再実行して pass すれば flaky と判断してよい。
@@ -83,6 +88,34 @@ full suite が下記だけで FAIL 表示のときは、対象を単独再実行
 保存済みの `storageState` は Supabase セッションの失効とともに使えなくなる
 （対象ページがログインへリダイレクトされる）。その場合は同じ手順で
 `pnpm playwright:auth` を再実行して作り直す。
+
+### 失効は config が実行前に fail-fast する（#420）
+
+`playwright/.auth/user.json` の access token は `supabase/config.toml` の
+`jwt_expiry = 3600`（1時間）で失効する。**cookie 自体の `expires` は refresh token 由来で
+約1年先を指すため、ファイルの見た目では失効に気づけない。**
+
+Playwright は test ごとに新しい context へ同じ `storageState` を読み込むので、失効したまま
+suite を回すと**全 test がそれぞれ token refresh を発火**し、
+`[auth.rate_limit] token_refresh = 150`（5分 / IP）を超えて 429 に到達する。このとき
+症状は「ページが描画されず待機系 assertion が timeout する」形で出るため、
+一見すると対象機能の不具合や flaky に見え、**失敗する test が run ごとに移動する**（#418）。
+
+これを timeout 延長 / retry / rate limit 引き上げで隠さないため、`playwright.config.ts` が
+**suite 開始前に**認証状態を検証して fail-fast する。
+
+- 判定は config のモジュールスコープで行う。`globalSetup` は webServer（`build + start`）の**後**に
+  走るため、そこに置くと失効を知るまで build を待たされる（Playwright は plugin setup =
+  webServer を globalSetup より先に実行する）。`resolveFixedToday` と同じ fail-fast の置き場所。
+- **残り有効期間が15分未満なら実行しない。** full suite は実測約5.6分、build を含めて約8分。
+  実行中の失効を防ぎつつ、発行から最初の45分は使える閾値。
+- 失効・ファイル欠損・形式不正はそれぞれ理由を明示して落ち、`playwright:auth` の再実行を案内する。
+- `CI`（`storageState` 未使用）と `--list`（収集のみ・server も起動しない）では検証しない。
+
+パース処理（chunk 連結・`base64-` prefix・`expires_at` 取り出し）は `playwright/authState.ts` にあり、
+`playwright/authState.test.ts` の vitest unit test で検証する（`pnpm test:unit`）。
+`playwright/` 配下は E2E 本体（`*.spec.ts`）と補助モジュールの unit test（`*.test.ts`）が同居するため、
+Playwright 側は `testMatch: "**/*.spec.ts"` で E2E だけを収集する。
 
 ## 仕組み
 
