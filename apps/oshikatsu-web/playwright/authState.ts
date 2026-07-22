@@ -19,7 +19,7 @@ export type StoredSessionExpiry =
   | { kind: "session-not-base64"; detail: string }
   | { kind: "session-not-json"; detail: string }
   | { kind: "expires-at-missing" }
-  | { kind: "expires-at-not-numeric"; value: unknown };
+  | { kind: "expires-at-invalid"; value: unknown };
 
 type AuthCookieChunk = { index: number; value: string };
 
@@ -154,11 +154,18 @@ export function readStoredSessionExpiry(authFilePath: string): StoredSessionExpi
   if (expiresAt === undefined) {
     return { kind: "expires-at-missing" };
   }
-  if (typeof expiresAt !== "number" || !Number.isFinite(expiresAt)) {
-    return { kind: "expires-at-not-numeric", value: expiresAt };
+  // epoch 秒として信用できない値は「利用可能」と判定してはいけない（fail-open になる）。
+  // 例えば 1e308 は有限だがミリ秒換算で Infinity になり、残り時間の比較を素通りする。
+  if (typeof expiresAt !== "number" || !Number.isSafeInteger(expiresAt) || expiresAt <= 0) {
+    return { kind: "expires-at-invalid", value: expiresAt };
+  }
+  const expiresAtMs = expiresAt * 1000;
+  // 秒が safe integer でも、ミリ秒換算で精度を失う値は日付として信用できないため弾く。
+  if (!Number.isSafeInteger(expiresAtMs)) {
+    return { kind: "expires-at-invalid", value: expiresAt };
   }
 
-  return { kind: "ok", expiresAtMs: expiresAt * 1000 };
+  return { kind: "ok", expiresAtMs };
 }
 
 // 失効理由を、config の fail-fast メッセージへそのまま載せられる日本語へ落とす。
@@ -182,7 +189,7 @@ export function describeExpiryFailure(
       return `Supabase auth cookieのデコード結果がJSONとして不正です: ${result.detail}`;
     case "expires-at-missing":
       return "Supabaseセッションにexpires_atがありません。";
-    case "expires-at-not-numeric":
-      return `Supabaseセッションのexpires_atが数値ではありません（${String(result.value)}）。`;
+    case "expires-at-invalid":
+      return `Supabaseセッションのexpires_atが有効なepoch秒ではありません（${String(result.value)}）。`;
   }
 }

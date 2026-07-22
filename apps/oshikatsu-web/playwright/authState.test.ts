@@ -154,7 +154,7 @@ describe("readStoredSessionExpiry", () => {
     expect(readStoredSessionExpiry(path)).toEqual({ kind: "expires-at-missing" });
   });
 
-  it("expires_atが数値でない場合はexpires-at-not-numericを返す", () => {
+  it("expires_atが数値でない場合はexpires-at-invalidを返す", () => {
     const path = writeCookies([
       {
         name: "sb-testref-auth-token",
@@ -163,8 +163,23 @@ describe("readStoredSessionExpiry", () => {
     ]);
 
     expect(readStoredSessionExpiry(path)).toEqual({
-      kind: "expires-at-not-numeric",
+      kind: "expires-at-invalid",
       value: String(EXPIRES_AT_SECONDS),
     });
+  });
+
+  // 有限でも巨大な値はミリ秒換算でInfinityになり、残り時間の比較を素通りしてfail-openになる。
+  it.each([
+    ["safe integerを超える巨大な有限値", 1e308],
+    ["秒はsafe integerだがミリ秒換算で精度を失う値", 9_000_000_000_000_000],
+    ["負の値", -1],
+    ["0", 0],
+    ["小数", EXPIRES_AT_SECONDS + 0.5],
+  ])("expires_atが%sの場合はexpires-at-invalidを返す", (_label, expiresAt) => {
+    const path = writeCookies([
+      { name: "sb-testref-auth-token", value: encodeSession({ expires_at: expiresAt }) },
+    ]);
+
+    expect(readStoredSessionExpiry(path)).toEqual({ kind: "expires-at-invalid", value: expiresAt });
   });
 });
