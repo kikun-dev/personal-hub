@@ -48,7 +48,6 @@ type SetlistItemField = {
   key: number;
   itemType: SetlistItemType;
   trackId: string;
-  songTitle: string;
   note: string;
   section: SetlistSection;
   performanceStyles: PerformanceStyle[];
@@ -86,7 +85,6 @@ export function SetlistEditor({
     key: nextKey(),
     itemType: item.itemType,
     trackId: item.trackId,
-    songTitle: item.songTitle,
     note: item.note,
     section: item.section,
     performanceStyles: item.performanceStyles,
@@ -139,7 +137,6 @@ export function SetlistEditor({
         key: nextKey(),
         itemType,
         trackId: "",
-        songTitle: "",
         note: "",
         section: "main",
         performanceStyles: [],
@@ -325,7 +322,6 @@ export function SetlistEditor({
     const payload: SetlistEditorItemInput[] = items.map((item) => ({
       itemType: item.itemType,
       trackId: item.trackId,
-      songTitle: item.songTitle,
       note: item.note,
       section: item.section,
       performanceStyles: item.performanceStyles,
@@ -471,12 +467,6 @@ export function SetlistEditor({
                     placeholder="登録曲を検索"
                     emptyLabel="未選択"
                     className="w-44"
-                  />
-                  <input
-                    value={item.songTitle}
-                    onChange={(e) => updateItem(item.key, { songTitle: e.target.value })}
-                    placeholder="未登録曲は曲名を入力"
-                    className="flex-1 rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
                   />
                 </div>
 

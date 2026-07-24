@@ -223,7 +223,6 @@ export type SetlistEditorFormationRowInput = { memberIds: string[] };
 export type SetlistEditorItemInput = {
   itemType: SetlistItemType;
   trackId: string;
-  songTitle: string;
   note: string;
   section: SetlistSection;
   performanceStyles: PerformanceStyle[];

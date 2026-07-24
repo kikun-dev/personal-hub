@@ -244,7 +244,8 @@ function toSetlistPayload(input: ReplaceSetlistInput) {
       return {
         item_type: item.itemType,
         track_id: isSong ? item.trackId || null : null,
-        song_title: isSong ? item.songTitle.trim() || null : null,
+        // song_title は登録曲必須化により書き込まない（#422）
+        song_title: null,
         note: item.note.trim() || null,
         section: item.section,
         // 披露タイプ・披露メンバー・フォーメーションは楽曲のみ

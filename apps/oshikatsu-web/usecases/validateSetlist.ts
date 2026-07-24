@@ -19,8 +19,8 @@ export function validateSetlist(
     if (!isSetlistSection(item.section)) {
       errors.push({ field, message: "無効なセクションです" });
     }
-    if (item.itemType === "song" && !item.trackId && !item.songTitle.trim()) {
-      errors.push({ field, message: "楽曲は登録曲の選択か曲名の入力が必要です" });
+    if (item.itemType === "song" && !item.trackId) {
+      errors.push({ field, message: "楽曲は登録曲の選択が必要です" });
     }
     if (item.note.length > 500) {
       errors.push({ field, message: "メモは500文字以内で入力してください" });
