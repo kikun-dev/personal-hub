@@ -1,6 +1,7 @@
 import type { SetlistEditorItemInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
 import { isSetlistItemType, isSetlistSection, isPerformanceStyle } from "@/types/live";
+import { isValidUuid } from "@/lib/validation";
 
 // #261: セットリスト編集ビューの入力を検証する純粋関数。
 // rosterMemberIds は公演の出演メンバー（空なら範囲チェックしない）
@@ -19,8 +20,11 @@ export function validateSetlist(
     if (!isSetlistSection(item.section)) {
       errors.push({ field, message: "無効なセクションです" });
     }
-    if (item.itemType === "song" && !item.trackId && !item.songTitle.trim()) {
-      errors.push({ field, message: "楽曲は登録曲の選択か曲名の入力が必要です" });
+    // trackId は truthy だけでなく UUID 形式まで検証する。action 直呼びで空白や
+    // 非 UUID 文字列が渡ると RPC 内の UUID キャストで汎用エラーになるため、
+    // ここで項目単位の行動可能なエラーとして弾く（#422 レビュー P2）。
+    if (item.itemType === "song" && !isValidUuid(item.trackId)) {
+      errors.push({ field, message: "楽曲は登録曲の選択が必要です" });
     }
     if (item.note.length > 500) {
       errors.push({ field, message: "メモは500文字以内で入力してください" });

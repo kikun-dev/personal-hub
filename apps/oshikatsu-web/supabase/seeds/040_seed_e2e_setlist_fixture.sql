@@ -8,6 +8,8 @@
 --   参戦記録がセットリストより前に現れる」Acceptance Criteria 検証が、
 --   canonical seed（035 はセットリスト行を持たない）だけの環境でも
 --   skip されず必ず実行されるようにする。
+-- - #422: セットリスト楽曲は登録曲必須のため、この fixture も
+--   song_title の自由入力ではなく登録済み track（track_id）を参照する。
 --
 -- Notes:
 -- - Guard: 対象ライブのいずれかの公演にセットリスト行が既にある環境
@@ -21,6 +23,7 @@
 DO $seed$
 DECLARE
   v_performance_id UUID;
+  v_track_id UUID;
 BEGIN
   SELECT p.id
     INTO v_performance_id
@@ -46,7 +49,21 @@ BEGIN
     RETURN;
   END IF;
 
-  INSERT INTO public.orbit_setlist_items (performance_id, position, item_type, song_title)
-  VALUES (v_performance_id, 1, 'song', 'セットリスト表示確認用（E2E fixture）');
+  -- 登録曲（乃木坂46「ぐるぐるカーテン」）を fixture の楽曲として参照する
+  SELECT t.id INTO v_track_id
+    FROM public.orbit_tracks t
+    JOIN public.orbit_release_tracks rt ON rt.track_id = t.id
+    JOIN public.orbit_releases r ON r.id = rt.release_id
+    JOIN public.orbit_groups g ON g.id = r.group_id
+   WHERE g.name_ja = '乃木坂46' AND t.title = 'ぐるぐるカーテン'
+   LIMIT 1;
+
+  -- 対象トラックが未投入の環境ではこの fixture をスキップする
+  IF v_track_id IS NULL THEN
+    RETURN;
+  END IF;
+
+  INSERT INTO public.orbit_setlist_items (performance_id, position, item_type, track_id)
+  VALUES (v_performance_id, 1, 'song', v_track_id);
 END
 $seed$;

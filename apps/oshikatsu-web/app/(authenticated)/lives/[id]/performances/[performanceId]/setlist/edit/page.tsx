@@ -21,7 +21,6 @@ function toSetlistEditorItem(item: SetlistItem): SetlistEditorItemInput {
   return {
     itemType: item.itemType,
     trackId: item.trackId ?? "",
-    songTitle: item.songTitle ?? "",
     note: item.note ?? "",
     section: item.section,
     performanceStyles: item.performanceStyles,
