@@ -32,6 +32,24 @@ describe("validateSetlist", () => {
     expect(errors).toEqual([]);
   });
 
+  it("楽曲項目のtrackIdが空白のみの場合、items.0にValidationErrorを返す（#422 P2 境界）", () => {
+    const errors = validateSetlist([makeItem({ trackId: "   " })], []);
+
+    expect(errors).toContainEqual({
+      field: "items.0",
+      message: "楽曲は登録曲の選択が必要です",
+    });
+  });
+
+  it("楽曲項目のtrackIdがUUID形式でない場合、items.0にValidationErrorを返す（#422 P2 境界）", () => {
+    const errors = validateSetlist([makeItem({ trackId: "not-a-uuid" })], []);
+
+    expect(errors).toContainEqual({
+      field: "items.0",
+      message: "楽曲は登録曲の選択が必要です",
+    });
+  });
+
   it("楽曲以外の項目はtrackId未選択でもValidationErrorを返さない", () => {
     const errors = validateSetlist(
       [makeItem({ itemType: "mc", trackId: "" })],
