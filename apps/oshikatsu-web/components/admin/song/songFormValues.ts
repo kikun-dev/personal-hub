@@ -151,12 +151,7 @@ export function toSubmitValues(
     musicPeople: values.musicPeople,
     arrangementPeople: values.arrangementPeople,
     choreographyPeople: values.choreographyPeople,
-    // TODO(#427 ⑤): フォームで参加メンバーを独立入力できるようになったら
-    // values.participantMemberIds をそのまま渡す。それまでの暫定として、
-    // フォーメーション全列のメンバーを参加メンバーとして送る（現行の挙動と等価）。
-    participantMemberIds: Array.from(
-      new Set(values.formationRows.flatMap((row) => row.memberIds))
-    ),
+    participantMemberIds: values.participantMemberIds,
     formationRows: values.formationRows.map((row) => ({
       memberCount: row.memberCount,
       memberIds: row.memberIds,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { Group } from "@/types/group";
 import type { ReleaseOption } from "@/types/release";
 import type { MemberOption } from "@/types/member";
@@ -27,6 +27,7 @@ import {
   type UnregisteredStaff,
 } from "@/lib/staffRoles";
 import { validateSong } from "@/usecases/validateSong";
+import { pickFirstDatedRelease } from "@/lib/firstRelease";
 import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 import {
@@ -55,6 +56,7 @@ import {
 import { SongBasicInfoSection } from "@/components/admin/song/SongBasicInfoSection";
 import { SongReleaseLinksSection } from "@/components/admin/song/SongReleaseLinksSection";
 import { SongCreditsSection } from "@/components/admin/song/SongCreditsSection";
+import { SongParticipantsSection } from "@/components/admin/song/SongParticipantsSection";
 import { SongFormationSection } from "@/components/admin/song/SongFormationSection";
 import { SongMvSection } from "@/components/admin/song/SongMvSection";
 import { SongVideosSection } from "@/components/admin/song/SongVideosSection";
@@ -147,18 +149,37 @@ export function SongForm({
     [members]
   );
 
+  // 楽曲参加メンバーの候補は初出リリースの参加メンバーに限る（#427 / ADR 0007 追記 2026-07-26）。
+  // アルバム・再録など後続リリースを紐づけても候補は広がらない。
+  // 日付付きの紐づきリリースが無ければ未確定として候補を出さない（フォールバックしない）。
+  const firstRelease = useMemo(() => {
+    const linkedReleases = values.releaseLinks
+      .map((link) => (link.releaseId ? releaseMap.get(link.releaseId) : undefined))
+      .filter((release): release is ReleaseOption => Boolean(release));
+
+    return pickFirstDatedRelease(
+      linkedReleases.map((release) => ({
+        releaseId: release.id,
+        releaseDate: release.releaseDate,
+        release,
+      }))
+    )?.release ?? null;
+  }, [releaseMap, values.releaseLinks]);
+
+  const hasReleaseLink = useMemo(
+    () => values.releaseLinks.some((link) => Boolean(link.releaseId)),
+    [values.releaseLinks]
+  );
+
   const participantOptions = useMemo<ParticipantOption[]>(() => {
     const options = new Map<string, { name: string; kana: string }>();
 
-    for (const link of values.releaseLinks) {
-      if (!link.releaseId) continue;
-      const release = releaseMap.get(link.releaseId);
-      if (!release) continue;
-
-      for (let i = 0; i < release.participantMemberIds.length; i++) {
-        const memberId = release.participantMemberIds[i];
-        const name = release.participantMemberNames[i] ?? memberNameById.get(memberId) ?? "";
-        const kana = release.participantMemberKanas[i] ?? "";
+    if (firstRelease) {
+      for (let i = 0; i < firstRelease.participantMemberIds.length; i++) {
+        const memberId = firstRelease.participantMemberIds[i];
+        const name =
+          firstRelease.participantMemberNames[i] ?? memberNameById.get(memberId) ?? "";
+        const kana = firstRelease.participantMemberKanas[i] ?? "";
         options.set(memberId, { name: name || memberId, kana });
       }
     }
@@ -180,66 +201,67 @@ export function SongForm({
           ? kanaCompare
           : a.memberName.localeCompare(b.memberName, "ja");
       });
-  }, [memberGroupIdsById, memberNameById, releaseMap, values.groupId, values.releaseLinks]);
+  }, [firstRelease, memberGroupIdsById, memberNameById, values.groupId]);
 
-  const participantNameById = useMemo(
-    () =>
-      new Map(participantOptions.map((option) => [option.memberId, option.memberName])),
-    [participantOptions]
-  );
-
-  const selectedFormationMemberIds = useMemo(() => {
-    const selected = new Set<string>();
-    for (const row of values.formationRows) {
-      for (const memberId of row.memberIds) {
-        selected.add(memberId);
-      }
+  // 表示名は候補（初出リリース参加者）に無い選択済みメンバーも解決できるようにする。
+  // リリース紐づけ変更で候補外になっても、名前を出して外す判断を促すため（#427）。
+  const participantNameById = useMemo(() => {
+    const names = new Map(memberNameById);
+    for (const option of participantOptions) {
+      names.set(option.memberId, option.memberName);
     }
-    return selected;
-  }, [values.formationRows]);
+    return names;
+  }, [memberNameById, participantOptions]);
+
+  const selectedParticipantIds = useMemo(
+    () => new Set(values.participantMemberIds),
+    [values.participantMemberIds]
+  );
 
   const visibleParticipantOptions = useMemo(() => {
     if (showAllParticipantMembers) {
       return participantOptions;
     }
 
-    return participantOptions.filter((option) =>
-      option.isInSongGroup || selectedFormationMemberIds.has(option.memberId)
+    return participantOptions.filter(
+      (option) => option.isInSongGroup || selectedParticipantIds.has(option.memberId)
     );
-  }, [participantOptions, selectedFormationMemberIds, showAllParticipantMembers]);
+  }, [participantOptions, selectedParticipantIds, showAllParticipantMembers]);
 
   const outOfGroupSelectedMemberNames = useMemo(
     () =>
       participantOptions
-        .filter((option) => selectedFormationMemberIds.has(option.memberId) && !option.isInSongGroup)
+        .filter(
+          (option) => selectedParticipantIds.has(option.memberId) && !option.isInSongGroup
+        )
         .map((option) => option.memberName),
-    [participantOptions, selectedFormationMemberIds]
+    [participantOptions, selectedParticipantIds]
   );
 
-  useEffect(() => {
+  // 初出リリースが変わって候補外になった選択済みメンバー。黙って削除せず警告として示す。
+  const outOfScopeSelectedMemberNames = useMemo(() => {
     const allowed = new Set(participantOptions.map((option) => option.memberId));
+    return values.participantMemberIds
+      .filter((memberId) => !allowed.has(memberId))
+      .map((memberId) => participantNameById.get(memberId) ?? memberId);
+  }, [participantNameById, participantOptions, values.participantMemberIds]);
 
-    setValues((prev) => ({
-      ...prev,
-      formationRows: prev.formationRows.map((row) => ({
-        ...row,
-        memberIds: row.memberIds.filter((memberId) => allowed.has(memberId)),
+  // フォーメーションへ割り当てられるのは楽曲参加メンバーだけ（#427）
+  const assignableMembers = useMemo(
+    () =>
+      values.participantMemberIds.map((memberId) => ({
+        memberId,
+        memberName: participantNameById.get(memberId) ?? memberId,
       })),
-    }));
-  }, [participantOptions, setValues]);
+    [participantNameById, values.participantMemberIds]
+  );
 
-  // 1列目(最前列)に居なくなったメンバーはセンター指定から外す
-  useEffect(() => {
-    setValues((prev) => {
-      const frontRow = prev.formationRows[0];
-      const allowed = new Set(frontRow ? frontRow.memberIds : []);
-      const filtered = prev.centerMemberIds.filter((memberId) =>
-        allowed.has(memberId)
-      );
-      if (filtered.length === prev.centerMemberIds.length) return prev;
-      return { ...prev, centerMemberIds: filtered };
-    });
-  }, [values.formationRows, setValues]);
+  const unplacedMemberNames = useMemo(() => {
+    const assigned = new Set(values.formationRows.flatMap((row) => row.memberIds));
+    return values.participantMemberIds
+      .filter((memberId) => !assigned.has(memberId))
+      .map((memberId) => participantNameById.get(memberId) ?? memberId);
+  }, [participantNameById, values.formationRows, values.participantMemberIds]);
 
   // 期の候補はグループの maxGeneration から 1..max（メンバー登録と同じ供給源）
   const generationOptions = useMemo(() => {
@@ -392,7 +414,39 @@ export function SongForm({
     }));
   };
 
-  // センター（1列目・最大2人）の指定を切り替える
+  // 楽曲参加メンバーの選択を切り替える（#427）。
+  // 外す場合は、そのメンバーをセンターとフォーメーションからも同じ state 更新で外す。
+  // 別々の effect に分けると、一瞬だけ不整合な状態が描画されるため1回でまとめる。
+  const toggleParticipant = (memberId: string) => {
+    setValues((prev) => {
+      if (!prev.participantMemberIds.includes(memberId)) {
+        return {
+          ...prev,
+          participantMemberIds: [...prev.participantMemberIds, memberId],
+        };
+      }
+
+      return {
+        ...prev,
+        participantMemberIds: prev.participantMemberIds.filter((id) => id !== memberId),
+        centerMemberIds: prev.centerMemberIds.filter((id) => id !== memberId),
+        formationRows: prev.formationRows.map((row) => ({
+          ...row,
+          memberIds: row.memberIds.filter((id) => id !== memberId),
+        })),
+      };
+    });
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.participantMemberIds;
+      delete next.centerMemberIds;
+      delete next.formationRows;
+      return next;
+    });
+  };
+
+  // センター（参加メンバー内・最大2人）の指定を切り替える。
+  // フォーメーションがある場合の「1列目に含まれる」制約は保存時の検証で扱う（#427）。
   const toggleCenter = (memberId: string) => {
     setValues((prev) => {
       if (prev.centerMemberIds.includes(memberId)) {
@@ -674,22 +728,34 @@ export function SongForm({
             removeCreditPerson={removeCreditPerson}
           />
 
-          <SongFormationSection
-            formationRows={values.formationRows}
+          {/* 参加メンバー → センター → フォーメーションの順で段階的に登録する（#427） */}
+          <SongParticipantsSection
+            participantMemberIds={values.participantMemberIds}
             centerMemberIds={values.centerMemberIds}
             groupId={values.groupId}
             errors={errors}
-            participantOptionsCount={participantOptions.length}
+            firstReleaseTitle={firstRelease?.title ?? null}
+            hasReleaseLink={hasReleaseLink}
             visibleParticipantOptions={visibleParticipantOptions}
             outOfGroupSelectedMemberNames={outOfGroupSelectedMemberNames}
+            outOfScopeSelectedMemberNames={outOfScopeSelectedMemberNames}
             participantNameById={participantNameById}
             showAllParticipantMembers={showAllParticipantMembers}
             setShowAllParticipantMembers={setShowAllParticipantMembers}
+            toggleParticipant={toggleParticipant}
+            toggleCenter={toggleCenter}
+          />
+
+          <SongFormationSection
+            formationRows={values.formationRows}
+            errors={errors}
+            assignableMembers={assignableMembers}
+            unplacedMemberNames={unplacedMemberNames}
+            participantNameById={participantNameById}
             addFormationRow={addFormationRow}
             removeFormationRow={removeFormationRow}
             updateFormationRowCount={updateFormationRowCount}
             toggleFormationMember={toggleFormationMember}
-            toggleCenter={toggleCenter}
             handleFormationDragEnd={handleFormationDragEnd}
           />
 

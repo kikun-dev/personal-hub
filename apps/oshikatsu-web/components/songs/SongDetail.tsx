@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
+import { SongParticipantsDisplay } from "@/components/songs/SongParticipantsDisplay";
 import { TextLink, TEXT_LINK_CLASS } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
@@ -112,6 +113,9 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
           </dl>
         </Card>
       )}
+
+      {/* 参加メンバー → フォーメーションの順で、判明している情報量に応じて並べる（#427） */}
+      <SongParticipantsDisplay participants={song.participants} />
 
       <FormationDisplay rows={song.formationRows} participants={song.participants} />
 
