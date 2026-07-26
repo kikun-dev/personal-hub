@@ -21,6 +21,7 @@ import { splitCreditNames } from "@/lib/songCredits";
 // 初出リリースの判定はドメイン規則のため lib の純関数を使い、Mapper には置かない
 // （UseCase 側も同じ関数を参照する。ADR 0007 追記 2026-07-26 / #427）。
 import { pickFirstDatedRelease } from "@/lib/firstRelease";
+import { compareByGenerationThenName } from "@/lib/memberOrder";
 
 // SelectRows は select 定数の typeof を必要とするため、リポジトリ側の SELECT 定数を
 // ここへ移動し、行型と一緒に export する（リポジトリは本ファイルから import する片方向依存）。
@@ -76,7 +77,11 @@ export const SONG_DETAIL_SELECT = `
   orbit_track_members(
     member_id,
     is_center,
-    orbit_members(name_ja)
+    orbit_members(
+      name_ja,
+      name_kana,
+      orbit_member_groups(group_id, generation)
+    )
   ),
   orbit_track_formations(
     id,
@@ -231,17 +236,36 @@ function mapCredits(rows: SongRow["orbit_track_credits"]): SongCredit[] {
     });
 }
 
-// 参加メンバーは集合であり並び順を持たないため、表示の安定のため名前順に揃える。
-function mapParticipants(rows: SongRow["orbit_track_members"]): SongParticipant[] {
+// 参加メンバーは集合であり並び順を持たないため、リリース参加メンバーと同じ
+// 「期昇順 → かな順」で表示順を安定させる（releaseMapper と同じ規則）。
+function mapParticipants(
+  rows: SongRow["orbit_track_members"],
+  groupId: string
+): SongParticipant[] {
   if (!rows) return [];
 
   return rows
-    .map((row) => ({
-      memberId: row.member_id,
-      memberNameJa: row.orbit_members.name_ja,
-      isCenter: row.is_center,
-    }))
-    .sort((a, b) => a.memberNameJa.localeCompare(b.memberNameJa, "ja"));
+    .map((row) => {
+      const orbitMember = row.orbit_members;
+      // 楽曲グループでの期を採用（無ければ null＝期不明として末尾へ）
+      const membership = (orbitMember.orbit_member_groups ?? []).find(
+        (memberGroup) => memberGroup.group_id === groupId
+      );
+
+      return {
+        memberId: row.member_id,
+        memberNameJa: orbitMember.name_ja,
+        memberNameKana: orbitMember.name_kana,
+        generation: membership?.generation ?? null,
+        isCenter: row.is_center,
+      } satisfies SongParticipant;
+    })
+    .sort((a, b) =>
+      compareByGenerationThenName(
+        { generation: a.generation, nameKana: a.memberNameKana },
+        { generation: b.generation, nameKana: b.memberNameKana }
+      )
+    );
 }
 
 function mapFormation(formation: SongRow["orbit_track_formations"]): SongFormationRow[] {
@@ -348,7 +372,7 @@ export function mapSong(row: SongRow): Song {
     representativeNumbering: labelRepresentative?.numbering ?? null,
     releases,
     credits: mapCredits(row.orbit_track_credits),
-    participants: mapParticipants(row.orbit_track_members),
+    participants: mapParticipants(row.orbit_track_members, row.group_id),
     formationRows: mapFormation(row.orbit_track_formations),
     mv: mapMv(row.orbit_track_mvs),
     videos: mapVideos(row.orbit_track_videos),

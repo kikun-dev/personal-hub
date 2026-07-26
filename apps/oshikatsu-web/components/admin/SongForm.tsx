@@ -28,6 +28,8 @@ import {
 } from "@/lib/staffRoles";
 import { validateSong } from "@/usecases/validateSong";
 import { pickFirstDatedRelease } from "@/lib/firstRelease";
+import { compareByGenerationThenName } from "@/lib/memberOrder";
+import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 import {
@@ -112,7 +114,6 @@ export function SongForm({
       call: Boolean(initialValues && hasVideoValue(initialValues.videos.call)),
     })
   );
-  const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
 
   const releaseMap = useMemo(
     () => new Map<string, ReleaseOption>(releases.map((release) => [release.id, release])),
@@ -166,13 +167,11 @@ export function SongForm({
     )?.release ?? null;
   }, [releaseMap, values.releaseLinks]);
 
-  const hasReleaseLink = useMemo(
-    () => values.releaseLinks.some((link) => Boolean(link.releaseId)),
-    [values.releaseLinks]
-  );
-
   const participantOptions = useMemo<ParticipantOption[]>(() => {
-    const options = new Map<string, { name: string; kana: string }>();
+    const options = new Map<
+      string,
+      { name: string; kana: string; generation: string | null }
+    >();
 
     if (firstRelease) {
       for (let i = 0; i < firstRelease.participantMemberIds.length; i++) {
@@ -180,27 +179,29 @@ export function SongForm({
         const name =
           firstRelease.participantMemberNames[i] ?? memberNameById.get(memberId) ?? "";
         const kana = firstRelease.participantMemberKanas[i] ?? "";
-        options.set(memberId, { name: name || memberId, kana });
+        const generation = firstRelease.participantMemberGenerations[i] ?? null;
+        options.set(memberId, { name: name || memberId, kana, generation });
       }
     }
 
     return Array.from(options.entries())
-      .map(([memberId, { name, kana }]) => ({
+      .map(([memberId, { name, kana, generation }]) => ({
         memberId,
         memberName: name,
         memberKana: kana,
+        generation,
         isInSongGroup:
           values.groupId.length > 0
             ? (memberGroupIdsById.get(memberId)?.has(values.groupId) ?? false)
             : true,
       }))
-      // メンバー一覧/リリースと同じく、かな読み順で安定ソートする
-      .sort((a, b) => {
-        const kanaCompare = a.memberKana.localeCompare(b.memberKana, "ja");
-        return kanaCompare !== 0
-          ? kanaCompare
-          : a.memberName.localeCompare(b.memberName, "ja");
-      });
+      // リリース詳細・楽曲詳細と同じ「期昇順 → かな順」で揃える
+      .sort((a, b) =>
+        compareByGenerationThenName(
+          { generation: a.generation, nameKana: a.memberKana },
+          { generation: b.generation, nameKana: b.memberKana }
+        )
+      );
   }, [firstRelease, memberGroupIdsById, memberNameById, values.groupId]);
 
   // 表示名は候補（初出リリース参加者）に無い選択済みメンバーも解決できるようにする。
@@ -217,16 +218,6 @@ export function SongForm({
     () => new Set(values.participantMemberIds),
     [values.participantMemberIds]
   );
-
-  const visibleParticipantOptions = useMemo(() => {
-    if (showAllParticipantMembers) {
-      return participantOptions;
-    }
-
-    return participantOptions.filter(
-      (option) => option.isInSongGroup || selectedParticipantIds.has(option.memberId)
-    );
-  }, [participantOptions, selectedParticipantIds, showAllParticipantMembers]);
 
   const outOfGroupSelectedMemberNames = useMemo(
     () =>
@@ -245,6 +236,16 @@ export function SongForm({
       .filter((memberId) => !allowed.has(memberId))
       .map((memberId) => participantNameById.get(memberId) ?? memberId);
   }, [participantNameById, participantOptions, values.participantMemberIds]);
+
+  const selectedParticipantSummary = useMemo(
+    () =>
+      formatMemberCountSummary(
+        participantOptions
+          .filter((option) => selectedParticipantIds.has(option.memberId))
+          .map((option) => option.generation)
+      ),
+    [participantOptions, selectedParticipantIds]
+  );
 
   // フォーメーションへ割り当てられるのは楽曲参加メンバーだけ（#427）
   const assignableMembers = useMemo(
@@ -732,16 +733,12 @@ export function SongForm({
           <SongParticipantsSection
             participantMemberIds={values.participantMemberIds}
             centerMemberIds={values.centerMemberIds}
-            groupId={values.groupId}
             errors={errors}
-            firstReleaseTitle={firstRelease?.title ?? null}
-            hasReleaseLink={hasReleaseLink}
-            visibleParticipantOptions={visibleParticipantOptions}
+            participantOptions={participantOptions}
+            selectedParticipantSummary={selectedParticipantSummary}
             outOfGroupSelectedMemberNames={outOfGroupSelectedMemberNames}
             outOfScopeSelectedMemberNames={outOfScopeSelectedMemberNames}
             participantNameById={participantNameById}
-            showAllParticipantMembers={showAllParticipantMembers}
-            setShowAllParticipantMembers={setShowAllParticipantMembers}
             toggleParticipant={toggleParticipant}
             toggleCenter={toggleCenter}
           />

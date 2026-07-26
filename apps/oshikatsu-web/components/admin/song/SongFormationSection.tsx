@@ -112,18 +112,11 @@ export function SongFormationSection({
         <p className="mb-2 text-xs text-danger-text">{errors.formationRows}</p>
       )}
 
-      {assignableMembers.length === 0 && (
-        <p className="mb-2 text-xs text-foreground-secondary">
-          参加メンバーを選ぶとフォーメーションを登録できます
-        </p>
-      )}
-
       {/* フォーメーションを登録する場合は参加メンバー全員の配置が必要。
           次に必要な操作が分かるよう、未配置を列の近くに一覧表示する（#427） */}
       {formationRows.length > 0 && unplacedMemberNames.length > 0 && (
         <p className="mb-2 rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-xs text-foreground">
-          未配置の参加メンバー{unplacedMemberNames.length}人（
-          {unplacedMemberNames.join(" / ")}）。フォーメーションを登録する場合は全員を配置してください
+          未配置 {unplacedMemberNames.length}人: {unplacedMemberNames.join(" / ")}
         </p>
       )}
 
@@ -184,18 +177,14 @@ export function SongFormationSection({
                     );
                   })}
                   {assignableMembers.length === 0 && (
-                    <p className="text-xs text-foreground-secondary">
-                      参加メンバーが選択されていません
-                    </p>
+                    <p className="text-xs text-foreground-secondary">—</p>
                   )}
                 </div>
               </div>
 
               {row.memberIds.length > 0 && (
                 <div className="mt-2">
-                  <p className="mb-1 text-xs text-foreground-secondary">
-                    並び順（ドラッグ/キーボードで左→右を調整）
-                  </p>
+                  <p className="mb-1 text-xs text-foreground-secondary">並び順</p>
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
@@ -225,7 +214,7 @@ export function SongFormationSection({
 
         {formationRows.length === 0 && (
           <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
-            フォーメーションは未設定です（未解禁のままでも保存できます）
+            フォーメーション未設定
           </p>
         )}
       </div>

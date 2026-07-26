@@ -74,6 +74,9 @@ export type SongReleaseLink = {
 export type SongParticipant = {
   memberId: string;
   memberNameJa: string;
+  // 並び（期昇順→かな順）と人数内訳のために保持する。期は楽曲グループでの所属から採る。
+  memberNameKana: string;
+  generation: string | null;
   isCenter: boolean;
 };
 
