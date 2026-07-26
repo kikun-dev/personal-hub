@@ -19,7 +19,7 @@ import type { OrbitReadClient } from "@/types/orbitReadClient";
  * これらの呼び出しは今後も未typedな戻り値のまま呼ぶ必要があるため、
  * `asWritableClient` 自体の戻り値を `TypedSupabaseClient` に変更することはできない
  * （変更すると、これらの呼び出しが未注釈のまま typed 化されてコンパイルエラーになる）。
- * 実ペイロードが生成 Args と一致する呼び出し（`set_track_centers` /
+ * 実ペイロードが生成 Args と一致する呼び出し（
  * `set_release_member_positions` / update 時の `upsert_orbit_live` /
  * `upsert_orbit_spot` / `upsert_orbit_event` 等）は、
  * 移行済みのリポジトリ側で

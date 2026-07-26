@@ -104,7 +104,10 @@ const loadMembersPageData = createSharedReadLoader(
 );
 
 const loadMemberDetailPageData = createSharedReadLoader(
-  ["orbit", "member-detail-page-data"],
+  // v2: #426 で Song DTO へ必須の participants を追加した。参加楽曲（Song[]）を
+  // そのまま cache するため、旧 deployment が保存した participants 無しの payload を
+  // 再利用しないよう schema version を bump する。
+  ["orbit", "member-detail-page-data", "v2"],
   [
     ORBIT_CACHE_TAGS.groups,
     ORBIT_CACHE_TAGS.members,
@@ -193,7 +196,9 @@ const loadSongsPageData = createSharedReadLoader(
 );
 
 const loadSongDetailPageData = createSharedReadLoader(
-  ["orbit", "song-detail-page-data"],
+  // v2: #426 で Song DTO へ必須の participants を追加した。FormationDisplay は
+  // participants からセンターを判定するため、旧 payload を再利用すると実行時に落ちる。
+  ["orbit", "song-detail-page-data", "v2"],
   [ORBIT_CACHE_TAGS.songs, ORBIT_CACHE_TAGS.songsDetail],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {

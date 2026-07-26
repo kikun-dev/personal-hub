@@ -25,6 +25,8 @@
 --       楽曲参加メンバーがリリース参加メンバー外でも DB では拒否せず、
 --       不一致は管理UIの警告として扱う（create 経路（023）には元から
 --       同制約が無く、両経路の挙動が非対称だった点もここで揃う）。
+--   (6) センターの旧正典（orbit_track_formation_members.is_center 列と
+--       set_track_centers 関数（039））を削除し、二重保持を残さない。
 --
 -- RPC シグネチャ:
 --   overload を残さないため、038 の前例に従って旧シグネチャを DROP してから
@@ -32,25 +34,42 @@
 --   参加メンバーとセンターは「参加メンバー → センター → フォーメーション」の
 --   段階順に合わせ、p_credits と p_formation_rows の間へ挿入する。
 --
--- orbit_track_formation_members.is_center / set_track_centers について:
---   本 migration では残したまま、新コードから参照しない状態にする。
---   物理削除は 064 で行う。migration 適用とアプリデプロイの間に旧コードが
---   壊れる窓を作らないため、`063 → アプリデプロイ → 064` の順で本番反映する。
---   本 migration 適用後、フォーメーション保存時に is_center は既定値 false の
---   ままとなり、センターの正典は orbit_track_members.is_center になる。
+-- デプロイ時の非互換期間（既知・許容する）:
+--   本 migration は旧アプリと互換性が無い。`supabase db push` は保留中の
+--   migration を全件適用し、特定 version で止める手段が無いため、
+--   「migration を先に適用し、アプリのデプロイ完了までの数分間は旧アプリが
+--   動いている」状態が必ず生じる。その間、旧アプリでは
+--   - 楽曲の作成・更新: 旧シグネチャの RPC を解決できず失敗する
+--   - 楽曲詳細 / メンバー詳細 / リリース詳細の閲覧: is_center 列が無く失敗する
+--   データ破壊は起きず、アプリのデプロイ完了で解消する。
+--   038 / 043 / 056 も同じ割り切りで v2 RPC のシグネチャを変更している。
+--   断絶をゼロにするには expand/contract を2つのPRへ分ける必要があるが、
+--   オーナー1人が push とデプロイを続けて実行する運用のため、本Issueでは
+--   この窓を許容する（#426 の実装Decision）。
 --
 -- RLS/Policy:
 --   グローバルテーブルの標準パターン（045/046、061 と同じ）。
 --   SELECT = has_orbit_read_role() / INSERT・UPDATE・DELETE = is_orbit_admin()。
 --
 -- ロールバック方針:
---   1. 本ファイルの RPC 3本を、それぞれ元の定義で再適用する
+--   1. ALTER TABLE public.orbit_track_formation_members
+--        ADD COLUMN is_center BOOLEAN NOT NULL DEFAULT false;
+--   2. orbit_track_members.is_center から is_center を復元する:
+--        UPDATE public.orbit_track_formation_members AS fm
+--        SET is_center = true
+--        FROM public.orbit_track_formation_rows AS fr
+--        JOIN public.orbit_track_formations AS f ON f.id = fr.formation_id
+--        JOIN public.orbit_track_members AS tm
+--          ON tm.track_id = f.track_id AND tm.is_center
+--        WHERE fm.formation_row_id = fr.id
+--          AND fr.row_number = 1
+--          AND fm.member_id = tm.member_id;
+--   3. 039_add_formation_center.sql の set_track_centers 定義を再適用する。
+--   4. 本ファイルの RPC 3本を、それぞれ元の定義で再適用する
 --      （update_track_with_relations = 038、update_track_with_relations_v2 = 056、
 --       create_track_with_relations_v2 = 043。いずれも新シグネチャを
 --       DROP してから旧シグネチャで CREATE する）。
---   2. DROP TABLE public.orbit_track_members;
---      （backfill 元の orbit_track_formation_members.is_center は 064 適用前なら
---       残っているため、センター情報は失われない）
+--   5. DROP TABLE public.orbit_track_members;
 -- ============================================================
 
 -- ============================================================
@@ -745,3 +764,15 @@ BEGIN
   RETURN v_track_id;
 END;
 $$;
+
+-- ============================================================
+-- (4) センターの旧正典を撤去する
+-- ------------------------------------------------------------
+-- backfill（2）と新RPC（3）でセンターの正典が orbit_track_members.is_center へ
+-- 移ったため、旧正典を残すと二重保持になる。新RPCはフォーメーション行へ
+-- is_center を書かないので、列を残しても以後は更新されない。
+-- ============================================================
+DROP FUNCTION IF EXISTS public.set_track_centers(UUID, JSONB);
+
+ALTER TABLE orbit_track_formation_members
+  DROP COLUMN is_center;
