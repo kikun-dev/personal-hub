@@ -213,10 +213,37 @@ export function validateSong(
     }
   }
 
+  // フォーメーションがある場合、全列のメンバー集合と参加メンバー集合を完全一致させる
+  // （ADR 0007 2026-07-24改訂）。片方向ずつ、必要な操作が分かる文言でエラーにする。
+  // 「参加メンバーが初出リリースの参加者に限る」ことは、クライアント由来の入力だけでは
+  // 判定できないためここでは検証しない（保存境界でDBから解決して検証する。#427）。
+  const participantIds = new Set(input.participantMemberIds);
+  if (input.formationRows.length > 0) {
+    const assignedIds = new Set(input.formationRows.flatMap((row) => row.memberIds));
+
+    const unassignedCount = input.participantMemberIds.filter(
+      (memberId) => !assignedIds.has(memberId)
+    ).length;
+    if (unassignedCount > 0) {
+      errors.push({
+        field: "formationRows",
+        message: `参加メンバー${unassignedCount}人がフォーメーションに配置されていません`,
+      });
+    }
+
+    const hasNonParticipantAssigned = Array.from(assignedIds).some(
+      (memberId) => !participantIds.has(memberId)
+    );
+    if (hasNonParticipantAssigned) {
+      errors.push({
+        field: "formationRows",
+        message: "フォーメーションには参加メンバーだけを配置してください",
+      });
+    }
+  }
+
   // センターは参加メンバー内の最大2人（Wセンター可）。フォーメーションがある場合のみ
   // 1列目に含まれることを必須とする（ADR 0007 2026-07-24改訂）。
-  // 参加メンバーは #427 までフォームから独立入力できないため、ここでは
-  // フォーメーション全列のメンバーを参加メンバーとみなす（Repository の導出と同じ）。
   if (input.centerMemberIds.length > 0) {
     if (input.centerMemberIds.length > 2) {
       errors.push({
@@ -225,9 +252,6 @@ export function validateSong(
       });
     }
 
-    const participantIds = new Set(
-      input.formationRows.flatMap((row) => row.memberIds)
-    );
     const hasNonParticipantCenter = input.centerMemberIds.some(
       (memberId) => !participantIds.has(memberId)
     );

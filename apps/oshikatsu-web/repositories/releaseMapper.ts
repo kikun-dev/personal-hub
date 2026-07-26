@@ -68,6 +68,7 @@ export const RELEASE_OPTION_SELECT = `
   id,
   title,
   release_type,
+  release_date,
   group_id,
   orbit_release_members(member_id, orbit_members(name_ja, name_kana, orbit_member_groups(group_id, generation)))
 ` as const;
@@ -234,6 +235,7 @@ export function mapToReleaseOption(row: ReleaseOptionRow): ReleaseOption {
     id: row.id,
     title: row.title,
     releaseType: row.release_type as ReleaseType,
+    releaseDate: row.release_date,
     participantMemberIds: participants.map((member) => member.memberId),
     participantMemberNames: participants.map((member) => member.memberNameJa),
     participantMemberKanas: participants.map((member) => member.memberNameKana),

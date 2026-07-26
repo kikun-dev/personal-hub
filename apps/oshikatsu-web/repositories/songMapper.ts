@@ -18,6 +18,9 @@ import type {
 import { SONG_VIDEO_TYPES, isSongLabel, isSongVideoType } from "@/types/song";
 import type { ReleaseType } from "@/types/release";
 import { splitCreditNames } from "@/lib/songCredits";
+// 初出リリースの判定はドメイン規則のため lib の純関数を使い、Mapper には置かない
+// （UseCase 側も同じ関数を参照する。ADR 0007 追記 2026-07-26 / #427）。
+import { pickFirstDatedRelease } from "@/lib/firstRelease";
 
 // SelectRows は select 定数の typeof を必要とするため、リポジトリ側の SELECT 定数を
 // ここへ移動し、行型と一緒に export する（リポジトリは本ファイルから import する片方向依存）。
@@ -167,19 +170,6 @@ type RepresentativeReleaseCandidate = {
   releaseType: ReleaseType | null;
   numbering: number | null;
 };
-
-function pickFirstDatedRelease<T extends RepresentativeReleaseCandidate>(
-  links: T[]
-): T | null {
-  const datedLinks = links
-    .filter((link) => Boolean(link.releaseDate))
-    .sort((a, b) => {
-      const dateCompare = (a.releaseDate ?? "").localeCompare(b.releaseDate ?? "");
-      return dateCompare !== 0 ? dateCompare : a.releaseId.localeCompare(b.releaseId);
-    });
-
-  return datedLinks[0] ?? null;
-}
 
 function pickRepresentativeReleaseLabelSource<T extends RepresentativeReleaseCandidate>(
   links: T[]
