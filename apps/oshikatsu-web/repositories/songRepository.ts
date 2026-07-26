@@ -1,4 +1,4 @@
-import type { SelectRows, TypedSupabaseClient } from "@personal-hub/supabase";
+import type { SelectRows } from "@personal-hub/supabase";
 import type {
   Song,
   SongOption,
@@ -28,8 +28,6 @@ import { validateCalendarDateRanges } from "./calendarDateRanges";
 
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
-const FORMATION_ROW_ID_SELECT = "formation_row_id" as const;
-const FORMATION_ID_SELECT = "formation_id" as const;
 const TRACK_ID_SELECT = "track_id" as const;
 
 const MV_CALENDAR_SELECT = `
@@ -101,6 +99,17 @@ function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
+// 楽曲参加メンバー（orbit_track_members）へ渡すID集合を組み立てる。
+// 楽曲フォームはまだ参加メンバーを独立して入力できない（#427 で対応）ため、
+// 現時点ではフォーメーション全列のメンバーを参加メンバーとみなす。
+// RPC 側はフォーメーションがある場合に「参加メンバー集合 = 全列のメンバー集合」を
+// 要求するため、この導出はその不変条件をそのまま満たす。
+function resolveTrackMemberIds(
+  formationRows: Array<{ memberIds: string[] }>
+): string[] {
+  return uniqueStrings(formationRows.flatMap((row) => row.memberIds));
+}
+
 // 曲順が空欄(null)の紐づけを、そのリリース内の末尾（max + 1）に解決する
 // select のみを行う読み取り専用処理のため OrbitReadClient で受け取る
 async function resolveReleaseLinkTrackNumbers(
@@ -150,35 +159,6 @@ export function createSongRepository(
     }
 
     return data.map(mapSong);
-  }
-
-  // フォーメーション列(formation_row)の集合から、所属する楽曲(track)IDを解決する
-  async function resolveTrackIdsFromRowIds(rowIds: string[]): Promise<string[]> {
-    if (rowIds.length === 0) return [];
-
-    const { data: formationRows, error: formationRowsError } = await supabase
-      .from("orbit_track_formation_rows")
-      .select(FORMATION_ID_SELECT)
-      .in("id", rowIds);
-
-    if (formationRowsError) {
-      throw new RepositoryError("参加楽曲の取得に失敗しました", formationRowsError);
-    }
-
-    const formationIds = uniqueStrings(formationRows.map((row) => row.formation_id));
-
-    if (formationIds.length === 0) return [];
-
-    const { data: formations, error: formationsError } = await supabase
-      .from("orbit_track_formations")
-      .select(TRACK_ID_SELECT)
-      .in("id", formationIds);
-
-    if (formationsError) {
-      throw new RepositoryError("参加楽曲の取得に失敗しました", formationsError);
-    }
-
-    return uniqueStrings(formations.map((row) => row.track_id));
   }
 
   return {
@@ -318,6 +298,8 @@ export function createSongRepository(
         p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
+        p_track_member_ids: resolveTrackMemberIds(formationRows),
+        p_center_member_ids: input.centerMemberIds,
         p_formation_rows: formationRows,
         p_mv: mv,
         p_videos: videos,
@@ -330,17 +312,6 @@ export function createSongRepository(
 
       if (typeof trackId !== "string") {
         throw new RepositoryError("作成した楽曲IDの取得に失敗しました", null);
-      }
-
-      // set_track_centers は p_track_id（非null文字列）/ p_center_member_ids（Json）とも
-      // 実ペイロードと不一致が無いため、typed client で呼び出す。
-      const centerClient: TypedSupabaseClient = asWritableClient(supabase);
-      const { error: centerError } = await centerClient.rpc("set_track_centers", {
-        p_track_id: trackId,
-        p_center_member_ids: input.centerMemberIds,
-      });
-      if (centerError) {
-        throw new RepositoryError("センターの設定に失敗しました", centerError);
       }
 
       const created = await this.findById(trackId);
@@ -423,6 +394,8 @@ export function createSongRepository(
         p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
+        p_track_member_ids: resolveTrackMemberIds(formationRows),
+        p_center_member_ids: input.centerMemberIds,
         p_formation_rows: formationRows,
         p_mv: mv,
         p_videos: videos,
@@ -431,15 +404,6 @@ export function createSongRepository(
 
       if (rpcError) {
         throw new RepositoryError("楽曲の更新に失敗しました", rpcError);
-      }
-
-      const centerClient: TypedSupabaseClient = asWritableClient(supabase);
-      const { error: centerError } = await centerClient.rpc("set_track_centers", {
-        p_track_id: id,
-        p_center_member_ids: input.centerMemberIds,
-      });
-      if (centerError) {
-        throw new RepositoryError("センターの更新に失敗しました", centerError);
       }
 
       const updated = await this.findById(id);
@@ -461,29 +425,25 @@ export function createSongRepository(
       }
     },
 
+    // 参加楽曲・センター楽曲は orbit_track_members が正典（ADR 0007 2026-07-24改訂）。
+    // フォーメーション経由の2段引きが不要になり、フォーメーション未登録の楽曲も拾える。
     async findByMemberId(memberId) {
       const { data: memberRows, error: memberRowsError } = await supabase
-        .from("orbit_track_formation_members")
-        .select(FORMATION_ROW_ID_SELECT)
+        .from("orbit_track_members")
+        .select(TRACK_ID_SELECT)
         .eq("member_id", memberId);
 
       if (memberRowsError) {
         throw new RepositoryError("参加楽曲の取得に失敗しました", memberRowsError);
       }
 
-      const formationRowIds = uniqueStrings(
-        memberRows.map((row) => row.formation_row_id)
-      );
-
-      const trackIds = await resolveTrackIdsFromRowIds(formationRowIds);
-
-      return findManyByIds(trackIds);
+      return findManyByIds(uniqueStrings(memberRows.map((row) => row.track_id)));
     },
 
     async findCenterTrackIdsByMemberId(memberId) {
       const { data: centerRows, error: centerRowsError } = await supabase
-        .from("orbit_track_formation_members")
-        .select(FORMATION_ROW_ID_SELECT)
+        .from("orbit_track_members")
+        .select(TRACK_ID_SELECT)
         .eq("member_id", memberId)
         .eq("is_center", true);
 
@@ -491,11 +451,7 @@ export function createSongRepository(
         throw new RepositoryError("センター楽曲の取得に失敗しました", centerRowsError);
       }
 
-      const centerRowIds = uniqueStrings(
-        centerRows.map((row) => row.formation_row_id)
-      );
-
-      return resolveTrackIdsFromRowIds(centerRowIds);
+      return uniqueStrings(centerRows.map((row) => row.track_id));
     },
 
     async findCalendarVideoItems() {

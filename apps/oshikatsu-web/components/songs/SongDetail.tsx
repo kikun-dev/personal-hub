@@ -113,7 +113,7 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
         </Card>
       )}
 
-      <FormationDisplay rows={song.formationRows} />
+      <FormationDisplay rows={song.formationRows} participants={song.participants} />
 
       {song.mv && (
         <Card>
