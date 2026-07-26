@@ -1387,7 +1387,6 @@ export type Database = {
           created_at: string
           formation_row_id: string
           id: string
-          is_center: boolean
           member_id: string
           slot_order: number
         }
@@ -1395,7 +1394,6 @@ export type Database = {
           created_at?: string
           formation_row_id: string
           id?: string
-          is_center?: boolean
           member_id: string
           slot_order: number
         }
@@ -1403,7 +1401,6 @@ export type Database = {
           created_at?: string
           formation_row_id?: string
           id?: string
-          is_center?: boolean
           member_id?: string
           slot_order?: number
         }
@@ -1483,6 +1480,45 @@ export type Database = {
             foreignKeyName: "orbit_track_formations_track_id_fkey"
             columns: ["track_id"]
             isOneToOne: true
+            referencedRelation: "orbit_tracks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orbit_track_members: {
+        Row: {
+          created_at: string
+          id: string
+          is_center: boolean
+          member_id: string
+          track_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_center?: boolean
+          member_id: string
+          track_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_center?: boolean
+          member_id?: string
+          track_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orbit_track_members_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "orbit_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orbit_track_members_track_id_fkey"
+            columns: ["track_id"]
+            isOneToOne: false
             referencedRelation: "orbit_tracks"
             referencedColumns: ["id"]
           },
@@ -1805,6 +1841,7 @@ export type Database = {
       }
       create_track_with_relations_v2: {
         Args: {
+          p_center_member_ids: Json
           p_costumes: Json
           p_credits: Json
           p_formation_rows: Json
@@ -1814,6 +1851,7 @@ export type Database = {
           p_mv: Json
           p_release_links: Json
           p_title: string
+          p_track_member_ids: Json
           p_videos: Json
         }
         Returns: string
@@ -1921,10 +1959,6 @@ export type Database = {
         Args: { p_positions: Json; p_release_id: string }
         Returns: undefined
       }
-      set_track_centers: {
-        Args: { p_center_member_ids: Json; p_track_id: string }
-        Returns: undefined
-      }
       update_member_with_relations: {
         Args: {
           p_blog_hashtag: string
@@ -1969,6 +2003,7 @@ export type Database = {
       }
       update_track_with_relations: {
         Args: {
+          p_center_member_ids: Json
           p_costumes: Json
           p_credits: Json
           p_formation_rows: Json
@@ -1976,11 +2011,13 @@ export type Database = {
           p_release_links: Json
           p_title: string
           p_track_id: string
+          p_track_member_ids: Json
         }
         Returns: undefined
       }
       update_track_with_relations_v2: {
         Args: {
+          p_center_member_ids: Json
           p_costumes: Json
           p_credits: Json
           p_formation_rows: Json
@@ -1991,6 +2028,7 @@ export type Database = {
           p_release_links: Json
           p_title: string
           p_track_id: string
+          p_track_member_ids: Json
           p_videos: Json
         }
         Returns: undefined

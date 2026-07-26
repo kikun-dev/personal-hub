@@ -74,9 +74,11 @@ export default async function EditSongPage({
       memberCount: String(row.memberCount),
       memberIds: row.members.map((member) => member.memberId),
     })),
-    centerMemberIds: song.formationRows.flatMap((row) =>
-      row.members.filter((member) => member.isCenter).map((member) => member.memberId)
-    ),
+    // センターの正典は楽曲参加メンバー（ADR 0007 2026-07-24改訂）。
+    // フォーメーションが未登録でも復元できる。
+    centerMemberIds: song.participants
+      .filter((participant) => participant.isCenter)
+      .map((participant) => participant.memberId),
     mv: {
       url: song.mv?.url ?? "",
       directorName: song.mv?.directorName ?? "",

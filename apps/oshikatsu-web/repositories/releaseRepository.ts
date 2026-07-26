@@ -27,7 +27,10 @@ import { buildCalendarDateRangeFilter } from "./calendarDateRanges";
 const RELEASE_CALENDAR_SELECT = "id, title, release_date" as const;
 
 // findSelectionPositionsByMemberId 内のアドホックなクエリ用 select 定数
-const FORMATION_MEMBER_SELECT = "formation_row_id, is_center" as const;
+const FORMATION_MEMBER_SELECT = "formation_row_id" as const;
+// センターの正典は楽曲参加メンバー（ADR 0007 2026-07-24改訂）。列はフォーメーション、
+// センターは orbit_track_members と、導出元を分けて引く。
+const TRACK_MEMBER_CENTER_SELECT = "track_id" as const;
 const FORMATION_ROW_SELECT = "id, row_number, formation_id" as const;
 const FORMATION_TRACK_SELECT = "id, track_id" as const;
 const TRACK_LABEL_SELECT = "id, label" as const;
@@ -300,6 +303,16 @@ export function createReleaseRepository(
         }
       }
 
+      // センターはフォーメーションから導出せず、楽曲参加メンバーを正典とする
+      // （ADR 0007 2026-07-24改訂）。フォーメーション未登録でもセンターは判明しうる。
+      const { data: centerRows, error: centerErr } = await supabase
+        .from("orbit_track_members")
+        .select(TRACK_MEMBER_CENTER_SELECT)
+        .eq("member_id", memberId)
+        .eq("is_center", true);
+      if (centerErr) throw fail(centerErr);
+      const centerTrackIds = new Set(centerRows.map((r) => r.track_id));
+
       // track_id -> { 列, センター }（メンバーは1トラックにつき1行）
       const formationByTrack = new Map<string, FormationPlacement>();
       for (const mr of memberRows) {
@@ -309,7 +322,7 @@ export function createReleaseRepository(
         if (!trackId) continue;
         formationByTrack.set(trackId, {
           rowNumber: info.rowNumber,
-          isCenter: mr.is_center,
+          isCenter: centerTrackIds.has(trackId),
         });
       }
 

@@ -213,7 +213,10 @@ export function validateSong(
     }
   }
 
-  // センターは1列目(最前列)のメンバーから最大2人（Wセンター可）
+  // センターは参加メンバー内の最大2人（Wセンター可）。フォーメーションがある場合のみ
+  // 1列目に含まれることを必須とする（ADR 0007 2026-07-24改訂）。
+  // 参加メンバーは #427 までフォームから独立入力できないため、ここでは
+  // フォーメーション全列のメンバーを参加メンバーとみなす（Repository の導出と同じ）。
   if (input.centerMemberIds.length > 0) {
     if (input.centerMemberIds.length > 2) {
       errors.push({
@@ -222,15 +225,28 @@ export function validateSong(
       });
     }
 
-    const frontRowMemberIds = new Set(input.formationRows[0]?.memberIds ?? []);
-    const hasInvalidCenter = input.centerMemberIds.some(
-      (memberId) => !frontRowMemberIds.has(memberId)
+    const participantIds = new Set(
+      input.formationRows.flatMap((row) => row.memberIds)
     );
-    if (hasInvalidCenter) {
+    const hasNonParticipantCenter = input.centerMemberIds.some(
+      (memberId) => !participantIds.has(memberId)
+    );
+    if (hasNonParticipantCenter) {
       errors.push({
         field: "centerMemberIds",
-        message: "センターは1列目のメンバーから選んでください",
+        message: "センターは参加メンバーから選んでください",
       });
+    } else if (input.formationRows.length > 0) {
+      const frontRowMemberIds = new Set(input.formationRows[0].memberIds);
+      const hasCenterOutsideFrontRow = input.centerMemberIds.some(
+        (memberId) => !frontRowMemberIds.has(memberId)
+      );
+      if (hasCenterOutsideFrontRow) {
+        errors.push({
+          field: "centerMemberIds",
+          message: "センターは1列目のメンバーから選んでください",
+        });
+      }
     }
   }
 

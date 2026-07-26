@@ -143,9 +143,10 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - 制作陣更新は `people` だけでなく、関連する楽曲/リリース詳細キャッシュも失効する
 
 ### 楽曲/リリース管理の運用メモ
-- 現行実装では、選抜/アンダー/期別、列、センターを楽曲ラベルとフォーメーションから導出する
-- ADR 0007の2026-07-24改訂では、楽曲参加メンバーとセンターの正典を `orbit_track_members` へ移し、フォーメーションを任意の配置情報とする方針を採用した。実装は #426 → #427 → #423 / #424 の順で進める
-- 改訂後も選抜/アンダー/期別と列は楽曲ラベル・フォーメーションから導出する。フォーメーションが存在する場合は、楽曲参加メンバー集合との完全一致を必須とする
+- 選抜/アンダー/期別と列は楽曲ラベル・フォーメーションから導出する。センターだけは導出せず、`orbit_track_members.is_center` を正典とする（ADR 0007の2026-07-24改訂 / Issue #426）
+- フォーメーションは任意。存在する場合は、全列のメンバー集合と楽曲参加メンバー集合の完全一致をDB側で強制する。センターは参加メンバー内の最大2人で、フォーメーションがある場合のみ1列目に含まれる必要がある
+- 楽曲の作成/更新は `create_track_with_relations_v2` / `update_track_with_relations_v2` が参加メンバー・センター・フォーメーションを同一トランザクションで保存する
+- 楽曲管理フォームから参加メンバーを独立入力できるようにするのは #427。それまでは Repository がフォーメーション全列のメンバーを参加メンバーとして導出する
 - `orbit_release_members` はリリース全体の参加者・休業情報として独立管理し、楽曲参加メンバーの和集合から自動導出しない
 - リリース×メンバーで手動保持する選抜ポジション情報は、福神/休業中 overlay に限定する
 - 櫻坂46 1st〜5th Single の櫻エイト期は、`label = title` の代表トラックを基準に特別ルールで導出する
@@ -160,7 +161,7 @@ household-web と同パターン。Repository に `userId` パラメータなし
 - `orbit_people` — 制作陣マスタ
 - `orbit_releases` / `orbit_release_tracks` / `orbit_release_members` / `orbit_release_bonus_videos` — リリース本体、収録曲、参加メンバー、特典映像
 - `orbit_release_member_positions` — リリース×メンバーの選抜ポジション overlay（福神/休業中）
-- `orbit_tracks` / `orbit_track_credits` / `orbit_track_formations` / `orbit_track_formation_rows` / `orbit_track_formation_members` / `orbit_track_mvs` / `orbit_track_videos` / `orbit_track_costumes` — 楽曲、クレジット、フォーメーション、MV、関連動画、衣装
+- `orbit_tracks` / `orbit_track_credits` / `orbit_track_members` / `orbit_track_formations` / `orbit_track_formation_rows` / `orbit_track_formation_members` / `orbit_track_mvs` / `orbit_track_videos` / `orbit_track_costumes` — 楽曲、クレジット、参加メンバー（センターの正典）、フォーメーション、MV、関連動画、衣装
 - `orbit_venues` — 会場マスタ
 - `orbit_lives` / `orbit_live_performances` / `orbit_live_performer_groups` / `orbit_live_performer_members` / `orbit_live_performance_absences` — ライブ、公演、出演/休演情報
 - `orbit_setlist_items` / `orbit_setlist_item_members` — セットリスト、披露メンバー

@@ -7,6 +7,7 @@ import type {
   SongFormationMember,
   SongFormationRow,
   SongMv,
+  SongParticipant,
   SongVideo,
   SongVideoType,
   SongReleaseLink,
@@ -69,6 +70,11 @@ export const SONG_DETAIL_SELECT = `
     sort_order,
     orbit_people(display_name)
   ),
+  orbit_track_members(
+    member_id,
+    is_center,
+    orbit_members(name_ja)
+  ),
   orbit_track_formations(
     id,
     column_count,
@@ -79,7 +85,6 @@ export const SONG_DETAIL_SELECT = `
       orbit_track_formation_members(
         member_id,
         slot_order,
-        is_center,
         orbit_members(name_ja)
       )
     )
@@ -129,6 +134,7 @@ type SongDetailRow = SelectRows<"orbit_tracks", typeof SONG_DETAIL_SELECT>[numbe
 export type SongRow = Omit<
   SongDetailRow,
   | "orbit_track_credits"
+  | "orbit_track_members"
   | "orbit_track_formations"
   | "orbit_track_mvs"
   | "orbit_track_videos"
@@ -137,6 +143,7 @@ export type SongRow = Omit<
   | "note"
 > & {
   orbit_track_credits?: SongDetailRow["orbit_track_credits"];
+  orbit_track_members?: SongDetailRow["orbit_track_members"];
   orbit_track_formations?: SongDetailRow["orbit_track_formations"];
   orbit_track_mvs?: SongDetailRow["orbit_track_mvs"];
   orbit_track_videos?: SongDetailRow["orbit_track_videos"];
@@ -234,6 +241,19 @@ function mapCredits(rows: SongRow["orbit_track_credits"]): SongCredit[] {
     });
 }
 
+// 参加メンバーは集合であり並び順を持たないため、表示の安定のため名前順に揃える。
+function mapParticipants(rows: SongRow["orbit_track_members"]): SongParticipant[] {
+  if (!rows) return [];
+
+  return rows
+    .map((row) => ({
+      memberId: row.member_id,
+      memberNameJa: row.orbit_members.name_ja,
+      isCenter: row.is_center,
+    }))
+    .sort((a, b) => a.memberNameJa.localeCompare(b.memberNameJa, "ja"));
+}
+
 function mapFormation(formation: SongRow["orbit_track_formations"]): SongFormationRow[] {
   if (!formation) return [];
 
@@ -244,7 +264,6 @@ function mapFormation(formation: SongRow["orbit_track_formations"]): SongFormati
           memberId: member.member_id,
           memberNameJa: member.orbit_members.name_ja,
           slotOrder: member.slot_order,
-          isCenter: member.is_center,
         }))
         .sort((a, b) => a.slotOrder - b.slotOrder);
 
@@ -339,6 +358,7 @@ export function mapSong(row: SongRow): Song {
     representativeNumbering: labelRepresentative?.numbering ?? null,
     releases,
     credits: mapCredits(row.orbit_track_credits),
+    participants: mapParticipants(row.orbit_track_members),
     formationRows: mapFormation(row.orbit_track_formations),
     mv: mapMv(row.orbit_track_mvs),
     videos: mapVideos(row.orbit_track_videos),

@@ -68,11 +68,19 @@ export type SongReleaseLink = {
   trackNumber: number;
 };
 
+// 楽曲参加メンバー（ADR 0007 2026-07-24改訂の正典 = orbit_track_members）。
+// フォーメーションが未登録でも保持でき、センターもここが正典になる。
+// 列・配置順は持たない（それらは SongFormationRow の責務）。
+export type SongParticipant = {
+  memberId: string;
+  memberNameJa: string;
+  isCenter: boolean;
+};
+
 export type SongFormationMember = {
   memberId: string;
   memberNameJa: string;
   slotOrder: number;
-  isCenter: boolean;
 };
 
 export type SongFormationRow = {
@@ -173,6 +181,7 @@ export type Song = {
   representativeNumbering: number | null;
   releases: SongReleaseLink[];
   credits: SongCredit[];
+  participants: SongParticipant[];
   formationRows: SongFormationRow[];
   mv: SongMv | null;
   videos: SongVideo[];
@@ -262,7 +271,8 @@ export type CreateSongInput = {
   arrangementPeople: string;
   choreographyPeople: string;
   formationRows: CreateSongFormationRowInput[];
-  // フォーメーション1列目のセンター（Wセンター可・最大2人）
+  // センター（Wセンター可・最大2人）。参加メンバー内に限定する。
+  // フォーメーションがある場合は1列目に含まれる必要がある。
   centerMemberIds: string[];
   mv: CreateSongMvInput;
   videos: Record<SongVideoType, CreateSongVideoInput>;
