@@ -53,7 +53,13 @@
 
 ## テスト
 
-- 対象は `usecases/` / `lib/` の純関数のみ（UIコンポーネント・repository は対象外）
+- 対象は純関数のみ（React コンポーネント・repository は対象外）
+  - 主たる置き場所は `usecases/` / `lib/`
+  - `components/` / `playwright/` 配下でも、**JSX を持たず React / Playwright ランタイムに
+    依存しないモジュール**（例: `*FormValues.ts` のフォーム値生成・変換）は対象に含む。
+    実装と密結合な値変換をテストのためだけに `lib/` へ移さない（#443）
+  - render や DOM 操作を伴う component test は基盤未導入のため対象外。
+    導入可否と適用範囲は #442 で決める
   - E2E は Playwright で別管理する（本節の対象外）
 - 置き場所は実装ファイルと同階層の colocated `*.test.ts`
 - ランナーは Vitest。実行は `pnpm --filter <app> test:unit`
