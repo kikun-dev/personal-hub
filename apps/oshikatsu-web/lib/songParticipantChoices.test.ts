@@ -40,33 +40,27 @@ function build(overrides: Partial<Parameters<typeof buildParticipantChoices>[0]>
     options: [IN_GROUP_1, IN_GROUP_2, OTHER_GROUP],
     selectedMemberIds: [],
     nameById: NAMES,
-    showAllGroups: false,
     ...overrides,
   });
 }
 
 describe("buildParticipantChoices の候補表示", () => {
-  it("既定では同グループのメンバーだけを出す", () => {
+  // 候補は初出リリースの参加メンバーだけで小さいため、表示範囲の切替は持たない
+  it("候補を常に全件出す（楽曲グループ外も含む）", () => {
     const choices = build();
 
-    expect(choices.map((choice) => choice.memberId)).toEqual(["m1", "m2"]);
-  });
-
-  it("「他グループも表示」がオンなら候補を全件出す", () => {
-    const choices = build({ showAllGroups: true });
-
     expect(choices.map((choice) => choice.memberId)).toEqual(["m1", "m2", "m3"]);
   });
 
-  it("他グループでも選択済みなら、切替がオフでも表示する", () => {
-    const choices = build({ selectedMemberIds: ["m3"] });
+  it("楽曲グループ外の行を isInSongGroup で区別できる", () => {
+    const choices = build();
 
-    expect(choices.map((choice) => choice.memberId)).toEqual(["m1", "m2", "m3"]);
-    expect(choices.find((choice) => choice.memberId === "m3")?.isSelected).toBe(true);
+    expect(choices.find((choice) => choice.memberId === "m3")?.isInSongGroup).toBe(false);
+    expect(choices.find((choice) => choice.memberId === "m1")?.isInSongGroup).toBe(true);
   });
 
   it("候補の並び（期昇順→かな順の入力順）を保つ", () => {
-    const choices = build({ showAllGroups: true });
+    const choices = build();
 
     expect(choices.map((choice) => choice.generation)).toEqual(["1", "2", null]);
   });
@@ -85,21 +79,13 @@ describe("buildParticipantChoices の候補外既選択", () => {
   it("候補外の既選択を末尾へ isOutOfScope 付きで出す", () => {
     const choices = build({ selectedMemberIds: ["m1", "gone1"] });
 
-    expect(choices.map((choice) => choice.memberId)).toEqual(["m1", "m2", "gone1"]);
+    expect(choices.map((choice) => choice.memberId)).toEqual(["m1", "m2", "m3", "gone1"]);
     const outOfScope = choices.find((choice) => choice.memberId === "gone1");
     expect(outOfScope).toMatchObject({
       isSelected: true,
       isOutOfScope: true,
       memberName: "そつぎょう",
     });
-  });
-
-  it("「他グループも表示」がオフでも候補外の既選択を隠さない", () => {
-    const offState = build({ selectedMemberIds: ["gone1"], showAllGroups: false });
-    const onState = build({ selectedMemberIds: ["gone1"], showAllGroups: true });
-
-    expect(offState.some((choice) => choice.memberId === "gone1")).toBe(true);
-    expect(onState.some((choice) => choice.memberId === "gone1")).toBe(true);
   });
 
   it("候補外が複数あるときは名前順に並べる", () => {
@@ -126,7 +112,7 @@ describe("buildParticipantChoices の候補外既選択", () => {
 
 describe("selectedGenerationsForSummary", () => {
   it("選択済みだけを母数にする", () => {
-    const choices = build({ selectedMemberIds: ["m1"], showAllGroups: true });
+    const choices = build({ selectedMemberIds: ["m1"] });
 
     expect(selectedGenerationsForSummary(choices)).toEqual(["1"]);
   });

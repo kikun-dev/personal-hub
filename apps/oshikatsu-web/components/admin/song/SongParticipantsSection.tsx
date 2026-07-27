@@ -1,7 +1,5 @@
 "use client";
 
-import type { Dispatch, SetStateAction } from "react";
-import { Button } from "@/components/ui/Button";
 import type { ParticipantChoice } from "@/lib/songParticipantChoices";
 
 type SongParticipantsSectionProps = {
@@ -12,10 +10,7 @@ type SongParticipantsSectionProps = {
   selectedParticipantSummary: string;
   // 初出リリースが確定しているか。未確定と「参加メンバー未登録」を空状態で区別する。
   isFirstReleaseResolved: boolean;
-  hasCandidate: boolean;
   participantNameById: Map<string, string>;
-  showAllParticipantMembers: boolean;
-  setShowAllParticipantMembers: Dispatch<SetStateAction<boolean>>;
   toggleParticipant: (memberId: string) => void;
   toggleCenter: (memberId: string) => void;
 };
@@ -33,10 +28,7 @@ export function SongParticipantsSection({
   choices,
   selectedParticipantSummary,
   isFirstReleaseResolved,
-  hasCandidate,
   participantNameById,
-  showAllParticipantMembers,
-  setShowAllParticipantMembers,
   toggleParticipant,
   toggleCenter,
 }: SongParticipantsSectionProps) {
@@ -48,20 +40,9 @@ export function SongParticipantsSection({
         <label className="text-sm font-medium text-foreground-secondary">
           参加メンバー
         </label>
-        <div className="flex items-baseline gap-2">
-          <span className="text-xs text-foreground-secondary">
-            {selectedParticipantSummary}
-          </span>
-          {hasCandidate && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowAllParticipantMembers((prev) => !prev)}
-            >
-              {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
-            </Button>
-          )}
-        </div>
+        <span className="text-xs text-foreground-secondary">
+          {selectedParticipantSummary}
+        </span>
       </div>
 
       {errors.participantMemberIds && (

@@ -7,7 +7,10 @@
  *
  * 2 はリリース紐づけを変更した結果として生じる。暗黙削除しない方針のため
  * state には残るが、一覧へ出さないと解除できず保存もできない詰み状態になる。
- * 「他グループも表示」の切替状態に関わらず、選択済みは常に確認・解除できる。
+ *
+ * 候補は初出リリースの参加メンバーだけで元々小さいため、表示範囲を切り替える
+ * トグルは持たず常に全件出す（#427 Decision 追補、2026-07-27）。
+ * 楽曲グループ外のメンバーは行内の表示で区別する。
  *
  * UI から独立した純関数にして、表示規則をテストで固定する。
  */
@@ -37,24 +40,17 @@ export type BuildParticipantChoicesInput = {
   selectedMemberIds: string[];
   // 候補外メンバーの表示名解決用。未解決なら memberId をそのまま出す。
   nameById: ReadonlyMap<string, string>;
-  // 「他グループも表示」がオンかどうか。オフでも選択済みは隠さない。
-  showAllGroups: boolean;
 };
 
 export function buildParticipantChoices({
   options,
   selectedMemberIds,
   nameById,
-  showAllGroups,
 }: BuildParticipantChoicesInput): ParticipantChoice[] {
   const selected = new Set(selectedMemberIds);
   const optionIds = new Set(options.map((option) => option.memberId));
 
   const inScope = options
-    .filter(
-      (option) =>
-        showAllGroups || option.isInSongGroup || selected.has(option.memberId)
-    )
     .map((option) => ({
       memberId: option.memberId,
       memberName: option.memberName,

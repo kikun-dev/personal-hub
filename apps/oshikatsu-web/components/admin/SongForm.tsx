@@ -110,7 +110,6 @@ export function SongForm({
   const [isMvFormVisible, setIsMvFormVisible] = useState<boolean>(
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
-  const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
   const [visibleVideos, setVisibleVideos] = useState<Record<SongVideoType, boolean>>(
     () => ({
       dance_practice: Boolean(
@@ -227,14 +226,8 @@ export function SongForm({
         options: participantOptions,
         selectedMemberIds: values.participantMemberIds,
         nameById: participantNameById,
-        showAllGroups: showAllParticipantMembers,
       }),
-    [
-      participantNameById,
-      participantOptions,
-      showAllParticipantMembers,
-      values.participantMemberIds,
-    ]
+    [participantNameById, participantOptions, values.participantMemberIds]
   );
 
   // 人数内訳は候補外の既選択も母数に含め、一覧のチェック数と食い違わせない。
@@ -732,10 +725,7 @@ export function SongForm({
             choices={participantChoices}
             selectedParticipantSummary={selectedParticipantSummary}
             isFirstReleaseResolved={firstRelease !== null}
-            hasCandidate={participantOptions.length > 0}
             participantNameById={participantNameById}
-            showAllParticipantMembers={showAllParticipantMembers}
-            setShowAllParticipantMembers={setShowAllParticipantMembers}
             toggleParticipant={toggleParticipant}
             toggleCenter={toggleCenter}
           />
