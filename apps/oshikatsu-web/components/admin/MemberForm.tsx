@@ -24,7 +24,13 @@ import {
   isAllowedMemberImageMimeType,
   resolveMemberImageSrc,
 } from "@/lib/memberImage";
-import { addKeyedItem, removeKeyedItem, updateKeyedItem, withGeneratedKey } from "@/lib/keyedList";
+import {
+  addKeyedItem,
+  removeKeyedItem,
+  updateKeyedItem,
+  withGeneratedKey,
+  withInitialKey,
+} from "@/lib/keyedList";
 import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 
 type GroupWithKey = CreateMemberGroupInput & { _key: string };
@@ -81,7 +87,12 @@ function getDefaultValues(): FormValues {
     talkAppUrl: "",
     talkAppHashtag: "",
     groups: [
-      withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
+      // 初期行は SSR / hydration で同一のキーにする（#443）
+      withInitialKey(
+        { groupId: "", generation: "", joinedAt: "", graduatedAt: "" },
+        0,
+        "group"
+      ),
     ],
     sns: [],
   };
@@ -90,8 +101,9 @@ function getDefaultValues(): FormValues {
 function toFormValues(input: CreateMemberInput): FormValues {
   return {
     ...input,
-    groups: input.groups.map(withGroupKey),
-    sns: input.sns.map(withSnsKey),
+    // 初期行は SSR / hydration で同一のキーにする（#443）
+    groups: input.groups.map((group, index) => withInitialKey(group, index, "group")),
+    sns: input.sns.map((sns, index) => withInitialKey(sns, index, "sns")),
   };
 }
 

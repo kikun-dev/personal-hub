@@ -1,8 +1,7 @@
-import { withGeneratedKey } from "@/lib/keyedList";
+import { withInitialKey } from "@/lib/keyedList";
 import type { CreateSpotAppearanceInput, CreateSpotInput } from "@/types/spot";
 import type { AppearanceField } from "@/components/admin/spot/spotFormShared";
 import {
-  withGeneratedPhotoKey,
   type FormSpotPhoto,
 } from "@/components/admin/spot/SpotPhotosSection";
 
@@ -42,7 +41,8 @@ export function getDefaultValues(): FormValues {
     googlePlaceId: "",
     googleMapsUrl: "",
     // 出来事1件以上必須（#286）のため、create の初期値に空行を1件入れておく。
-    appearances: [withGeneratedKey(getDefaultAppearance())],
+    // 初期行は SSR / hydration で同一のキーにする（#443）
+    appearances: [withInitialKey(getDefaultAppearance(), 0, "appearance")],
     photos: [],
   };
 }
@@ -50,10 +50,13 @@ export function getDefaultValues(): FormValues {
 export function toFormValues(input: CreateSpotInput): FormValues {
   return {
     ...input,
-    appearances: input.appearances.map((appearance) =>
-      withGeneratedKey(appearance)
+    // 初期行は SSR / hydration で同一のキーにする（#443）。写真も同様
+    appearances: input.appearances.map((appearance, index) =>
+      withInitialKey(appearance, index, "appearance")
     ),
-    photos: input.photos.map(withGeneratedPhotoKey),
+    photos: input.photos.map((photo, index) =>
+      withInitialKey(photo, index, "photo")
+    ),
   };
 }
 

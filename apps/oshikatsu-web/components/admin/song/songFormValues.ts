@@ -1,4 +1,4 @@
-import { withGeneratedKey } from "@/lib/keyedList";
+import { withGeneratedKey, withInitialKey } from "@/lib/keyedList";
 import type {
   CreateSongCostumeInput,
   CreateSongFormationRowInput,
@@ -58,7 +58,8 @@ export function getDefaultValues(): FormValues {
     groupId: "",
     label: "",
     generation: "",
-    releaseLinks: [withReleaseKey({ releaseId: "", trackNumber: "" })],
+    // 初期行は SSR / hydration で同一のキーにする（#443）
+    releaseLinks: [withInitialKey({ releaseId: "", trackNumber: "" }, 0, "release")],
     lyricsPeople: "",
     musicPeople: "",
     arrangementPeople: "",
@@ -83,9 +84,16 @@ export function getDefaultValues(): FormValues {
 export function toFormValues(input: CreateSongInput): FormValues {
   return {
     ...input,
-    releaseLinks: input.releaseLinks.map(withReleaseKey),
-    formationRows: input.formationRows.map(withFormationRowKey),
-    costumes: input.costumes.map(withCostumeKey),
+    // 初期行は SSR / hydration で同一のキーにする（#443）
+    releaseLinks: input.releaseLinks.map((link, index) =>
+      withInitialKey(link, index, "release")
+    ),
+    formationRows: input.formationRows.map((row, index) =>
+      withInitialKey(row, index, "formation")
+    ),
+    costumes: input.costumes.map((costume, index) =>
+      withInitialKey(costume, index, "costume")
+    ),
   };
 }
 
