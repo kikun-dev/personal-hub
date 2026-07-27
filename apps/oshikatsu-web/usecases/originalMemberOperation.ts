@@ -14,9 +14,10 @@ import type { ResolveOriginalMembersResult } from "@/usecases/resolveOriginalMem
  * 非同期中に許可する操作の契約:
  * - 禁止（UIで無効化する）: 対象項目の 項目削除 / 再実行、
  *   フォーム内に1件でも実行中があるときの 別公演コピー / 保存
- * - 許可: 対象項目の楽曲変更。trackChanged が pending を破棄し、
- *   後から届く応答は requestId 不一致として適用も記録もされない
- *   （Combobox は disabled を持たず、共有部品の変更を避けたため無効化しない）
+ * - 許可（進行中の操作をキャンセルする扱い）: 対象項目の楽曲変更と、
+ *   披露メンバー・センター・フォーメーションの手動編集。
+ *   ユーザーの手動編集を優先し、後から届く応答は requestId 不一致で破棄する。
+ *   Server Action は読み取りだけなので、通信が残っても副作用はない
  * - 上記の禁止操作を迂回する経路（プログラム的な state 変更）に備え、
  *   requestId が一致しない応答は常に捨てる
  */
@@ -39,6 +40,9 @@ export type OriginalMemberOperationEvent =
     }
   | { type: "failed"; itemKey: number; requestId: number }
   | { type: "trackChanged"; itemKey: number }
+  // 披露メンバー・センター・フォーメーションの手動編集。
+  // 応答が上書きしうる入力なので、進行中の操作をキャンセルする。
+  | { type: "inputChanged"; itemKey: number }
   | { type: "itemRemoved"; itemKey: number }
   // 別公演からのコピーなど、項目そのものを総入れ替えする操作
   | { type: "itemsReplaced" };
@@ -109,8 +113,10 @@ export function originalMemberOperationReducer(
       };
     }
 
-    // 楽曲が変わったら、その項目の結果は意味を失う。実行中なら応答も捨てる。
+    // 楽曲変更・手動編集・項目削除はいずれも、その項目の結果を意味のないものにする。
+    // 実行中なら操作ごと破棄し、後から届く応答は requestId 不一致で捨てられる。
     case "trackChanged":
+    case "inputChanged":
     case "itemRemoved":
       return withoutItem(state, event.itemKey);
 

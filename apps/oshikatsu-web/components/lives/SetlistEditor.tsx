@@ -223,6 +223,7 @@ export function SetlistEditor({
   // 別々に処理すると、一瞬だけ「披露メンバー外が配置されている」状態が描画される。
   // センターは members から消えることで同時に失われる。
   const toggleMember = (itemKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const exists = item.members.some((member) => member.memberId === memberId);
       if (!exists) {
@@ -241,6 +242,7 @@ export function SetlistEditor({
   // 解除は常に許可する。保存境界の検証任せにせず、楽曲フォームと同じく
   // state 更新側で防いで操作前に制約を伝える。
   const toggleCenter = (itemKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const currentCenterIds = item.members
         .filter((member) => member.isCenter)
@@ -259,6 +261,7 @@ export function SetlistEditor({
 
   // 「全員」ボタン：roster全員をmembersにセット（既存isCenterは保持、roster外の既存選択は残す）
   const setAllMembers = (itemKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const existingById = new Map(item.members.map((member) => [member.memberId, member]));
       const rosterMembers: SetlistEditorMemberInput[] = roster.map((member) => ({
@@ -280,6 +283,7 @@ export function SetlistEditor({
   };
 
   const addFormationRow = (itemKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: addKeyedItem(item.formationRows, {
@@ -291,6 +295,7 @@ export function SetlistEditor({
   };
 
   const removeFormationRow = (itemKey: number, rowKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: removeKeyedItem(item.formationRows, (row) => row.key, rowKey),
@@ -302,6 +307,7 @@ export function SetlistEditor({
     rowKey: number,
     memberCount: string
   ) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
@@ -311,6 +317,7 @@ export function SetlistEditor({
   };
 
   const toggleFormationMember = (itemKey: number, rowKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
@@ -324,6 +331,7 @@ export function SetlistEditor({
     (itemKey: number, rowKey: number) =>
     ({ active, over }: DragEndEvent) => {
       if (!over || active.id === over.id) return;
+      dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
       updateItem(itemKey, (item) => ({
         ...item,
         formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) => {
@@ -340,8 +348,9 @@ export function SetlistEditor({
   // 「オリメン」= 楽曲参加メンバー（#425）。反映内容の確定はサーバで行い、
   // ここは確定済みの結果を state へ適用するだけにする（#424）。
   //
-  // 実行中は対象項目の 楽曲変更 / 削除 / 再実行 をUIで無効化しているが、
-  // それでも古い応答が届く経路に備え、requestId が一致する場合だけ適用する。
+  // 実行中は対象項目の削除・再実行をUIで無効化する。
+  // 楽曲変更や披露メンバー・フォーメーションの手動編集は操作をキャンセルし、
+  // 後から届く応答を requestId 不一致として破棄する。
   const applyOriginalMembers = async (itemKey: number, trackId: string) => {
     if (!trackId) return;
 

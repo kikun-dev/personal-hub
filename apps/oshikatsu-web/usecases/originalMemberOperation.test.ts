@@ -207,3 +207,41 @@ describe("hasPendingOperation", () => {
     expect(hasPendingOperation(initialOriginalMemberOperationState)).toBe(false);
   });
 });
+
+// 反映中に披露メンバーやフォーメーションを手動編集した場合、
+// 後着の応答が手動編集を上書きしないことを固定する。
+describe("originalMemberOperation の手動編集によるキャンセル", () => {
+  it("実行 → 手動編集 → applied応答: 適用も通知もしない", () => {
+    const state = run([
+      { type: "started", itemKey: ITEM, trackId: TRACK_A, requestId: 1 },
+      { type: "inputChanged", itemKey: ITEM },
+      { type: "resolved", itemKey: ITEM, requestId: 1, result: APPLIED },
+    ]);
+
+    expect(state[ITEM]).toBeUndefined();
+    expect(getOperationOutcome(state, ITEM)).toBeNull();
+    expect(isItemPending(state, ITEM)).toBe(false);
+  });
+
+  it("実行 → 手動編集 → failed応答: failed通知も残さない", () => {
+    const state = run([
+      { type: "started", itemKey: ITEM, trackId: TRACK_A, requestId: 1 },
+      { type: "inputChanged", itemKey: ITEM },
+      { type: "failed", itemKey: ITEM, requestId: 1 },
+    ]);
+
+    expect(state[ITEM]).toBeUndefined();
+    expect(getOperationOutcome(state, ITEM)).toBeNull();
+  });
+
+  it("手動編集は他項目の操作へ影響しない", () => {
+    const state = run([
+      { type: "started", itemKey: ITEM, trackId: TRACK_A, requestId: 1 },
+      { type: "started", itemKey: OTHER_ITEM, trackId: TRACK_B, requestId: 2 },
+      { type: "inputChanged", itemKey: ITEM },
+    ]);
+
+    expect(state[ITEM]).toBeUndefined();
+    expect(isItemPending(state, OTHER_ITEM)).toBe(true);
+  });
+});
