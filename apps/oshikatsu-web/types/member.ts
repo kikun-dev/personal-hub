@@ -62,6 +62,17 @@ export type MemberOption = {
   isActive: boolean;
 };
 
+// #424: オリメン反映の在籍判定専用の軽量DTO。
+// MemberOption は管理フォーム全般の候補マスタとして広く使われるため広げず、
+// この用途だけの最小項目を別に持つ（rules/sakalog.md の候補マスタ分離方針）。
+// orbit_member_groups は (member_id, group_id) が UNIQUE のため、
+// 1グループにつきメンバーごとに高々1件になる。
+export type MemberMembershipPeriod = {
+  memberId: string;
+  joinedAt: string | null;
+  graduatedAt: string | null;
+};
+
 export type MemberSns = {
   id: string;
   snsType: SnsType;

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useReducer, useRef, useState } from "react";
 import type { ValidationError } from "@/types/errors";
 import type { SongOption } from "@/types/song";
 import {
@@ -20,9 +20,19 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
 import { addKeyedItem, moveKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
+import type { OriginalMembersActionResult } from "@/app/(authenticated)/lives/[id]/performances/[performanceId]/setlist/edit/actions";
+import {
+  getOperationOutcome,
+  hasPendingOperation,
+  initialOriginalMemberOperationState,
+  isCurrentRequest,
+  isItemPending,
+  originalMemberOperationReducer,
+  type OriginalMemberOperationEvent,
+} from "@/usecases/originalMemberOperation";
+import { OriginalMembersNotice } from "@/components/lives/OriginalMembersNotice";
 import { FormationRowsEditor } from "@/components/admin/formation/FormationRowsEditor";
 import {
   isCenterAdditionBlocked,
@@ -51,9 +61,11 @@ type SetlistEditorProps = {
   onSubmit: (
     items: SetlistEditorItemInput[]
   ) => Promise<{ errors?: ValidationError[] }>;
-  getTrackFormation: (
-    trackId: string
-  ) => Promise<{ rows: { memberIds: string[] }[] }>;
+  resolveOriginalMembers: (
+    trackId: string,
+    liveId: string,
+    performanceId: string
+  ) => Promise<OriginalMembersActionResult>;
 };
 
 type FormationRowField = { key: number; memberCount: string; memberIds: string[] };
@@ -87,7 +99,7 @@ export function SetlistEditor({
   trackOptions,
   copySources,
   onSubmit,
-  getTrackFormation,
+  resolveOriginalMembers,
 }: SetlistEditorProps) {
   const keyRef = useRef(0);
   const nextKey = () => {
@@ -116,9 +128,24 @@ export function SetlistEditor({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copyingFormationKeys, setCopyingFormationKeys] = useState<Set<number>>(
-    new Set()
+  // オリメン反映の処理中表示・通知・リクエスト識別を、1つの操作状態から導出する。
+  // 別々の state で持つと、楽曲変更・項目削除・別公演コピー・連打のたびに
+  // 手作業で整合を取る必要があり、実際にそこから不具合が出た（#424）。
+  const [originalMemberOps, setOriginalMemberOps] = useReducer(
+    originalMemberOperationReducer,
+    initialOriginalMemberOperationState
   );
+  const originalMemberRequestIdRef = useRef(0);
+  // 非同期ハンドラはクロージャの state を見るため、応答時点の最新状態を判定できない。
+  // reducer は純粋なので、同じ event で同期的に進めた ref をミラーとして持つ。
+  const originalMemberOpsRef = useRef(initialOriginalMemberOperationState);
+  const dispatchOriginalMemberOp = (event: OriginalMemberOperationEvent) => {
+    originalMemberOpsRef.current = originalMemberOperationReducer(
+      originalMemberOpsRef.current,
+      event
+    );
+    setOriginalMemberOps(event);
+  };
   const [copySourceId, setCopySourceId] = useState("");
 
   const rosterIds = new Set(roster.map((member) => member.memberId));
@@ -176,11 +203,19 @@ export function SetlistEditor({
     setItems((prev) => updateKeyedItem(prev, (item) => item.key, key, patch));
   };
 
+  // 楽曲を変更したら、実行中のオリメン反映を無効化し、旧楽曲の通知も落とす。
+  // ref の更新は同期的なので、応答が返る前に確実に無効化できる。
+  const changeTrackId = (itemKey: number, trackId: string) => {
+    dispatchOriginalMemberOp({ type: "trackChanged", itemKey });
+    updateItem(itemKey, { trackId });
+  };
+
   const moveItem = (key: number, direction: -1 | 1) => {
     setItems((prev) => moveKeyedItem(prev, (item) => item.key, key, direction));
   };
 
   const removeItem = (key: number) => {
+    dispatchOriginalMemberOp({ type: "itemRemoved", itemKey: key });
     setItems((prev) => removeKeyedItem(prev, (item) => item.key, key));
   };
 
@@ -188,6 +223,7 @@ export function SetlistEditor({
   // 別々に処理すると、一瞬だけ「披露メンバー外が配置されている」状態が描画される。
   // センターは members から消えることで同時に失われる。
   const toggleMember = (itemKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const exists = item.members.some((member) => member.memberId === memberId);
       if (!exists) {
@@ -206,6 +242,7 @@ export function SetlistEditor({
   // 解除は常に許可する。保存境界の検証任せにせず、楽曲フォームと同じく
   // state 更新側で防いで操作前に制約を伝える。
   const toggleCenter = (itemKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const currentCenterIds = item.members
         .filter((member) => member.isCenter)
@@ -224,6 +261,7 @@ export function SetlistEditor({
 
   // 「全員」ボタン：roster全員をmembersにセット（既存isCenterは保持、roster外の既存選択は残す）
   const setAllMembers = (itemKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => {
       const existingById = new Map(item.members.map((member) => [member.memberId, member]));
       const rosterMembers: SetlistEditorMemberInput[] = roster.map((member) => ({
@@ -245,6 +283,7 @@ export function SetlistEditor({
   };
 
   const addFormationRow = (itemKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: addKeyedItem(item.formationRows, {
@@ -256,6 +295,7 @@ export function SetlistEditor({
   };
 
   const removeFormationRow = (itemKey: number, rowKey: number) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: removeKeyedItem(item.formationRows, (row) => row.key, rowKey),
@@ -267,6 +307,7 @@ export function SetlistEditor({
     rowKey: number,
     memberCount: string
   ) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
@@ -276,6 +317,7 @@ export function SetlistEditor({
   };
 
   const toggleFormationMember = (itemKey: number, rowKey: number, memberId: string) => {
+    dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
     updateItem(itemKey, (item) => ({
       ...item,
       formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
@@ -289,6 +331,7 @@ export function SetlistEditor({
     (itemKey: number, rowKey: number) =>
     ({ active, over }: DragEndEvent) => {
       if (!over || active.id === over.id) return;
+      dispatchOriginalMemberOp({ type: "inputChanged", itemKey });
       updateItem(itemKey, (item) => ({
         ...item,
         formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) => {
@@ -300,63 +343,70 @@ export function SetlistEditor({
       }));
     };
 
-  const copyFormationFromTrack = async (itemKey: number, trackId: string) => {
+  // 「オリメン」= 楽曲参加メンバー（#425）。反映内容の確定はサーバで行い、
+  // ここは確定済みの結果を state へ適用して通知を残すだけにする（#424）。
+  // 「オリメン」= 楽曲参加メンバー（#425）。反映内容の確定はサーバで行い、
+  // ここは確定済みの結果を state へ適用するだけにする（#424）。
+  //
+  // 実行中は対象項目の削除・再実行をUIで無効化する。
+  // 楽曲変更や披露メンバー・フォーメーションの手動編集は操作をキャンセルし、
+  // 後から届く応答を requestId 不一致として破棄する。
+  const applyOriginalMembers = async (itemKey: number, trackId: string) => {
     if (!trackId) return;
+    // 保存はこの時点の items をペイロード化済みなので、保存中に反映しても
+    // その結果は保存されず、成功後の redirect で失われる。開始させない。
+    if (isSubmitting) return;
+
     const target = items.find((item) => item.key === itemKey);
-    if (target && target.formationRows.some((row) => row.memberIds.length > 0)) {
+    const hasExistingInput =
+      Boolean(target) &&
+      (target!.members.length > 0 ||
+        target!.formationRows.some((row) => row.memberIds.length > 0));
+    if (hasExistingInput) {
       const confirmed = window.confirm(
-        "既存のフォーメーションを楽曲マスタの内容で上書きします。よろしいですか？"
+        "既存の披露メンバーとフォーメーションを楽曲マスタの内容で上書きします。よろしいですか？"
       );
       if (!confirmed) return;
     }
-    setCopyingFormationKeys((prev) => new Set(prev).add(itemKey));
+
+    originalMemberRequestIdRef.current += 1;
+    const requestId = originalMemberRequestIdRef.current;
+    dispatchOriginalMemberOp({ type: "started", itemKey, trackId, requestId });
+
+    let result: OriginalMembersActionResult;
     try {
-      const result = await getTrackFormation(trackId);
-      // 楽曲マスタにはこの公演のロスター外メンバー（卒業生等）が含まれ得るため、
-      // ロスター内のみに絞って取り込む（保存時の境界検証と整合させる）。
-      // ロスターが空（未設定）の場合は絞り込めないためそのまま取り込む。
-      const filterToRoster = rosterIds.size > 0;
-      const copiedRows = result.rows
-        .map((row) => {
-          const memberIds = filterToRoster
-            ? row.memberIds.filter((id) => rosterIds.has(id))
-            : row.memberIds;
-          return {
-            key: nextKey(),
-            memberCount: String(memberIds.length),
-            memberIds,
-          };
-        })
-        .filter((row) => row.memberIds.length > 0);
-
-      // 配置は披露メンバーの部分集合という不変条件を保つため、コピーした
-      // メンバーを披露メンバーへも取り込む（既存のセンター指定は維持する）。
-      // 卒業・休演を理由にした除外と、その通知は #424 の範囲。
-      updateItem(itemKey, (item) => {
-        const existingIds = new Set(item.members.map((member) => member.memberId));
-        const added = copiedRows
-          .flatMap((row) => row.memberIds)
-          .filter((memberId) => !existingIds.has(memberId));
-
-        return {
-          ...item,
-          members: [
-            ...item.members,
-            ...Array.from(new Set(added)).map((memberId) => ({
-              memberId,
-              isCenter: false,
-            })),
-          ],
-          formationRows: copiedRows,
-        };
-      });
-    } finally {
-      setCopyingFormationKeys((prev) => {
-        const next = new Set(prev);
-        next.delete(itemKey);
-        return next;
-      });
+      result = await resolveOriginalMembers(trackId, live.id, performanceId);
+    } catch {
+      // 技術的な失敗は業務上の未登録通知へ変換しない（誤った編集導線を出さない）
+      dispatchOriginalMemberOp({ type: "failed", itemKey, requestId });
+      return;
     }
+
+    if (result.status === "invalid-input") {
+      dispatchOriginalMemberOp({ type: "failed", itemKey, requestId });
+      return;
+    }
+
+    // 応答が現在の操作のものでなければ、項目へ適用しない。
+    // reducer 側も同じ判定で resolved を無視するため、通知も残らない。
+    const isCurrent = isCurrentRequest(
+      originalMemberOpsRef.current,
+      itemKey,
+      requestId
+    );
+
+    if (isCurrent && result.status === "applied") {
+      updateItem(itemKey, (item) => ({
+        ...item,
+        members: result.members.map((member) => ({ ...member })),
+        formationRows: result.formationRows.map((row) => ({
+          key: nextKey(),
+          memberCount: row.memberCount,
+          memberIds: [...row.memberIds],
+        })),
+      }));
+    }
+    dispatchOriginalMemberOp({ type: "resolved", itemKey, requestId, result });
   };
 
   const copyCostumeFromPrevious = (index: number) => {
@@ -381,6 +431,7 @@ export function SetlistEditor({
         return;
       }
     }
+    dispatchOriginalMemberOp({ type: "itemsReplaced" });
     setItems(source.items.map((item) => toItemField(item)));
     setCopySourceId("");
   };
@@ -435,7 +486,8 @@ export function SetlistEditor({
           <select
             value={copySourceId}
             onChange={(e) => handleCopyFromPerformance(e.target.value)}
-            className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
+            disabled={hasPendingOperation(originalMemberOps)}
+            className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">選択してください</option>
             {copySources.map((source) => (
@@ -520,7 +572,8 @@ export function SetlistEditor({
                 <button
                   type="button"
                   onClick={() => removeItem(item.key)}
-                  className="px-1 text-xs text-red-500 hover:underline"
+                  disabled={isItemPending(originalMemberOps, item.key)}
+                  className="px-1 text-xs text-red-500 hover:underline disabled:cursor-not-allowed disabled:opacity-50 disabled:no-underline"
                 >
                   削除
                 </button>
@@ -532,7 +585,7 @@ export function SetlistEditor({
                 <div className="flex flex-wrap gap-2">
                   <Combobox
                     value={item.trackId}
-                    onChange={(trackId) => updateItem(item.key, { trackId })}
+                    onChange={(trackId) => changeTrackId(item.key, trackId)}
                     options={trackOptions.map((track) => ({
                       value: track.id,
                       label: track.title,
@@ -567,13 +620,31 @@ export function SetlistEditor({
                     <p className="text-xs text-foreground/50">
                       披露メンバー（C=センター）
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setAllMembers(item.key)}
-                      className={`text-xs ${TEXT_ACTION_CLASS}`}
-                    >
-                      全員
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setAllMembers(item.key)}
+                      >
+                        全員
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => applyOriginalMembers(item.key, item.trackId)}
+                        disabled={
+                          !item.trackId ||
+                          isSubmitting ||
+                          isItemPending(originalMemberOps, item.key)
+                        }
+                      >
+                        {isItemPending(originalMemberOps, item.key)
+                          ? "反映中…"
+                          : "オリメン"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
                     {memberCandidates(item).map((candidate) => {
@@ -620,19 +691,27 @@ export function SetlistEditor({
                       );
                     })}
                   </div>
+                  {(() => {
+                    const outcome = getOperationOutcome(originalMemberOps, item.key);
+                    if (!outcome) return null;
+                    if (outcome.kind === "failed") {
+                      return (
+                        <p className="mt-1 rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-xs text-foreground">
+                          反映に失敗しました。時間をおいて再度お試しください。
+                        </p>
+                      );
+                    }
+                    return (
+                      <OriginalMembersNotice
+                        result={outcome.result}
+                        liveId={live.id}
+                        trackId={item.trackId}
+                      />
+                    );
+                  })()}
                 </div>
 
                 <div className="space-y-2 rounded-lg border border-foreground/10 p-2">
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => copyFormationFromTrack(item.key, item.trackId)}
-                      disabled={!item.trackId || copyingFormationKeys.has(item.key)}
-                      className={`text-xs ${TEXT_ACTION_CLASS} disabled:cursor-not-allowed disabled:text-foreground/30`}
-                    >
-                      楽曲マスタからコピー
-                    </button>
-                  </div>
                   {(() => {
                     const candidates = formationCandidates(item);
                     const candidateIds = candidates.map((candidate) => candidate.memberId);
@@ -688,13 +767,15 @@ export function SetlistEditor({
                 className={compactInputClass}
               />
               {index > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => copyCostumeFromPrevious(index)}
-                  className={`shrink-0 text-xs ${TEXT_ACTION_CLASS}`}
+                  className="shrink-0"
                 >
                   上と同じ
-                </button>
+                </Button>
               )}
             </div>
 
@@ -712,7 +793,11 @@ export function SetlistEditor({
         ))}
       </div>
 
-      <Button type="submit" disabled={isSubmitting} className="w-full">
+      <Button
+        type="submit"
+        disabled={isSubmitting || hasPendingOperation(originalMemberOps)}
+        className="w-full"
+      >
         {isSubmitting ? "保存中..." : "保存する"}
       </Button>
     </form>

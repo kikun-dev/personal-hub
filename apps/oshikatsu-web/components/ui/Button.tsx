@@ -2,17 +2,25 @@ import { type ComponentPropsWithRef } from "react";
 
 type ButtonProps = ComponentPropsWithRef<"button"> & {
   variant?: "primary" | "secondary" | "danger" | "ghost" | "danger-ghost";
+  // sm: 密度の高い行内アクション用。管理フォームのセクション見出し横など、
+  // md では行の情報量に対して大きすぎる場所で使う。
+  // 高さは約28pxで WCAG 2.2 の Target Size (Minimum) 24px を満たす。
+  size?: "md" | "sm";
 };
 
 export function Button({
   variant = "primary",
+  size = "md",
   className = "",
   disabled,
   children,
   ...props
 }: ButtonProps) {
-  const base =
-    "rounded-lg px-4 py-2.5 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-50";
+  const sizes = {
+    md: "px-4 py-2.5 text-sm",
+    sm: "px-3 py-1.5 text-xs",
+  };
+  const base = `rounded-lg font-medium transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-50 ${sizes[size]}`;
   const variants = {
     primary: "bg-foreground text-background hover:bg-foreground/90",
     secondary:

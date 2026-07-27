@@ -30,6 +30,17 @@ import { pickFirstDatedRelease } from "@/lib/firstRelease";
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
 const TRACK_ID_SELECT = "track_id" as const;
+// #424: オリメン反映に必要な楽曲側の列だけ。楽曲詳細は使わない。
+const ORIGINAL_MEMBER_SOURCE_SELECT = `
+  group_id,
+  orbit_track_members(member_id, is_center),
+  orbit_track_formations(
+    orbit_track_formation_rows(
+      row_number,
+      orbit_track_formation_members(member_id, slot_order)
+    )
+  )
+` as const;
 // #427: 初出リリースの判定と、その参加メンバーの解決に必要な最小列。
 const FIRST_RELEASE_PARTICIPANT_SELECT = `
   id,
@@ -241,6 +252,42 @@ export function createSongRepository(
         throw new RepositoryError("グループの取得に失敗しました", error);
       }
       return data.is_catchall;
+    },
+
+    // オリメン反映に必要な楽曲側の事実だけを取得する（#424）。
+    async findOriginalMemberSource(trackId) {
+      const { data, error } = await supabase
+        .from("orbit_tracks")
+        .select(ORIGINAL_MEMBER_SOURCE_SELECT)
+        .eq("id", trackId)
+        .single();
+
+      if (error) {
+        if (error.code === "PGRST116" || error.code === "22P02") {
+          return null;
+        }
+        throw new RepositoryError("楽曲参加メンバーの取得に失敗しました", error);
+      }
+
+      const formation = data.orbit_track_formations;
+      const formationRows = (formation?.orbit_track_formation_rows ?? [])
+        .slice()
+        .sort((a, b) => a.row_number - b.row_number)
+        .map((row) => ({
+          memberIds: row.orbit_track_formation_members
+            .slice()
+            .sort((a, b) => a.slot_order - b.slot_order)
+            .map((member) => member.member_id),
+        }));
+
+      return {
+        groupId: data.group_id,
+        participants: data.orbit_track_members.map((member) => ({
+          memberId: member.member_id,
+          isCenter: member.is_center,
+        })),
+        formationRows,
+      };
     },
 
     // 楽曲参加メンバーの許可集合を DB で権威的に解決する（#427）。

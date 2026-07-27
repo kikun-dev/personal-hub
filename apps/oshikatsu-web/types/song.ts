@@ -220,6 +220,14 @@ export type SongSection = {
   songs: SongListItem[];
 };
 
+// #424: オリメン反映に必要な楽曲側の事実だけを持つ軽量DTO。
+// 楽曲詳細（クレジット・MV・衣装・リリース紐づけ等）は反映に使わない。
+export type SongOriginalMemberSource = {
+  groupId: string;
+  participants: Array<{ memberId: string; isCenter: boolean }>;
+  formationRows: Array<{ memberIds: string[] }>;
+};
+
 export type SongOption = {
   id: string;
   title: string;

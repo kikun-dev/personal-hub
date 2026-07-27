@@ -699,5 +699,25 @@ export function createMemberRepository(
       }
       return [...activeIds];
     },
+
+    // 指定グループの在籍期間をそのまま返す（#424）。
+    // 在籍しているかの判定ではなく、未加入 / 卒業 を公演日と比較して
+    // 区別するため、日付を落とさずに渡す。
+    async findMembershipPeriodsByGroup(groupId) {
+      const { data, error } = await supabase
+        .from("orbit_member_groups")
+        .select(MEMBER_ACTIVE_IDS_SELECT)
+        .eq("group_id", groupId);
+
+      if (error) {
+        throw new RepositoryError("在籍期間の取得に失敗しました", error);
+      }
+
+      return data.map((row) => ({
+        memberId: row.member_id,
+        joinedAt: row.joined_at,
+        graduatedAt: row.graduated_at,
+      }));
+    },
   };
 }

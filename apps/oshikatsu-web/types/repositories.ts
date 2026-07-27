@@ -8,12 +8,14 @@ import type {
   BirthdayMember,
   MemberListItem,
   MemberOption,
+  MemberMembershipPeriod,
 } from "./member";
 import type { Event, EventOption, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
 import type {
   Song,
   SongOption,
+  SongOriginalMemberSource,
   SongVideoOption,
   CreateSongInput,
   UpdateSongInput,
@@ -45,6 +47,7 @@ import type {
   CreateLiveInput,
   UpdateLiveInput,
   ReplaceSetlistInput,
+  PerformanceRosterContext,
 } from "./live";
 import type {
   Release,
@@ -92,6 +95,9 @@ export type MemberRepository = {
   findBirthdaysByDate(month: number, day: number): Promise<BirthdayMember[]>;
   findAllBirthdays(): Promise<BirthdayMember[]>;
   findActiveMemberIdsByGroups(groupIds: string[], date: string): Promise<string[]>;
+  // #424: 指定グループにおける在籍期間。オリメン反映で未加入・卒業を
+  // 公演日と比較して判定するために使う。
+  findMembershipPeriodsByGroup(groupId: string): Promise<MemberMembershipPeriod[]>;
 };
 
 // Top Page の read 窓。startDate を含み、endDate を含まない。
@@ -188,6 +194,11 @@ export type LiveRepository = {
   ): Promise<LiveCalendarPerformance[]>;
   findOptions(): Promise<LiveOption[]>;
   findById(id: string): Promise<Live | null>;
+  // #424: オリメン反映用。対象公演の日付・休演と、ライブ基準ロスターだけを引く。
+  findPerformanceRosterContext(
+    liveId: string,
+    performanceId: string
+  ): Promise<PerformanceRosterContext | null>;
   findPerformancesByVenue(venueId: string): Promise<VenuePerformanceSummary[]>;
   create(input: CreateLiveInput): Promise<Live>;
   update(id: string, input: UpdateLiveInput): Promise<Live>;
@@ -224,6 +235,8 @@ export type SongRepository = {
   // #264: グループが「その他」受け皿（is_catchall）かをDBで権威的に判定する。
   // 検証（validateSong の分岐）と作成/更新の分岐の両方で使う。
   isGroupCatchall(groupId: string): Promise<boolean>;
+  // #424: オリメン反映に必要な楽曲側の事実だけを取得する軽量メソッド。
+  findOriginalMemberSource(trackId: string): Promise<SongOriginalMemberSource | null>;
   // #427: 楽曲参加メンバーの許可集合をDBで権威的に解決する。
   // クライアントから送られたリリース情報は信用せず、releaseIds に対応する
   // リリースを DB から引き直して初出リリースを決める。
