@@ -1,4 +1,4 @@
-import { expect, test, type ConsoleMessage, type Page } from "@playwright/test";
+import { expect, test, type ConsoleMessage, type Page } from "./test";
 
 /**
  * 管理フォームの初期表示で hydration mismatch が起きないことを固定する（#443）。

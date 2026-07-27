@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "./test";
+import { isRouterPrefetchRequest } from "./routerPrefetch";
 
 // #364/#378: OSのreduced motion指定に対し、Mobile drawerの移動・PendingLink spinnerの回転・
 // NavigationProgressのpulseを止める契約を、motion utilityと`motion-reduce:`variantの
@@ -51,6 +52,12 @@ async function delaySameOriginGetRequests(
   const currentOrigin = new URL(page.url()).origin;
   await page.route("**/*", async (route) => {
     const request = route.request();
+    // prefetch は fixture 側で遮断する。ここで continue すると遮断が効かず、
+    // pending 表示を観測している間に prefetch fan-out がサーバを飽和させる（#440）
+    if (isRouterPrefetchRequest(route)) {
+      await route.fallback();
+      return;
+    }
     if (
       request.method() === "GET" &&
       new URL(request.url()).origin === currentOrigin

@@ -1,4 +1,5 @@
-import { expect, test, type Locator, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "./test";
+import { isRouterPrefetchRequest } from "./routerPrefetch";
 
 // #363: fallback carousel（最大18枚）の全cardにAttendanceControl（form/state/effect持ち）が
 // 常時mountされていたことで発生していた「59 focus target・反復するCTA・setlistより下に
@@ -588,6 +589,11 @@ test("保存処理中はcarousel内の全disclosureがdisabledになる", async 
 
   // 保存のPOSTを遅延させ、pending中のUI状態を観測できるようにする
   await page.route("**/*", async (route) => {
+    // prefetch は fixture 側で遮断する（#440）。ここで continue すると遮断が効かない
+    if (isRouterPrefetchRequest(route)) {
+      await route.fallback();
+      return;
+    }
     if (route.request().method() === "POST") {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }

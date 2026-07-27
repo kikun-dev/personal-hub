@@ -96,6 +96,10 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3001",
     storageState: process.env.CI ? undefined : authFile,
+    // #440: まれにしか再現しないフレークは「失敗した run の証跡が残っているか」で調査可否が決まる。
+    // ローカルは `retries: 0` のため `on-first-retry` では発火せず、既定の `off` だと失敗しても
+    // 何も残らない。成功時は破棄されるのでグリーン時のコストはほぼゼロ。
+    trace: "retain-on-failure",
   },
   // #413: dev（next dev）の on-demand compile が並列初回アクセスで timeout しフレークになるため、
   // production build を start して配信する。ここでの timeout は server 起動（build + start）の

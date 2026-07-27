@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator } from "./test";
 import {
   createReadOnlyClient,
   isReadOnlyServerClientAvailable,
