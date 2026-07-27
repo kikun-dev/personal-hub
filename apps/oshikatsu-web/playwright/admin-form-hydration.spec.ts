@@ -27,12 +27,18 @@ type ConsoleCapture = {
 };
 
 /**
- * リソース読み込み失敗は本Issueの対象外。favicon 等の静的アセットが未配置で、
- * 全ページに既存の 404 が出ている。hydration とは別の関心事なので、
- * ここで拾うと本来見たい React のエラーが埋もれる。
+ * 既存の静的アセット 404（favicon 等が未配置）だけを除外する。
+ *
+ * 「Failed to load resource」を一律で除外すると、client JS chunk や RSC の
+ * 取得失敗まで無視してしまう。その場合 SSR 済みの見出しは表示されるため
+ * hydration していなくてもテストが通り、回帰テストとして偽陰性になる。
+ * URL を見て、静的な画像・アイコンだけを除外対象にする。
  */
-function isResourceLoadFailure(text: string): boolean {
-  return /failed to load resource/i.test(text);
+const IGNORABLE_ASSET_URL = /(favicon|apple-touch-icon|icon)[^/]*\.(ico|png|svg)$/i;
+
+function isIgnorableResourceFailure(text: string, url: string | undefined): boolean {
+  if (!/failed to load resource/i.test(text)) return false;
+  return Boolean(url && IGNORABLE_ASSET_URL.test(url));
 }
 
 function captureConsole(page: Page): ConsoleCapture {
@@ -44,19 +50,20 @@ function captureConsole(page: Page): ConsoleCapture {
       capture.hydrationMessages.push(text);
     }
     // React の hydration 警告は error だけでなく warning でも出るため両方拾う
-    if (message.type() === "error" && !isResourceLoadFailure(text)) {
+    if (
+      message.type() === "error" &&
+      !isIgnorableResourceFailure(text, message.location()?.url)
+    ) {
       capture.errors.push(text);
     }
   };
 
   page.on("console", record);
+  // 未捕捉例外はリソース取得の失敗ではないので、常に error として扱う
   page.on("pageerror", (error) => {
-    const text = error.message;
-    if (!isResourceLoadFailure(text)) {
-      capture.errors.push(text);
-    }
-    if (HYDRATION_PATTERN.test(text)) {
-      capture.hydrationMessages.push(text);
+    capture.errors.push(error.message);
+    if (HYDRATION_PATTERN.test(error.message)) {
+      capture.hydrationMessages.push(error.message);
     }
   });
 
@@ -66,10 +73,31 @@ function captureConsole(page: Page): ConsoleCapture {
 /**
  * hard navigation で開き、hydration が終わるまで待つ。
  * SPA 遷移では SSR された HTML を経由しないため、必ず `goto` で開く。
+ *
+ * 見出しの表示は SSR 済み HTML でも満たされるため、hydration 完了の根拠にならない。
+ * クライアント state を更新するボタン（行の追加）を押し、DOM が増えることまで
+ * 確認する。JS が動いていなければここで落ちる。
  */
-async function openAndHydrate(page: Page, path: string): Promise<void> {
+async function openAndHydrate(
+  page: Page,
+  path: string,
+  addRowLabel: string
+): Promise<void> {
   await page.goto(path, { waitUntil: "networkidle" });
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+
+  // MemberForm のように同名の追加ボタンが複数ある画面があるため先頭に絞る
+  const addButton = page.getByRole("button", { name: addRowLabel }).first();
+  await expect(addButton).toBeVisible();
+
+  const rowSelector = "form input, form select, form textarea";
+  const before = await page.locator(rowSelector).count();
+  await addButton.click();
+  await expect
+    .poll(() => page.locator(rowSelector).count(), {
+      message: `${path}: 行追加で入力要素が増えない（hydration していない可能性）`,
+    })
+    .toBeGreaterThan(before);
 }
 
 function expectNoHydrationIssue(capture: ConsoleCapture, label: string): void {
@@ -79,17 +107,17 @@ function expectNoHydrationIssue(capture: ConsoleCapture, label: string): void {
 }
 
 const NEW_FORM_PATHS = [
-  { label: "楽曲の新規作成", path: "/admin/songs/new" },
-  { label: "メンバーの新規作成", path: "/admin/members/new" },
-  { label: "リリースの新規作成", path: "/admin/releases/new" },
-  { label: "スポットの新規作成", path: "/spots/new" },
+  { label: "楽曲の新規作成", path: "/admin/songs/new", addRowLabel: "+ リリースを追加" },
+  { label: "メンバーの新規作成", path: "/admin/members/new", addRowLabel: "+ 追加" },
+  { label: "リリースの新規作成", path: "/admin/releases/new", addRowLabel: "+ 楽曲を追加" },
+  { label: "スポットの新規作成", path: "/spots/new", addRowLabel: "出来事を追加" },
 ];
 
-for (const { label, path } of NEW_FORM_PATHS) {
+for (const { label, path, addRowLabel } of NEW_FORM_PATHS) {
   test(`${label}でhydration mismatchが発生しない`, async ({ page }) => {
     const capture = captureConsole(page);
 
-    await openAndHydrate(page, path);
+    await openAndHydrate(page, path, addRowLabel);
 
     expectNoHydrationIssue(capture, label);
   });
@@ -100,13 +128,13 @@ for (const { label, path } of NEW_FORM_PATHS) {
  * 対象データが無い環境では skip する（データ有無で fail させない）。
  */
 const EDIT_FORM_TARGETS = [
-  { label: "楽曲の編集", listPath: "/admin/songs" },
-  { label: "メンバーの編集", listPath: "/admin/members" },
-  { label: "リリースの編集", listPath: "/admin/releases" },
-  { label: "スポットの編集", listPath: "/spots" },
+  { label: "楽曲の編集", listPath: "/admin/songs", addRowLabel: "+ リリースを追加" },
+  { label: "メンバーの編集", listPath: "/admin/members", addRowLabel: "+ 追加" },
+  { label: "リリースの編集", listPath: "/admin/releases", addRowLabel: "+ 楽曲を追加" },
+  { label: "スポットの編集", listPath: "/spots", addRowLabel: "出来事を追加" },
 ];
 
-for (const { label, listPath } of EDIT_FORM_TARGETS) {
+for (const { label, listPath, addRowLabel } of EDIT_FORM_TARGETS) {
   test(`${label}（データ入り）でhydration mismatchが発生しない`, async ({ page }) => {
     await page.goto(listPath, { waitUntil: "networkidle" });
 
@@ -119,7 +147,7 @@ for (const { label, listPath } of EDIT_FORM_TARGETS) {
 
     // 一覧からの SPA 遷移では SSR HTML を経由しないため、URL を取って開き直す
     const capture = captureConsole(page);
-    await openAndHydrate(page, href as string);
+    await openAndHydrate(page, href as string, addRowLabel);
 
     expectNoHydrationIssue(capture, label);
   });
@@ -130,7 +158,7 @@ for (const { label, listPath } of EDIT_FORM_TARGETS) {
 test("楽曲フォームの動的行のidとhtmlForが一致する", async ({ page }) => {
   const capture = captureConsole(page);
 
-  await openAndHydrate(page, "/admin/songs/new");
+  await openAndHydrate(page, "/admin/songs/new", "+ リリースを追加");
 
   const releaseSearch = page.locator('[id^="release-search-"]').first();
   await expect(releaseSearch).toBeVisible();
