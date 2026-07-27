@@ -626,3 +626,38 @@ describe("resolveOriginalMembers の空列の扱い", () => {
     ]);
   });
 });
+
+// センター上限（最大2人）はセットリスト側の保存境界でも検証される。
+// ソース側が超過している場合に反映すると、保存で拒否されて
+// 「不整合なソースでは既存入力を変更しない」方針が崩れる。
+describe("resolveOriginalMembers のセンター上限", () => {
+  it("楽曲マスタのセンターが3人以上なら停止する", () => {
+    const result = resolveOriginalMembers(
+      makeInput({
+        trackParticipants: [
+          { memberId: A, isCenter: true },
+          { memberId: B, isCenter: true },
+          { memberId: C, isCenter: true },
+        ],
+        trackFormationRows: [],
+        rosterMemberIds: [A, B, C],
+      })
+    );
+
+    expect(result).toEqual({ status: "blocked", reason: "inconsistent-track-data" });
+  });
+
+  it("センター2人（Wセンター）は反映する", () => {
+    const result = resolveOriginalMembers(
+      makeInput({
+        trackParticipants: [
+          { memberId: A, isCenter: true },
+          { memberId: B, isCenter: true },
+        ],
+        trackFormationRows: [],
+      })
+    );
+
+    expect(result.status).toBe("applied");
+  });
+});

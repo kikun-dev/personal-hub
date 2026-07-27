@@ -123,8 +123,9 @@ export function SetlistEditor({
     new Set()
   );
   // オリメン反映の結果（除外件数・登録導線・停止理由）。項目ごとに保存まで残す。
+  // 実行時の trackId を保持し、楽曲を変更した項目へ旧結果を出さないようにする。
   const [originalMemberNotices, setOriginalMemberNotices] = useState<
-    Record<number, ResolveOriginalMembersResult>
+    Record<number, { trackId: string; result: ResolveOriginalMembersResult }>
   >({});
   const [copySourceId, setCopySourceId] = useState("");
 
@@ -328,22 +329,39 @@ export function SetlistEditor({
     try {
       const result = await resolveOriginalMembers(trackId, live.id, performanceId);
 
-      if (result.status === "blocked") {
-        // 既存入力は変更せず、理由と登録導線だけを残す
-        setOriginalMemberNotices((prev) => ({ ...prev, [itemKey]: result }));
-        return;
-      }
+      // 実行中に楽曲を変更されていたら、古いレスポンスは捨てる。
+      // 適用しないだけでなく通知も残さない（別楽曲の結果と導線を出さないため）。
+      let isStale = false;
+      setItems((prev) => {
+        const current = prev.find((item) => item.key === itemKey);
+        if (!current || current.trackId !== trackId) {
+          isStale = true;
+          return prev;
+        }
+        if (result.status === "blocked") {
+          // 既存入力は変更せず、理由と登録導線だけを残す
+          return prev;
+        }
+        return prev.map((item) =>
+          item.key === itemKey
+            ? {
+                ...item,
+                members: result.members.map((member) => ({ ...member })),
+                formationRows: result.formationRows.map((row) => ({
+                  key: nextKey(),
+                  memberCount: row.memberCount,
+                  memberIds: [...row.memberIds],
+                })),
+              }
+            : item
+        );
+      });
 
-      updateItem(itemKey, (item) => ({
-        ...item,
-        members: result.members.map((member) => ({ ...member })),
-        formationRows: result.formationRows.map((row) => ({
-          key: nextKey(),
-          memberCount: row.memberCount,
-          memberIds: [...row.memberIds],
-        })),
+      if (isStale) return;
+      setOriginalMemberNotices((prev) => ({
+        ...prev,
+        [itemKey]: { trackId, result },
       }));
-      setOriginalMemberNotices((prev) => ({ ...prev, [itemKey]: result }));
     } finally {
       setApplyingOriginalKeys((prev) => {
         const next = new Set(prev);
@@ -626,9 +644,9 @@ export function SetlistEditor({
                       );
                     })}
                   </div>
-                  {originalMemberNotices[item.key] && (
+                  {originalMemberNotices[item.key]?.trackId === item.trackId && (
                     <OriginalMembersNotice
-                      result={originalMemberNotices[item.key]}
+                      result={originalMemberNotices[item.key].result}
                       liveId={live.id}
                       trackId={item.trackId}
                     />

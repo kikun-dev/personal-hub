@@ -4,7 +4,6 @@ import { requireAdmin } from "@/lib/requireAdmin";
 import { createLiveRepository } from "@/repositories/liveRepository";
 import { createSongRepository } from "@/repositories/songRepository";
 import { createMemberRepository } from "@/repositories/memberRepository";
-import { getSong } from "@/usecases/getSong";
 import { validateSetlist } from "@/usecases/validateSetlist";
 import { resolveOriginalMembers } from "@/usecases/resolveOriginalMembers";
 import type { ResolveOriginalMembersResult } from "@/usecases/resolveOriginalMembers";
@@ -49,43 +48,35 @@ export async function resolveOriginalMembersAction(
 ): Promise<ResolveOriginalMembersResult> {
   const supabase = await requireAdmin();
 
-  const song = await getSong(createSongRepository(supabase), trackId);
-  if (!song) {
+  // 反映に必要な事実だけを、互いに独立なので並列で取得する。
+  // 楽曲詳細やライブ配下の全公演・全セットリストは使わない。
+  const [trackSource, rosterContext] = await Promise.all([
+    createSongRepository(supabase).findOriginalMemberSource(trackId),
+    createLiveRepository(supabase).findPerformanceRosterContext(liveId, performanceId),
+  ]);
+
+  if (!trackSource) {
     return { status: "blocked", reason: "no-track-participants" };
   }
-
-  const live = await createLiveRepository(supabase).findById(liveId);
-  const performance = live?.performances.find((p) => p.id === performanceId);
-  if (!live || !performance) {
+  if (!rosterContext) {
     return { status: "blocked", reason: "no-roster" };
   }
 
   const membershipPeriods = await createMemberRepository(
     supabase
-  ).findMembershipPeriodsByGroup(song.groupId);
+  ).findMembershipPeriodsByGroup(trackSource.groupId);
 
   return resolveOriginalMembers({
-    trackParticipants: song.participants.map((participant) => ({
-      memberId: participant.memberId,
-      isCenter: participant.isCenter,
-    })),
-    trackFormationRows: song.formationRows
-      .slice()
-      .sort((a, b) => a.rowNumber - b.rowNumber)
-      .map((row) => ({
-        memberIds: row.members
-          .slice()
-          .sort((a, b) => a.slotOrder - b.slotOrder)
-          .map((member) => member.memberId),
-      })),
-    rosterMemberIds: live.performerMembers.map((member) => member.memberId),
-    absentMemberIds: performance.absences.map((absence) => absence.memberId),
+    trackParticipants: trackSource.participants,
+    trackFormationRows: trackSource.formationRows,
+    rosterMemberIds: rosterContext.rosterMemberIds,
+    absentMemberIds: rosterContext.absentMemberIds,
     membershipByMemberId: new Map(
       membershipPeriods.map((period) => [
         period.memberId,
         { joinedAt: period.joinedAt, graduatedAt: period.graduatedAt },
       ])
     ),
-    performanceDate: performance.performanceDate,
+    performanceDate: rosterContext.performanceDate,
   });
 }

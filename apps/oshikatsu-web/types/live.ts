@@ -239,3 +239,12 @@ export type SetlistEditorItemInput = {
   formationRows: SetlistEditorFormationRowInput[];
 };
 export type ReplaceSetlistInput = { items: SetlistEditorItemInput[] };
+
+// #424: オリメン反映に必要なライブ側の事実だけを持つ軽量DTO。
+// findById はライブ配下の全公演・全セットリストを含むため、
+// 反映のたびに取得すると公演数に比例して無駄が増える。
+export type PerformanceRosterContext = {
+  performanceDate: string | null;
+  rosterMemberIds: string[];
+  absentMemberIds: string[];
+};

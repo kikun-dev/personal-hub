@@ -9,6 +9,8 @@
  * DBからの取得を担い、クライアント由来の分類は受け取らない。
  */
 
+import { MAX_CENTERS } from "@/lib/centerSelection";
+
 /**
  * 除外理由。1人が複数に該当しうるため、この配列順を優先順位として
  * **最初に一致した理由だけ**を割り当てる。件数の合計が重複しないようにするため。
@@ -103,7 +105,7 @@ function resolveMembershipExclusion(
  * 楽曲マスタ側が ADR 0007 追記 §1 / §2 の不変条件を満たしているか。
  * 満たさない場合、除外加工をしても反映結果が整合しないため反映しない。
  *
- * - センターは楽曲参加メンバー内
+ * - センターは楽曲参加メンバー内、かつ最大2人
  * - フォーメーションがある場合、全列のメンバー集合と参加メンバー集合が完全一致
  * - フォーメーション内で同一メンバーが重複しない
  * - フォーメーションがある場合、センターは1列目に含まれる
@@ -120,6 +122,11 @@ function isTrackSourceConsistent(
     .map((participant) => participant.memberId);
 
   if (centerIds.some((memberId) => !participantIds.has(memberId))) {
+    return false;
+  }
+  // 上限超過をそのまま反映すると、セットリスト側の保存境界で拒否されて
+  // 「不整合なソースでは既存入力を変更しない」という方針が崩れる。
+  if (centerIds.length > MAX_CENTERS) {
     return false;
   }
 

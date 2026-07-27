@@ -273,8 +273,49 @@ function toSetlistPayload(input: ReplaceSetlistInput) {
   };
 }
 
+// #424: オリメン反映に必要なライブ側の列だけ。ライブ配下の全公演・全セットリストは使わない。
+const PERFORMANCE_ROSTER_CONTEXT_SELECT = `
+  performance_date,
+  orbit_live_performance_absences(member_id)
+` as const;
+
+const LIVE_ROSTER_MEMBER_SELECT = "member_id" as const;
+
 export function createLiveRepository(supabase: OrbitReadClient): LiveRepository {
   return {
+    // オリメン反映に必要なライブ側の事実だけを、対象公演に絞って取得する（#424）。
+    // ロスターと公演コンテキストは互いに独立なので並列で引く。
+    async findPerformanceRosterContext(liveId, performanceId) {
+      const [performanceResult, rosterResult] = await Promise.all([
+        supabase
+          .from("orbit_live_performances")
+          .select(PERFORMANCE_ROSTER_CONTEXT_SELECT)
+          .eq("id", performanceId)
+          .eq("live_id", liveId)
+          .maybeSingle(),
+        supabase
+          .from("orbit_live_performer_members")
+          .select(LIVE_ROSTER_MEMBER_SELECT)
+          .eq("live_id", liveId),
+      ]);
+
+      if (performanceResult.error) {
+        throw new RepositoryError("公演情報の取得に失敗しました", performanceResult.error);
+      }
+      if (rosterResult.error) {
+        throw new RepositoryError("出演メンバーの取得に失敗しました", rosterResult.error);
+      }
+      if (!performanceResult.data) return null;
+
+      return {
+        performanceDate: performanceResult.data.performance_date,
+        rosterMemberIds: rosterResult.data.map((row) => row.member_id),
+        absentMemberIds: performanceResult.data.orbit_live_performance_absences.map(
+          (absence) => absence.member_id
+        ),
+      };
+    },
+
     async findPublicList() {
       const { data, error } = await supabase
         .from("orbit_lives")
