@@ -83,7 +83,11 @@ const loadEventFormMasterData = createSharedReadLoader(
 );
 
 const loadSongFormMasterData = createSharedReadLoader(
-  ["orbit", "admin", "song-form-masters"],
+  // v2: #427 で ReleaseOption へ必須の releaseDate を追加した。unstable_cache は
+  // key が同じ限り旧 deployment の payload を返し得るため、DTO の形が変わる変更では
+  // schema version を bump する。旧 payload のままだと全リリースが日付未設定として
+  // 扱われ、初出リリースが確定せず参加メンバー候補が0件になる。
+  ["orbit", "admin", "song-form-masters", "v2"],
   [
     ORBIT_CACHE_TAGS.groups,
     ORBIT_CACHE_TAGS.members,

@@ -224,6 +224,23 @@ export type SongRepository = {
   // #264: グループが「その他」受け皿（is_catchall）かをDBで権威的に判定する。
   // 検証（validateSong の分岐）と作成/更新の分岐の両方で使う。
   isGroupCatchall(groupId: string): Promise<boolean>;
+  // #427: 楽曲参加メンバーの許可集合をDBで権威的に解決する。
+  // クライアントから送られたリリース情報は信用せず、releaseIds に対応する
+  // リリースを DB から引き直して初出リリースを決める。
+  //
+  // 返却値の意味:
+  //   null            = 初出リリース未確定。releaseIds が空、対応するリリースが
+  //                     1件も存在しない、または日付を持つリリースが1件も無い場合。
+  //                     このとき楽曲参加メンバーは登録できない。
+  //   firstReleaseId  = 初出リリースのID（非null文字列）。
+  //   participantMemberIds
+  //                   = 初出リリースの参加メンバーID。空配列は「初出リリースは
+  //                     確定したが参加メンバーが未登録」を意味し、未確定とは区別する。
+  //
+  // DB に存在しない releaseId は判定対象から除外し、エラーにはしない。
+  findFirstReleaseParticipants(
+    releaseIds: string[]
+  ): Promise<{ firstReleaseId: string; participantMemberIds: string[] } | null>;
   create(input: CreateSongInput): Promise<Song>;
   update(id: string, input: UpdateSongInput): Promise<Song>;
   delete(id: string): Promise<void>;

@@ -20,6 +20,8 @@ export type ParticipantOption = {
   memberId: string;
   memberName: string;
   memberKana: string;
+  // 楽曲グループでの期。並び（期昇順→かな順）と人数内訳に使う。
+  generation: string | null;
   isInSongGroup: boolean;
 };
 

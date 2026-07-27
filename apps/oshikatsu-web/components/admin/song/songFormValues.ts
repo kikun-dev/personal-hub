@@ -63,6 +63,7 @@ export function getDefaultValues(): FormValues {
     musicPeople: "",
     arrangementPeople: "",
     choreographyPeople: "",
+    participantMemberIds: [],
     formationRows: [],
     centerMemberIds: [],
     mv: {
@@ -120,6 +121,7 @@ export function toSubmitValues(
       musicPeople: "",
       arrangementPeople: "",
       choreographyPeople: "",
+      participantMemberIds: [],
       formationRows: [],
       centerMemberIds: [],
       mv: {
@@ -149,6 +151,7 @@ export function toSubmitValues(
     musicPeople: values.musicPeople,
     arrangementPeople: values.arrangementPeople,
     choreographyPeople: values.choreographyPeople,
+    participantMemberIds: values.participantMemberIds,
     formationRows: values.formationRows.map((row) => ({
       memberCount: row.memberCount,
       memberIds: row.memberIds,

@@ -70,6 +70,9 @@ export default async function EditSongPage({
       .filter((credit) => credit.role === "choreography")
       .map((credit) => credit.personName)
       .join(", "),
+    // 参加メンバーの正典は orbit_track_members（ADR 0007 2026-07-24改訂）。
+    // フォーメーションが未登録でも復元できる。
+    participantMemberIds: song.participants.map((participant) => participant.memberId),
     formationRows: song.formationRows.map((row) => ({
       memberCount: String(row.memberCount),
       memberIds: row.members.map((member) => member.memberId),

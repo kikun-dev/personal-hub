@@ -3,6 +3,7 @@ import type { Song, CreateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import type { Result } from "@/types/result";
 import { validateSong } from "./validateSong";
+import { validateParticipantScope } from "./validateParticipantScope";
 
 export async function createSong(
   repo: SongRepository,
@@ -18,6 +19,19 @@ export async function createSong(
   const errors = validateSong(input, isCatchallGroup);
   if (errors.length > 0) {
     return { ok: false, errors };
+  }
+
+  // #427: 参加メンバーの許可集合はクライアント由来のリリース情報を信用せず、
+  // releaseId から DB で初出リリースを解決して検証する。catch-all 楽曲は
+  // リリースも参加メンバーも持たないため対象外。
+  if (!isCatchallGroup) {
+    const scope = await repo.findFirstReleaseParticipants(
+      input.releaseLinks.map((link) => link.releaseId)
+    );
+    const scopeErrors = validateParticipantScope(input.participantMemberIds, scope);
+    if (scopeErrors.length > 0) {
+      return { ok: false, errors: scopeErrors };
+    }
   }
 
   const song = await repo.create(input);

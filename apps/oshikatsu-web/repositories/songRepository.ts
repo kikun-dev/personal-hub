@@ -25,10 +25,17 @@ import {
   parseCostumes,
 } from "./songMapper";
 import { validateCalendarDateRanges } from "./calendarDateRanges";
+import { pickFirstDatedRelease } from "@/lib/firstRelease";
 
 const SONG_OPTION_SELECT = "id, title" as const;
 const RELEASE_TRACK_NUMBER_SELECT = "track_number" as const;
 const TRACK_ID_SELECT = "track_id" as const;
+// #427: 初出リリースの判定と、その参加メンバーの解決に必要な最小列。
+const FIRST_RELEASE_PARTICIPANT_SELECT = `
+  id,
+  release_date,
+  orbit_release_members(member_id)
+` as const;
 
 const MV_CALENDAR_SELECT = `
   mv_url,
@@ -99,16 +106,6 @@ function uniqueStrings(values: string[]): string[] {
   return Array.from(new Set(values));
 }
 
-// 楽曲参加メンバー（orbit_track_members）へ渡すID集合を組み立てる。
-// 楽曲フォームはまだ参加メンバーを独立して入力できない（#427 で対応）ため、
-// 現時点ではフォーメーション全列のメンバーを参加メンバーとみなす。
-// RPC 側はフォーメーションがある場合に「参加メンバー集合 = 全列のメンバー集合」を
-// 要求するため、この導出はその不変条件をそのまま満たす。
-function resolveTrackMemberIds(
-  formationRows: Array<{ memberIds: string[] }>
-): string[] {
-  return uniqueStrings(formationRows.flatMap((row) => row.memberIds));
-}
 
 // 曲順が空欄(null)の紐づけを、そのリリース内の末尾（max + 1）に解決する
 // select のみを行う読み取り専用処理のため OrbitReadClient で受け取る
@@ -246,6 +243,39 @@ export function createSongRepository(
       return data.is_catchall;
     },
 
+    // 楽曲参加メンバーの許可集合を DB で権威的に解決する（#427）。
+    // クライアントから届くのは releaseId の一覧だけで、リリース日も参加者も
+    // 信用しない。存在しない releaseId は自然に除外される（in フィルタの結果に
+    // 含まれないため）。返却値の意味は SongRepository の型定義を参照。
+    async findFirstReleaseParticipants(releaseIds) {
+      const uniqueReleaseIds = uniqueStrings(releaseIds.filter(Boolean));
+      if (uniqueReleaseIds.length === 0) return null;
+
+      const { data, error } = await supabase
+        .from("orbit_releases")
+        .select(FIRST_RELEASE_PARTICIPANT_SELECT)
+        .in("id", uniqueReleaseIds);
+
+      if (error) {
+        throw new RepositoryError("初出リリースの取得に失敗しました", error);
+      }
+
+      const firstRelease = pickFirstDatedRelease(
+        data.map((release) => ({
+          releaseId: release.id,
+          releaseDate: release.release_date,
+          memberIds: release.orbit_release_members.map((member) => member.member_id),
+        }))
+      );
+
+      if (!firstRelease) return null;
+
+      return {
+        firstReleaseId: firstRelease.releaseId,
+        participantMemberIds: uniqueStrings(firstRelease.memberIds),
+      };
+    },
+
     async create(input) {
       // 対象グループが「その他」受け皿グループ（is_catchall）かを DB で権威的に判定する。
       // catch-all 楽曲はリレーションを一切持たず、release-link 必須の v2 RPC を通せない
@@ -298,7 +328,7 @@ export function createSongRepository(
         p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
-        p_track_member_ids: resolveTrackMemberIds(formationRows),
+        p_track_member_ids: uniqueStrings(input.participantMemberIds),
         p_center_member_ids: input.centerMemberIds,
         p_formation_rows: formationRows,
         p_mv: mv,
@@ -394,7 +424,7 @@ export function createSongRepository(
         p_generation: generation,
         p_release_links: releaseLinks,
         p_credits: credits,
-        p_track_member_ids: resolveTrackMemberIds(formationRows),
+        p_track_member_ids: uniqueStrings(input.participantMemberIds),
         p_center_member_ids: input.centerMemberIds,
         p_formation_rows: formationRows,
         p_mv: mv,

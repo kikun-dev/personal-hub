@@ -20,6 +20,7 @@ function makeInput(overrides: Partial<CreateSongInput> = {}): CreateSongInput {
     musicPeople: "",
     arrangementPeople: "",
     choreographyPeople: "",
+    participantMemberIds: [],
     formationRows: [],
     centerMemberIds: [],
     mv: { url: "", directorName: "", location: "", publishedOn: "", memo: "" },
@@ -53,6 +54,7 @@ describe("validateSong のセンター検証", () => {
   it("フォーメーション1列目のセンターを受け付ける", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B, MEMBER_C],
         formationRows: [
           { memberCount: "2", memberIds: [MEMBER_A, MEMBER_B] },
           { memberCount: "1", memberIds: [MEMBER_C] },
@@ -67,6 +69,7 @@ describe("validateSong のセンター検証", () => {
   it("Wセンター（2人）を受け付ける", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B, MEMBER_C],
         formationRows: [{ memberCount: "3", memberIds: [MEMBER_A, MEMBER_B, MEMBER_C] }],
         centerMemberIds: [MEMBER_A, MEMBER_B],
       })
@@ -78,6 +81,7 @@ describe("validateSong のセンター検証", () => {
   it("センターが3人以上ならエラーにする", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B, MEMBER_C],
         formationRows: [{ memberCount: "3", memberIds: [MEMBER_A, MEMBER_B, MEMBER_C] }],
         centerMemberIds: [MEMBER_A, MEMBER_B, MEMBER_C],
       })
@@ -89,6 +93,7 @@ describe("validateSong のセンター検証", () => {
   it("センターが参加メンバー外ならエラーにする", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B],
         formationRows: [{ memberCount: "2", memberIds: [MEMBER_A, MEMBER_B] }],
         centerMemberIds: [MEMBER_D],
       })
@@ -100,6 +105,7 @@ describe("validateSong のセンター検証", () => {
   it("フォーメーションがある場合、センターが1列目以外ならエラーにする", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B],
         formationRows: [
           { memberCount: "1", memberIds: [MEMBER_A] },
           { memberCount: "1", memberIds: [MEMBER_B] },
@@ -114,6 +120,7 @@ describe("validateSong のセンター検証", () => {
   it("参加メンバー外のセンターには、1列目エラーを重ねて出さない", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B],
         formationRows: [
           { memberCount: "1", memberIds: [MEMBER_A] },
           { memberCount: "1", memberIds: [MEMBER_B] },
@@ -130,6 +137,7 @@ describe("validateSong のフォーメーション検証", () => {
   it("列人数と割当メンバー数が一致しなければエラーにする", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A, MEMBER_B],
         formationRows: [{ memberCount: "3", memberIds: [MEMBER_A, MEMBER_B] }],
       })
     );
@@ -143,6 +151,7 @@ describe("validateSong のフォーメーション検証", () => {
   it("同じメンバーを複数列に割り当てたらエラーにする", () => {
     const errors = validateSong(
       makeInput({
+        participantMemberIds: [MEMBER_A],
         formationRows: [
           { memberCount: "1", memberIds: [MEMBER_A] },
           { memberCount: "1", memberIds: [MEMBER_A] },

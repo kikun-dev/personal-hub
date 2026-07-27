@@ -74,6 +74,9 @@ export type SongReleaseLink = {
 export type SongParticipant = {
   memberId: string;
   memberNameJa: string;
+  // 並び（期昇順→かな順）と人数内訳のために保持する。期は楽曲グループでの所属から採る。
+  memberNameKana: string;
+  generation: string | null;
   isCenter: boolean;
 };
 
@@ -270,6 +273,9 @@ export type CreateSongInput = {
   musicPeople: string;
   arrangementPeople: string;
   choreographyPeople: string;
+  // 楽曲参加メンバー（#427）。初出リリースの参加メンバーから選ぶ。
+  // 許可集合はクライアントを信用せず、保存境界でDBから解決して検証する。
+  participantMemberIds: string[];
   formationRows: CreateSongFormationRowInput[];
   // センター（Wセンター可・最大2人）。参加メンバー内に限定する。
   // フォーメーションがある場合は1列目に含まれる必要がある。

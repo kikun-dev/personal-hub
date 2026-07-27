@@ -167,6 +167,8 @@ export type ReleaseOption = {
   id: string;
   title: string;
   releaseType: ReleaseType;
+  // 楽曲フォームで初出リリース（最古の非null日付）を判定するために必要（#427）
+  releaseDate: string | null;
   participantMemberIds: string[];
   participantMemberNames: string[];
   participantMemberKanas: string[];

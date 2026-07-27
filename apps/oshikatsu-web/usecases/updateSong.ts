@@ -3,6 +3,7 @@ import type { Song, UpdateSongInput } from "@/types/song";
 import type { ValidationError } from "@/types/errors";
 import type { Result } from "@/types/result";
 import { validateSong } from "./validateSong";
+import { validateParticipantScope } from "./validateParticipantScope";
 
 export async function updateSong(
   repo: SongRepository,
@@ -17,6 +18,17 @@ export async function updateSong(
   const errors = validateSong(input, isCatchallGroup);
   if (errors.length > 0) {
     return { ok: false, errors };
+  }
+
+  // #427: createSong と同様、参加メンバーの許可集合を DB で権威的に解決して検証する。
+  if (!isCatchallGroup) {
+    const scope = await repo.findFirstReleaseParticipants(
+      input.releaseLinks.map((link) => link.releaseId)
+    );
+    const scopeErrors = validateParticipantScope(input.participantMemberIds, scope);
+    if (scopeErrors.length > 0) {
+      return { ok: false, errors: scopeErrors };
+    }
   }
 
   const song = await repo.update(id, input);
