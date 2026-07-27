@@ -157,29 +157,47 @@ async function expectAttendancePrototypeLayout(
   const date = row.locator('[data-ui="attendance-date"]');
   const badgeColumn = row.locator('[data-ui="attendance-type"]');
   const badges = badgeColumn.locator('[data-ui="badge"]');
-  const badge = badges.first();
   const content = row.locator('[data-ui="attendance-content"]');
-  const arrow = row.locator('[data-ui="attendance-arrow"]');
   const link = row.getByRole("link");
-  const [dateBox, badgeBox, badgeColumnBox, contentBox, arrowBox, linkBox] =
-    await Promise.all([
-    date.boundingBox(),
-    badge.boundingBox(),
-    badgeColumn.boundingBox(),
-    content.boundingBox(),
-    arrow.boundingBox(),
-    link.boundingBox(),
-    ]);
-  if (
-    !dateBox ||
-    !badgeBox ||
-    !badgeColumnBox ||
-    !contentBox ||
-    !arrowBox ||
-    !linkBox
-  ) {
-    throw new Error(`${label}のPrototype列を計測できませんでした。`);
+
+  // 6要素の矩形は「同じ1フレームの並び」を検証するためのものなので、1回の evaluate で
+  // 同期的に読む。locator ごとに boundingBox() を投げると測定が hydration を跨ぎ、
+  // 途中で DOM が差し替わった要素のハンドルが detach して null になる（#440）。
+  // 1回の同期読み取りならその隙間が無く、待ち時間を増やさずに race を消せる。
+  await expect(link).toBeVisible();
+  const boxes = await row.evaluate((rowElement) => {
+    const read = (selector: string) => {
+      const element = rowElement.querySelector(selector);
+      if (element === null) return null;
+      const rect = element.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) return null;
+      return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+    };
+    return {
+      date: read('[data-ui="attendance-date"]'),
+      badge: read('[data-ui="attendance-type"] [data-ui="badge"]'),
+      badgeColumn: read('[data-ui="attendance-type"]'),
+      content: read('[data-ui="attendance-content"]'),
+      arrow: read('[data-ui="attendance-arrow"]'),
+      link: read("a"),
+    };
+  });
+  const missing = Object.entries(boxes)
+    .filter(([, box]) => box === null)
+    .map(([name]) => name);
+  if (missing.length > 0) {
+    throw new Error(
+      `${label}のPrototype列を計測できませんでした（矩形なし: ${missing.join(", ")}）。`
+    );
   }
+  const {
+    date: dateBox,
+    badge: badgeBox,
+    badgeColumn: badgeColumnBox,
+    content: contentBox,
+    arrow: arrowBox,
+    link: linkBox,
+  } = boxes as Record<keyof typeof boxes, NonNullable<(typeof boxes)["date"]>>;
 
   await expect(date).toHaveText(/^\d{2}\/\d{2}\([日月火水木金土]\)$/);
   expect(await badges.count(), `${label}: badge stack`).toBeGreaterThan(0);
