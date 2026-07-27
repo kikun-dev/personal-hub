@@ -53,11 +53,3 @@ export function splitPeople(value: string): string[] {
 export function joinPeople(people: string[]): string {
   return people.join(", ");
 }
-
-export function parseMemberCount(value: string): number {
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed < 0) {
-    return 0;
-  }
-  return parsed;
-}
