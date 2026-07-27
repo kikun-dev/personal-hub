@@ -24,25 +24,39 @@ const HYDRATION_PATTERN =
 type ConsoleCapture = {
   errors: string[];
   hydrationMessages: string[];
+  failedResources: string[];
 };
 
 /**
  * 既存の静的アセット 404（favicon 等が未配置）だけを除外する。
  *
- * 「Failed to load resource」を一律で除外すると、client JS chunk や RSC の
- * 取得失敗まで無視してしまう。その場合 SSR 済みの見出しは表示されるため
+ * 「Failed to load resource」を console テキストで一律除外すると、client JS chunk や
+ * RSC の取得失敗まで無視してしまう。その場合 SSR 済みの見出しは表示されるため
  * hydration していなくてもテストが通り、回帰テストとして偽陰性になる。
- * URL を見て、静的な画像・アイコンだけを除外対象にする。
+ *
+ * console message の location は空になることがあり URL 判定に使えないため、
+ * response を直接監視して URL で判定する。
  */
-const IGNORABLE_ASSET_URL = /(favicon|apple-touch-icon|icon)[^/]*\.(ico|png|svg)$/i;
+/**
+ * Vercel Analytics / Speed Insights のスクリプトは Vercel 上でのみ配信され、
+ * ローカルの `next start` では必ず 404 になる。アプリの配信物ではないため除外する。
+ * `/_next/` 配下の chunk や RSC は除外しないので、hydration に必要な取得の
+ * 失敗はそのまま検出できる。
+ */
+const IGNORABLE_RESOURCE_URL =
+  /\/_vercel\/|(favicon|apple-touch-icon|icon)[^/]*\.(ico|png|svg)$/i;
 
-function isIgnorableResourceFailure(text: string, url: string | undefined): boolean {
-  if (!/failed to load resource/i.test(text)) return false;
-  return Boolean(url && IGNORABLE_ASSET_URL.test(url));
+/** console 側の「Failed to load resource」は response 監視と重複するので数えない */
+function isResourceLoadMessage(text: string): boolean {
+  return /failed to load resource/i.test(text);
 }
 
 function captureConsole(page: Page): ConsoleCapture {
-  const capture: ConsoleCapture = { errors: [], hydrationMessages: [] };
+  const capture: ConsoleCapture = {
+    errors: [],
+    hydrationMessages: [],
+    failedResources: [],
+  };
 
   const record = (message: ConsoleMessage) => {
     const text = message.text();
@@ -50,10 +64,7 @@ function captureConsole(page: Page): ConsoleCapture {
       capture.hydrationMessages.push(text);
     }
     // React の hydration 警告は error だけでなく warning でも出るため両方拾う
-    if (
-      message.type() === "error" &&
-      !isIgnorableResourceFailure(text, message.location()?.url)
-    ) {
+    if (message.type() === "error" && !isResourceLoadMessage(text)) {
       capture.errors.push(text);
     }
   };
@@ -65,6 +76,15 @@ function captureConsole(page: Page): ConsoleCapture {
     if (HYDRATION_PATTERN.test(error.message)) {
       capture.hydrationMessages.push(error.message);
     }
+  });
+
+  // 取得に失敗したリソースは URL で判定する。既知の静的アセット以外が落ちていれば、
+  // hydration に必要な chunk / RSC が届いていない可能性がある。
+  page.on("response", (response) => {
+    if (response.ok() || response.status() < 400) return;
+    const url = response.url();
+    if (IGNORABLE_RESOURCE_URL.test(url)) return;
+    capture.failedResources.push(`${response.status()} ${url}`);
   });
 
   return capture;
@@ -104,6 +124,8 @@ function expectNoHydrationIssue(capture: ConsoleCapture, label: string): void {
   expect(capture.hydrationMessages, `${label}: hydration mismatch`).toEqual([]);
   // リソース読み込み以外の console error（React のエラー等）も出ないこと
   expect(capture.errors, `${label}: console error`).toEqual([]);
+  // 既知の静的アセット以外の取得失敗（chunk / RSC 等）も出ないこと
+  expect(capture.failedResources, `${label}: リソース取得失敗`).toEqual([]);
 }
 
 const NEW_FORM_PATHS = [
