@@ -353,6 +353,9 @@ export function SetlistEditor({
   // 後から届く応答を requestId 不一致として破棄する。
   const applyOriginalMembers = async (itemKey: number, trackId: string) => {
     if (!trackId) return;
+    // 保存はこの時点の items をペイロード化済みなので、保存中に反映しても
+    // その結果は保存されず、成功後の redirect で失われる。開始させない。
+    if (isSubmitting) return;
 
     const target = items.find((item) => item.key === itemKey);
     const hasExistingInput =
@@ -632,7 +635,9 @@ export function SetlistEditor({
                         size="sm"
                         onClick={() => applyOriginalMembers(item.key, item.trackId)}
                         disabled={
-                          !item.trackId || isItemPending(originalMemberOps, item.key)
+                          !item.trackId ||
+                          isSubmitting ||
+                          isItemPending(originalMemberOps, item.key)
                         }
                       >
                         {isItemPending(originalMemberOps, item.key)

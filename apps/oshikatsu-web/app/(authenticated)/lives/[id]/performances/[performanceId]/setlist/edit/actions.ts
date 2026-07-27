@@ -53,6 +53,10 @@ export async function resolveOriginalMembersAction(
   liveId: string,
   performanceId: string
 ): Promise<OriginalMembersActionResult> {
+  // 認可は入力の妥当性より先に完了させる。入力値によって Server Action の
+  // 認可動作が変わらないようにするため（rules/sakalog.md の Server Action 境界）。
+  const supabase = await requireAdmin();
+
   // クライアント由来のIDはUUID形式まで境界で検証する。業務上の未登録とは
   // 別の状態なので、blocked へ変換せず invalid-input として返す。
   if (
@@ -62,8 +66,6 @@ export async function resolveOriginalMembersAction(
   ) {
     return { status: "invalid-input" };
   }
-
-  const supabase = await requireAdmin();
 
   // 反映に必要な事実だけを、互いに独立なので並列で取得する。
   // 楽曲詳細やライブ配下の全公演・全セットリストは使わない。
