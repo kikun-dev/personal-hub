@@ -5,7 +5,7 @@ import { getLiveFormMasterData } from "@/usecases/readOrbitAdminData";
 import { SetlistEditor } from "@/components/lives/SetlistEditor";
 import {
   replacePerformanceSetlistAction,
-  getTrackSetlistFormationAction,
+  resolveOriginalMembersAction,
 } from "./actions";
 import type { LivePerformance, SetlistItem, SetlistEditorItemInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
@@ -106,7 +106,7 @@ export default async function SetlistEditPage({ params }: SetlistEditPageProps) 
       trackOptions={songOptions}
       copySources={copySources}
       onSubmit={handleSubmit}
-      getTrackFormation={getTrackSetlistFormationAction}
+      resolveOriginalMembers={resolveOriginalMembersAction}
     />
   );
 }

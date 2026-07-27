@@ -8,6 +8,7 @@ import type {
   BirthdayMember,
   MemberListItem,
   MemberOption,
+  MemberMembershipPeriod,
 } from "./member";
 import type { Event, EventOption, CreateEventInput, UpdateEventInput } from "./event";
 import type { EventType } from "./eventType";
@@ -92,6 +93,9 @@ export type MemberRepository = {
   findBirthdaysByDate(month: number, day: number): Promise<BirthdayMember[]>;
   findAllBirthdays(): Promise<BirthdayMember[]>;
   findActiveMemberIdsByGroups(groupIds: string[], date: string): Promise<string[]>;
+  // #424: 指定グループにおける在籍期間。オリメン反映で未加入・卒業を
+  // 公演日と比較して判定するために使う。
+  findMembershipPeriodsByGroup(groupId: string): Promise<MemberMembershipPeriod[]>;
 };
 
 // Top Page の read 窓。startDate を含み、endDate を含まない。

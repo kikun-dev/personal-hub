@@ -20,9 +20,10 @@ import { Combobox } from "@/components/ui/Combobox";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
 import { addKeyedItem, moveKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
+import type { ResolveOriginalMembersResult } from "@/usecases/resolveOriginalMembers";
+import { OriginalMembersNotice } from "@/components/lives/OriginalMembersNotice";
 import { FormationRowsEditor } from "@/components/admin/formation/FormationRowsEditor";
 import {
   isCenterAdditionBlocked,
@@ -51,9 +52,11 @@ type SetlistEditorProps = {
   onSubmit: (
     items: SetlistEditorItemInput[]
   ) => Promise<{ errors?: ValidationError[] }>;
-  getTrackFormation: (
-    trackId: string
-  ) => Promise<{ rows: { memberIds: string[] }[] }>;
+  resolveOriginalMembers: (
+    trackId: string,
+    liveId: string,
+    performanceId: string
+  ) => Promise<ResolveOriginalMembersResult>;
 };
 
 type FormationRowField = { key: number; memberCount: string; memberIds: string[] };
@@ -87,7 +90,7 @@ export function SetlistEditor({
   trackOptions,
   copySources,
   onSubmit,
-  getTrackFormation,
+  resolveOriginalMembers,
 }: SetlistEditorProps) {
   const keyRef = useRef(0);
   const nextKey = () => {
@@ -116,9 +119,13 @@ export function SetlistEditor({
   );
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copyingFormationKeys, setCopyingFormationKeys] = useState<Set<number>>(
+  const [applyingOriginalKeys, setApplyingOriginalKeys] = useState<Set<number>>(
     new Set()
   );
+  // オリメン反映の結果（除外件数・登録導線・停止理由）。項目ごとに保存まで残す。
+  const [originalMemberNotices, setOriginalMemberNotices] = useState<
+    Record<number, ResolveOriginalMembersResult>
+  >({});
   const [copySourceId, setCopySourceId] = useState("");
 
   const rosterIds = new Set(roster.map((member) => member.memberId));
@@ -300,58 +307,45 @@ export function SetlistEditor({
       }));
     };
 
-  const copyFormationFromTrack = async (itemKey: number, trackId: string) => {
+  // 「オリメン」= 楽曲参加メンバー（#425）。反映内容の確定はサーバで行い、
+  // ここは確定済みの結果を state へ適用して通知を残すだけにする（#424）。
+  const applyOriginalMembers = async (itemKey: number, trackId: string) => {
     if (!trackId) return;
+
     const target = items.find((item) => item.key === itemKey);
-    if (target && target.formationRows.some((row) => row.memberIds.length > 0)) {
+    const hasExistingInput =
+      Boolean(target) &&
+      (target!.members.length > 0 ||
+        target!.formationRows.some((row) => row.memberIds.length > 0));
+    if (hasExistingInput) {
       const confirmed = window.confirm(
-        "既存のフォーメーションを楽曲マスタの内容で上書きします。よろしいですか？"
+        "既存の披露メンバーとフォーメーションを楽曲マスタの内容で上書きします。よろしいですか？"
       );
       if (!confirmed) return;
     }
-    setCopyingFormationKeys((prev) => new Set(prev).add(itemKey));
+
+    setApplyingOriginalKeys((prev) => new Set(prev).add(itemKey));
     try {
-      const result = await getTrackFormation(trackId);
-      // 楽曲マスタにはこの公演のロスター外メンバー（卒業生等）が含まれ得るため、
-      // ロスター内のみに絞って取り込む（保存時の境界検証と整合させる）。
-      // ロスターが空（未設定）の場合は絞り込めないためそのまま取り込む。
-      const filterToRoster = rosterIds.size > 0;
-      const copiedRows = result.rows
-        .map((row) => {
-          const memberIds = filterToRoster
-            ? row.memberIds.filter((id) => rosterIds.has(id))
-            : row.memberIds;
-          return {
-            key: nextKey(),
-            memberCount: String(memberIds.length),
-            memberIds,
-          };
-        })
-        .filter((row) => row.memberIds.length > 0);
+      const result = await resolveOriginalMembers(trackId, live.id, performanceId);
 
-      // 配置は披露メンバーの部分集合という不変条件を保つため、コピーした
-      // メンバーを披露メンバーへも取り込む（既存のセンター指定は維持する）。
-      // 卒業・休演を理由にした除外と、その通知は #424 の範囲。
-      updateItem(itemKey, (item) => {
-        const existingIds = new Set(item.members.map((member) => member.memberId));
-        const added = copiedRows
-          .flatMap((row) => row.memberIds)
-          .filter((memberId) => !existingIds.has(memberId));
+      if (result.status === "blocked") {
+        // 既存入力は変更せず、理由と登録導線だけを残す
+        setOriginalMemberNotices((prev) => ({ ...prev, [itemKey]: result }));
+        return;
+      }
 
-        return {
-          ...item,
-          members: [
-            ...item.members,
-            ...Array.from(new Set(added)).map((memberId) => ({
-              memberId,
-              isCenter: false,
-            })),
-          ],
-          formationRows: copiedRows,
-        };
-      });
+      updateItem(itemKey, (item) => ({
+        ...item,
+        members: result.members.map((member) => ({ ...member })),
+        formationRows: result.formationRows.map((row) => ({
+          key: nextKey(),
+          memberCount: row.memberCount,
+          memberIds: [...row.memberIds],
+        })),
+      }));
+      setOriginalMemberNotices((prev) => ({ ...prev, [itemKey]: result }));
     } finally {
-      setCopyingFormationKeys((prev) => {
+      setApplyingOriginalKeys((prev) => {
         const next = new Set(prev);
         next.delete(itemKey);
         return next;
@@ -567,13 +561,25 @@ export function SetlistEditor({
                     <p className="text-xs text-foreground/50">
                       披露メンバー（C=センター）
                     </p>
-                    <button
-                      type="button"
-                      onClick={() => setAllMembers(item.key)}
-                      className={`text-xs ${TEXT_ACTION_CLASS}`}
-                    >
-                      全員
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setAllMembers(item.key)}
+                      >
+                        全員
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => applyOriginalMembers(item.key, item.trackId)}
+                        disabled={!item.trackId || applyingOriginalKeys.has(item.key)}
+                      >
+                        {applyingOriginalKeys.has(item.key) ? "反映中…" : "オリメン"}
+                      </Button>
+                    </div>
                   </div>
                   <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
                     {memberCandidates(item).map((candidate) => {
@@ -620,19 +626,16 @@ export function SetlistEditor({
                       );
                     })}
                   </div>
+                  {originalMemberNotices[item.key] && (
+                    <OriginalMembersNotice
+                      result={originalMemberNotices[item.key]}
+                      liveId={live.id}
+                      trackId={item.trackId}
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2 rounded-lg border border-foreground/10 p-2">
-                  <div className="flex items-center justify-end">
-                    <button
-                      type="button"
-                      onClick={() => copyFormationFromTrack(item.key, item.trackId)}
-                      disabled={!item.trackId || copyingFormationKeys.has(item.key)}
-                      className={`text-xs ${TEXT_ACTION_CLASS} disabled:cursor-not-allowed disabled:text-foreground/30`}
-                    >
-                      楽曲マスタからコピー
-                    </button>
-                  </div>
                   {(() => {
                     const candidates = formationCandidates(item);
                     const candidateIds = candidates.map((candidate) => candidate.memberId);
@@ -688,13 +691,15 @@ export function SetlistEditor({
                 className={compactInputClass}
               />
               {index > 0 && (
-                <button
+                <Button
                   type="button"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => copyCostumeFromPrevious(index)}
-                  className={`shrink-0 text-xs ${TEXT_ACTION_CLASS}`}
+                  className="shrink-0"
                 >
                   上と同じ
-                </button>
+                </Button>
               )}
             </div>
 
