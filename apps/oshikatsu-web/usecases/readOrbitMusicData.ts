@@ -104,10 +104,11 @@ const loadMembersPageData = createSharedReadLoader(
 );
 
 const loadMemberDetailPageData = createSharedReadLoader(
-  // v2: #426 で Song DTO へ必須の participants を追加した。参加楽曲（Song[]）を
-  // そのまま cache するため、旧 deployment が保存した participants 無しの payload を
-  // 再利用しないよう schema version を bump する。
-  ["orbit", "member-detail-page-data", "v2"],
+  // v3: #426 で Song DTO へ必須の participants を追加し、#427 で participants へ
+  // 必須の memberNameKana / generation を追加した。参加楽曲（Song[]）をそのまま
+  // cache するため、旧 deployment が保存した payload を再利用しないよう
+  // schema version を bump する。
+  ["orbit", "member-detail-page-data", "v3"],
   [
     ORBIT_CACHE_TAGS.groups,
     ORBIT_CACHE_TAGS.members,
@@ -196,9 +197,11 @@ const loadSongsPageData = createSharedReadLoader(
 );
 
 const loadSongDetailPageData = createSharedReadLoader(
-  // v2: #426 で Song DTO へ必須の participants を追加した。FormationDisplay は
-  // participants からセンターを判定するため、旧 payload を再利用すると実行時に落ちる。
-  ["orbit", "song-detail-page-data", "v2"],
+  // v3: #426 で Song DTO へ必須の participants を追加し、#427 で participants へ
+  // 必須の memberNameKana / generation を追加した。FormationDisplay は participants
+  // からセンターを判定し、参加メンバー表示は generation で並び順と人数内訳を出すため、
+  // 旧 payload を再利用すると実行時エラーや誤った表示になる。
+  ["orbit", "song-detail-page-data", "v3"],
   [ORBIT_CACHE_TAGS.songs, ORBIT_CACHE_TAGS.songsDetail],
   async (id: string) =>
     withOrbitReadClient(async (supabase) => {

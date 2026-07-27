@@ -30,6 +30,10 @@ import { validateSong } from "@/usecases/validateSong";
 import { pickFirstDatedRelease } from "@/lib/firstRelease";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
+import {
+  buildParticipantChoices,
+  selectedGenerationsForSummary,
+} from "@/lib/songParticipantChoices";
 import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 import {
@@ -106,6 +110,7 @@ export function SongForm({
   const [isMvFormVisible, setIsMvFormVisible] = useState<boolean>(
     () => Boolean(initialValues && hasMvValue(initialValues.mv))
   );
+  const [showAllParticipantMembers, setShowAllParticipantMembers] = useState(false);
   const [visibleVideos, setVisibleVideos] = useState<Record<SongVideoType, boolean>>(
     () => ({
       dance_practice: Boolean(
@@ -214,37 +219,28 @@ export function SongForm({
     return names;
   }, [memberNameById, participantOptions]);
 
-  const selectedParticipantIds = useMemo(
-    () => new Set(values.participantMemberIds),
-    [values.participantMemberIds]
-  );
-
-  const outOfGroupSelectedMemberNames = useMemo(
+  // 現候補（初出リリース参加者）と候補外の既選択を1つの表示モデルへ統合する。
+  // 候補外を一覧へ出さないと解除できず、保存境界で拒否されて詰むため（#427）。
+  const participantChoices = useMemo(
     () =>
-      participantOptions
-        .filter(
-          (option) => selectedParticipantIds.has(option.memberId) && !option.isInSongGroup
-        )
-        .map((option) => option.memberName),
-    [participantOptions, selectedParticipantIds]
+      buildParticipantChoices({
+        options: participantOptions,
+        selectedMemberIds: values.participantMemberIds,
+        nameById: participantNameById,
+        showAllGroups: showAllParticipantMembers,
+      }),
+    [
+      participantNameById,
+      participantOptions,
+      showAllParticipantMembers,
+      values.participantMemberIds,
+    ]
   );
 
-  // 初出リリースが変わって候補外になった選択済みメンバー。黙って削除せず警告として示す。
-  const outOfScopeSelectedMemberNames = useMemo(() => {
-    const allowed = new Set(participantOptions.map((option) => option.memberId));
-    return values.participantMemberIds
-      .filter((memberId) => !allowed.has(memberId))
-      .map((memberId) => participantNameById.get(memberId) ?? memberId);
-  }, [participantNameById, participantOptions, values.participantMemberIds]);
-
+  // 人数内訳は候補外の既選択も母数に含め、一覧のチェック数と食い違わせない。
   const selectedParticipantSummary = useMemo(
-    () =>
-      formatMemberCountSummary(
-        participantOptions
-          .filter((option) => selectedParticipantIds.has(option.memberId))
-          .map((option) => option.generation)
-      ),
-    [participantOptions, selectedParticipantIds]
+    () => formatMemberCountSummary(selectedGenerationsForSummary(participantChoices)),
+    [participantChoices]
   );
 
   // フォーメーションへ割り当てられるのは楽曲参加メンバーだけ（#427）
@@ -731,14 +727,15 @@ export function SongForm({
 
           {/* 参加メンバー → センター → フォーメーションの順で段階的に登録する（#427） */}
           <SongParticipantsSection
-            participantMemberIds={values.participantMemberIds}
             centerMemberIds={values.centerMemberIds}
             errors={errors}
-            participantOptions={participantOptions}
+            choices={participantChoices}
             selectedParticipantSummary={selectedParticipantSummary}
-            outOfGroupSelectedMemberNames={outOfGroupSelectedMemberNames}
-            outOfScopeSelectedMemberNames={outOfScopeSelectedMemberNames}
+            isFirstReleaseResolved={firstRelease !== null}
+            hasCandidate={participantOptions.length > 0}
             participantNameById={participantNameById}
+            showAllParticipantMembers={showAllParticipantMembers}
+            setShowAllParticipantMembers={setShowAllParticipantMembers}
             toggleParticipant={toggleParticipant}
             toggleCenter={toggleCenter}
           />

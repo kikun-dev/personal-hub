@@ -1,17 +1,21 @@
 "use client";
 
-import type { ParticipantOption } from "@/components/admin/song/songFormShared";
+import type { Dispatch, SetStateAction } from "react";
+import { Button } from "@/components/ui/Button";
+import type { ParticipantChoice } from "@/lib/songParticipantChoices";
 
 type SongParticipantsSectionProps = {
-  participantMemberIds: string[];
   centerMemberIds: string[];
   errors: Record<string, string>;
-  // 候補は初出リリースの参加メンバー（#427）。未確定なら空になる。
-  participantOptions: ParticipantOption[];
+  // 現候補と候補外既選択を統合した表示モデル（lib/songParticipantChoices）
+  choices: ParticipantChoice[];
   selectedParticipantSummary: string;
-  outOfGroupSelectedMemberNames: string[];
-  outOfScopeSelectedMemberNames: string[];
+  // 初出リリースが確定しているか。未確定と「参加メンバー未登録」を空状態で区別する。
+  isFirstReleaseResolved: boolean;
+  hasCandidate: boolean;
   participantNameById: Map<string, string>;
+  showAllParticipantMembers: boolean;
+  setShowAllParticipantMembers: Dispatch<SetStateAction<boolean>>;
   toggleParticipant: (memberId: string) => void;
   toggleCenter: (memberId: string) => void;
 };
@@ -24,74 +28,77 @@ type SongParticipantsSectionProps = {
  * フォーメーションが未登録でもここだけで保存できる。
  */
 export function SongParticipantsSection({
-  participantMemberIds,
   centerMemberIds,
   errors,
-  participantOptions,
+  choices,
   selectedParticipantSummary,
-  outOfGroupSelectedMemberNames,
-  outOfScopeSelectedMemberNames,
+  isFirstReleaseResolved,
+  hasCandidate,
   participantNameById,
+  showAllParticipantMembers,
+  setShowAllParticipantMembers,
   toggleParticipant,
   toggleCenter,
 }: SongParticipantsSectionProps) {
+  const selectedChoices = choices.filter((choice) => choice.isSelected);
+
   return (
     <div>
       <div className="mb-2 flex items-baseline justify-between gap-2">
         <label className="text-sm font-medium text-foreground-secondary">
           参加メンバー
         </label>
-        <span className="text-xs text-foreground-secondary">
-          {selectedParticipantSummary}
-        </span>
+        <div className="flex items-baseline gap-2">
+          <span className="text-xs text-foreground-secondary">
+            {selectedParticipantSummary}
+          </span>
+          {hasCandidate && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowAllParticipantMembers((prev) => !prev)}
+            >
+              {showAllParticipantMembers ? "同グループのみ表示" : "他グループも表示"}
+            </Button>
+          )}
+        </div>
       </div>
 
       {errors.participantMemberIds && (
         <p className="mb-2 text-xs text-danger-text">{errors.participantMemberIds}</p>
       )}
 
-      {outOfGroupSelectedMemberNames.length > 0 && (
-        <p className="mb-2 rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-xs text-foreground">
-          楽曲グループ外: {outOfGroupSelectedMemberNames.join(" / ")}
-        </p>
-      )}
-
-      {/* リリース紐づけを変更しても選択済みメンバーは自動削除しない。
-          候補外になったメンバーは明示して、外す判断をユーザーに委ねる（#427） */}
-      {outOfScopeSelectedMemberNames.length > 0 && (
-        <p className="mb-2 rounded-lg border border-border-subtle bg-surface-subtle px-3 py-2 text-xs text-foreground">
-          初出リリースの参加メンバー外: {outOfScopeSelectedMemberNames.join(" / ")}
-        </p>
-      )}
-
       <div className="max-h-56 overflow-y-auto rounded-lg border border-border-subtle p-2">
-        {participantOptions.map((option) => {
-          const checked = participantMemberIds.includes(option.memberId);
-
-          return (
-            <label
-              key={`participant-${option.memberId}`}
-              className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
-            >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => toggleParticipant(option.memberId)}
-              />
-              <span>
-                {option.memberName}
-                {!option.isInSongGroup && (
+        {choices.map((choice) => (
+          <label
+            key={`participant-${choice.memberId}`}
+            className="flex items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
+          >
+            <input
+              type="checkbox"
+              checked={choice.isSelected}
+              onChange={() => toggleParticipant(choice.memberId)}
+            />
+            <span>
+              {choice.memberName}
+              {/* 候補外の既選択は解除が必要。色だけに依存せずテキストで示す */}
+              {choice.isOutOfScope ? (
+                <span className="ml-1 text-xs text-danger-text">（候補外）</span>
+              ) : (
+                !choice.isInSongGroup && (
                   <span className="ml-1 text-xs text-foreground-secondary">
                     （グループ外）
                   </span>
-                )}
-              </span>
-            </label>
-          );
-        })}
-        {participantOptions.length === 0 && (
+                )
+              )}
+            </span>
+          </label>
+        ))}
+        {choices.length === 0 && (
           <p className="px-2 py-1 text-xs text-foreground-secondary">
-            初出リリース未確定
+            {isFirstReleaseResolved
+              ? "初出リリースに参加メンバー未登録"
+              : "初出リリース未確定"}
           </p>
         )}
       </div>
@@ -100,16 +107,16 @@ export function SongParticipantsSection({
       <div className="mt-3">
         <p className="mb-1 text-xs text-foreground-secondary">センター（最大2人）</p>
         <div className="flex flex-wrap gap-1.5">
-          {participantMemberIds.map((memberId) => {
-            const isCenter = centerMemberIds.includes(memberId);
+          {selectedChoices.map((choice) => {
+            const isCenter = centerMemberIds.includes(choice.memberId);
             const disabled = !isCenter && centerMemberIds.length >= 2;
-            const name = participantNameById.get(memberId) ?? memberId;
+            const name = participantNameById.get(choice.memberId) ?? choice.memberName;
 
             return (
               <button
                 type="button"
-                key={`center-${memberId}`}
-                onClick={() => toggleCenter(memberId)}
+                key={`center-${choice.memberId}`}
+                onClick={() => toggleCenter(choice.memberId)}
                 disabled={disabled}
                 aria-pressed={isCenter}
                 className={`rounded-full border px-2.5 py-1 text-xs transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-50 ${
@@ -124,7 +131,7 @@ export function SongParticipantsSection({
               </button>
             );
           })}
-          {participantMemberIds.length === 0 && (
+          {selectedChoices.length === 0 && (
             <p className="text-xs text-foreground-secondary">—</p>
           )}
         </div>
