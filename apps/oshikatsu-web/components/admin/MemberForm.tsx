@@ -24,19 +24,22 @@ import {
   isAllowedMemberImageMimeType,
   resolveMemberImageSrc,
 } from "@/lib/memberImage";
-import { addKeyedItem, removeKeyedItem, updateKeyedItem, withGeneratedKey } from "@/lib/keyedList";
+import {
+  addKeyedItem,
+  removeKeyedItem,
+  updateKeyedItem,
+  withGeneratedKey,
+} from "@/lib/keyedList";
+import {
+  type FormValues,
+  type SnsWithKey,
+  getDefaultGroup,
+  getDefaultSns,
+  getDefaultValues,
+  toFormValues,
+  toSubmitValues,
+} from "@/components/admin/member/memberFormValues";
 import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
-
-type GroupWithKey = CreateMemberGroupInput & { _key: string };
-type SnsWithKey = CreateMemberSnsInput & { _key: string };
-
-type FormValues = Omit<
-  CreateMemberInput,
-  "groups" | "sns"
-> & {
-  groups: GroupWithKey[];
-  sns: SnsWithKey[];
-};
 
 type MemberFormProps = {
   mode: "create" | "edit";
@@ -52,66 +55,6 @@ const CIRCLED_NUMBERS = [
   "①", "②", "③", "④", "⑤", "⑥", "⑦", "⑧", "⑨", "⑩",
   "⑪", "⑫", "⑬", "⑭", "⑮", "⑯", "⑰", "⑱", "⑲", "⑳",
 ] as const;
-
-function withGroupKey(group: CreateMemberGroupInput): GroupWithKey {
-  return withGeneratedKey(group);
-}
-
-function withSnsKey(sns: CreateMemberSnsInput): SnsWithKey {
-  return withGeneratedKey(sns);
-}
-
-function getDefaultValues(): FormValues {
-  return {
-    nameJa: "",
-    nameKana: "",
-    nameEn: "",
-    dateOfBirth: "",
-    bloodType: "",
-    callName: "",
-    penlightColor1: "",
-    penlightColor2: "",
-    heightCm: "",
-    hometown: "",
-    memo: "",
-    imageUrl: "",
-    blogUrl: "",
-    blogHashtag: "",
-    talkAppName: "",
-    talkAppUrl: "",
-    talkAppHashtag: "",
-    groups: [
-      withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" }),
-    ],
-    sns: [],
-  };
-}
-
-function toFormValues(input: CreateMemberInput): FormValues {
-  return {
-    ...input,
-    groups: input.groups.map(withGroupKey),
-    sns: input.sns.map(withSnsKey),
-  };
-}
-
-function toSubmitValues(form: FormValues): CreateMemberInput {
-  return {
-    ...form,
-    groups: form.groups.map((g) => ({
-      groupId: g.groupId,
-      generation: g.generation,
-      joinedAt: g.joinedAt,
-      graduatedAt: g.graduatedAt,
-    })),
-    sns: form.sns.map((sns) => ({
-      snsType: sns.snsType,
-      displayName: sns.displayName,
-      url: sns.url,
-      hashtag: sns.hashtag,
-    })),
-  };
-}
 
 function buildOrderedLabel(index: number, label: string): string {
   const prefix = CIRCLED_NUMBERS[index] ?? `${index + 1}.`;
@@ -211,7 +154,7 @@ export function MemberForm({
       ...prev,
       groups: addKeyedItem(
         prev.groups,
-        withGroupKey({ groupId: "", generation: "", joinedAt: "", graduatedAt: "" })
+        withGeneratedKey(getDefaultGroup())
       ),
     }));
   };
@@ -255,7 +198,7 @@ export function MemberForm({
       ...prev,
       sns: addKeyedItem(
         prev.sns,
-        withSnsKey({ snsType: "x", displayName: "", url: "", hashtag: "" })
+        withGeneratedKey(getDefaultSns())
       ),
     }));
   };

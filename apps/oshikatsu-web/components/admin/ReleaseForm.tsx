@@ -109,7 +109,10 @@ export function ReleaseForm({
             ? member.groupIds.includes(values.groupId)
             : true,
       }))
-      .sort((a, b) => a.nameJa.localeCompare(b.nameJa));
+      // ロケール未指定の localeCompare は実行環境の既定ロケールで照合するため、
+      // Node（SSR）とブラウザ（hydration）で並び順が食い違い hydration mismatch になる（#443）。
+      // 他の一覧と同じく "ja" を明示して両者を一致させる。
+      .sort((a, b) => a.nameJa.localeCompare(b.nameJa, "ja"));
   }, [members, values.groupId]);
 
   const selectedParticipantMemberIds = useMemo(

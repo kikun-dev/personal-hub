@@ -77,3 +77,25 @@ export function moveKeyedItem<T, K>(
 export function withGeneratedKey<T extends object>(item: T): T & { _key: string } {
   return { ...item, _key: crypto.randomUUID() };
 }
+
+/**
+ * 初期表示の行へ、SSR と client hydration で同一になるキーを付与する（#443）。
+ *
+ * `useAdminForm` は `useState` の遅延初期化で初期値を組み立てるため、初期値ビルダは
+ * サーバ描画とハイドレーションの両方で実行される。ここで `crypto.randomUUID()` を
+ * 使うと `_key` が食い違い、`_key` から作る `id` / `htmlFor` が hydration mismatch に
+ * なる（`release-search-{_key}` など）。
+ *
+ * 初期行はインデックスで決定的に採番し、追加・複製時だけ `withGeneratedKey()` を使う。
+ * 形式が異なるため両者は衝突せず、並べ替え・削除をしてもキーは要素に紐づいたまま残る。
+ *
+ * `scope` は同一ページ内の別配列と id が衝突しないための接頭辞
+ * （例: 楽曲フォームの releaseLinks と formationRows）。
+ */
+export function withInitialKey<T extends object>(
+  item: T,
+  index: number,
+  scope: string
+): T & { _key: string } {
+  return { ...item, _key: `initial-${scope}-${index}` };
+}

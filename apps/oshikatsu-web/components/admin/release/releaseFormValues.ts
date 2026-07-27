@@ -1,4 +1,4 @@
-import { withGeneratedKey } from "@/lib/keyedList";
+import { withGeneratedKey, withInitialKey } from "@/lib/keyedList";
 import type {
   CreateReleaseBonusVideoInput,
   CreateReleaseInput,
@@ -43,8 +43,13 @@ export function getDefaultValues(): FormValues {
 export function toFormValues(input: CreateReleaseInput): FormValues {
   return {
     ...input,
-    bonusVideos: input.bonusVideos.map(withBonusKey),
-    trackLinks: input.trackLinks.map(withTrackKey),
+    // 初期行は SSR / hydration で同一のキーにする（#443）
+    bonusVideos: input.bonusVideos.map((video, index) =>
+      withInitialKey(video, index, "bonus")
+    ),
+    trackLinks: input.trackLinks.map((link, index) =>
+      withInitialKey(link, index, "track")
+    ),
   };
 }
 
