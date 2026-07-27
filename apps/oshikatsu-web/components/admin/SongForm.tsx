@@ -30,6 +30,7 @@ import { validateSong } from "@/usecases/validateSong";
 import { pickFirstDatedRelease } from "@/lib/firstRelease";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
+import { toggleCenterSelection } from "@/lib/centerSelection";
 import {
   removeMemberFromRows,
   toggleRowMember,
@@ -445,16 +446,10 @@ export function SongForm({
   // センター（参加メンバー内・最大2人）の指定を切り替える。
   // フォーメーションがある場合の「1列目に含まれる」制約は保存時の検証で扱う（#427）。
   const toggleCenter = (memberId: string) => {
-    setValues((prev) => {
-      if (prev.centerMemberIds.includes(memberId)) {
-        return {
-          ...prev,
-          centerMemberIds: prev.centerMemberIds.filter((id) => id !== memberId),
-        };
-      }
-      if (prev.centerMemberIds.length >= 2) return prev;
-      return { ...prev, centerMemberIds: [...prev.centerMemberIds, memberId] };
-    });
+    setValues((prev) => ({
+      ...prev,
+      centerMemberIds: toggleCenterSelection(prev.centerMemberIds, memberId),
+    }));
     setErrors((prev) => {
       const next = { ...prev };
       delete next.centerMemberIds;

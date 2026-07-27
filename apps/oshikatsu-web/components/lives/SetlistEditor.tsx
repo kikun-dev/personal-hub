@@ -23,6 +23,20 @@ import { PendingLink } from "@/components/ui/PendingLink";
 import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
 import { addKeyedItem, moveKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
+import { FormationRowsEditor } from "@/components/admin/formation/FormationRowsEditor";
+import {
+  isCenterAdditionBlocked,
+  toggleCenterSelection,
+} from "@/lib/centerSelection";
+import {
+  outOfCandidateAssignedMemberIds,
+  removeMemberFromRows,
+  toggleRowMember,
+  unplacedMemberIds,
+  updateRowMemberCount,
+} from "@/lib/formationRows";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { arrayMove } from "@dnd-kit/sortable";
 
 type RosterMember = { memberId: string; memberNameJa: string };
 
@@ -42,7 +56,7 @@ type SetlistEditorProps = {
   ) => Promise<{ rows: { memberIds: string[] }[] }>;
 };
 
-type FormationRowField = { key: number; memberIds: string[] };
+type FormationRowField = { key: number; memberCount: string; memberIds: string[] };
 
 type SetlistItemField = {
   key: number;
@@ -92,6 +106,7 @@ export function SetlistEditor({
     members: item.members.map((member) => ({ ...member })),
     formationRows: item.formationRows.map((row) => ({
       key: nextKey(),
+      memberCount: row.memberCount,
       memberIds: [...row.memberIds],
     })),
   });
@@ -120,16 +135,23 @@ export function SetlistEditor({
     return [...roster, ...extras];
   };
 
-  // フォーメーション行の候補も同様に、ロスター ∪ 選択済み extras
-  const formationCandidates = (row: FormationRowField): RosterMember[] => {
-    const extras = row.memberIds
-      .filter((memberId) => !rosterIds.has(memberId))
-      .map((memberId) => ({
-        memberId,
-        memberNameJa: rosterById.get(memberId)?.memberNameJa ?? memberId,
-      }));
-    return [...roster, ...extras];
+  // 表示名は候補外（ロスター外・披露メンバー外）も解決できるようにする
+  const nameById = (item: SetlistItemField): Map<string, string> => {
+    const names = new Map(roster.map((member) => [member.memberId, member.memberNameJa]));
+    for (const member of item.members) {
+      if (!names.has(member.memberId)) {
+        names.set(member.memberId, rosterById.get(member.memberId)?.memberNameJa ?? member.memberId);
+      }
+    }
+    return names;
   };
+
+  // フォーメーションへ割り当てられるのは披露メンバーだけ（#423 / ADR 0007 追記 §5）
+  const formationCandidates = (item: SetlistItemField): RosterMember[] =>
+    item.members.map((member) => ({
+      memberId: member.memberId,
+      memberNameJa: rosterById.get(member.memberId)?.memberNameJa ?? member.memberId,
+    }));
 
   const addItem = (itemType: SetlistItemType) => {
     setItems((prev) =>
@@ -162,25 +184,42 @@ export function SetlistEditor({
     setItems((prev) => removeKeyedItem(prev, (item) => item.key, key));
   };
 
+  // 披露メンバーを外すときは、フォーメーションの配置も同じ state 更新で落とす。
+  // 別々に処理すると、一瞬だけ「披露メンバー外が配置されている」状態が描画される。
+  // センターは members から消えることで同時に失われる。
   const toggleMember = (itemKey: number, memberId: string) => {
     updateItem(itemKey, (item) => {
       const exists = item.members.some((member) => member.memberId === memberId);
+      if (!exists) {
+        return { ...item, members: [...item.members, { memberId, isCenter: false }] };
+      }
+
       return {
         ...item,
-        members: exists
-          ? item.members.filter((member) => member.memberId !== memberId)
-          : [...item.members, { memberId, isCenter: false }],
+        members: item.members.filter((member) => member.memberId !== memberId),
+        formationRows: removeMemberFromRows(item.formationRows, memberId),
       };
     });
   };
 
+  // センターは披露メンバー内の最大2人（ADR 0007 追記 §5）。上限到達後は追加せず、
+  // 解除は常に許可する。保存境界の検証任せにせず、楽曲フォームと同じく
+  // state 更新側で防いで操作前に制約を伝える。
   const toggleCenter = (itemKey: number, memberId: string) => {
-    updateItem(itemKey, (item) => ({
-      ...item,
-      members: item.members.map((member) =>
-        member.memberId === memberId ? { ...member, isCenter: !member.isCenter } : member
-      ),
-    }));
+    updateItem(itemKey, (item) => {
+      const currentCenterIds = item.members
+        .filter((member) => member.isCenter)
+        .map((member) => member.memberId);
+      const nextCenterIds = new Set(toggleCenterSelection(currentCenterIds, memberId));
+
+      return {
+        ...item,
+        members: item.members.map((member) => ({
+          ...member,
+          isCenter: nextCenterIds.has(member.memberId),
+        })),
+      };
+    });
   };
 
   // 「全員」ボタン：roster全員をmembersにセット（既存isCenterは保持、roster外の既存選択は残す）
@@ -208,7 +247,11 @@ export function SetlistEditor({
   const addFormationRow = (itemKey: number) => {
     updateItem(itemKey, (item) => ({
       ...item,
-      formationRows: addKeyedItem(item.formationRows, { key: nextKey(), memberIds: [] }),
+      formationRows: addKeyedItem(item.formationRows, {
+        key: nextKey(),
+        memberCount: "0",
+        memberIds: [],
+      }),
     }));
   };
 
@@ -219,39 +262,43 @@ export function SetlistEditor({
     }));
   };
 
-  const toggleFormationMember = (itemKey: number, rowKey: number, memberId: string) => {
-    updateItem(itemKey, (item) => ({
-      ...item,
-      formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) => {
-        const exists = row.memberIds.includes(memberId);
-        return {
-          ...row,
-          memberIds: exists
-            ? row.memberIds.filter((id) => id !== memberId)
-            : [...row.memberIds, memberId],
-        };
-      }),
-    }));
-  };
-
-  const moveFormationMember = (
+  const updateFormationRowCount = (
     itemKey: number,
     rowKey: number,
-    memberId: string,
-    direction: -1 | 1
+    memberCount: string
   ) => {
     updateItem(itemKey, (item) => ({
       ...item,
-      formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) => {
-        const index = row.memberIds.indexOf(memberId);
-        const target = index + direction;
-        if (index < 0 || target < 0 || target >= row.memberIds.length) return row;
-        const next = [...row.memberIds];
-        [next[index], next[target]] = [next[target], next[index]];
-        return { ...row, memberIds: next };
-      }),
+      formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
+        updateRowMemberCount(row, memberCount)
+      ),
     }));
   };
+
+  const toggleFormationMember = (itemKey: number, rowKey: number, memberId: string) => {
+    updateItem(itemKey, (item) => ({
+      ...item,
+      formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) =>
+        toggleRowMember(row, memberId)
+      ),
+    }));
+  };
+
+  // 列内の並び順（= slot_order = 左→右）をドラッグ&ドロップ／キーボードで入れ替える
+  const handleFormationDragEnd =
+    (itemKey: number, rowKey: number) =>
+    ({ active, over }: DragEndEvent) => {
+      if (!over || active.id === over.id) return;
+      updateItem(itemKey, (item) => ({
+        ...item,
+        formationRows: updateKeyedItem(item.formationRows, (row) => row.key, rowKey, (row) => {
+          const from = row.memberIds.indexOf(String(active.id));
+          const to = row.memberIds.indexOf(String(over.id));
+          if (from < 0 || to < 0) return row;
+          return { ...row, memberIds: arrayMove(row.memberIds, from, to) };
+        }),
+      }));
+    };
 
   const copyFormationFromTrack = async (itemKey: number, trackId: string) => {
     if (!trackId) return;
@@ -269,15 +316,39 @@ export function SetlistEditor({
       // ロスター内のみに絞って取り込む（保存時の境界検証と整合させる）。
       // ロスターが空（未設定）の場合は絞り込めないためそのまま取り込む。
       const filterToRoster = rosterIds.size > 0;
-      updateItem(itemKey, {
-        formationRows: result.rows
-          .map((row) => ({
+      const copiedRows = result.rows
+        .map((row) => {
+          const memberIds = filterToRoster
+            ? row.memberIds.filter((id) => rosterIds.has(id))
+            : row.memberIds;
+          return {
             key: nextKey(),
-            memberIds: filterToRoster
-              ? row.memberIds.filter((id) => rosterIds.has(id))
-              : row.memberIds,
-          }))
-          .filter((row) => row.memberIds.length > 0),
+            memberCount: String(memberIds.length),
+            memberIds,
+          };
+        })
+        .filter((row) => row.memberIds.length > 0);
+
+      // 配置は披露メンバーの部分集合という不変条件を保つため、コピーした
+      // メンバーを披露メンバーへも取り込む（既存のセンター指定は維持する）。
+      // 卒業・休演を理由にした除外と、その通知は #424 の範囲。
+      updateItem(itemKey, (item) => {
+        const existingIds = new Set(item.members.map((member) => member.memberId));
+        const added = copiedRows
+          .flatMap((row) => row.memberIds)
+          .filter((memberId) => !existingIds.has(memberId));
+
+        return {
+          ...item,
+          members: [
+            ...item.members,
+            ...Array.from(new Set(added)).map((memberId) => ({
+              memberId,
+              isCenter: false,
+            })),
+          ],
+          formationRows: copiedRows,
+        };
       });
     } finally {
       setCopyingFormationKeys((prev) => {
@@ -327,7 +398,10 @@ export function SetlistEditor({
       performanceStyles: item.performanceStyles,
       costumeNote: item.costumeNote,
       members: item.members,
-      formationRows: item.formationRows.map((row) => ({ memberIds: row.memberIds })),
+      formationRows: item.formationRows.map((row) => ({
+        memberCount: row.memberCount,
+        memberIds: row.memberIds,
+      })),
     }));
 
     try {
@@ -525,7 +599,14 @@ export function SetlistEditor({
                             <button
                               type="button"
                               onClick={() => toggleCenter(item.key, candidate.memberId)}
-                              className={`rounded px-1 ${
+                              disabled={isCenterAdditionBlocked(
+                                item.members
+                                  .filter((member) => member.isCenter)
+                                  .map((member) => member.memberId),
+                                candidate.memberId
+                              )}
+                              aria-pressed={selected.isCenter}
+                              className={`rounded px-1 disabled:cursor-not-allowed disabled:opacity-50 ${
                                 selected.isCenter
                                   ? "bg-pink-500 text-white"
                                   : "bg-foreground/10 text-foreground/50"
@@ -542,96 +623,59 @@ export function SetlistEditor({
                 </div>
 
                 <div className="space-y-2 rounded-lg border border-foreground/10 p-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-foreground/50">フォーメーション</p>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => copyFormationFromTrack(item.key, item.trackId)}
-                        disabled={!item.trackId || copyingFormationKeys.has(item.key)}
-                        className={`text-xs ${TEXT_ACTION_CLASS} disabled:cursor-not-allowed disabled:text-foreground/30`}
-                      >
-                        楽曲マスタからコピー
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => addFormationRow(item.key)}
-                        className={`text-xs ${TEXT_ACTION_CLASS}`}
-                      >
-                        列を追加
-                      </button>
-                    </div>
-                  </div>
-                  {item.formationRows.map((row, rowIndex) => (
-                    <div
-                      key={row.key}
-                      className="space-y-1 rounded border border-foreground/10 p-2"
+                  <div className="flex items-center justify-end">
+                    <button
+                      type="button"
+                      onClick={() => copyFormationFromTrack(item.key, item.trackId)}
+                      disabled={!item.trackId || copyingFormationKeys.has(item.key)}
+                      className={`text-xs ${TEXT_ACTION_CLASS} disabled:cursor-not-allowed disabled:text-foreground/30`}
                     >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-foreground/50">
-                          {rowIndex + 1}列目
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => removeFormationRow(item.key, row.key)}
-                          className="text-xs text-red-500 hover:underline"
-                        >
-                          削除
-                        </button>
-                      </div>
-                      <div className="grid max-h-32 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
-                        {formationCandidates(row).map((candidate) => (
-                          <label
-                            key={candidate.memberId}
-                            className="flex cursor-pointer items-center gap-1 text-xs"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={row.memberIds.includes(candidate.memberId)}
-                              onChange={() =>
-                                toggleFormationMember(item.key, row.key, candidate.memberId)
-                              }
-                            />
-                            <span className="text-foreground">
-                              {candidate.memberNameJa}
-                            </span>
-                          </label>
-                        ))}
-                      </div>
-                      {row.memberIds.length > 0 && (
-                        <ol className="space-y-1 text-xs text-foreground/70">
-                          {row.memberIds.map((memberId, memberIndex) => (
-                            <li key={memberId} className="flex items-center gap-2">
-                              <span>
-                                {memberIndex + 1}.{" "}
-                                {rosterById.get(memberId)?.memberNameJa ?? memberId}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  moveFormationMember(item.key, row.key, memberId, -1)
-                                }
-                                className="px-1 text-foreground/60 hover:text-foreground"
-                                aria-label="前へ"
-                              >
-                                ↑
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  moveFormationMember(item.key, row.key, memberId, 1)
-                                }
-                                className="px-1 text-foreground/60 hover:text-foreground"
-                                aria-label="後へ"
-                              >
-                                ↓
-                              </button>
-                            </li>
-                          ))}
-                        </ol>
-                      )}
-                    </div>
-                  ))}
+                      楽曲マスタからコピー
+                    </button>
+                  </div>
+                  {(() => {
+                    const candidates = formationCandidates(item);
+                    const candidateIds = candidates.map((candidate) => candidate.memberId);
+                    const names = nameById(item);
+                    return (
+                      <FormationRowsEditor
+                        label="フォーメーション"
+                        rows={item.formationRows.map((row) => ({
+                          key: String(row.key),
+                          memberCount: row.memberCount,
+                          memberIds: row.memberIds,
+                        }))}
+                        candidates={candidates.map((candidate) => ({
+                          memberId: candidate.memberId,
+                          memberName: candidate.memberNameJa,
+                        }))}
+                        nameById={names}
+                        unplacedMemberNames={unplacedMemberIds(
+                          item.formationRows,
+                          candidateIds
+                        ).map((memberId) => names.get(memberId) ?? memberId)}
+                        outOfCandidateMemberIds={outOfCandidateAssignedMemberIds(
+                          item.formationRows,
+                          candidateIds
+                        )}
+                        errors={errors}
+                        errorPrefix={`items.${index}.formationRows`}
+                        addRow={() => addFormationRow(item.key)}
+                        removeRow={(rowKey) =>
+                          removeFormationRow(item.key, Number(rowKey))
+                        }
+                        updateRowMemberCount={(rowKey, memberCount) =>
+                          updateFormationRowCount(item.key, Number(rowKey), memberCount)
+                        }
+                        toggleRowMember={(rowKey, memberId) =>
+                          toggleFormationMember(item.key, Number(rowKey), memberId)
+                        }
+                        handleDragEnd={(rowKey) =>
+                          handleFormationDragEnd(item.key, Number(rowKey))
+                        }
+                      />
+                    );
+                  })()}
                 </div>
               </>
             ) : null}

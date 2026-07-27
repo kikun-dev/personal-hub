@@ -1,6 +1,7 @@
 "use client";
 
 import type { ParticipantChoice } from "@/lib/songParticipantChoices";
+import { isCenterAdditionBlocked } from "@/lib/centerSelection";
 
 type SongParticipantsSectionProps = {
   centerMemberIds: string[];
@@ -90,7 +91,7 @@ export function SongParticipantsSection({
         <div className="flex flex-wrap gap-1.5">
           {selectedChoices.map((choice) => {
             const isCenter = centerMemberIds.includes(choice.memberId);
-            const disabled = !isCenter && centerMemberIds.length >= 2;
+            const disabled = isCenterAdditionBlocked(centerMemberIds, choice.memberId);
             const name = participantNameById.get(choice.memberId) ?? choice.memberName;
 
             return (
