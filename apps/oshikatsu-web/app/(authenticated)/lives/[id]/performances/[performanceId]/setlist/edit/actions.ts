@@ -7,6 +7,12 @@ import { createMemberRepository } from "@/repositories/memberRepository";
 import { validateSetlist } from "@/usecases/validateSetlist";
 import { resolveOriginalMembers } from "@/usecases/resolveOriginalMembers";
 import type { ResolveOriginalMembersResult } from "@/usecases/resolveOriginalMembers";
+
+// 業務上の停止（blocked）と、技術的な入力異常（invalid-input）を分ける。
+// 同じ型へ押し込むと、UIが「未登録なので編集してください」という誤った導線を出す。
+export type OriginalMembersActionResult =
+  | ResolveOriginalMembersResult
+  | { status: "invalid-input" };
 import { revalidateOrbitLiveData } from "@/lib/revalidateOrbit";
 import { isValidUuid } from "@/lib/validation";
 import type { ReplaceSetlistInput } from "@/types/live";
@@ -46,14 +52,15 @@ export async function resolveOriginalMembersAction(
   trackId: string,
   liveId: string,
   performanceId: string
-): Promise<ResolveOriginalMembersResult> {
-  // クライアント由来のIDはUUID形式まで境界で検証する。DBへ渡すと 22P02 の
-  // 汎用エラーになり、想定済みの停止結果と区別できなくなるため（#422 と同じ方針）。
-  if (!isValidUuid(trackId)) {
-    return { status: "blocked", reason: "no-track-participants" };
-  }
-  if (!isValidUuid(liveId) || !isValidUuid(performanceId)) {
-    return { status: "blocked", reason: "no-roster" };
+): Promise<OriginalMembersActionResult> {
+  // クライアント由来のIDはUUID形式まで境界で検証する。業務上の未登録とは
+  // 別の状態なので、blocked へ変換せず invalid-input として返す。
+  if (
+    !isValidUuid(trackId) ||
+    !isValidUuid(liveId) ||
+    !isValidUuid(performanceId)
+  ) {
+    return { status: "invalid-input" };
   }
 
   const supabase = await requireAdmin();
@@ -65,11 +72,10 @@ export async function resolveOriginalMembersAction(
     createLiveRepository(supabase).findPerformanceRosterContext(liveId, performanceId),
   ]);
 
-  if (!trackSource) {
-    return { status: "blocked", reason: "no-track-participants" };
-  }
-  if (!rosterContext) {
-    return { status: "blocked", reason: "no-roster" };
+  // 対象が見つからない場合は、参加メンバー未登録やロスター未登録とは別の状態。
+  // 編集導線を出さず、汎用エラーとして扱わせる。
+  if (!trackSource || !rosterContext) {
+    return { status: "invalid-input" };
   }
 
   const membershipPeriods = await createMemberRepository(
