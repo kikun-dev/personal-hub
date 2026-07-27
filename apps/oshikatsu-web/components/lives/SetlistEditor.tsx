@@ -25,6 +25,10 @@ import { addKeyedItem, moveKeyedItem, removeKeyedItem, updateKeyedItem } from "@
 import { toErrorMap } from "@/hooks/useAdminForm";
 import { FormationRowsEditor } from "@/components/admin/formation/FormationRowsEditor";
 import {
+  isCenterAdditionBlocked,
+  toggleCenterSelection,
+} from "@/lib/centerSelection";
+import {
   outOfCandidateAssignedMemberIds,
   removeMemberFromRows,
   toggleRowMember,
@@ -198,13 +202,24 @@ export function SetlistEditor({
     });
   };
 
+  // センターは披露メンバー内の最大2人（ADR 0007 追記 §5）。上限到達後は追加せず、
+  // 解除は常に許可する。保存境界の検証任せにせず、楽曲フォームと同じく
+  // state 更新側で防いで操作前に制約を伝える。
   const toggleCenter = (itemKey: number, memberId: string) => {
-    updateItem(itemKey, (item) => ({
-      ...item,
-      members: item.members.map((member) =>
-        member.memberId === memberId ? { ...member, isCenter: !member.isCenter } : member
-      ),
-    }));
+    updateItem(itemKey, (item) => {
+      const currentCenterIds = item.members
+        .filter((member) => member.isCenter)
+        .map((member) => member.memberId);
+      const nextCenterIds = new Set(toggleCenterSelection(currentCenterIds, memberId));
+
+      return {
+        ...item,
+        members: item.members.map((member) => ({
+          ...member,
+          isCenter: nextCenterIds.has(member.memberId),
+        })),
+      };
+    });
   };
 
   // 「全員」ボタン：roster全員をmembersにセット（既存isCenterは保持、roster外の既存選択は残す）
@@ -584,7 +599,14 @@ export function SetlistEditor({
                             <button
                               type="button"
                               onClick={() => toggleCenter(item.key, candidate.memberId)}
-                              className={`rounded px-1 ${
+                              disabled={isCenterAdditionBlocked(
+                                item.members
+                                  .filter((member) => member.isCenter)
+                                  .map((member) => member.memberId),
+                                candidate.memberId
+                              )}
+                              aria-pressed={selected.isCenter}
+                              className={`rounded px-1 disabled:cursor-not-allowed disabled:opacity-50 ${
                                 selected.isCenter
                                   ? "bg-pink-500 text-white"
                                   : "bg-foreground/10 text-foreground/50"
