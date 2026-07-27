@@ -51,6 +51,7 @@ const DETAIL_SELECT = `
       orbit_setlist_item_members(member_id, is_center, sort_order, orbit_members(name_ja)),
       orbit_setlist_item_formation_rows(
         row_number,
+        member_count,
         orbit_setlist_item_formation_members(slot_order, member_id, orbit_members(name_ja))
       )
     )
@@ -88,6 +89,7 @@ function mapFormationRows(
   return rows
     .map((row) => ({
       rowNumber: row.row_number,
+      memberCount: row.member_count,
       members: row.orbit_setlist_item_formation_members
         .slice()
         .sort((a, b) => a.slot_order - b.slot_order)

@@ -30,6 +30,7 @@ function toSetlistEditorItem(item: SetlistItem): SetlistEditorItemInput {
       isCenter: member.isCenter,
     })),
     formationRows: item.formationRows.map((row) => ({
+      memberCount: String(row.memberCount),
       memberIds: row.members.map((member) => member.memberId),
     })),
   };

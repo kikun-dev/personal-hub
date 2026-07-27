@@ -115,6 +115,9 @@ export type SetlistFormationMember = {
 
 export type SetlistFormationRow = {
   rowNumber: number;
+  // 列人数（orbit_setlist_item_formation_rows.member_count）。
+  // 編集画面が楽曲登録と同じ「列人数 / 割当人数」を復元するために保持する（#423）。
+  memberCount: number;
   members: SetlistFormationMember[];
 };
 
@@ -219,7 +222,12 @@ export type UpdateLiveInput = CreateLiveInput;
 // #261: セットリスト編集ビュー用の入力型。公演単位で保存する
 // replace_performance_setlist RPC（migration 052）にそのまま対応する。
 export type SetlistEditorMemberInput = { memberId: string; isCenter: boolean };
-export type SetlistEditorFormationRowInput = { memberIds: string[] };
+// 列人数はUIだけに閉じず UseCase 入力まで保持し、保存境界で
+// 「列人数 == 割当人数」を検証する（#423）。入力途中の文字列をそのまま運ぶ。
+export type SetlistEditorFormationRowInput = {
+  memberCount: string;
+  memberIds: string[];
+};
 export type SetlistEditorItemInput = {
   itemType: SetlistItemType;
   trackId: string;

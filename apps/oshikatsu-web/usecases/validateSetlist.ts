@@ -83,6 +83,71 @@ export function validateSetlist(
         seenFormationMembers.add(memberId);
       }
     }
+    if (formationInvalid) return;
+
+    // #423 / ADR 0007 追記 §5: 披露メンバーとフォーメーション・センターの整合。
+    // 列人数はUI状態に閉じず入力として受け取り、ここで割当人数との一致を検証する。
+    const performerIds = new Set(
+      item.members.map((member) => member.memberId).filter(Boolean)
+    );
+
+    item.formationRows.forEach((row, rowIndex) => {
+      const memberCount = Number(row.memberCount);
+      if (!Number.isInteger(memberCount) || memberCount < 0) {
+        errors.push({
+          field: `${field}.formationRows.${rowIndex}.memberCount`,
+          message: "列人数は0以上の整数で入力してください",
+        });
+        return;
+      }
+      if (row.memberIds.length !== memberCount) {
+        errors.push({
+          field: `${field}.formationRows.${rowIndex}.memberIds`,
+          message: "列人数と割当メンバー数を一致させてください",
+        });
+      }
+    });
+
+    if (item.formationRows.length > 0) {
+      // フォーメーションを登録する場合、配置と披露メンバーを完全一致させる。
+      // 部分集合を許すと「未配置」と「入力漏れ」を区別できない。
+      const unplacedCount = Array.from(performerIds).filter(
+        (memberId) => !seenFormationMembers.has(memberId)
+      ).length;
+      if (unplacedCount > 0) {
+        errors.push({
+          field: `${field}.formationRows`,
+          message: `披露メンバー${unplacedCount}人がフォーメーションに配置されていません`,
+        });
+      }
+
+      const outOfPerformerCount = Array.from(seenFormationMembers).filter(
+        (memberId) => !performerIds.has(memberId)
+      ).length;
+      if (outOfPerformerCount > 0) {
+        errors.push({
+          field: `${field}.formationRows`,
+          message: "フォーメーションには披露メンバーだけを配置してください",
+        });
+      }
+    }
+
+    // センターは披露メンバー内の最大2人。フォーメーションがある場合のみ1列目必須。
+    const centerIds = item.members
+      .filter((member) => member.isCenter && member.memberId)
+      .map((member) => member.memberId);
+    if (centerIds.length > 2) {
+      errors.push({ field, message: "センターは最大2人まで指定できます" });
+    }
+    if (item.formationRows.length > 0 && centerIds.length > 0) {
+      const frontRowIds = new Set(item.formationRows[0]?.memberIds ?? []);
+      if (centerIds.some((memberId) => !frontRowIds.has(memberId))) {
+        errors.push({
+          field,
+          message: "センターは1列目のメンバーから選んでください",
+        });
+      }
+    }
   });
   return errors;
 }
