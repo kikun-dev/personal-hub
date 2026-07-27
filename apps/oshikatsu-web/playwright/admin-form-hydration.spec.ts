@@ -15,13 +15,25 @@ import { expect, test, type ConsoleMessage, type Page } from "@playwright/test";
  * こちらの方が再現しやすい。
  */
 
+// production build では React のメッセージが minified され、
+// 「Minified React error #418」のような形になる。418/419/421/423/425 は
+// hydration 失敗系のコードなので、文言と併せてコード側でも検出する。
 const HYDRATION_PATTERN =
-  /hydrat|did not match|server rendered html|text content does not match/i;
+  /hydrat|did not match|server rendered html|text content does not match|Minified React error #(418|419|421|423|425)/i;
 
 type ConsoleCapture = {
   errors: string[];
   hydrationMessages: string[];
 };
+
+/**
+ * リソース読み込み失敗は本Issueの対象外。favicon 等の静的アセットが未配置で、
+ * 全ページに既存の 404 が出ている。hydration とは別の関心事なので、
+ * ここで拾うと本来見たい React のエラーが埋もれる。
+ */
+function isResourceLoadFailure(text: string): boolean {
+  return /failed to load resource/i.test(text);
+}
 
 function captureConsole(page: Page): ConsoleCapture {
   const capture: ConsoleCapture = { errors: [], hydrationMessages: [] };
@@ -32,7 +44,7 @@ function captureConsole(page: Page): ConsoleCapture {
       capture.hydrationMessages.push(text);
     }
     // React の hydration 警告は error だけでなく warning でも出るため両方拾う
-    if (message.type() === "error") {
+    if (message.type() === "error" && !isResourceLoadFailure(text)) {
       capture.errors.push(text);
     }
   };
@@ -40,7 +52,9 @@ function captureConsole(page: Page): ConsoleCapture {
   page.on("console", record);
   page.on("pageerror", (error) => {
     const text = error.message;
-    capture.errors.push(text);
+    if (!isResourceLoadFailure(text)) {
+      capture.errors.push(text);
+    }
     if (HYDRATION_PATTERN.test(text)) {
       capture.hydrationMessages.push(text);
     }
@@ -60,6 +74,7 @@ async function openAndHydrate(page: Page, path: string): Promise<void> {
 
 function expectNoHydrationIssue(capture: ConsoleCapture, label: string): void {
   expect(capture.hydrationMessages, `${label}: hydration mismatch`).toEqual([]);
+  // リソース読み込み以外の console error（React のエラー等）も出ないこと
   expect(capture.errors, `${label}: console error`).toEqual([]);
 }
 
@@ -67,7 +82,7 @@ const NEW_FORM_PATHS = [
   { label: "楽曲の新規作成", path: "/admin/songs/new" },
   { label: "メンバーの新規作成", path: "/admin/members/new" },
   { label: "リリースの新規作成", path: "/admin/releases/new" },
-  { label: "スポットの新規作成", path: "/admin/spots/new" },
+  { label: "スポットの新規作成", path: "/spots/new" },
 ];
 
 for (const { label, path } of NEW_FORM_PATHS) {
@@ -88,7 +103,7 @@ const EDIT_FORM_TARGETS = [
   { label: "楽曲の編集", listPath: "/admin/songs" },
   { label: "メンバーの編集", listPath: "/admin/members" },
   { label: "リリースの編集", listPath: "/admin/releases" },
-  { label: "スポットの編集", listPath: "/admin/spots" },
+  { label: "スポットの編集", listPath: "/spots" },
 ];
 
 for (const { label, listPath } of EDIT_FORM_TARGETS) {
