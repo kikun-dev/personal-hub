@@ -31,6 +31,11 @@ import { pickFirstDatedRelease } from "@/lib/firstRelease";
 import { compareByGenerationThenName } from "@/lib/memberOrder";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import {
+  removeMemberFromRows,
+  toggleRowMember,
+  updateRowMemberCount,
+} from "@/lib/formationRows";
+import {
   buildParticipantChoices,
   selectedGenerationsForSummary,
 } from "@/lib/songParticipantChoices";
@@ -39,7 +44,6 @@ import { toErrorMap, useAdminForm } from "@/hooks/useAdminForm";
 import {
   CREDIT_FIELDS,
   joinPeople,
-  parseMemberCount,
   peopleNamesForRole,
   splitPeople,
   type CreditFieldKey,
@@ -395,40 +399,18 @@ export function SongForm({
   const updateFormationRowCount = (key: string, memberCount: string) => {
     setValues((prev) => ({
       ...prev,
-      formationRows: updateKeyedItem(prev.formationRows, (row) => row._key, key, (row) => {
-        const nextCount = parseMemberCount(memberCount);
-        const nextMembers = row.memberIds.slice(0, nextCount);
-
-        return {
-          ...row,
-          memberCount,
-          memberIds: nextMembers,
-        };
-      }),
+      formationRows: updateKeyedItem(prev.formationRows, (row) => row._key, key, (row) =>
+        updateRowMemberCount(row, memberCount)
+      ),
     }));
   };
 
   const toggleFormationMember = (key: string, memberId: string) => {
     setValues((prev) => ({
       ...prev,
-      formationRows: updateKeyedItem(prev.formationRows, (row) => row._key, key, (row) => {
-        if (row.memberIds.includes(memberId)) {
-          return {
-            ...row,
-            memberIds: row.memberIds.filter((id) => id !== memberId),
-          };
-        }
-
-        const limit = parseMemberCount(row.memberCount);
-        if (row.memberIds.length >= limit) {
-          return row;
-        }
-
-        return {
-          ...row,
-          memberIds: [...row.memberIds, memberId],
-        };
-      }),
+      formationRows: updateKeyedItem(prev.formationRows, (row) => row._key, key, (row) =>
+        toggleRowMember(row, memberId)
+      ),
     }));
   };
 
@@ -448,10 +430,7 @@ export function SongForm({
         ...prev,
         participantMemberIds: prev.participantMemberIds.filter((id) => id !== memberId),
         centerMemberIds: prev.centerMemberIds.filter((id) => id !== memberId),
-        formationRows: prev.formationRows.map((row) => ({
-          ...row,
-          memberIds: row.memberIds.filter((id) => id !== memberId),
-        })),
+        formationRows: removeMemberFromRows(prev.formationRows, memberId),
       };
     });
     setErrors((prev) => {
