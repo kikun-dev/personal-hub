@@ -120,9 +120,12 @@ export function OriginalMembersNotice({
         </p>
       )}
 
+      {/* 「現役」は在籍判定が行われた場合しか確定しない（公演日未登録や在籍履歴なしでも
+          ここへ来る）。UseCase が確定していない分類をUIで断定せず、
+          出演メンバー未登録という確認済みの事実だけを述べる。 */}
       {notInRoster && (
         <p className="mt-1">
-          {notInRoster.memberIds.length}人は現役ですがこのライブの出演メンバーに未登録のため反映していません。
+          {notInRoster.memberIds.length}人はこのライブの出演メンバーに未登録のため反映していません。
           <Link
             href={`${APP_ROUTES.admin}/lives/${liveId}/edit`}
             target="_blank"

@@ -127,6 +127,10 @@ export function SetlistEditor({
   const [originalMemberNotices, setOriginalMemberNotices] = useState<
     Record<number, { trackId: string; result: ResolveOriginalMembersResult }>
   >({});
+  // 実行中のオリメン反映を項目ごとに識別する token。楽曲変更で同期的に無効化し、
+  // 応答が返った時点で自分の token が生きている場合だけ適用する。
+  // state updater の実行タイミングに依存しないよう ref で持つ。
+  const originalMemberRequestRef = useRef(new Map<number, symbol>());
   const [copySourceId, setCopySourceId] = useState("");
 
   const rosterIds = new Set(roster.map((member) => member.memberId));
@@ -182,6 +186,19 @@ export function SetlistEditor({
     patch: Partial<SetlistItemField> | ((item: SetlistItemField) => SetlistItemField)
   ) => {
     setItems((prev) => updateKeyedItem(prev, (item) => item.key, key, patch));
+  };
+
+  // 楽曲を変更したら、実行中のオリメン反映を無効化し、旧楽曲の通知も落とす。
+  // ref の更新は同期的なので、応答が返る前に確実に無効化できる。
+  const changeTrackId = (itemKey: number, trackId: string) => {
+    originalMemberRequestRef.current.delete(itemKey);
+    setOriginalMemberNotices((prev) => {
+      if (!(itemKey in prev)) return prev;
+      const next = { ...prev };
+      delete next[itemKey];
+      return next;
+    });
+    updateItem(itemKey, { trackId });
   };
 
   const moveItem = (key: number, direction: -1 | 1) => {
@@ -325,39 +342,28 @@ export function SetlistEditor({
       if (!confirmed) return;
     }
 
+    const token = Symbol("original-members-request");
+    originalMemberRequestRef.current.set(itemKey, token);
     setApplyingOriginalKeys((prev) => new Set(prev).add(itemKey));
     try {
       const result = await resolveOriginalMembers(trackId, live.id, performanceId);
 
-      // 実行中に楽曲を変更されていたら、古いレスポンスは捨てる。
-      // 適用しないだけでなく通知も残さない（別楽曲の結果と導線を出さないため）。
-      let isStale = false;
-      setItems((prev) => {
-        const current = prev.find((item) => item.key === itemKey);
-        if (!current || current.trackId !== trackId) {
-          isStale = true;
-          return prev;
-        }
-        if (result.status === "blocked") {
-          // 既存入力は変更せず、理由と登録導線だけを残す
-          return prev;
-        }
-        return prev.map((item) =>
-          item.key === itemKey
-            ? {
-                ...item,
-                members: result.members.map((member) => ({ ...member })),
-                formationRows: result.formationRows.map((row) => ({
-                  key: nextKey(),
-                  memberCount: row.memberCount,
-                  memberIds: [...row.memberIds],
-                })),
-              }
-            : item
-        );
-      });
+      // 実行中に楽曲を変更されていたら、古いレスポンスは適用も記録もしない。
+      // 記録してしまうと、元の楽曲へ戻したときに「反映しました」だけが復活する。
+      if (originalMemberRequestRef.current.get(itemKey) !== token) return;
+      originalMemberRequestRef.current.delete(itemKey);
 
-      if (isStale) return;
+      if (result.status !== "blocked") {
+        updateItem(itemKey, (item) => ({
+          ...item,
+          members: result.members.map((member) => ({ ...member })),
+          formationRows: result.formationRows.map((row) => ({
+            key: nextKey(),
+            memberCount: row.memberCount,
+            memberIds: [...row.memberIds],
+          })),
+        }));
+      }
       setOriginalMemberNotices((prev) => ({
         ...prev,
         [itemKey]: { trackId, result },
@@ -544,7 +550,7 @@ export function SetlistEditor({
                 <div className="flex flex-wrap gap-2">
                   <Combobox
                     value={item.trackId}
-                    onChange={(trackId) => updateItem(item.key, { trackId })}
+                    onChange={(trackId) => changeTrackId(item.key, trackId)}
                     options={trackOptions.map((track) => ({
                       value: track.id,
                       label: track.title,

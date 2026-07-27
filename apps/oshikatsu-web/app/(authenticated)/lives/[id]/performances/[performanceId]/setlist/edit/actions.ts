@@ -8,6 +8,7 @@ import { validateSetlist } from "@/usecases/validateSetlist";
 import { resolveOriginalMembers } from "@/usecases/resolveOriginalMembers";
 import type { ResolveOriginalMembersResult } from "@/usecases/resolveOriginalMembers";
 import { revalidateOrbitLiveData } from "@/lib/revalidateOrbit";
+import { isValidUuid } from "@/lib/validation";
 import type { ReplaceSetlistInput } from "@/types/live";
 import type { ValidationError } from "@/types/errors";
 import { RepositoryError } from "@/types/errors";
@@ -46,6 +47,15 @@ export async function resolveOriginalMembersAction(
   liveId: string,
   performanceId: string
 ): Promise<ResolveOriginalMembersResult> {
+  // クライアント由来のIDはUUID形式まで境界で検証する。DBへ渡すと 22P02 の
+  // 汎用エラーになり、想定済みの停止結果と区別できなくなるため（#422 と同じ方針）。
+  if (!isValidUuid(trackId)) {
+    return { status: "blocked", reason: "no-track-participants" };
+  }
+  if (!isValidUuid(liveId) || !isValidUuid(performanceId)) {
+    return { status: "blocked", reason: "no-roster" };
+  }
+
   const supabase = await requireAdmin();
 
   // 反映に必要な事実だけを、互いに独立なので並列で取得する。

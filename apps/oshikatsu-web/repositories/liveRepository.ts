@@ -299,10 +299,14 @@ export function createLiveRepository(supabase: OrbitReadClient): LiveRepository 
           .eq("live_id", liveId),
       ]);
 
+      // 不正なUUIDは 22P02 になる。findById / findOriginalMemberSource と揃えて
+      // 未検出（null）として扱い、呼び出し側が停止結果へ落とせるようにする。
       if (performanceResult.error) {
+        if (performanceResult.error.code === "22P02") return null;
         throw new RepositoryError("公演情報の取得に失敗しました", performanceResult.error);
       }
       if (rosterResult.error) {
+        if (rosterResult.error.code === "22P02") return null;
         throw new RepositoryError("出演メンバーの取得に失敗しました", rosterResult.error);
       }
       if (!performanceResult.data) return null;
