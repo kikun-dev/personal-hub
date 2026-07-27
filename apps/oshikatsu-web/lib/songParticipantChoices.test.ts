@@ -35,11 +35,21 @@ const NAMES = new Map([
   ["gone2", "あるばむ"],
 ]);
 
+// 楽曲グループでの所属期。候補内・候補外で同じ供給源を使う（#427 レビューP2）。
+const GENERATIONS = new Map<string, string | null>([
+  ["m1", "1"],
+  ["m2", "2"],
+  ["m3", null],
+  ["gone1", "3"],
+  ["gone2", null],
+]);
+
 function build(overrides: Partial<Parameters<typeof buildParticipantChoices>[0]> = {}) {
   return buildParticipantChoices({
     options: [IN_GROUP_1, IN_GROUP_2, OTHER_GROUP],
     selectedMemberIds: [],
     nameById: NAMES,
+    generationById: GENERATIONS,
     ...overrides,
   });
 }
@@ -117,10 +127,16 @@ describe("selectedGenerationsForSummary", () => {
     expect(selectedGenerationsForSummary(choices)).toEqual(["1"]);
   });
 
-  it("候補外の既選択も母数に含める（期不明として null）", () => {
+  it("候補外の既選択も母数に含め、期も解決する", () => {
     const choices = build({ selectedMemberIds: ["m1", "gone1"] });
 
-    expect(selectedGenerationsForSummary(choices)).toEqual(["1", null]);
+    expect(selectedGenerationsForSummary(choices)).toEqual(["1", "3"]);
+  });
+
+  it("期が解決できない候補外は null（他N人）として扱う", () => {
+    const choices = build({ selectedMemberIds: ["unknown-id"] });
+
+    expect(selectedGenerationsForSummary(choices)).toEqual([null]);
   });
 
   it("未選択なら空配列を返す", () => {

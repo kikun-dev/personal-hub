@@ -40,12 +40,16 @@ export type BuildParticipantChoicesInput = {
   selectedMemberIds: string[];
   // 候補外メンバーの表示名解決用。未解決なら memberId をそのまま出す。
   nameById: ReadonlyMap<string, string>;
+  // 候補外メンバーの期。候補内と同じ供給源（楽曲グループでの所属期）を渡すこと。
+  // 人数内訳の母数に候補外も含めるため、ここが欠けると内訳だけ「他N人」に寄る。
+  generationById: ReadonlyMap<string, string | null>;
 };
 
 export function buildParticipantChoices({
   options,
   selectedMemberIds,
   nameById,
+  generationById,
 }: BuildParticipantChoicesInput): ParticipantChoice[] {
   const selected = new Set(selectedMemberIds);
   const optionIds = new Set(options.map((option) => option.memberId));
@@ -66,7 +70,7 @@ export function buildParticipantChoices({
     .map((memberId) => ({
       memberId,
       memberName: nameById.get(memberId) ?? memberId,
-      generation: null,
+      generation: generationById.get(memberId) ?? null,
       isSelected: true,
       isInSongGroup: false,
       isOutOfScope: true,

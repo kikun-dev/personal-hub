@@ -143,6 +143,22 @@ export function SongForm({
     selectedGroupNameJa
   );
 
+  // 期は「楽曲のグループ」での所属から引く（#427 レビューP2）。
+  // ReleaseOption.participantMemberGenerations は「リリースのグループ」基準のため、
+  // 楽曲グループと初出リリースのグループが異なる場合に公開表示（songMapper）とずれる。
+  const songGroupGenerationByMemberId = useMemo(
+    () =>
+      new Map<string, string | null>(
+        members.map((member) => [
+          member.id,
+          member.groupGenerations.find(
+            (membership) => membership.groupId === values.groupId
+          )?.generation ?? null,
+        ])
+      ),
+    [members, values.groupId]
+  );
+
   const memberGroupIdsById = useMemo(
     () =>
       new Map<string, Set<string>>(
@@ -183,7 +199,7 @@ export function SongForm({
         const name =
           firstRelease.participantMemberNames[i] ?? memberNameById.get(memberId) ?? "";
         const kana = firstRelease.participantMemberKanas[i] ?? "";
-        const generation = firstRelease.participantMemberGenerations[i] ?? null;
+        const generation = songGroupGenerationByMemberId.get(memberId) ?? null;
         options.set(memberId, { name: name || memberId, kana, generation });
       }
     }
@@ -206,7 +222,13 @@ export function SongForm({
           { generation: b.generation, nameKana: b.memberKana }
         )
       );
-  }, [firstRelease, memberGroupIdsById, memberNameById, values.groupId]);
+  }, [
+    firstRelease,
+    memberGroupIdsById,
+    memberNameById,
+    songGroupGenerationByMemberId,
+    values.groupId,
+  ]);
 
   // 表示名は候補（初出リリース参加者）に無い選択済みメンバーも解決できるようにする。
   // リリース紐づけ変更で候補外になっても、名前を出して外す判断を促すため（#427）。
@@ -226,8 +248,14 @@ export function SongForm({
         options: participantOptions,
         selectedMemberIds: values.participantMemberIds,
         nameById: participantNameById,
+        generationById: songGroupGenerationByMemberId,
       }),
-    [participantNameById, participantOptions, values.participantMemberIds]
+    [
+      participantNameById,
+      participantOptions,
+      songGroupGenerationByMemberId,
+      values.participantMemberIds,
+    ]
   );
 
   // 人数内訳は候補外の既選択も母数に含め、一覧のチェック数と食い違わせない。
