@@ -17,6 +17,9 @@ pnpm test:e2e             # = playwright test（webServer が build + start を�
 pnpm test:e2e --list      # 収集のみ（実行しない・server 起動しない）
 pnpm test:e2e <spec名>    # 個別 spec
 
+# 高回数の反復・full suiteはローカルSupabaseへ固定して実行する
+pnpm test:e2e:local -- <spec名> --repeat-each=40 --workers=1
+
 # 開発中に起動済み server を再利用して素早く回したいとき（production build 契約は外れる）。
 # server と spec の「今日」を一致させるため、両方に同じ E2E_FIXED_TODAY を必ず渡す。
 # （未指定で E2E_REUSE_SERVER=1 のときは config が fail-fast する）
@@ -44,6 +47,36 @@ E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 pnpm test:e2e <spec名>    # test
   timeout 不足ではない）。
 - 認証は下記 `storageState`（非 CI）を利用する。失効したら再作成する。
 
+### 高回数検証はローカルSupabaseで行う
+
+`--repeat-each` や full suite の複数回実行は、hosted Supabase の Disk IO Budgetを
+消費しないよう `pnpm test:e2e:local` を使う。このコマンドは次を自動化する。
+
+- 接続先を `http://127.0.0.1` / `http://localhost` に限定し、remote URLなら実行前に停止する
+- ローカル専用adminユーザーとRecent Attendance用の最小fixtureを冪等に準備する
+- hostedには存在するがlocal `db reset`では欠けるrole GRANTを、既存の
+  `scripts/perf/grant-local-roles.sql`でローカルDBだけへ冪等適用する
+- `playwright/.auth/local-user.json` を生成し、通常のGoogle認証状態
+  (`playwright/.auth/user.json`) と分離する
+- build / Next.js server / Playwright Node processの全てへ同じローカル接続情報を渡す
+
+前提として `docs/ops/local-supabase.md` の手順でローカルstackとmigration/seedを準備する。
+通常は次の順でよい。
+
+```bash
+cd apps/oshikatsu-web
+supabase start
+supabase db reset # ローカルDBだけを初期化する
+pnpm test:e2e:local -- --list
+pnpm test:e2e:local -- playwright/recent-attendance-isolation.spec.ts --repeat-each=40
+```
+
+ローカルstackのport/keyを既定値から変えている場合だけ、
+`E2E_LOCAL_SUPABASE_URL` / `E2E_LOCAL_SUPABASE_ANON_KEY` /
+`E2E_LOCAL_SUPABASE_SERVICE_ROLE_KEY` で上書きする。URLのlocal-only検証は解除できない。
+Docker container名を変えている場合は `E2E_LOCAL_SUPABASE_KONG_CONTAINER` /
+`E2E_LOCAL_SUPABASE_DB_CONTAINER` も指定する。
+
 ### 失敗の証跡は trace に残る（#440）
 
 `use.trace: "retain-on-failure"` を設定してある。ローカルは `retries: 0` なので
@@ -68,8 +101,40 @@ prod server と Supabase が飽和して TTFB が最大 1562ms まで伸びる�
 飽和は1ページの中で起きるため `workers: 1` では防げない。どの test が落ちるかは
 「その時点でサーバがどれだけ温まっているか」に依存するので、**失敗する test が run ごとに移動する**。
 
-対策は発生源側で、`components/events/CalendarDateLink.tsx` が `prefetch={false}` を指定している。
-**カレンダーの日付リンクへ prefetch を戻さないこと。**
+対策は発生源側で、TOPの `components/events/CalendarDateLink.tsx`・
+`components/events/EventListItem.tsx`・`components/top/RecentAttendance.tsx` と、
+リンク密度が高いライブ一覧・詳細の `components/lives/LiveCard.tsx`・
+`components/lives/LiveDetail.tsx` が `prefetch={false}` を指定している。
+カレンダーだけを止めた中間検証では、日付リンク由来は0件になった一方、TOPのイベント一覧から
+13〜44件のprefetchが残り、日付navigationのRSC本文が未完了になる同じ失敗を再観測した。
+イベント一覧も止めた時点では参加記録へのリンクなど7件が残り、同じ失敗を再観測した。
+full suiteの中間検証では、ライブ一覧から詳細へ遷移するtestでも、一覧cardとoffscreenを含む
+全公演cardから118件のprefetchが走り、保存・解除後のUI反映がtimeoutした。同じ発生原因なので
+ライブ一覧・詳細にも発生源側の抑止を適用し、総requestは161→61、RSCは120→20、prefetchは
+118→18へ減少した。POSTのwaitも約1.6秒→0.35秒／0.16秒へ短縮した。
+**TOPのカレンダー日付・イベント一覧・最近の参加記録、およびライブ一覧・詳細の高密度リンクへ
+prefetchを戻さないこと。**
+
+最終検証はremoteのDisk IO Budgetを消費しないよう、上記`test:e2e:local`で実施した。
+
+- Recent Attendance footer + NavigationProgressをdesktop/mobile各40回: 236/240 pass。
+  4件はmobile通常モーションの既知の独立flakyで、#445へ分割した
+- 最終差分のfull suiteをfresh serverで1回: 205 pass / 9 skip / 0 fail
+- 同じlocal production serverでfull suiteを4反復: 820 pass / 36 skip / 0 fail
+- full suite合計5回: 1025 pass / 45 skip / 0 fail。route teardown errorと
+  navigation RSC本文未完了は再発しなかった
+
+各full suiteで発生する9件のskipは、次の意図した条件と一致した。想定外のskipはない。
+
+- 管理フォームの編集4件: desktop/mobileのメンバー・スポット各1件。ローカルseedは
+  `orbit_members=0` / `orbit_spots=0` のため、「一覧に編集対象がない場合は固定IDに依存せずskipする」
+  条件が成立した。データのある楽曲（551件）・リリース（93件）の編集ケースは両projectでpassした
+- viewport固有の1件: mobile専用ハンバーガー操作をdesktopでskipし、mobileではpassした
+- 共有DBへの書き込み重複を避ける4件: 参加記録の保存・解除、compact badge、保存中表示、
+  2ユーザー分離をmobileでskipし、同じケースをdesktopで実行してpassした
+
+したがって9件は環境・project条件による設計どおりのskipで、flakyの隠蔽ではない。メンバー・
+スポットの編集hydrationをローカルでも常時検証したい場合は、#440とは分けて専用fixtureを追加する。
 
 > route 層で prefetch 要求を `route.abort()` して塞ぐ方法も試したが、App Router が
 > 通常と異なる状態になり、`reduced-motion` の `NavigationProgress` が
@@ -85,31 +150,25 @@ prod server と Supabase が飽和して TTFB が最大 1562ms まで伸びる�
 `playwright/trackedRoute.ts` の `installTrackedRoute(page, url, handler)` は自分が登録した
 handler だけを解除し、解除前に開始した処理の完了まで待つ dispose を返す。
 **spec 内で `page.route()` を直接使わず、これを経由して `finally` で dispose する。**
+test timeoutによってPlaywrightがpageを先に閉じた場合は解除を省略し、一次timeoutを
+`Target page, context or browser has been closed` で上書きしない。
 
-### 既知の flaky test（解消済みではない）
+### 既知の flaky test（最終状態）
 
-> **注記（#420）**: 下記の記録は、認証状態の失効による 429（後述「失効は config が実行前に
-> fail-fast する」）が判明する前のもの。「分離実行では pass するが full suite で単発 fail する」
-> という症状は 429 でも同じ形で出るため、**この一覧の一部はそれで説明できる可能性がある**。
-> 有効な認証状態で改めて観測し直すまで一覧は残す（未再観測のまま削除しない）。
+#440完了時点で再現を確認できた既知flakyは、`reduced-motion.spec.ts` の
+NavigationProgress通常モーション幅計測（#445）のみ。
 
-> **注記（#440）**: 「いずれも分離実行では pass」という下記の前提は**誤り**だった。#440 で
-> 観測した失敗を単体で40回反復したところ 1回（2.5%）再現した。**単独再実行が1回 pass しても
-> flaky と断定する根拠にはならない。** 再現率を測るときは `--repeat-each` を使う。認証チェックは
-> プロセス開始時の1回で済むので、反復あたりのコストが低い。
->
-> ```bash
-> E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 \
->   pnpm exec playwright test playwright/<spec>.spec.ts -g "<test名>" --repeat-each=20
-> ```
+- local-only反復ではdesktop通常/reduce・mobile reduceが各40/40 pass、mobile通常が36/40 pass
+- 失敗4件はouter/innerとも0幅。traceでは3つのevaluateがroute遅延と同じ約1.3〜1.5秒待ち、
+  その間に要素がunmountしていた
+- prefetch飽和やroute teardownとは独立したtest同期問題として#445へ分割した。retry・timeout増加で
+  隠さず、browser側の連続計測と遅延対象routeの限定で恒久対策する
+- その後のlocal full suite 5回では再発しなかったが、対象反復で再現済みのため解消扱いにはしない
 
-`workers: 1` + build+start でフレークは大幅に減ったが、focus / animation / carousel の timing に
-敏感な次の test は**まれに単発 fail する**（CI の `retries: 1` が吸収）。
-恒久対策（timing の安定化）は未了で、ここに記録して追跡する。
-
-- `live-detail-attendance-density.spec.ts`（carousel の keyboard / focus 追従: `:239` `:310` `:371` `:405` 付近）
-- `calendar-narrow-interaction.spec.ts:87`（1440px での hit-area 計測、mobile）
-- `attendance-form-a11y.spec.ts:110`（field error と focus 連動、mobile）
+以前候補として記録していたlive detailのcarousel、calendarのhit-area、参加フォームのfocus連動は、
+有効なローカル認証状態でのfull suite 5回では再観測されなかったため、既知flakyの一覧から外した。
+再発時は `trace: "retain-on-failure"` の証跡で#440と同じ原因か独立原因かを分類し、独立原因だけを
+別Issueにする。単独再実行1回のpass/failでは判定せず、`--repeat-each`で再現率を測る。
 
 ## 前提（認証セットアップ）
 

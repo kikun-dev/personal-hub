@@ -75,7 +75,7 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
     return null;
   }
   return (
-    <TextLink href={`/venues/${performance.venueId}`}>
+    <TextLink href={`/venues/${performance.venueId}`} prefetch={false}>
       {performance.venueName}
     </TextLink>
   );
@@ -194,6 +194,9 @@ function PerformanceCard({
               既存のセトリ表示自体は変更しない（簡素化は#262） */}
           <TextLink
             href={`/lives/${live.id}/performances/${performance.id}/setlist`}
+            // offscreenを含む全carousel cardがDOMに存在するため、自動prefetchすると
+            // 公演数に比例してRSC requestが増える。操作時の遷移だけ許可する（#440）。
+            prefetch={false}
             className="text-xs"
           >
             詳細を見る →
@@ -250,6 +253,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                     {group.venueId && group.venueName ? (
                       <TextLink
                         href={`/venues/${group.venueId}`}
+                        prefetch={false}
                         className="block text-sm"
                       >
                         {group.venueName}
@@ -277,6 +281,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                 <TextLink
                   data-ui="single-venue-link"
                   href={`/venues/${venueGroups[0].venueId}`}
+                  prefetch={false}
                   className="block"
                 >
                   {venueGroups[0].venueName}
@@ -546,6 +551,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         {context !== null && targetPerformance !== null ? (
           <Link
             href={topPageDateHref(context.date)}
+            prefetch={false}
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
@@ -553,6 +559,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         ) : (
           <Link
             href="/lives"
+            prefetch={false}
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             ← ライブ一覧へ戻る

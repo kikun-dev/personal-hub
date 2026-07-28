@@ -43,6 +43,11 @@ export async function installTrackedRoute(
     while (pending.size > 0) {
       await Promise.allSettled([...pending]);
     }
+    // test timeout時はPlaywrightがpageを先に閉じる。一次timeoutをcleanupの
+    // `Target page ... has been closed` で上書きせず、解除不要として終了する。
+    if (page.isClosed()) {
+      return;
+    }
     // handler を指定し、別の helper / fixture が所有する route は解除しない。
     await page.unroute(url, handler);
   };

@@ -58,6 +58,7 @@ export default async function AdminMembersPage() {
                 <td className="py-2">
                   <TextLink
                     href={`/admin/members/${member.id}/edit`}
+                    prefetch={false}
                     feedback="global"
                     className="text-sm"
                   >

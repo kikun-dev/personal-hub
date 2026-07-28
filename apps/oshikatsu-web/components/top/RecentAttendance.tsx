@@ -32,12 +32,14 @@ export function RecentAttendance({ overview }: RecentAttendanceProps) {
                 entry={entry}
                 showNote
                 variant="row"
+                prefetch={false}
               />
             ))}
           </ul>
           {hasAnyPastAttendance && (
             <TextLink
               href={APP_ROUTES.mypage}
+              prefetch={false}
               feedback="global"
               className="flex min-h-11 w-full items-center justify-center border-t border-border-subtle px-3 text-center text-xs"
             >

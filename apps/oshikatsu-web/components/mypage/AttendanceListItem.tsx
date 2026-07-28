@@ -21,6 +21,8 @@ type AttendanceListItemProps = {
   backHref?: string;
   // トップページ「最近の参加記録」（#344）用: 短い記録（note）を1行で添える。
   showNote?: boolean;
+  // 多数のリンクを同時表示するTOPでは自動prefetchを止める（#440）。
+  prefetch?: boolean;
 };
 
 // 参戦記録の1行リスト表示（VenueDetailPage の公演一覧と同じトーン）。
@@ -30,6 +32,7 @@ export function AttendanceListItem({
   variant = "card",
   backHref = APP_ROUTES.mypage,
   showNote = false,
+  prefetch,
 }: AttendanceListItemProps) {
   return (
     <li
@@ -43,6 +46,7 @@ export function AttendanceListItem({
     >
       <PendingLink
         href={`/lives/${entry.liveId}`}
+        prefetch={prefetch}
         className="group grid grid-cols-[auto_minmax(0,4.75rem)_minmax(0,1fr)_auto] items-start gap-x-2 text-sm text-foreground min-[390px]:grid-cols-[auto_auto_minmax(0,1fr)_auto]"
         listBackFallbackHref={backHref}
       >

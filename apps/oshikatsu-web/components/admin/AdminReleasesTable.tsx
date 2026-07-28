@@ -74,6 +74,7 @@ export function AdminReleasesTable({ releases }: AdminReleasesTableProps) {
                 <td className="py-2">
                   <TextLink
                     href={`/admin/releases/${release.id}/edit`}
+                    prefetch={false}
                     feedback="global"
                     className="text-sm"
                   >
