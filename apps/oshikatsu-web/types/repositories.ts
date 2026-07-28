@@ -219,12 +219,31 @@ export type ReleaseRepository = {
   ): Promise<ReleaseCalendarItem[]>;
   findOptions(): Promise<ReleaseOption[]>;
   findById(id: string): Promise<Release | null>;
+  findTrackParticipantScopeFacts(
+    trackIds: string[]
+  ): Promise<ReleaseParticipantScopeFacts>;
   findSelectionPositionsByMemberId(
     memberId: string
   ): Promise<MemberSelectionPosition[]>;
   create(input: CreateReleaseInput): Promise<Release>;
   update(id: string, input: UpdateReleaseInput): Promise<Release>;
   delete(id: string): Promise<void>;
+};
+
+export type TrackParticipantScopeFact = {
+  trackId: string;
+  trackTitle: string;
+  isCatchallGroup: boolean;
+  participantMemberIds: string[];
+  releaseLinks: Array<{
+    releaseId: string;
+    releaseDate: string | null;
+  }>;
+};
+
+export type ReleaseParticipantScopeFacts = {
+  tracks: TrackParticipantScopeFact[];
+  releaseParticipants: Record<string, string[]>;
 };
 
 export type SongRepository = {

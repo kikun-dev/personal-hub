@@ -104,9 +104,11 @@ export async function deleteReleaseAction(
   const releaseImageRepo = createReleaseImageRepository(supabase);
 
   try {
-    const existing = await repo.findById(id);
-    await deleteRelease(repo, id);
-    await cleanupReleaseImages(releaseImageRepo, [existing?.artworkPath]);
+    const result = await deleteRelease(repo, id);
+    if (!result.ok) {
+      return { error: result.errors[0]?.message ?? "リリースの削除に失敗しました" };
+    }
+    await cleanupReleaseImages(releaseImageRepo, [result.data.artworkPath]);
     revalidateOrbitReleaseData();
     return {};
   } catch (e) {

@@ -40,6 +40,20 @@ const SINGLE_RELEASE_INFO_SELECT =
   "id, title, numbering, release_type, group_id, orbit_groups(name_ja)" as const;
 const RELEASE_TRACK_LINK_SELECT = "track_id, track_number, release_id" as const;
 const TRACK_LABEL_GENERATION_SELECT = "id, label, generation" as const;
+// #448: リリース変更が影響する楽曲について、参加メンバー・catch-all・
+// 全リリースリンクをDB由来の事実として取得する。初出判定はUseCaseで行う。
+const TRACK_PARTICIPANT_SCOPE_SELECT = `
+  id,
+  title,
+  orbit_groups(is_catchall),
+  orbit_track_members(member_id),
+  orbit_release_tracks(release_id, orbit_releases(release_date))
+` as const;
+const RELEASE_PARTICIPANT_MEMBER_SELECT = "release_id, member_id" as const;
+
+function uniqueStrings(values: string[]): string[] {
+  return Array.from(new Set(values));
+}
 
 // 楽曲ラベル → 導出tier。配列の並び順がそのまま導出の優先順位（上ほど優先）。
 // 表題(title)と選抜(senbatsu)はどちらも「選抜」。表題を先に評価する。
@@ -260,6 +274,68 @@ export function createReleaseRepository(
       }
 
       return mapToRelease(data);
+    },
+
+    async findTrackParticipantScopeFacts(trackIds) {
+      const uniqueTrackIds = uniqueStrings(trackIds.filter(Boolean));
+      if (uniqueTrackIds.length === 0) {
+        return { tracks: [], releaseParticipants: {} };
+      }
+
+      const { data: trackRows, error: trackError } = await supabase
+        .from("orbit_tracks")
+        .select(TRACK_PARTICIPANT_SCOPE_SELECT)
+        .in("id", uniqueTrackIds);
+
+      if (trackError) {
+        throw new RepositoryError(
+          "リリース変更の影響を受ける楽曲の取得に失敗しました",
+          trackError
+        );
+      }
+
+      const tracks = trackRows.map((track) => ({
+        trackId: track.id,
+        trackTitle: track.title,
+        isCatchallGroup: track.orbit_groups.is_catchall,
+        participantMemberIds: uniqueStrings(
+          track.orbit_track_members.map((member) => member.member_id)
+        ),
+        releaseLinks: track.orbit_release_tracks.map((link) => ({
+          releaseId: link.release_id,
+          releaseDate: link.orbit_releases.release_date,
+        })),
+      }));
+      const releaseIds = uniqueStrings(
+        tracks.flatMap((track) =>
+          track.releaseLinks.map((link) => link.releaseId)
+        )
+      );
+      const releaseParticipants: Record<string, string[]> = Object.fromEntries(
+        releaseIds.map((releaseId) => [releaseId, []])
+      );
+
+      if (releaseIds.length === 0) {
+        return { tracks, releaseParticipants };
+      }
+
+      const { data: participantRows, error: participantError } = await supabase
+        .from("orbit_release_members")
+        .select(RELEASE_PARTICIPANT_MEMBER_SELECT)
+        .in("release_id", releaseIds);
+
+      if (participantError) {
+        throw new RepositoryError(
+          "初出リリース候補の参加メンバー取得に失敗しました",
+          participantError
+        );
+      }
+
+      for (const participant of participantRows) {
+        releaseParticipants[participant.release_id]?.push(participant.member_id);
+      }
+
+      return { tracks, releaseParticipants };
     },
 
     async findSelectionPositionsByMemberId(memberId) {
