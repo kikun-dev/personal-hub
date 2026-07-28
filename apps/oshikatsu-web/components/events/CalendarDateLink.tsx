@@ -26,6 +26,9 @@ export function CalendarDateLink({
   return (
     <Link
       href={href}
+      // TOPではカレンダー内の約42リンクが同時にviewportへ入り、production環境の
+      // 自動prefetchがローカルserverを飽和させるため無効化する（#440）。
+      prefetch={false}
       aria-label={ariaLabel}
       aria-current={ariaCurrent}
       className={className}

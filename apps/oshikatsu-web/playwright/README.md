@@ -44,6 +44,48 @@ E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 pnpm test:e2e <spec名>    # test
   timeout 不足ではない）。
 - 認証は下記 `storageState`（非 CI）を利用する。失効したら再作成する。
 
+### 失敗の証跡は trace に残る（#440）
+
+`use.trace: "retain-on-failure"` を設定してある。ローカルは `retries: 0` なので
+`on-first-retry` 系では発火せず、既定の `off` だと**失敗しても何も残らない**。成功時は
+破棄されるためグリーン時のコストはほぼゼロ。
+
+```bash
+pnpm exec playwright show-trace test-results/<失敗したtest>/trace.zip
+```
+
+Network タブのリクエスト単位の `wait` / `receive` と、Actions のタイムラインを突き合わせると、
+「アプリの不具合」に見える待機 timeout がサーバ側の詰まりだったのか、テスト側の同期不足
+だったのかを推測なしで切り分けられる。
+
+### prefetch fan-out がサーバを飽和させる問題（#440）
+
+TOP はカレンダーの日付セル約42個を含む多数の `next/link` を viewport 内に持つ。既定の
+自動 prefetch のままだと1ページの表示で RSC prefetch が2波・計89リクエスト走り、ローカルの
+prod server と Supabase が飽和して TTFB が最大 1562ms まで伸びる。この状態でリンクを操作すると
+**ナビゲーションの RSC 応答が prefetch の後ろで詰まり、本文が届かないまま待機が尽きて失敗する**。
+
+飽和は1ページの中で起きるため `workers: 1` では防げない。どの test が落ちるかは
+「その時点でサーバがどれだけ温まっているか」に依存するので、**失敗する test が run ごとに移動する**。
+
+対策は発生源側で、`components/events/CalendarDateLink.tsx` が `prefetch={false}` を指定している。
+**カレンダーの日付リンクへ prefetch を戻さないこと。**
+
+> route 層で prefetch 要求を `route.abort()` して塞ぐ方法も試したが、App Router が
+> 通常と異なる状態になり、`reduced-motion` の `NavigationProgress` が
+> **main で 40/40 pass → 変更ありで 4/40 fail** と明確に悪化したため採用しなかった。
+
+### spec 固有の route は `installTrackedRoute` を使う（#440）
+
+`page.unroute(url)` は**同じ URL に一致する全 handler を解除**し、しかも**実行中 handler の
+完了を待たない**。遅延注入のように handler 内で待つ実装だと、sleep 中の handler が後から
+`route.continue()` した時点で route が別経路で解決済みになっており、
+`route.continue: Route is already handled!` で落ちる。
+
+`playwright/trackedRoute.ts` の `installTrackedRoute(page, url, handler)` は自分が登録した
+handler だけを解除し、解除前に開始した処理の完了まで待つ dispose を返す。
+**spec 内で `page.route()` を直接使わず、これを経由して `finally` で dispose する。**
+
 ### 既知の flaky test（解消済みではない）
 
 > **注記（#420）**: 下記の記録は、認証状態の失効による 429（後述「失効は config が実行前に
@@ -51,9 +93,18 @@ E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 pnpm test:e2e <spec名>    # test
 > という症状は 429 でも同じ形で出るため、**この一覧の一部はそれで説明できる可能性がある**。
 > 有効な認証状態で改めて観測し直すまで一覧は残す（未再観測のまま削除しない）。
 
+> **注記（#440）**: 「いずれも分離実行では pass」という下記の前提は**誤り**だった。#440 で
+> 観測した失敗を単体で40回反復したところ 1回（2.5%）再現した。**単独再実行が1回 pass しても
+> flaky と断定する根拠にはならない。** 再現率を測るときは `--repeat-each` を使う。認証チェックは
+> プロセス開始時の1回で済むので、反復あたりのコストが低い。
+>
+> ```bash
+> E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 \
+>   pnpm exec playwright test playwright/<spec>.spec.ts -g "<test名>" --repeat-each=20
+> ```
+
 `workers: 1` + build+start でフレークは大幅に減ったが、focus / animation / carousel の timing に
-敏感な次の test は**まれに単発 fail する**（いずれも分離実行では pass。CI の `retries: 1` が吸収）。
-full suite が下記だけで FAIL 表示のときは、対象を単独再実行して pass すれば flaky と判断してよい。
+敏感な次の test は**まれに単発 fail する**（CI の `retries: 1` が吸収）。
 恒久対策（timing の安定化）は未了で、ここに記録して追跡する。
 
 - `live-detail-attendance-density.spec.ts`（carousel の keyboard / focus 追従: `:239` `:310` `:371` `:405` 付近）

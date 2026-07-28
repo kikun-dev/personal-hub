@@ -1,4 +1,4 @@
-import { expect, test, type Locator, type Page } from "./test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
 const fallbackLiveName = /乃木坂46 真夏の全国ツアー2026/;
 

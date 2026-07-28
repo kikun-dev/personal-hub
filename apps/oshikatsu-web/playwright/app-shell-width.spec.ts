@@ -1,4 +1,4 @@
-import { expect, test } from "./test";
+import { expect, test } from "@playwright/test";
 
 // #411: authenticated shell の最大幅を max-w-5xl(1024px) から max-w-7xl(1280px) へ広げた。
 // Tailwind preflightがbox-sizing: border-boxのため、max-w-7xl px-4のborder-box幅は

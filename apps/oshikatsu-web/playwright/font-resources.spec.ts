@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "./test";
+import { expect, test, type Page } from "@playwright/test";
 
 // #397: webfont を全廃し、Primary / Wiki とも font ファイルを転送しない。
 // Wiki のコード/Markdown は system monospace（等幅）契約を維持する。
