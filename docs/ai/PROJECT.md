@@ -35,7 +35,7 @@ personal-hub は、日常生活を支える複数アプリを統合する
 - チャート：recharts（household-web で導入済み）
 - Markdown レンダリング：react-markdown + remark-gfm（oshikatsu-web の Wiki で導入済み、ADR 0011）
 - リポジトリ：GitHub（private）
-- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / unit test（純関数・Vitest）/ build、oshikatsu-web は migration の db-verify）
+- CI：GitHub Actions（各アプリ配下の変更時に typecheck / lint / unit test（純関数・Vitest）/ build。oshikatsu-web は component test（jsdom・Testing Library）と migration の db-verify も実行）
 - デプロイ：Vercel（household-web / oshikatsu-web）
 - IDE：VS Code（Remote WSL）
 
@@ -226,7 +226,7 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
 | 0011 | Wiki的静的ページ集のコンテンツ管理と Markdown レンダリング | Accepted |
 | 0012 | Supabase ローカル環境（Docker）の導入と migration 検証フロー | Accepted |
 | 0013 | Sakalog主要閲覧ジャーニーのDaily Story方針 | Accepted |
-| 0014 | テスト基盤としての Vitest 導入と純関数のみのテスト対象範囲 | Accepted |
+| 0014 | テスト基盤としての Vitest 導入とテスト対象範囲 | Accepted |
 | 0015 | Top routeのauth検証境界とremote call budget | Accepted |
 | 0016 | authenticated shellの最大幅(1280px)とwide surfaceの扱い | Accepted |
 
@@ -244,6 +244,6 @@ ADR 0008 参照（Issue #213 / #221 対応済み）。
   Phase 4（運用基盤の整備）で Supabase ローカル環境として導入した
   （Issue #322 / **ADR 0012** / `docs/ops/local-supabase.md`）
 - ~~テストは対象外~~: リファクタの安全性を機械的検証に頼ってきたが、ロジック退行を
-  継続的に検知するため Phase 4 でテスト基盤（Vitest・純関数のみ）を導入した
-  （Issue #323 / ADR 0014。規約は `rules/implementation.md`「テスト」節）。
-  対象範囲は Decision で確定してから着手する
+  継続的に検知するため Phase 4 でテスト基盤（Vitest）を導入した（Issue #323 / ADR 0014）。
+  #442 の再評価後、Sakalogでは操作密度の高いClient Componentに限り、jsdom・Testing Libraryの
+  component testも追加した（Issue #450）。規約は `rules/implementation.md`「テスト」節を正とする
