@@ -10,6 +10,15 @@ export type FirstReleaseScope = {
   participantMemberIds: string[];
 } | null;
 
+/** 指定された許可集合に含まれない参加メンバーIDを返す。 */
+export function findOutOfScopeMemberIds(
+  participantMemberIds: readonly string[],
+  allowedMemberIds: readonly string[]
+): string[] {
+  const allowed = new Set(allowedMemberIds);
+  return participantMemberIds.filter((memberId) => !allowed.has(memberId));
+}
+
 /**
  * 不変条件 `楽曲参加メンバー ⊆ 初出リリース参加メンバー` を検証する。
  * 完全一致は要求しない（1つのリリース内で楽曲ごとに参加者が異なるのは正常）。
@@ -36,9 +45,9 @@ export function validateParticipantScope(
     ];
   }
 
-  const allowed = new Set(scope.participantMemberIds);
-  const outOfScopeCount = participantMemberIds.filter(
-    (memberId) => !allowed.has(memberId)
+  const outOfScopeCount = findOutOfScopeMemberIds(
+    participantMemberIds,
+    scope.participantMemberIds
   ).length;
 
   if (outOfScopeCount === 0) return [];
