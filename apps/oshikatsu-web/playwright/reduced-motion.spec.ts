@@ -70,6 +70,97 @@ async function delaySameOriginGetRequests(
   });
 }
 
+type NavigationProgressSample = {
+  animationName: string;
+  outerWidth: number;
+  innerWidth: number;
+  isReducedMotionStatusHidden: boolean;
+};
+
+/**
+ * NavigationProgress が mount した最初の有効frameを、click前からbrowser内で捕捉する。
+ *
+ * Node側からmount後にevaluateすると、route遅延とnavigation commitの間に要素が
+ * unmountして0幅を返すことがある（#445）。rAFで同一frameのstyleと矩形を保存し、
+ * Playwright側の読み取り時点には依存させない。
+ */
+async function armNavigationProgressSampler(page: Page): Promise<void> {
+  await page.evaluate(() => {
+    const root = document.documentElement;
+    delete root.dataset.e2eNavigationProgressAnimationName;
+    delete root.dataset.e2eNavigationProgressOuterWidth;
+    delete root.dataset.e2eNavigationProgressInnerWidth;
+    delete root.dataset.e2eNavigationProgressReducedStatusHidden;
+    delete root.dataset.e2eNavigationProgressSampled;
+
+    const sampleFrame = () => {
+      const progress = document.querySelector<HTMLElement>(
+        '[role="status"][aria-label="画面遷移中"]'
+      );
+      const innerBar = progress?.querySelector<HTMLElement>(".animate-pulse");
+      const reducedMotionStatus = progress?.querySelector<HTMLElement>("p");
+
+      if (progress && innerBar && reducedMotionStatus) {
+        const outerWidth = progress.getBoundingClientRect().width;
+        const innerWidth = innerBar.getBoundingClientRect().width;
+
+        if (outerWidth > 0 && innerWidth > 0) {
+          root.dataset.e2eNavigationProgressAnimationName =
+            getComputedStyle(innerBar).animationName;
+          root.dataset.e2eNavigationProgressOuterWidth = String(outerWidth);
+          root.dataset.e2eNavigationProgressInnerWidth = String(innerWidth);
+          root.dataset.e2eNavigationProgressReducedStatusHidden = String(
+            getComputedStyle(reducedMotionStatus).display === "none"
+          );
+          root.dataset.e2eNavigationProgressSampled = "true";
+          return;
+        }
+      }
+
+      requestAnimationFrame(sampleFrame);
+    };
+
+    requestAnimationFrame(sampleFrame);
+  });
+}
+
+async function readNavigationProgressSample(
+  page: Page
+): Promise<NavigationProgressSample> {
+  const root = page.locator("html");
+  await expect(root).toHaveAttribute(
+    "data-e2e-navigation-progress-sampled",
+    "true"
+  );
+
+  return page.evaluate(() => {
+    const {
+      e2eNavigationProgressAnimationName: animationName,
+      e2eNavigationProgressOuterWidth: rawOuterWidth,
+      e2eNavigationProgressInnerWidth: rawInnerWidth,
+      e2eNavigationProgressReducedStatusHidden: rawReducedStatusHidden,
+    } = document.documentElement.dataset;
+    const outerWidth = Number(rawOuterWidth);
+    const innerWidth = Number(rawInnerWidth);
+
+    if (
+      animationName === undefined ||
+      !Number.isFinite(outerWidth) ||
+      !Number.isFinite(innerWidth) ||
+      rawReducedStatusHidden === undefined
+    ) {
+      throw new Error("NavigationProgressの保存済み計測値が不正です。");
+    }
+
+    return {
+      animationName,
+      outerWidth,
+      innerWidth,
+      isReducedMotionStatusHidden: rawReducedStatusHidden === "true",
+    };
+  });
+}
+
 const mobileViewport = { width: 390, height: 844 } as const; // ハンバーガーはmd:hiddenのため必要
 const desktopNavViewport = { width: 1440, height: 900 } as const; // Header内のfeedback="global"リンク（デスクトップnav）を表示するため必要
 
@@ -375,24 +466,16 @@ test("NavigationProgress（通常）: pulse keyframeで1/3幅のバーが再生�
       .locator("header nav")
       .first()
       .getByRole("link", { name: "メンバー", exact: true });
+    await armNavigationProgressSampler(page);
     await navLink.click();
 
-    const progressBar = page.getByRole("status", { name: "画面遷移中" });
-    await expect(progressBar).toBeVisible();
-    const innerBar = progressBar.locator(".animate-pulse");
+    const sample = await readNavigationProgressSample(page);
 
-    const [animationName, outerWidth, innerWidth] = await Promise.all([
-      innerBar.evaluate((element) => getComputedStyle(element).animationName),
-      progressBar.evaluate((element) => element.getBoundingClientRect().width),
-      innerBar.evaluate((element) => element.getBoundingClientRect().width),
-    ]);
-
-    expect(animationName).not.toBe("none");
-    expect(innerWidth).toBeLessThan(outerWidth * 0.5);
+    expect(sample.animationName).not.toBe("none");
+    expect(sample.innerWidth).toBeLessThan(sample.outerWidth * 0.5);
 
     // reduce時専用の可視statusは通常時には表示されない
-    const visibleStatus = progressBar.getByText("画面を読み込み中…");
-    await expect(visibleStatus).toBeHidden();
+    expect(sample.isReducedMotionStatusHidden).toBe(true);
 
     await expect(page).toHaveURL(/\/members/, { timeout: 15000 });
   } finally {

@@ -155,15 +155,17 @@ test timeoutによってPlaywrightがpageを先に閉じた場合は解除を省
 
 ### 既知の flaky test（最終状態）
 
-#440完了時点で再現を確認できた既知flakyは、`reduced-motion.spec.ts` の
-NavigationProgress通常モーション幅計測（#445）のみ。
+#445で、`reduced-motion.spec.ts` のNavigationProgress通常モーション幅計測を解消した。
 
-- local-only反復ではdesktop通常/reduce・mobile reduceが各40/40 pass、mobile通常が36/40 pass
-- 失敗4件はouter/innerとも0幅。traceでは3つのevaluateがroute遅延と同じ約1.3〜1.5秒待ち、
-  その間に要素がunmountしていた
-- prefetch飽和やroute teardownとは独立したtest同期問題として#445へ分割した。retry・timeout増加で
-  隠さず、browser側の連続計測と遅延対象routeの限定で恒久対策する
-- その後のlocal full suite 5回では再発しなかったが、対象反復で再現済みのため解消扱いにはしない
+- 原因は、click後にNode側からstyleと矩形を3回計測する間にnavigationがcommitし、
+  NavigationProgressがunmountしてouter/innerとも0幅になる競合だった
+- click前からbrowser内で`requestAnimationFrame`ループを開始し、要素がmountした最初の有効frameで
+  styleと矩形をまとめて保存する。MutationObserver、retry・timeout増加、プロダクト実装の変更は行わない
+- local-only反復はdesktop通常/reduce・mobile通常/reduceが各40/40、合計160/160 pass。
+  0幅・route teardownエラーはいずれも0件
+- 続けて実行したlocal full suiteも205 passed / 9 skipped / 0 failedで完走した
+
+#445完了時点で、再現を確認できている既知flakyはない。
 
 以前候補として記録していたlive detailのcarousel、calendarのhit-area、参加フォームのfocus連動は、
 有効なローカル認証状態でのfull suite 5回では再観測されなかったため、既知flakyの一覧から外した。
