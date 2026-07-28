@@ -16,7 +16,9 @@ export default defineConfig({
         url: "http://localhost:3001/",
       },
     },
-    include: ["components/**/*.test.tsx"],
+    // 配置先に依存せず、対象 Client Component と同階層のテストを収集する。
+    // app/ 配下の page / error なども component test の対象になり得る（#442）。
+    include: ["**/*.test.tsx"],
     setupFiles: ["./vitest.component.setup.ts"],
     restoreMocks: true,
   },
