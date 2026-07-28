@@ -1,4 +1,4 @@
-# ADR 0014: テスト基盤としての Vitest 導入と純関数のみのテスト対象範囲
+# ADR 0014: テスト基盤としての Vitest 導入とテスト対象範囲
 
 ## Status
 Accepted
@@ -63,8 +63,55 @@ UI コンポーネント・repository は対象外とし、E2E / DOM 構造の�
 - colocated テストはソースツリーにテストファイルが混ざるため、ファイル数が増える
 - 「新規・変更時に足す」運用のため、触られていない既存純関数は当面テストされないまま残る
 
+## 追記（2026-07-28 / #442）: 操作密度の高い Client Component を対象へ追加
+
+### 再評価の背景
+
+#424 / PR #437 の `SetlistEditor` では、非同期のオリメン反映、手動編集によるキャンセル、
+保存との相互排他、disabled、結果通知を組み合わせた。状態遷移は純粋 reducer としてテストしたが、
+各 UI handler がキャンセル event を dispatch することや、両方向の相互排他を正しく配線することは
+純粋関数テストでは検証できなかった。実際に、手動編集 handler の dispatch 漏れと片方向だけの
+相互排他がレビューで見つかり、需要が明確になった時点で再検討するという本 ADR の条件を満たした。
+
+案A「純粋関数 + Playwright の現状維持」、案B「Testing Library + DOM環境」、案C
+「ブラウザベースの component test」を、配線ミスの検出力、実行速度、flaky、ブラウザ忠実度、
+mock・CIコスト、accessibility assertionで比較した。
+
+### Decision
+
+案Bを採用し、`apps/oshikatsu-web` に限って次の component test 基盤を追加する。
+
+- runner は既存の Vitest、DOM 環境は jsdom
+- render / query は React Testing Library、操作は `user-event`、DOM assertion は `jest-dom`
+- 対象コンポーネントと同階層の colocated `*.test.tsx` に置く
+- `test:unit` とは設定・収集対象・実行コマンド・CI step を分離し、`test:component` で実行する
+- 対象は、複数操作と state の連動、非同期 lifecycle、disabled・通知・入力保持など、
+  純粋関数だけでは配線を保証できない Client Component に限定する
+- Server Action は props へ注入する fake を優先し、`next/*` 等のフレームワーク境界だけを
+  必要最小限 mock する。React hook、reducer、内部 state は mock しない
+- assertion は role、accessible name、入力状態、表示テキストなど利用者から観測可能な契約に置く
+
+CSS layout、D&D 座標、実ブラウザ focus、navigation、SSR / hydration、認証・認可、RLS、
+複数画面フローは対象外とし、既存 Playwright に残す。jsdom が実装しない挙動を mock で再現しない。
+Server Component、repository、Server Action 本体も DOM test の対象外とする。
+
+案Cは実ブラウザ忠実度に優れるが、今回必要な React の event・state 配線には案Bで十分な検出力が
+あり、ブラウザ起動・provider・CI環境と native ESM mock の追加コストを正当化しないため採用しない。
+
+この追記は、Decision §2 の「純関数のみ」と、Consequences の
+「UIコンポーネント単体の退行は本基盤では拾えない」を上記の限定範囲で更新する。
+
+### Consequences
+
+- jsdom / Testing Library 関連の devDependencies と component test 用設定が増える
+- component test は実ブラウザの代替ではなく、純粋関数 test と Playwright の間の配線検証を担う
+- 対象条件を満たす新規・変更時だけ追加し、既存全コンポーネントへ遡及しない
+- 詳細な配置、mock、3層の責務分担は `rules/implementation.md` の「テスト」節を正とする
+- 基盤導入と代表テストは #450 で実装する
+
 ## Notes
 
 - 導入 Issue: #323（Options / Trade-offs の一次情報）
 - 先行導入: PR #372（#361 の calendar semantic DTO 検証で oshikatsu-web に先行導入し、本 ADR で正式化）
 - 関連: `rules/implementation.md`「テスト」節、`docs/orbit-roadmap.md` Phase 4
+- component test 再評価: #442、実装: #450

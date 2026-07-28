@@ -45,6 +45,9 @@ jobs:
       - name: Unit Test
         run: pnpm --filter oshikatsu-web test:unit
 
+      - name: Component Test
+        run: pnpm --filter oshikatsu-web test:component
+
       - name: Restore Next.js build cache
         uses: actions/cache@v6
         with:

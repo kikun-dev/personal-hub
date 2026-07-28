@@ -362,10 +362,12 @@
   - CI（`db-verify.yml`）に `supabase db reset` を追加し、migration の適用可能性を
     マージ前に自動検証する
 - [x] **P2-1: テスト基盤（Vitest）**（Issue #323 / ADR 0014）
-  - usecases / lib の純関数のみを対象に Vitest を両アプリへ導入し、見本テスト
+  - 初期導入ではusecases / lib の純関数を対象に Vitest を両アプリへ導入し、見本テスト
     （validate 系・集計系・`markdownHeadings` 等 27 件）と CI の Unit Test step を整備した
+  - #442で配線検証の需要を再評価し、Sakalogの操作密度が高いClient Componentに限って
+    jsdom・Testing Libraryを採用。#450で独立したComponent Test stepと`SetlistEditor`の代表テストを追加した
   - 「テストは対象外」としてきた方針の転換。規約は `rules/implementation.md`「テスト」節、
-    選定理由と対象範囲（純関数のみ、コンポーネントは需要発生時に別 Issue）は ADR 0014 を正とする
+    選定理由と3層（純粋関数 / component / Playwright）の対象範囲は ADR 0014 を正とする
 - [ ] **P2-2: エラー監視**（Issue #324）
   - まず「サーバーエラーに気づける」最小構成として Vercel Runtime Logs / Observability の運用手順を整備する
 - P3（テスト・環境が定着してから検討）:
