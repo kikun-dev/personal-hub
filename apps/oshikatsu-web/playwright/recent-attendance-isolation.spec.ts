@@ -26,7 +26,20 @@ import {
 // 入らないため、dotenv を追加せず fs.readFileSync で直接 parse する。
 function readEnvLocal(): Record<string, string> {
   const envPath = path.resolve(__dirname, "..", ".env.local");
-  const content = readFileSync(envPath, "utf-8");
+  let content: string;
+  try {
+    content = readFileSync(envPath, "utf-8");
+  } catch (error) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return {};
+    }
+    throw error;
+  }
   const result: Record<string, string> = {};
 
   for (const rawLine of content.split("\n")) {
@@ -54,16 +67,16 @@ function readEnvLocal(): Record<string, string> {
 
 const envLocal = readEnvLocal();
 
-function requireEnvLocal(key: string): string {
-  const value = envLocal[key];
+function requireTestEnv(key: string): string {
+  const value = process.env[key] ?? envLocal[key];
   if (!value) {
-    throw new Error(`${key} が .env.local に設定されていません。`);
+    throw new Error(`${key} がプロセス環境または .env.local に設定されていません。`);
   }
   return value;
 }
 
-const SUPABASE_URL = requireEnvLocal("NEXT_PUBLIC_SUPABASE_URL");
-const SUPABASE_ANON_KEY = requireEnvLocal("NEXT_PUBLIC_SUPABASE_ANON_KEY");
+const SUPABASE_URL = requireTestEnv("NEXT_PUBLIC_SUPABASE_URL");
+const SUPABASE_ANON_KEY = requireTestEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
 // @personal-hub/supabase/read-only-server の createReadOnlyClient / isReadOnlyServerClientAvailable
 // は process.env を直接読むため（Next.js実行時にしか.env.localが入らない）、ここで
@@ -74,11 +87,10 @@ const SUPABASE_ANON_KEY = requireEnvLocal("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 if (process.env.NEXT_PUBLIC_SUPABASE_URL === undefined) {
   process.env.NEXT_PUBLIC_SUPABASE_URL = SUPABASE_URL;
 }
-if (
-  process.env.SUPABASE_SERVICE_ROLE_KEY === undefined &&
-  envLocal.SUPABASE_SERVICE_ROLE_KEY
-) {
-  process.env.SUPABASE_SERVICE_ROLE_KEY = envLocal.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ?? envLocal.SUPABASE_SERVICE_ROLE_KEY;
+if (process.env.SUPABASE_SERVICE_ROLE_KEY === undefined && serviceRoleKey) {
+  process.env.SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey;
 }
 
 function todayDateStr(): string {

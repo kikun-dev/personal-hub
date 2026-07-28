@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { installTrackedRoute, type DisposeRoute } from "./trackedRoute";
 
 // #364/#378: OSのreduced motion指定に対し、Mobile drawerの移動・PendingLink spinnerの回転・
 // NavigationProgressのpulseを止める契約を、motion utilityと`motion-reduce:`variantの
@@ -44,12 +45,20 @@ async function assertFocusWithinPanel(page: Page): Promise<void> {
   expect(isWithinPanel).toBe(true);
 }
 
+/**
+ * pending 表示を観測するため same-origin GET を遅延させる。
+ *
+ * 戻り値の dispose を必ず呼ぶ。`page.unroute("**\/*")` だと同じ URL の全 handler を
+ * 巻き込んで解除し、しかも sleep 中の handler の完了を待たないため、後から
+ * `route.continue()` した時点で解決済みになっていると "Route is already handled" で
+ * 落ちる（#440）。dispose は自分の handler だけを外し、実行中の分を待つ。
+ */
 async function delaySameOriginGetRequests(
   page: Page,
   delayMs: number
-): Promise<void> {
+): Promise<DisposeRoute> {
   const currentOrigin = new URL(page.url()).origin;
-  await page.route("**/*", async (route) => {
+  return installTrackedRoute(page, "**/*", async (route) => {
     const request = route.request();
     if (
       request.method() === "GET" &&
@@ -210,7 +219,7 @@ for (const viewport of spinnerViewports) {
     const liveCard = page.locator('[data-ui="live-card"]').first();
     await expect(liveCard).toBeVisible();
 
-    await delaySameOriginGetRequests(page, 1300);
+    const disposeDelay = await delaySameOriginGetRequests(page, 1300);
 
     try {
       await liveCard.click();
@@ -252,7 +261,7 @@ for (const viewport of spinnerViewports) {
 
       await expect(page).toHaveURL(/\/lives\//, { timeout: 15000 });
     } finally {
-      await page.unroute("**/*");
+      await disposeDelay();
     }
   });
 }
@@ -264,7 +273,7 @@ test("PendingLink spinner（通常）: spin keyframeで回転する", async ({ p
   const liveCard = page.locator('[data-ui="live-card"]').first();
   await expect(liveCard).toBeVisible();
 
-  await delaySameOriginGetRequests(page, 1300);
+  const disposeDelay = await delaySameOriginGetRequests(page, 1300);
 
   try {
     await liveCard.click();
@@ -284,7 +293,7 @@ test("PendingLink spinner（通常）: spin keyframeで回転する", async ({ p
 
     await expect(page).toHaveURL(/\/lives\//, { timeout: 15000 });
   } finally {
-    await page.unroute("**/*");
+    await disposeDelay();
   }
 });
 
@@ -295,7 +304,7 @@ test("NavigationProgress（reduce）: barが静止し全幅になる。可視sta
   await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/");
 
-  await delaySameOriginGetRequests(page, 1300);
+  const disposeDelay = await delaySameOriginGetRequests(page, 1300);
 
   try {
     // Header内、feedback="global"のPendingLink（デスクトップnav）
@@ -348,7 +357,7 @@ test("NavigationProgress（reduce）: barが静止し全幅になる。可視sta
 
     await expect(page).toHaveURL(/\/members/, { timeout: 15000 });
   } finally {
-    await page.unroute("**/*");
+    await disposeDelay();
   }
 });
 
@@ -359,7 +368,7 @@ test("NavigationProgress（通常）: pulse keyframeで1/3幅のバーが再生�
   await page.emulateMedia({ reducedMotion: "no-preference" });
   await page.goto("/");
 
-  await delaySameOriginGetRequests(page, 1300);
+  const disposeDelay = await delaySameOriginGetRequests(page, 1300);
 
   try {
     const navLink = page
@@ -387,6 +396,6 @@ test("NavigationProgress（通常）: pulse keyframeで1/3幅のバーが再生�
 
     await expect(page).toHaveURL(/\/members/, { timeout: 15000 });
   } finally {
-    await page.unroute("**/*");
+    await disposeDelay();
   }
 });

@@ -142,7 +142,7 @@ function SpotInfoWindowContent({
         詳細を見る
       </TextLink>
       {isAdmin && (
-        <TextLink href={`/spots/${spot.id}/edit`} className="block">
+        <TextLink href={`/spots/${spot.id}/edit`} prefetch={false} className="block">
           編集
         </TextLink>
       )}
@@ -378,6 +378,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                     <td className="py-2">
                       <TextLink
                         href={`/spots/${spot.id}/edit`}
+                        prefetch={false}
                         className="text-sm"
                         onClick={(event) => event.stopPropagation()}
                       >

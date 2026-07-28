@@ -1,4 +1,5 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
+import { installTrackedRoute } from "./trackedRoute";
 
 // #363: fallback carousel（最大18枚）の全cardにAttendanceControl（form/state/effect持ち）が
 // 常時mountされていたことで発生していた「59 focus target・反復するCTA・setlistより下に
@@ -587,7 +588,8 @@ test("保存処理中はcarousel内の全disclosureがdisabledになる", async 
   await attendedTypeSelect.selectOption({ index: 1 }); // 現地
 
   // 保存のPOSTを遅延させ、pending中のUI状態を観測できるようにする
-  await page.route("**/*", async (route) => {
+  // dispose は自分の handler だけを外し、遅延中の分の完了を待つ（#440）
+  const disposeDelay = await installTrackedRoute(page, "**/*", async (route) => {
     if (route.request().method() === "POST") {
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
@@ -623,7 +625,7 @@ test("保存処理中はcarousel内の全disclosureがdisabledになる", async 
     ).toBeVisible({ timeout: 15000 });
     restored = true;
   } finally {
-    await page.unroute("**/*");
+    await disposeDelay();
     if (saveAttempted && !restored) {
       // focus/UI assertionが失敗しても、再読込した永続状態を基準に必ず原状復帰を試みる
       await page.goto(liveHref);

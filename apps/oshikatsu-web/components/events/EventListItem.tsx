@@ -89,6 +89,9 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
           // カレンダー下の一覧はすべてこの1箇所を共用している。
           <Link
             href={`/lives/${event.liveId}?date=${event.date}&performance=${event.performanceId}`}
+            // TOPのイベント一覧は多数の内部リンクを同時表示する。カレンダー日付リンクと
+            // 合わせた自動prefetchがローカルproduction serverを飽和させるため無効化する（#440）。
+            prefetch={false}
             className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.name}
@@ -104,6 +107,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
         nameLink: (
           <Link
             href={`/releases/${event.releaseId}`}
+            prefetch={false}
             className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.title}
@@ -153,6 +157,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
         nameLink: (
           <Link
             href={`/members/${event.memberId}`}
+            prefetch={false}
             className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
           >
             {event.memberName}

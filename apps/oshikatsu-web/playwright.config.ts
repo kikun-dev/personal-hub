@@ -3,7 +3,32 @@ import { join } from "node:path";
 import { describeExpiryFailure, readStoredSessionExpiry } from "./playwright/authState";
 import { parseStrictYmd } from "./lib/dateParams";
 
-const authFile = "playwright/.auth/user.json";
+const isLocalSupabaseE2E = process.env.E2E_LOCAL_SUPABASE === "1";
+const authFile = isLocalSupabaseE2E
+  ? "playwright/.auth/local-user.json"
+  : "playwright/.auth/user.json";
+
+function assertLocalSupabaseE2E(): void {
+  if (!isLocalSupabaseE2E) {
+    return;
+  }
+
+  const value = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!value) {
+    throw new Error("E2E_LOCAL_SUPABASE=1 ですが NEXT_PUBLIC_SUPABASE_URL が未設定です。");
+  }
+  const url = new URL(value);
+  const isLocal =
+    url.protocol === "http:" &&
+    (url.hostname === "127.0.0.1" || url.hostname === "localhost");
+  if (!isLocal) {
+    throw new Error(
+      `E2E_LOCAL_SUPABASE=1 はローカルSupabase専用です。remoteへは接続しません: ${value}`
+    );
+  }
+}
+
+assertLocalSupabaseE2E();
 
 // #420: storageState の access token は `jwt_expiry = 3600`（1時間）で失効する。Playwright は test ごとに
 // 新しい context へ同じ storageState を読み込むため、失効したまま suite を回すと全 test が個別に token
@@ -29,8 +54,9 @@ function assertAuthStateUsable(): void {
 
   const authFilePath = join(__dirname, authFile);
   const expiry = readStoredSessionExpiry(authFilePath);
-  const remedy =
-    "`pnpm --filter oshikatsu-web playwright:auth` で認証状態を作り直してください（手順は playwright/README.md）。";
+  const remedy = isLocalSupabaseE2E
+    ? "`pnpm --filter oshikatsu-web test:e2e:local -- --list` でローカル認証状態を作り直してください。"
+    : "`pnpm --filter oshikatsu-web playwright:auth` で認証状態を作り直してください（手順は playwright/README.md）。";
 
   if (expiry.kind !== "ok") {
     throw new Error(`E2Eの認証状態を利用できません。${describeExpiryFailure(expiry)}\n${remedy}`);
@@ -82,6 +108,21 @@ function resolveFixedToday(): string {
 const E2E_FIXED_TODAY = resolveFixedToday();
 process.env.E2E_FIXED_TODAY = E2E_FIXED_TODAY;
 
+const webServerEnv: Record<string, string> = { E2E_FIXED_TODAY };
+if (isLocalSupabaseE2E) {
+  for (const key of [
+    "NEXT_PUBLIC_SUPABASE_URL",
+    "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+    "SUPABASE_SERVICE_ROLE_KEY",
+  ] as const) {
+    const value = process.env[key];
+    if (!value) {
+      throw new Error(`ローカルE2Eに必要な環境変数 ${key} が未設定です。`);
+    }
+    webServerEnv[key] = value;
+  }
+}
+
 export default defineConfig({
   testDir: "./playwright",
   // Playwright の既定 testMatch は `*.test.ts` も拾う。playwright/ 配下には E2E の補助モジュールと
@@ -96,6 +137,10 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3001",
     storageState: process.env.CI ? undefined : authFile,
+    // #440: まれにしか再現しないフレークは「失敗した run の証跡が残っているか」で調査可否が決まる。
+    // ローカルは `retries: 0` のため `on-first-retry` では発火せず、既定の `off` だと失敗しても
+    // 何も残らない。成功時は破棄されるのでグリーン時のコストはほぼゼロ。
+    trace: "retain-on-failure",
   },
   // #413: dev（next dev）の on-demand compile が並列初回アクセスで timeout しフレークになるため、
   // production build を start して配信する。ここでの timeout は server 起動（build + start）の
@@ -111,7 +156,7 @@ export default defineConfig({
     reuseExistingServer: process.env.E2E_REUSE_SERVER === "1",
     timeout: 180_000,
     // #412: server プロセスの getTodayInAppTimeZone が同じ固定「今日」を返すよう env を渡す。
-    env: { E2E_FIXED_TODAY },
+    env: webServerEnv,
   },
   projects: [
     {

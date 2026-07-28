@@ -22,6 +22,9 @@ export function LiveCard({ live }: LiveCardProps) {
   return (
     <PendingLink
       href={`/lives/${live.id}`}
+      // ライブ一覧は多数のcardを同時表示する。全cardの自動prefetchが遷移先の
+      // production server負荷へ持ち越されるため、操作時だけ遷移する（#440）。
+      prefetch={false}
       className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
       data-ui="live-card"
       listBackFallbackHref={APP_ROUTES.lives}

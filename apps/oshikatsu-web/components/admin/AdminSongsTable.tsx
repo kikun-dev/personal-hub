@@ -63,6 +63,9 @@ export function AdminSongsTable({ songs }: AdminSongsTableProps) {
                 <td className="py-2">
                   <TextLink
                     href={`/admin/songs/${song.id}/edit`}
+                    // 一覧件数分の編集画面を自動prefetchすると、遷移後もRSC処理が
+                    // serverに残って後続testを飽和させるため無効化する（#440）。
+                    prefetch={false}
                     feedback="global"
                     className="text-sm"
                   >
