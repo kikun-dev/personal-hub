@@ -19,12 +19,9 @@ export async function installTrackedRoute(
   let isDisposing = false;
 
   const handler = (route: Route): Promise<void> => {
-    // dispose 開始後に届いた要求は遅延させず素通しする。待たせると drain が
-    // 終わらず、teardown が handler の待ち時間ぶん延びるため。
-    if (isDisposing) {
-      return route.continue();
-    }
-    const operation = handleRoute(route);
+    // dispose 開始後に届いた要求は遅延させず素通しする。ただし、この continue も
+    // 追跡しないと実行中のまま test teardown へ進めるため、pending には必ず加える。
+    const operation = isDisposing ? route.continue() : handleRoute(route);
     pending.add(operation);
     void operation.then(
       () => pending.delete(operation),
