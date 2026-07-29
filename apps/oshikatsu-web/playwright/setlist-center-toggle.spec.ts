@@ -227,13 +227,12 @@ async function readGridClearance(toggle: Locator): Promise<Clearance> {
 // 指定 index の toggle へ keyboard だけで到達する。walk 自体は共有 helper
 // （contrast.ts の focusWithKeyboard）に任せ、この画面固有の事情だけを options で渡す。
 //
-// - maxTabs: 既定の40では先頭の C にすら届かない（実測で focus test 8/8 が到達失敗した）。
-//   header nav + フォーム操作部で17 stop、その後は候補1件あたり2 stop（checkbox + C）× 18人。
-// - onStep: 楽曲Combobox は onFocus で候補リストを開き、候補 <button> に tabIndex=-1 を
-//   付けていないため、そのまま Tab し続けると登録曲551件すべてを通過してしまう
-//   （タブ順を probe して確認）。Escape でリストを閉じてから先へ進む。
-//   これは spec 側の回避策で、Combobox のタブ順そのものは #458 で直す。
-//   #458 の対応後はこの onStep が不要になる可能性があるため、そのとき見直す。
+// maxTabs: 既定の40では先頭の C にすら届かない（実測で focus test 8/8 が到達失敗した）。
+// header nav + フォーム操作部で17 stop、その後は候補1件あたり2 stop（checkbox + C）× 18人。
+//
+// かつては楽曲Comboboxの候補551件がすべてタブ順に入っていたため、Escapeでリストを
+// 閉じながら進む onStep 回避策が必要だった。#458 で候補をタブストップから外したので
+// 回避策は不要になり、削除した（削除した状態で本specが通ることを確認済み）。
 async function focusToggleWithKeyboard(
   page: Page,
   toggles: Locator,
@@ -242,11 +241,6 @@ async function focusToggleWithKeyboard(
   try {
     await focusWithKeyboard(page, toggles.nth(index), {
       maxTabs: MAX_FORWARD_TAB,
-      onStep: async () => {
-        if (await page.locator('[role="combobox"]:focus').count()) {
-          await page.keyboard.press("Escape");
-        }
-      },
     });
   } catch (cause) {
     // 共有 helper の汎用メッセージに、どの候補で失敗したかと a11y 上の意味を足す
