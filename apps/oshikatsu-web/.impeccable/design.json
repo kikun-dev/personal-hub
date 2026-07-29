@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-21T01:05:00Z",
+  "generatedAt": "2026-07-29T12:00:00Z",
   "title": "Design System: Sakalog",
   "extensions": {
     "colorMeta": {
@@ -87,6 +87,30 @@
         "displayName": "ダーク操作境界",
         "canonical": "#7A7A7A",
         "tonalRamp": ["#0A0A0A", "#1C1C1C", "#2A2A2A", "#3F3F3F", "#7A7A7A", "#B3B3B3", "#EDEDED", "#FFFFFF"]
+      },
+      "surface-center-light": {
+        "role": "tertiary",
+        "displayName": "ライトセンター面",
+        "canonical": "#FAF3E0",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#A87F1E", "#D4AF37", "#E3C766", "#EFDDA3", "#FAF3E0"]
+      },
+      "surface-center-dark": {
+        "role": "tertiary",
+        "displayName": "ダークセンター面",
+        "canonical": "#2C2517",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#A87F1E", "#D4AF37", "#E3C766", "#EFDDA3", "#FAF3E0"]
+      },
+      "border-center-light": {
+        "role": "tertiary",
+        "displayName": "ライトセンター境界",
+        "canonical": "#A87F1E",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#A87F1E", "#D4AF37", "#E3C766", "#EFDDA3", "#FAF3E0"]
+      },
+      "border-center-dark": {
+        "role": "tertiary",
+        "displayName": "ダークセンター境界",
+        "canonical": "#D4AF37",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#A87F1E", "#D4AF37", "#E3C766", "#EFDDA3", "#FAF3E0"]
       },
       "danger-light": {
         "role": "tertiary",

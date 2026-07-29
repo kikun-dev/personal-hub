@@ -160,7 +160,7 @@ describe("SetlistEditor のセンター切り替え", () => {
     await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
 
     const centerToggle = screen.getByRole("button", {
-      name: "センター切り替え（メンバーA）",
+      name: "C：センター切り替え（メンバーA）",
     });
     // 部分一致だと想定外の文字列でも通ってしまうため、ラベルがCのみであることまで固定する
     expect(centerToggle).toHaveTextContent(/^C$/);
@@ -173,7 +173,7 @@ describe("SetlistEditor のセンター切り替え", () => {
 
     await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
     const centerToggle = screen.getByRole("button", {
-      name: "センター切り替え（メンバーA）",
+      name: "C：センター切り替え（メンバーA）",
     });
 
     await user.click(centerToggle);
@@ -188,7 +188,7 @@ describe("SetlistEditor のセンター切り替え", () => {
 
     await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
     const centerToggle = screen.getByRole("button", {
-      name: "センター切り替え（メンバーA）",
+      name: "C：センター切り替え（メンバーA）",
     });
 
     await user.click(centerToggle);
@@ -213,13 +213,13 @@ describe("SetlistEditor のセンター切り替え", () => {
     await user.click(screen.getByRole("checkbox", { name: "メンバーC" }));
 
     const centerToggleA = screen.getByRole("button", {
-      name: "センター切り替え（メンバーA）",
+      name: "C：センター切り替え（メンバーA）",
     });
     const centerToggleB = screen.getByRole("button", {
-      name: "センター切り替え（メンバーB）",
+      name: "C：センター切り替え（メンバーB）",
     });
     const centerToggleC = screen.getByRole("button", {
-      name: "センター切り替え（メンバーC）",
+      name: "C：センター切り替え（メンバーC）",
     });
 
     await user.click(centerToggleA);
