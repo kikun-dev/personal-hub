@@ -114,7 +114,7 @@ components:
   input:
     backgroundColor: "{colors.background-light}"
     textColor: "{colors.foreground-light}"
-    borderColor: "{colors.border-subtle-light}"
+    borderColor: "{colors.border-strong-light}"
     focusColor: "{colors.focus-ring-light}"
     typography: "{typography.body}"
     rounded: "{rounded.lg}"
@@ -273,7 +273,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 ### Inputs / Fields
 
-- **Style:** 8pxの丸み、theme別subtle tokenの1px境界、背景色と同じ面、上下8px・左右12px、14px本文。
+- **Style:** 8pxの丸み、theme別strong tokenの1px境界、背景色と同じ面、上下8px・左右12px、14px本文。面が背景と同色のため境界だけが操作部品の手掛かりになる。背景に対して3:1以上のstrongを使い、subtleは使わない。
 - **Focus:** 既定の境界に加え、ライト `#1D4ED8` / ダーク `#93C5FD`の2pxリングを表示する。フォーカスを色だけで表現しない。
 - **Error / Disabled:** エラーは赤い境界と説明文を併用する。無効状態は不透明度とカーソルを変え、操作不能であることを視覚と挙動の両方で示す。
 
