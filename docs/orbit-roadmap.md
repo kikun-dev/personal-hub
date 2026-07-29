@@ -408,5 +408,9 @@
 | ~~Primary routeの未使用Geist転送~~ | ~~body正典はArialだがRootLayoutがGeist Sans / Monoを固定転送する~~ | ✅ Issue #397 で対応済み（Decision B: 局所化ではなくwebfontを全廃し、monoをsystem monospaceへ統一。Primary / Wiki含む全ルートでfont転送ゼロ） |
 | Primary journeyのcopy / external affordance残差 | 動画linkのnew-tab accessible hintと一部英語向け区切りが残る | P3 Backlog: Issue #395で日本語copyとexternal link contractを整える |
 | Mobile Next Eventsのread density | 390pxでNext EventsがToday Scheduleの約2.3倍の縦量を占める | P3 Backlog: Issue #396で件数・sort・read modelを変えずpresentationをpolishする |
+| foreground alphaによる文字・境界の組み立て | `DESIGN.md` の The Semantic Contrast Rule に反し、`text-foreground/NN` 等で文字色・操作境界を作っている。#455 完了時点で **grep該当452行 / クラス出現506件 / 83ファイル**（`SongDetail` 29行、`MemberProfile` 25行など公開画面が上位）。別途 `Button.tsx` の `hover:bg-foreground/90` と `NavigationProgress.tsx` の装飾塗り計3行・3件があるが、`DESIGN.md` に沿った意図的な使用のため負債件数に含めない | 共有UIプリミティブは Issue #455 で解消済み。画面単位の残りは Issue #461 で継続。Primary journey 範囲の CF-R04 は 2026-07-20 Full Design QA で Resolved 済みで、#461 はその範囲外に残る箇所を対象にする |
+| Comboboxの `aria-controls` が閉時に存在しないidを指す | リストを閉じている間も `aria-controls` が listbox の id を指したままで、参照先の要素が存在しない | Issue #458 のスコープ外として据え置き。実害は確認されていないが、ARIA 的には厳密でない |
 
-2026-07-20 Full Design QAではP0 / P1 / P2の残件なし。上記3件はjourneyを阻害しないP3としてbacklog運用し、詳細な判定と証跡は[`docs/advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md`](advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md)を正本とする。
+2026-07-20 Full Design QAではP0 / P1 / P2の残件なし。同QAがP3として残したのは **CF-R08（#397）/ CF-R09（#395）/ CF-R10（#396）** の3件で、うち CF-R08 は Issue #397 で対応済み、CF-R09 / CF-R10 は P3 backlog として継続中。詳細な判定と証跡は[`docs/advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md`](advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md)を正本とする。
+
+なお上表の「foreground alphaによる文字・境界の組み立て」「Comboboxの `aria-controls`」は、この Full Design QA の総括とは別に、2026-07-30 のマージ後同期（#441 / #452 / #453 / #455 / #458）で記録した項目である。
