@@ -32,7 +32,7 @@ export function FormationDisplay({ rows, participants }: FormationDisplayProps) 
 
   return (
     <Card>
-      <h2 className="mb-4 text-sm font-medium text-foreground/70">
+      <h2 className="mb-4 text-sm font-medium text-foreground-secondary">
         フォーメーション
       </h2>
       <FormationRows rows={normalizedRows} size="sm" />

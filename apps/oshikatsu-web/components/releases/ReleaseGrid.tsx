@@ -9,7 +9,7 @@ type ReleaseGridProps = {
 export function ReleaseGrid({ releases, showGroupName = true }: ReleaseGridProps) {
   if (releases.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-foreground/50">
+      <p className="py-12 text-center text-sm text-foreground-secondary">
         リリースが見つかりません
       </p>
     );

@@ -26,7 +26,7 @@ export default async function ReleaseDetailPage({ params }: ReleaseDetailPagePro
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.releases}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← リリース一覧
         </ListBackButton>

@@ -28,7 +28,7 @@ export default async function SongDetailPage({ params }: SongDetailPageProps) {
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.songs}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← 楽曲一覧
         </ListBackButton>

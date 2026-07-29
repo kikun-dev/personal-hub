@@ -9,7 +9,7 @@ type SongGridProps = {
 export function SongGrid({ showGroupName = true, songs }: SongGridProps) {
   if (songs.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-foreground/50">
+      <p className="py-12 text-center text-sm text-foreground-secondary">
         楽曲が見つかりません
       </p>
     );

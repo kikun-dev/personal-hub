@@ -74,7 +74,7 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {groups.map((group) => (
@@ -89,7 +89,7 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
             handleReleaseTypeChange(event.target.value as ReleaseType | "")
           }
           aria-label="リリースタイプで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全タイプ</option>
           {RELEASE_FILTER_TYPES.map((type) => (
@@ -98,7 +98,7 @@ export function ReleaseBrowser({ groups, releases }: ReleaseBrowserProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {flatReleases.length}件
         </span>
       </div>
