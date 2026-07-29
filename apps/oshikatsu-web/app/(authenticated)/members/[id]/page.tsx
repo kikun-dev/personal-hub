@@ -36,7 +36,7 @@ export default async function MemberDetailPage({
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.members}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← メンバー一覧
         </ListBackButton>

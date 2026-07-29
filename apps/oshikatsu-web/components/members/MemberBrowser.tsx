@@ -129,7 +129,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {groups.map((group) => (
@@ -143,7 +143,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             value={effectiveGeneration}
             onChange={(event) => handleGenerationChange(event.target.value)}
             aria-label="期で絞り込み"
-            className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+            className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
           >
             <option value="">全期</option>
             {generationOptions.map((option) => (
@@ -159,7 +159,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             handleStatusChange(event.target.value as MemberStatus)
           }
           aria-label="在籍状況で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           {STATUS_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -167,7 +167,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {flatMembers.length}人
         </span>
       </div>

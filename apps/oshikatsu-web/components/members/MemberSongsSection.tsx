@@ -55,14 +55,14 @@ export function MemberSongsSection({
   return (
     <Card>
       <div className="mb-2 flex items-center justify-between gap-2">
-        <h2 className="text-sm font-medium text-foreground/70">参加楽曲</h2>
+        <h2 className="text-sm font-medium text-foreground-secondary">参加楽曲</h2>
         <span className="text-sm font-medium text-foreground">
           {songs.length}曲
         </span>
       </div>
 
       {breakdown.length > 0 && (
-        <p className="text-xs text-foreground/60">{breakdown.join("、")}</p>
+        <p className="text-xs text-foreground-secondary">{breakdown.join("、")}</p>
       )}
       {centerCount > 0 && (
         <p className="mt-1 text-xs font-medium text-amber-600">
@@ -73,7 +73,7 @@ export function MemberSongsSection({
       <button
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
-        className="mt-3 text-xs text-foreground/60 hover:text-foreground"
+        className="mt-3 text-xs text-foreground-secondary hover:text-foreground"
       >
         {isExpanded ? "閉じる ▲" : "全曲を表示 ▼"}
       </button>
@@ -97,7 +97,7 @@ export function MemberSongsSection({
               <Link
                 key={song.id}
                 href={`/songs/${song.id}`}
-                className="block rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground hover:bg-foreground/5"
+                className="block rounded-lg border border-border-subtle px-3 py-2 text-sm text-foreground hover:bg-surface-subtle"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium">
@@ -108,7 +108,7 @@ export function MemberSongsSection({
                     <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />
                   )}
                 </div>
-                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground/50">
+                <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-foreground-secondary">
                   {releaseLabel && <span>{releaseLabel}</span>}
                   {song.groupNameJa && <span>{song.groupNameJa}</span>}
                 </div>
