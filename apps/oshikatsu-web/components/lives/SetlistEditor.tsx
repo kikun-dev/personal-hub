@@ -88,7 +88,7 @@ const NON_SONG_ITEM_TYPES = SETLIST_ITEM_TYPE_VALUES.filter(
 );
 
 const compactInputClass =
-  "w-full rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground/30";
+  "w-full rounded-lg border border-border-strong bg-background px-2 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary";
 
 export function SetlistEditor({
   live,
@@ -470,24 +470,24 @@ export function SetlistEditor({
       <div className="space-y-1">
         <PendingLink
           href={`/lives/${live.id}/performances/${performanceId}/setlist`}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← セットリスト（参照）
         </PendingLink>
         <h1 className="text-lg font-bold text-foreground">セットリストを編集</h1>
-        <p className="text-sm text-foreground/70">{performanceLabel}</p>
+        <p className="text-sm text-foreground-secondary">{performanceLabel}</p>
       </div>
 
       <FormErrorBanner message={errors._form} />
 
       {copySources.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <label className="text-sm text-foreground/70">別公演からコピー</label>
+          <label className="text-sm text-foreground-secondary">別公演からコピー</label>
           <select
             value={copySourceId}
             onChange={(e) => handleCopyFromPerformance(e.target.value)}
             disabled={hasPendingOperation(originalMemberOps)}
-            className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border border-border-strong bg-background px-2 py-1.5 text-sm text-foreground disabled:cursor-not-allowed disabled:opacity-50"
           >
             <option value="">選択してください</option>
             {copySources.map((source) => (
@@ -500,7 +500,7 @@ export function SetlistEditor({
       )}
 
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-foreground/70">項目</label>
+        <label className="block text-sm font-medium text-foreground-secondary">項目</label>
         <div className="flex gap-2">
           <Button type="button" variant="secondary" onClick={() => addItem("song")}>
             楽曲を追加
@@ -515,12 +515,12 @@ export function SetlistEditor({
         {items.map((item, index) => (
           <div
             key={item.key}
-            className="space-y-2 rounded-lg border border-foreground/10 p-3"
+            className="space-y-2 rounded-lg border border-border-subtle p-3"
           >
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs text-foreground/50">{index + 1}</span>
+              <span className="text-xs text-foreground-secondary">{index + 1}</span>
               {item.itemType === "song" ? (
-                <span className="rounded bg-foreground/10 px-2 py-1 text-xs text-foreground/70">
+                <span className="rounded bg-surface-subtle px-2 py-1 text-xs text-foreground">
                   楽曲
                 </span>
               ) : (
@@ -529,7 +529,7 @@ export function SetlistEditor({
                   onChange={(e) =>
                     updateItem(item.key, { itemType: e.target.value as SetlistItemType })
                   }
-                  className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
+                  className="rounded-lg border border-border-strong bg-background px-2 py-1.5 text-sm text-foreground"
                 >
                   {NON_SONG_ITEM_TYPES.map((type) => (
                     <option key={type} value={type}>
@@ -544,7 +544,7 @@ export function SetlistEditor({
                   updateItem(item.key, { section: e.target.value as SetlistSection })
                 }
                 aria-label="セクション"
-                className="rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-sm text-foreground"
+                className="rounded-lg border border-border-strong bg-background px-2 py-1.5 text-sm text-foreground"
               >
                 {SETLIST_SECTION_VALUES.map((section) => (
                   <option key={section} value={section}>
@@ -556,7 +556,7 @@ export function SetlistEditor({
                 <button
                   type="button"
                   onClick={() => moveItem(item.key, -1)}
-                  className="px-1 text-xs text-foreground/60 hover:text-foreground"
+                  className="px-1 text-xs text-foreground-secondary hover:text-foreground"
                   aria-label="上へ"
                 >
                   ↑
@@ -564,7 +564,7 @@ export function SetlistEditor({
                 <button
                   type="button"
                   onClick={() => moveItem(item.key, 1)}
-                  className="px-1 text-xs text-foreground/60 hover:text-foreground"
+                  className="px-1 text-xs text-foreground-secondary hover:text-foreground"
                   aria-label="下へ"
                 >
                   ↓
@@ -615,9 +615,9 @@ export function SetlistEditor({
                   ))}
                 </div>
 
-                <div className="rounded-lg border border-foreground/10 p-2">
+                <div className="rounded-lg border border-border-subtle p-2">
                   <div className="mb-1 flex items-center justify-between">
-                    <p className="text-xs text-foreground/50">
+                    <p className="text-xs text-foreground-secondary">
                       披露メンバー（C=センター）
                     </p>
                     <div className="flex items-center gap-2">
@@ -715,7 +715,7 @@ export function SetlistEditor({
                   })()}
                 </div>
 
-                <div className="space-y-2 rounded-lg border border-foreground/10 p-2">
+                <div className="space-y-2 rounded-lg border border-border-subtle p-2">
                   {(() => {
                     const candidates = formationCandidates(item);
                     const candidateIds = candidates.map((candidate) => candidate.memberId);
