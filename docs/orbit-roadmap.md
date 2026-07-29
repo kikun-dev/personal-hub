@@ -408,5 +408,7 @@
 | ~~Primary routeの未使用Geist転送~~ | ~~body正典はArialだがRootLayoutがGeist Sans / Monoを固定転送する~~ | ✅ Issue #397 で対応済み（Decision B: 局所化ではなくwebfontを全廃し、monoをsystem monospaceへ統一。Primary / Wiki含む全ルートでfont転送ゼロ） |
 | Primary journeyのcopy / external affordance残差 | 動画linkのnew-tab accessible hintと一部英語向け区切りが残る | P3 Backlog: Issue #395で日本語copyとexternal link contractを整える |
 | Mobile Next Eventsのread density | 390pxでNext EventsがToday Scheduleの約2.3倍の縦量を占める | P3 Backlog: Issue #396で件数・sort・read modelを変えずpresentationをpolishする |
+| foreground alphaによる文字・境界の組み立て | `DESIGN.md` の The Semantic Contrast Rule に反し、`text-foreground/NN` 等で文字色・操作境界を作っている箇所がアプリ全体に残る。#455 完了時点で約455箇所 / 85ファイル（`SongDetail` 29、`MemberProfile` 25 など公開画面が上位） | 共有UIプリミティブは Issue #455 で解消済み。画面単位の残りは Issue #461 で継続（Consolidated Findings の CF-R04 に対応する作業） |
+| Comboboxの `aria-controls` が閉時に存在しないidを指す | リストを閉じている間も `aria-controls` が listbox の id を指したままで、参照先の要素が存在しない | Issue #458 のスコープ外として据え置き。実害は確認されていないが、ARIA 的には厳密でない |
 
 2026-07-20 Full Design QAではP0 / P1 / P2の残件なし。上記3件はjourneyを阻害しないP3としてbacklog運用し、詳細な判定と証跡は[`docs/advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md`](advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md)を正本とする。
