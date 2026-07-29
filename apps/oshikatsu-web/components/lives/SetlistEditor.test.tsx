@@ -27,6 +27,7 @@ const PERFORMANCE_ID = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 const TRACK_ID = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const MEMBER_A_ID = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const MEMBER_B_ID = "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee";
+const MEMBER_C_ID = "ffffffff-ffff-4fff-8fff-ffffffffffff";
 
 const INITIAL_ITEM: SetlistEditorItemInput = {
   itemType: "song",
@@ -63,17 +64,20 @@ function createDeferred<T>(): {
 function renderEditor({
   onSubmit = async () => ({}),
   resolveOriginalMembers = async () => APPLIED_RESULT,
-}: Partial<Pick<SetlistEditorProps, "onSubmit" | "resolveOriginalMembers">> = {}) {
+  roster = [
+    { memberId: MEMBER_A_ID, memberNameJa: "メンバーA" },
+    { memberId: MEMBER_B_ID, memberNameJa: "メンバーB" },
+  ],
+}: Partial<
+  Pick<SetlistEditorProps, "onSubmit" | "resolveOriginalMembers" | "roster">
+> = {}) {
   return render(
     <SetlistEditor
       live={{ id: LIVE_ID, name: "テストライブ" }}
       performanceId={PERFORMANCE_ID}
       performanceLabel="2026-07-29 公演"
       initialItems={[INITIAL_ITEM]}
-      roster={[
-        { memberId: MEMBER_A_ID, memberNameJa: "メンバーA" },
-        { memberId: MEMBER_B_ID, memberNameJa: "メンバーB" },
-      ]}
+      roster={roster}
       trackOptions={[{ id: TRACK_ID, title: "テスト楽曲" }]}
       copySources={[]}
       onSubmit={onSubmit}
@@ -145,5 +149,84 @@ describe("SetlistEditor のオリメン反映", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "保存する" })).toBeEnabled();
     });
+  });
+});
+
+describe("SetlistEditor のセンター切り替え", () => {
+  it("参加メンバーを選択するとそのメンバー名入りのセンター切り替えが現れ、初期状態は未押下でラベルはCであること", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
+
+    const centerToggle = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーA）",
+    });
+    // 部分一致だと想定外の文字列でも通ってしまうため、ラベルがCのみであることまで固定する
+    expect(centerToggle).toHaveTextContent(/^C$/);
+    expect(centerToggle).toHaveAttribute("aria-pressed", "false");
+  });
+
+  it("押すとaria-pressedがtrueになり、ラベルはCのまま変わらないこと", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
+    const centerToggle = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーA）",
+    });
+
+    await user.click(centerToggle);
+
+    expect(centerToggle).toHaveAttribute("aria-pressed", "true");
+    expect(centerToggle).toHaveTextContent(/^C$/);
+  });
+
+  it("もう一度押すと未選択へ戻ること", async () => {
+    const user = userEvent.setup();
+    renderEditor();
+
+    await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
+    const centerToggle = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーA）",
+    });
+
+    await user.click(centerToggle);
+    await user.click(centerToggle);
+
+    expect(centerToggle).toHaveAttribute("aria-pressed", "false");
+    expect(centerToggle).toHaveTextContent(/^C$/);
+  });
+
+  it("センターが2人に達すると3人目のセンター切り替えがdisabledになり、既にセンターの2人はdisabledにならないこと", async () => {
+    const user = userEvent.setup();
+    renderEditor({
+      roster: [
+        { memberId: MEMBER_A_ID, memberNameJa: "メンバーA" },
+        { memberId: MEMBER_B_ID, memberNameJa: "メンバーB" },
+        { memberId: MEMBER_C_ID, memberNameJa: "メンバーC" },
+      ],
+    });
+
+    await user.click(screen.getByRole("checkbox", { name: "メンバーA" }));
+    await user.click(screen.getByRole("checkbox", { name: "メンバーB" }));
+    await user.click(screen.getByRole("checkbox", { name: "メンバーC" }));
+
+    const centerToggleA = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーA）",
+    });
+    const centerToggleB = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーB）",
+    });
+    const centerToggleC = screen.getByRole("button", {
+      name: "C：センター切り替え（メンバーC）",
+    });
+
+    await user.click(centerToggleA);
+    await user.click(centerToggleB);
+
+    expect(centerToggleA).not.toBeDisabled();
+    expect(centerToggleB).not.toBeDisabled();
+    expect(centerToggleC).toBeDisabled();
   });
 });

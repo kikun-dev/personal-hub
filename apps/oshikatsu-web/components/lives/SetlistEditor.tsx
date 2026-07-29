@@ -646,7 +646,10 @@ export function SetlistEditor({
                       </Button>
                     </div>
                   </div>
-                  <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:grid-cols-3">
+                  {/* overflow-y-auto は上下左右すべてでこの要素がclip境界になる。
+                      センター切り替えのfocus ring（2px outline + 2px offset）が
+                      上下左右どこでも切れないよう全方向に余白を取る */}
+                  <div className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto p-1 sm:grid-cols-3">
                     {memberCandidates(item).map((candidate) => {
                       const selected = item.members.find(
                         (member) => member.memberId === candidate.memberId
@@ -677,12 +680,13 @@ export function SetlistEditor({
                                 candidate.memberId
                               )}
                               aria-pressed={selected.isCenter}
-                              className={`rounded px-1 disabled:cursor-not-allowed disabled:opacity-50 ${
+                              className={`border px-1 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring disabled:cursor-not-allowed disabled:opacity-50 ${
                                 selected.isCenter
-                                  ? "bg-pink-500 text-white"
-                                  : "bg-foreground/10 text-foreground/50"
+                                  ? "rounded-full border-border-center bg-surface-center font-bold text-foreground"
+                                  : "rounded border-border-strong bg-background font-medium text-foreground-secondary hover:bg-surface-subtle"
                               }`}
-                              aria-label="センター切り替え"
+                              aria-label={`C：センター切り替え（${candidate.memberNameJa}）`}
+                              data-ui="setlist-center-toggle"
                             >
                               C
                             </button>
