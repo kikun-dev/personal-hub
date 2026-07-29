@@ -42,7 +42,7 @@ export default async function PersonDetailPage({
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.people}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← 制作陣一覧
         </ListBackButton>

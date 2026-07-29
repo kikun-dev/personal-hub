@@ -16,7 +16,7 @@ export function MemberCard({ member }: MemberCardProps) {
   return (
     <PendingLink
       href={`/members/${member.id}`}
-      className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      className="block rounded-lg border border-border-subtle bg-background p-4 transition-colors hover:bg-surface-subtle"
       listBackFallbackHref={APP_ROUTES.members}
     >
       <div className="flex items-start gap-3">
@@ -29,7 +29,7 @@ export function MemberCard({ member }: MemberCardProps) {
             className="h-16 w-16 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-foreground/5 text-lg font-bold text-foreground/30">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-subtle text-lg font-bold text-foreground-secondary">
             {member.nameJa.charAt(0)}
           </div>
         )}
@@ -39,10 +39,10 @@ export function MemberCard({ member }: MemberCardProps) {
               {member.nameJa}
             </span>
             {!isActive && (
-              <span className="text-xs text-foreground/40">卒業</span>
+              <span className="text-xs text-foreground-secondary">卒業</span>
             )}
           </div>
-          <p className="text-xs text-foreground/50">{member.nameKana}</p>
+          <p className="text-xs text-foreground-secondary">{member.nameKana}</p>
           <div className="mt-1.5 flex flex-wrap gap-1">
             {member.groups.map((g) => (
               <GroupBadge

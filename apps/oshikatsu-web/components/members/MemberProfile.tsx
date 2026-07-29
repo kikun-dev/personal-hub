@@ -183,15 +183,15 @@ export function MemberProfile({
             className="h-24 w-24 rounded-full object-cover"
           />
         ) : (
-          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-foreground/5 text-2xl font-bold text-foreground/30">
+          <div className="flex h-24 w-24 items-center justify-center rounded-full bg-surface-subtle text-2xl font-bold text-foreground-secondary">
             {member.nameJa.charAt(0)}
           </div>
         )}
         <div>
           <h1 className="text-xl font-bold text-foreground">{member.nameJa}</h1>
-          <p className="text-sm text-foreground/50">{member.nameKana}</p>
+          <p className="text-sm text-foreground-secondary">{member.nameKana}</p>
           {member.nameEn && (
-            <p className="text-sm text-foreground/50">{member.nameEn}</p>
+            <p className="text-sm text-foreground-secondary">{member.nameEn}</p>
           )}
           <div className="mt-2 flex flex-wrap gap-1">
             {member.groups.map((g) => (
@@ -208,11 +208,11 @@ export function MemberProfile({
 
       {/* プロフィール */}
       <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">プロフィール</h2>
+        <h2 className="mb-3 text-sm font-medium text-foreground-secondary">プロフィール</h2>
         <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
           {member.dateOfBirth && (
             <>
-              <dt className="text-foreground/50">生年月日</dt>
+              <dt className="text-foreground-secondary">生年月日</dt>
               <dd className="text-foreground">
                 {formatBirthday(member.dateOfBirth)}
                 {age !== null && ` (${age}歳)`}
@@ -221,26 +221,26 @@ export function MemberProfile({
           )}
           {member.zodiac && (
             <>
-              <dt className="text-foreground/50">星座</dt>
+              <dt className="text-foreground-secondary">星座</dt>
               <dd className="text-foreground">{member.zodiac}</dd>
             </>
           )}
           {/* null: 未入力（非表示）、"不明": ユーザーが明示的に選択（表示） */}
           {member.bloodType && (
             <>
-              <dt className="text-foreground/50">血液型</dt>
+              <dt className="text-foreground-secondary">血液型</dt>
               <dd className="text-foreground">{member.bloodType === "不明" ? "不明" : `${member.bloodType}型`}</dd>
             </>
           )}
           {member.callName && (
             <>
-              <dt className="text-foreground/50">コール名</dt>
+              <dt className="text-foreground-secondary">コール名</dt>
               <dd className="text-foreground">{member.callName}</dd>
             </>
           )}
           {member.penlightColor1 && member.penlightColor2 && (
             <>
-              <dt className="text-foreground/50">サイリウム</dt>
+              <dt className="text-foreground-secondary">サイリウム</dt>
               <dd className="text-foreground">
                 {formatPenlightLabel(member.penlightColor1, orderedPenlightColors)}
                 {" × "}
@@ -250,19 +250,19 @@ export function MemberProfile({
           )}
           {member.heightCm && (
             <>
-              <dt className="text-foreground/50">身長</dt>
+              <dt className="text-foreground-secondary">身長</dt>
               <dd className="text-foreground">{member.heightCm}cm</dd>
             </>
           )}
           {member.hometown && (
             <>
-              <dt className="text-foreground/50">出身地</dt>
+              <dt className="text-foreground-secondary">出身地</dt>
               <dd className="text-foreground">{member.hometown}</dd>
             </>
           )}
           {member.memo && (
             <>
-              <dt className="col-span-2 border-t border-foreground/10 pt-3 text-foreground/50">メモ</dt>
+              <dt className="col-span-2 border-t border-border-subtle pt-3 text-foreground-secondary">メモ</dt>
               <dd className="col-span-2 whitespace-pre-wrap text-foreground">{member.memo}</dd>
             </>
           )}
@@ -271,7 +271,7 @@ export function MemberProfile({
 
       {/* グループ履歴 */}
       <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">グループ履歴</h2>
+        <h2 className="mb-3 text-sm font-medium text-foreground-secondary">グループ履歴</h2>
         <div className="space-y-2">
           {member.groups.map((g) => {
             const tenureDays = calculateTenureDays(g.joinedAt, g.graduatedAt);
@@ -287,7 +287,7 @@ export function MemberProfile({
                     generation={g.generation}
                   />
                 </div>
-                <div className="text-right text-foreground/50">
+                <div className="text-right text-foreground-secondary">
                   <p>
                     {g.joinedAt && formatDate(g.joinedAt)}
                     {g.joinedAt && " 〜 "}
@@ -304,7 +304,7 @@ export function MemberProfile({
       {/* 発信情報 */}
       {hasOutgoingInfo && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">発信情報</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">発信情報</h2>
           <div className="space-y-2 text-sm">
             {(member.blogUrl || member.blogHashtag) && (
               <div>
@@ -321,7 +321,7 @@ export function MemberProfile({
                   <p className="text-foreground">ブログ</p>
                 )}
                 {member.blogHashtag && (
-                  <p className="text-xs text-foreground/50">{member.blogHashtag}</p>
+                  <p className="text-xs text-foreground-secondary">{member.blogHashtag}</p>
                 )}
               </div>
             )}
@@ -340,7 +340,7 @@ export function MemberProfile({
                   <p className="text-foreground">{member.talkAppName || "トークアプリ"}</p>
                 )}
                 {member.talkAppHashtag && (
-                  <p className="text-xs text-foreground/50">{member.talkAppHashtag}</p>
+                  <p className="text-xs text-foreground-secondary">{member.talkAppHashtag}</p>
                 )}
               </div>
             )}
@@ -361,7 +361,7 @@ export function MemberProfile({
                     <p className="text-foreground">{snsLabel}</p>
                   )}
                   {sns.hashtag && (
-                    <p className="text-xs text-foreground/50">{sns.hashtag}</p>
+                    <p className="text-xs text-foreground-secondary">{sns.hashtag}</p>
                   )}
                 </div>
               );
@@ -373,11 +373,11 @@ export function MemberProfile({
       {/* 選抜ポジション（シングル別） */}
       {selectionPositions.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">選抜ポジション</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">選抜ポジション</h2>
           <ul className="space-y-1 text-sm">
             {selectionPositions.map((position) => (
               <li key={position.releaseId} className="flex items-baseline gap-3">
-                <span className="w-12 shrink-0 text-foreground/50">
+                <span className="w-12 shrink-0 text-foreground-secondary">
                   {position.numbering != null
                     ? ordinalNumber(position.numbering)
                     : "—"}
@@ -395,11 +395,11 @@ export function MemberProfile({
       {/* 来歴 */}
       {histories.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">来歴</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">来歴</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm">
               <thead>
-                <tr className="border-b border-foreground/10 text-foreground/50">
+                <tr className="border-b border-border-subtle text-foreground-secondary">
                   <th className="px-2 py-2 font-medium">日付</th>
                   <th className="px-2 py-2 font-medium">出来事</th>
                   <th className="px-2 py-2 font-medium">備考</th>
@@ -407,12 +407,12 @@ export function MemberProfile({
               </thead>
               <tbody>
                 {histories.map((history) => (
-                  <tr key={history.id} className="border-b border-foreground/10 align-top">
-                    <td className="px-2 py-2 whitespace-nowrap text-foreground/70">
+                  <tr key={history.id} className="border-b border-border-subtle align-top">
+                    <td className="px-2 py-2 whitespace-nowrap text-foreground">
                       {formatDate(history.date)}
                     </td>
                     <td className="px-2 py-2 text-foreground">{history.event}</td>
-                    <td className="px-2 py-2 whitespace-pre-wrap text-foreground/70">
+                    <td className="px-2 py-2 whitespace-pre-wrap text-foreground">
                       {history.note ? linkifyNote(history.note) : "-"}
                     </td>
                   </tr>

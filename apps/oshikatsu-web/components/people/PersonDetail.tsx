@@ -40,7 +40,7 @@ export function PersonDetail({ person, sections }: PersonDetailProps) {
             {person.roles.map((role) => (
               <span
                 key={role}
-                className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground"
+                className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs text-foreground"
               >
                 {PERSON_ROLE_LABELS[role]}
               </span>
@@ -48,7 +48,7 @@ export function PersonDetail({ person, sections }: PersonDetailProps) {
           </div>
         )}
         {person.biography && (
-          <p className="whitespace-pre-wrap text-sm text-foreground/70">
+          <p className="whitespace-pre-wrap text-sm text-foreground">
             {person.biography}
           </p>
         )}
@@ -56,12 +56,12 @@ export function PersonDetail({ person, sections }: PersonDetailProps) {
 
       <Card>
         <div className="mb-3 flex items-baseline justify-between gap-2">
-          <h2 className="text-sm font-medium text-foreground/70">担当楽曲</h2>
-          <span className="text-xs text-foreground/60">{songCount}曲</span>
+          <h2 className="text-sm font-medium text-foreground-secondary">担当楽曲</h2>
+          <span className="text-xs text-foreground-secondary">{songCount}曲</span>
         </div>
 
         {songCount === 0 ? (
-          <p className="text-sm text-foreground/50">担当楽曲がありません</p>
+          <p className="text-sm text-foreground-secondary">担当楽曲がありません</p>
         ) : (
           <div className="space-y-4">
             {sections.map((section) => (
@@ -88,7 +88,7 @@ export function PersonDetail({ person, sections }: PersonDetailProps) {
                       {creditRoleBadges(song.roles).map((badge) => (
                         <span
                           key={badge}
-                          className="rounded bg-foreground/10 px-1.5 py-0.5 text-[10px] text-foreground/60"
+                          className="rounded bg-surface-subtle px-1.5 py-0.5 text-[10px] text-foreground-secondary"
                         >
                           {badge}
                         </span>

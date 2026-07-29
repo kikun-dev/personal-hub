@@ -53,13 +53,13 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="名前で検索"
           aria-label="名前で検索"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         />
         <select
           value={role}
           onChange={(event) => setRole(event.target.value as PersonRole | "")}
           aria-label="担当で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全担当</option>
           {PERSON_ROLE_VALUES.map((value) => (
@@ -68,7 +68,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {sorted.length}人
         </span>
       </div>
@@ -76,7 +76,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
+            <tr className="border-b border-border-subtle text-left">
               <SortableTh
                 label="名前"
                 active={sortKey === "name"}
@@ -84,7 +84,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                 ariaSort={ariaSort("name")}
                 onSort={() => handleSort("name")}
               />
-              <th className="pb-2 pr-4 font-medium text-foreground/70">担当</th>
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">担当</th>
               <SortableTh
                 label="担当曲数"
                 active={sortKey === "songCount"}
@@ -93,13 +93,13 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                 onSort={() => handleSort("songCount")}
               />
               {isAdmin && (
-                <th className="pb-2 font-medium text-foreground/70">操作</th>
+                <th className="pb-2 font-medium text-foreground-secondary">操作</th>
               )}
             </tr>
           </thead>
           <tbody>
             {sorted.map((person) => (
-              <tr key={person.id} className="border-b border-foreground/5">
+              <tr key={person.id} className="border-b border-border-subtle">
                 <td className="py-2 pr-4">
                   <Link
                     href={`/people/${person.id}`}
@@ -114,17 +114,17 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
                       person.roles.map((personRole) => (
                         <span
                           key={`${person.id}-${personRole}`}
-                          className="rounded-full bg-foreground/10 px-2 py-0.5 text-xs text-foreground"
+                          className="rounded-full bg-surface-subtle px-2 py-0.5 text-xs text-foreground"
                         >
                           {PERSON_ROLE_LABELS[personRole]}
                         </span>
                       ))
                     ) : (
-                      <span className="text-foreground/40">—</span>
+                      <span className="text-foreground-secondary">—</span>
                     )}
                   </div>
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground">
                   {person.songCount}
                 </td>
                 {isAdmin && (
@@ -144,7 +144,7 @@ export function PeopleBrowser({ people, isAdmin }: PeopleBrowserProps) {
       </div>
 
       {sorted.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           該当する制作陣がいません
         </p>
       )}
