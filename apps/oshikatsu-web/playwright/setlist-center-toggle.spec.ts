@@ -3,6 +3,7 @@ import {
   composite,
   expectAaContrastColors,
   expectContrastAtLeast,
+  focusWithKeyboard,
   parseColor,
   themes,
   viewports,
@@ -223,50 +224,38 @@ async function readGridClearance(toggle: Locator): Promise<Clearance> {
   });
 }
 
-async function isFocused(target: Locator): Promise<boolean> {
-  return target.evaluate((element) => element === document.activeElement);
-}
-
-// 指定 index の toggle へ keyboard だけで到達する。
-// contrast.ts の focusWithKeyboard は Tab 40回が上限で、header nav + form controls に加えて
-// 候補1件あたり2 stop（checkbox + C）を消費するため、後方の候補までは届かない。
-// そこで「先頭 toggle までは共有 helper、そこから先も同じ Tab 操作で前進」する。
-// programmatic focus を混ぜないので :focus-visible は確実に match する。
+// 指定 index の toggle へ keyboard だけで到達する。walk 自体は共有 helper
+// （contrast.ts の focusWithKeyboard）に任せ、この画面固有の事情だけを options で渡す。
+//
+// - maxTabs: 既定の40では先頭の C にすら届かない（実測で focus test 8/8 が到達失敗した）。
+//   header nav + フォーム操作部で17 stop、その後は候補1件あたり2 stop（checkbox + C）× 18人。
+// - onStep: 楽曲Combobox は onFocus で候補リストを開き、候補 <button> に tabIndex=-1 を
+//   付けていないため、そのまま Tab し続けると登録曲551件すべてを通過してしまう
+//   （タブ順を probe して確認）。Escape でリストを閉じてから先へ進む。
+//   これは spec 側の回避策で、Combobox のタブ順そのものは #458 で直す。
+//   #458 の対応後はこの onStep が不要になる可能性があるため、そのとき見直す。
 async function focusToggleWithKeyboard(
   page: Page,
   toggles: Locator,
   index: number
 ): Promise<void> {
-  const target = toggles.nth(index);
-
-  // contrast.ts の focusWithKeyboard は Tab 40回が上限で、この画面では
-  // 先頭の C にすら届かない（実測で 8/8 の focus test が到達失敗した）。
-  // header nav + form controls に加え候補1件あたり2 stop（checkbox + C）を消費するため。
-  // よってここでは同じ手順（blur → Tab を繰り返す）を上限だけ広げて自前で行う。
-  // programmatic focus を混ぜないので :focus-visible は確実に match する。
-  await page.evaluate(() => {
-    if (document.activeElement instanceof HTMLElement) {
-      document.activeElement.blur();
-    }
-  });
-
-  for (let step = 1; step <= MAX_FORWARD_TAB; step += 1) {
-    await page.keyboard.press("Tab");
-    if (await isFocused(target)) {
-      return;
-    }
-    // 楽曲Comboboxは onFocus で候補リストを開き、候補 <button> に tabIndex=-1 を付けて
-    // いないため、そのまま Tab し続けると登録曲551件すべてを通過してしまう（probe で確認）。
-    // Escape でリストを閉じてから先へ進む。
-    // これは spec の回避策であって、Combobox 側の tab 順は別Issueで扱う。
-    if (await page.locator('[role="combobox"]:focus').count()) {
-      await page.keyboard.press("Escape");
-    }
+  try {
+    await focusWithKeyboard(page, toggles.nth(index), {
+      maxTabs: MAX_FORWARD_TAB,
+      onStep: async () => {
+        if (await page.locator('[role="combobox"]:focus').count()) {
+          await page.keyboard.press("Escape");
+        }
+      },
+    });
+  } catch (cause) {
+    // 共有 helper の汎用メッセージに、どの候補で失敗したかと a11y 上の意味を足す
+    throw new Error(
+      `${index + 1}番目のセンター切り替えへTabで到達できませんでした（Tab ${MAX_FORWARD_TAB}回）。` +
+        "keyboardで到達できないのはaccessibility上の退行の可能性があります。",
+      { cause }
+    );
   }
-  throw new Error(
-    `${index + 1}番目のセンター切り替えへTabで到達できませんでした（Tab ${MAX_FORWARD_TAB}回）。` +
-      "keyboardで到達できないのはaccessibility上の退行の可能性があります。"
-  );
 }
 
 // fixture の編集画面を開く。fixture が無い環境（remote Supabase）では false を返す。

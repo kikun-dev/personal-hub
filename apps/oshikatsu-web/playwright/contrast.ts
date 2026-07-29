@@ -180,24 +180,43 @@ export async function expectRenderedTextContrast(
   }
 }
 
+export type FocusWithKeyboardOptions = {
+  /**
+   * Tabの上限。既定は40で、既存specの挙動は変わらない。
+   * 候補が多い一覧など、対象までのtab stopが40を超える画面だけ明示的に増やす（#453）。
+   */
+  maxTabs?: number;
+  /**
+   * 各Tabの後に呼ばれる。ページ固有の割り込みを挟むために使う。
+   * 例: focusで開くlistboxをEscapeで閉じ、候補全件をTabで通過しないようにする（#453 / #458）。
+   */
+  onStep?: () => Promise<void>;
+};
+
 // 直前のfocusを外してからTabで対象へ到達する。keyboard操作を経ることで、
 // text field以外でも:focus-visibleが確実にmatchする状態を作る。
 export async function focusWithKeyboard(
   page: Page,
-  target: Locator
+  target: Locator,
+  options: FocusWithKeyboardOptions = {}
 ): Promise<void> {
+  const maxTabs = options.maxTabs ?? 40;
+
   await page.evaluate(() => {
     if (document.activeElement instanceof HTMLElement) {
       document.activeElement.blur();
     }
   });
 
-  for (let index = 0; index < 40; index += 1) {
+  for (let index = 0; index < maxTabs; index += 1) {
     await page.keyboard.press("Tab");
     if (await target.evaluate((element) => element === document.activeElement)) {
       return;
     }
+    if (options.onStep) {
+      await options.onStep();
+    }
   }
 
-  throw new Error("対象要素へTabで到達できませんでした。");
+  throw new Error(`対象要素へTabで到達できませんでした（Tab ${maxTabs}回）。`);
 }

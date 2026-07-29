@@ -125,7 +125,7 @@ prefetchを戻さないこと。**
 - full suite合計5回: 1025 pass / 45 skip / 0 fail。route teardown errorと
   navigation RSC本文未完了は再発しなかった
 
-各full suiteで発生する9件のskipは、次の意図した条件と一致した。想定外のskipはない。
+各full suiteで発生する7件（seed 041 追加前は9件）のskipは、次の意図した条件と一致した。想定外のskipはない。
 
 - 管理フォームの編集2件: desktop/mobileのスポット各1件。ローカルseedは `orbit_spots=0` のため、
   「一覧に編集対象がない場合は固定IDに依存せずskipする」条件が成立した。データのある
