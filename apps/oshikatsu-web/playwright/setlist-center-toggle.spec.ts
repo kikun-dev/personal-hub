@@ -79,6 +79,7 @@ type ToggleAppearance = {
   borderRadiusPx: number;
   fontWeight: number;
   // 自分より外側の背景色（手前→奥）。border / focus ring が接する「外側の背景」を解決するために使う。
+  // 末尾には :root の --background（ページの canvas 色）を必ず積む（#465。readToggleAppearance 参照）。
   ancestorBackgrounds: string[];
   width: number;
   height: number;
@@ -116,7 +117,11 @@ function resolveBackgroundStack(layers: string[], label: string): Rgba {
     }
   }
   if (resolved === null) {
-    throw new Error(`${label}の背景色を解決できませんでした（祖先がすべて透明です）。`);
+    // 到達したら「祖先も :root の --background も透明」という状態。#465 の修正後は起きない想定だが、
+    // 再発時に原因を追えるよう、渡されたスタックをそのまま出す。
+    throw new Error(
+      `${label}の背景色を解決できませんでした（祖先がすべて透明です）。layers=${JSON.stringify(layers)}`
+    );
   }
   return resolved;
 }
@@ -128,6 +133,28 @@ async function readToggleAppearance(toggle: Locator): Promise<ToggleAppearance> 
     for (let node = element.parentElement; node !== null; node = node.parentElement) {
       ancestorBackgrounds.push(getComputedStyle(node).backgroundColor);
     }
+
+    // #465: Chromium が body / main の computed custom property を空で返すことがある。
+    // 発現条件は「emulateMedia(colorScheme) を navigation より前に設定」かつ narrow viewport で、
+    // light のときに観測した。html は正しい値を持ち、より深い子孫（この toggle 自身）も正しい値を持つのに、
+    // 間の body / main だけが空になる。CSS の継承では起こり得ない組み合わせなので、実際の描画ではなく
+    // computed style の報告だけが壊れている。
+    //
+    // このとき `body { background: var(--background) }` は無効化されて transparent と報告され、
+    // 祖先スタックが全て透明になって背景を解決できなくなる。Tailwind の utility は @theme inline で
+    // 値が埋め込まれるため無傷で、手書きの body ルールだけが影響を受ける。
+    // rAF 待ち・強制レイアウト・class 付け外し・:root の変数再設定・viewport 変更のいずれでも回復しない。
+    //
+    // 最外郭として :root の --background（＝ページの canvas 色）を必ず積むことで、
+    // 報告が壊れた場合も正常時と同じ背景（light: #fff / dark: #0a0a0a）へ解決させる。
+    // 判定のしきい値は緩めない。retry・timeout 増加・プロダクト実装の変更も行わない。
+    const themeBackground = getComputedStyle(document.documentElement)
+      .getPropertyValue("--background")
+      .trim();
+    if (themeBackground !== "") {
+      ancestorBackgrounds.push(themeBackground);
+    }
+
     const rect = element.getBoundingClientRect();
     return {
       color: style.color,

@@ -170,7 +170,29 @@ test timeoutによってPlaywrightがpageを先に閉じた場合は解除を省
   0幅・route teardownエラーはいずれも0件
 - 続けて実行したlocal full suiteも205 passed / 9 skipped / 0 failedで完走した
 
-#445完了時点で、再現を確認できている既知flakyはない。
+#465で、`setlist-center-toggle.spec.ts` の「選択状態を色以外でも判別できる」を解消した。
+
+- 症状は `resolveBackgroundStack` の「祖先がすべて透明です」。lightの320px / 390pxで発現し、
+  失敗するviewportは実行ごとに移動していた（320pxのみ → 320px+390px → 320pxのみ）
+- 原因はChromiumがcomputed custom propertyを一部の要素で空に報告するバグ。`html`は正しい値を持ち、
+  より深い子孫であるCボタン自身も正しい値を持つのに、間の`body` / `main`だけが空になる。
+  CSSの継承では起こり得ない組み合わせなので、描画ではなく報告だけが壊れている
+- 発現条件は「`emulateMedia({colorScheme})`をnavigationより前に設定」かつnarrow viewport。
+  reload、rAF待ち、強制レイアウト、class付け外し、`:root`の変数再設定、viewport変更のいずれでも回復しない
+- Tailwindのutilityは`@theme inline`で値が埋め込まれるため無傷で、手書きの
+  `body { background: var(--background) }` だけがtransparentと報告される
+- 祖先スタックの最外郭へ`:root`の`--background`（＝ページのcanvas色）を必ず積むことで解消した。
+  正常時はbodyが不透明なのでこの層には到達せず、判定は変わらない。
+  retry・timeout増加、しきい値の緩和、プロダクト実装の変更は行わない
+- local-only反復は当該specがmobile projectで10/10 × 5回＝50/50 pass。
+  続けて実行したlocal full suiteも0 failedで完走した
+
+`semantic-ui-state.spec.ts` も `getComputedStyle(body).backgroundColor` を直接読んでおり、
+同じ「emulateMedia → goto」順序のため理屈上は同じバグを踏みうる。踏んだ場合は
+`expectAaContrast` が背景を透明として扱い1.15:1相当で誤検知する。ただし54回（18 × 3回）の
+反復では再現しなかったため、#465では変更していない。再発時はここを最初に疑う。
+
+#465完了時点で、再現を確認できている既知flakyはない。
 
 以前候補として記録していたlive detailのcarousel、calendarのhit-area、参加フォームのfocus連動は、
 有効なローカル認証状態でのfull suite 5回では再観測されなかったため、既知flakyの一覧から外した。
