@@ -26,8 +26,8 @@ export function Input({
     : ariaDescribedBy;
   // エラー時は内部契約を優先し、それ以外は呼び出し側の指定を維持する
   const invalid = error ? ("true" as const) : ariaInvalid;
-  const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
-    error ? "border-red-400" : "border-foreground/10"
+  const inputClassName = `w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass} ${
+    error ? "border-danger" : "border-border-strong"
   } ${className}`;
 
   if (props.type === "date") {
@@ -46,7 +46,7 @@ export function Input({
 
     return (
       <div>
-        <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground/70">
+        <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground-secondary">
           {label}
         </label>
         <div className="flex items-center gap-2">
@@ -66,8 +66,8 @@ export function Input({
             onClick={openPicker}
             className={`shrink-0 rounded-lg border px-3 py-2 text-sm ${focusRingClass} ${
               error
-                ? "border-red-400 text-red-500"
-                : "border-foreground/10 text-foreground/70 hover:bg-foreground/5"
+                ? "border-danger text-danger-text"
+                : "border-border-strong text-foreground hover:bg-surface-subtle"
             }`}
             aria-label={`${label}をカレンダーから選択`}
           >
@@ -86,14 +86,14 @@ export function Input({
             aria-hidden="true"
           />
         </div>
-        {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
+        {error && <p id={errorId} className="mt-1 text-xs text-danger-text">{error}</p>}
       </div>
     );
   }
 
   return (
     <div>
-      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground/70">
+      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground-secondary">
         {label}
       </label>
       <input
@@ -103,7 +103,7 @@ export function Input({
         className={inputClassName}
         {...props}
       />
-      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-danger-text">{error}</p>}
     </div>
   );
 }

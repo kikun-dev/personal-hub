@@ -9,7 +9,7 @@ export function FormErrorBanner({ message }: FormErrorBannerProps) {
   return (
     <p
       role="alert"
-      className="rounded-lg bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950 dark:text-red-400"
+      className="rounded-lg border border-border-subtle bg-surface-subtle px-4 py-3 text-sm text-danger-text"
     >
       {message}
     </p>

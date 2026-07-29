@@ -114,16 +114,16 @@ export function Combobox({
           setHighlight(0);
         }}
         onKeyDown={handleKeyDown}
-        className={`w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`}
+        className={`w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass}`}
       />
       {open && (
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-foreground/10 bg-background py-1 shadow-lg"
+          className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border-subtle bg-background py-1 shadow-lg"
         >
           {rows.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-foreground/40">
+            <li className="px-3 py-2 text-sm text-foreground-secondary">
               候補がありません
             </li>
           ) : (
@@ -137,8 +137,8 @@ export function Combobox({
                   }}
                   onMouseEnter={() => setHighlight(index)}
                   className={`flex w-full items-center px-3 py-1.5 text-left text-sm ${
-                    index === safeHighlight ? "bg-foreground/10" : ""
-                  } ${row.isEmpty ? "text-foreground/50" : "text-foreground"} ${
+                    index === safeHighlight ? "bg-surface-subtle" : ""
+                  } ${row.isEmpty ? "text-foreground-secondary" : "text-foreground"} ${
                     row.value === value ? "font-medium" : ""
                   }`}
                 >
