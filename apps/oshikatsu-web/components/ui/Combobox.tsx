@@ -19,6 +19,12 @@ type ComboboxProps = {
   className?: string;
 };
 
+/**
+ * 候補（option）は意図的にフォーカス不可にしている（#458）。
+ * フォーカスは常に入力欄に留め、キーボード操作は矢印キー + `aria-activedescendant` で行う。
+ * 候補を button 等のタブストップに戻すと、Tab が候補数だけ空打ちされて
+ * フォーム内の次の項目へ進めなくなるため、フォーカス可能な要素を再導入しないこと。
+ */
 export function Combobox({
   value,
   onChange,
@@ -32,7 +38,9 @@ export function Combobox({
   const [query, setQuery] = useState("");
   const [highlight, setHighlight] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
+  const optionRefs = useRef<(HTMLLIElement | null)[]>([]);
   const listId = useId();
+  const optionId = (index: number) => `${listId}-option-${index}`;
 
   const selectedLabel = options.find((opt) => opt.value === value)?.label ?? "";
 
@@ -68,6 +76,14 @@ export function Combobox({
   const safeHighlight =
     rows.length === 0 ? -1 : Math.min(Math.max(highlight, 0), rows.length - 1);
 
+  // 候補をタブストップから外した結果、Tab でのフォーカス移動に伴うブラウザ既定の
+  // スクロールが働かなくなった（従来はそれで選択中候補が見えていた）。
+  // フォーカスは入力欄に留まるためリストは自力でスクロールしない。ここで明示的に寄せる。
+  useEffect(() => {
+    if (!open || safeHighlight < 0) return;
+    optionRefs.current[safeHighlight]?.scrollIntoView({ block: "nearest" });
+  }, [open, safeHighlight]);
+
   const commit = (rowValue: string) => {
     onChange(rowValue);
     setOpen(false);
@@ -90,6 +106,11 @@ export function Combobox({
     } else if (event.key === "Escape") {
       setOpen(false);
       setQuery("");
+    } else if (event.key === "Tab") {
+      // Tab は既定どおりフォーカスを次へ移す（preventDefault しない）。
+      // 外側クリック検知は mousedown だけなので、閉じる処理をここでも行う。
+      setOpen(false);
+      setQuery("");
     }
   };
 
@@ -101,6 +122,10 @@ export function Combobox({
         aria-expanded={open}
         aria-controls={listId}
         aria-label={ariaLabel}
+        aria-autocomplete="list"
+        aria-activedescendant={
+          open && safeHighlight >= 0 ? optionId(safeHighlight) : undefined
+        }
         value={open ? query : selectedLabel}
         placeholder={placeholder}
         onFocus={() => {
@@ -123,27 +148,39 @@ export function Combobox({
           className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-lg border border-border-subtle bg-background py-1 shadow-lg"
         >
           {rows.length === 0 ? (
-            <li className="px-3 py-2 text-sm text-foreground-secondary">
+            // listbox の子は option だけにするため、この行は option 扱いにしない
+            <li
+              role="presentation"
+              className="px-3 py-2 text-sm text-foreground-secondary"
+            >
               候補がありません
             </li>
           ) : (
             rows.map((row, index) => (
-              <li key={row.isEmpty ? "__empty__" : row.value}>
-                <button
-                  type="button"
-                  onMouseDown={(event) => {
-                    event.preventDefault();
-                    commit(row.value);
-                  }}
-                  onMouseEnter={() => setHighlight(index)}
-                  className={`flex w-full items-center px-3 py-1.5 text-left text-sm ${
-                    index === safeHighlight ? "bg-surface-subtle" : ""
-                  } ${row.isEmpty ? "text-foreground-secondary" : "text-foreground"} ${
-                    row.value === value ? "font-medium" : ""
-                  }`}
-                >
-                  {row.label}
-                </button>
+              <li
+                key={row.isEmpty ? "__empty__" : row.value}
+                id={optionId(index)}
+                role="option"
+                aria-selected={index === safeHighlight}
+                ref={(node) => {
+                  optionRefs.current[index] = node;
+                }}
+                // mousedown では確定せず、入力欄からDOM focusが外れるのを防ぐだけにする。
+                // 確定は click に結び付ける（#458）。支援技術や音声操作は mousedown を
+                // 伴わない click を合成するため、mousedown だけに commit を置くと
+                // それらの経路から候補を選べなくなる。
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                }}
+                onClick={() => commit(row.value)}
+                onMouseEnter={() => setHighlight(index)}
+                className={`flex w-full items-center px-3 py-1.5 text-left text-sm ${
+                  index === safeHighlight ? "bg-surface-subtle" : ""
+                } ${row.isEmpty ? "text-foreground-secondary" : "text-foreground"} ${
+                  row.value === value ? "font-medium" : ""
+                }`}
+              >
+                {row.label}
               </li>
             ))
           )}
