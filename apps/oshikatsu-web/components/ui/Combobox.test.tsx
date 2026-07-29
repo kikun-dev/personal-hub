@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeAll, describe, expect, it, vi } from "vitest";
 import { Combobox, type ComboboxOption } from "@/components/ui/Combobox";
@@ -200,5 +200,21 @@ describe("Combobox のマウス操作", () => {
     expect(onChange).toHaveBeenCalledExactlyOnceWith("gamma");
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(input).toHaveValue("楽曲ガンマ");
+  });
+
+  it("mousedownを伴わないclick単独でも確定する", async () => {
+    const user = userEvent.setup();
+    const { input, onChange } = renderCombobox();
+
+    await user.click(input);
+
+    // 支援技術や音声操作は mousedown を伴わない click を合成する。
+    // userEvent.click は mousedown も発火するためこの経路を検知できないので、
+    // click だけを直接送って確定できることを固定する（#458 レビュー指摘）。
+    fireEvent.click(screen.getByRole("option", { name: "楽曲ベータ" }));
+
+    expect(onChange).toHaveBeenCalledExactlyOnceWith("beta");
+    expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
+    expect(input).toHaveValue("楽曲ベータ");
   });
 });

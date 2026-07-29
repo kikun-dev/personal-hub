@@ -165,10 +165,14 @@ export function Combobox({
                 ref={(node) => {
                   optionRefs.current[index] = node;
                 }}
+                // mousedown では確定せず、入力欄からDOM focusが外れるのを防ぐだけにする。
+                // 確定は click に結び付ける（#458）。支援技術や音声操作は mousedown を
+                // 伴わない click を合成するため、mousedown だけに commit を置くと
+                // それらの経路から候補を選べなくなる。
                 onMouseDown={(event) => {
                   event.preventDefault();
-                  commit(row.value);
                 }}
+                onClick={() => commit(row.value)}
                 onMouseEnter={() => setHighlight(index)}
                 className={`flex w-full items-center px-3 py-1.5 text-left text-sm ${
                   index === safeHighlight ? "bg-surface-subtle" : ""

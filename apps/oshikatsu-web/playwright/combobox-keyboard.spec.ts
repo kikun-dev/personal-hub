@@ -53,18 +53,21 @@ test("候補リストが開いていてもTab1回でComboboxを抜けられる�
     "候補が無い状態ではタブ順の検証にならない。会場データが投入されているか確認すること"
   ).toBeGreaterThan(1);
 
+  // Combobox の直後にある「公演日」。ここへ1回の Tab で到達することが AC。
+  // 「候補ではない要素へ移った」だけだと body や想定外の要素でも通ってしまうため、
+  // 次のコントロールそのものを指定して固定する。
+  // exact: true が必要。Input の日付バリアントは「選択」ボタンへ
+  // aria-label="公演日*をカレンダーから選択" を付けており、getByLabel は部分一致なので
+  // exact を外すと日付入力とカレンダーボタンの2件にマッチして strict mode 違反になる。
+  const nextField = page.getByLabel("公演日*", { exact: true });
+  await expect(nextField).toBeVisible();
+
   await page.keyboard.press("Tab");
 
-  // 1回の Tab で Combobox の外へ出ていること。
-  // 候補がタブ順に入っていると、ここで focus は候補のどれかに留まる。
-  const focusedIsOption = await page.evaluate(
-    () => document.activeElement?.getAttribute("role") === "option"
-  );
-  expect(
-    focusedIsOption,
-    "Tab後のfocusが候補に留まっている。候補がタブストップに戻っている可能性がある"
-  ).toBe(false);
-
+  await expect(
+    nextField,
+    "Tab1回でCombobox直後の「公演日」へ到達していない。候補がタブストップに戻っている可能性がある"
+  ).toBeFocused();
   await expect(input).not.toBeFocused();
   // Tab で離脱したらリストも閉じる（#458）
   await expect(listbox).toBeHidden();
