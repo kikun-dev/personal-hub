@@ -26,20 +26,20 @@ export function Textarea({
 
   return (
     <div>
-      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground/70">
+      <label htmlFor={fieldId} className="mb-1 block text-sm font-medium text-foreground-secondary">
         {label}
       </label>
       <textarea
         id={fieldId}
         aria-invalid={invalid}
         aria-describedby={describedBy}
-        className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
-          error ? "border-red-400" : "border-foreground/10"
+        className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass} ${
+          error ? "border-danger" : "border-border-strong"
         } ${className}`}
         rows={3}
         {...props}
       />
-      {error && <p id={errorId} className="mt-1 text-xs text-red-500">{error}</p>}
+      {error && <p id={errorId} className="mt-1 text-xs text-danger-text">{error}</p>}
     </div>
   );
 }

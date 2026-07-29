@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-29T06:11:50Z",
+  "generatedAt": "2026-07-29T07:42:07Z",
   "title": "Design System: Sakalog",
   "extensions": {
     "colorMeta": {
@@ -302,7 +302,7 @@
       "refersTo": "input",
       "description": "面が背景と同色のため、3:1以上のstrong境界で操作部品として識別させる標準入力欄。focusはsemantic focus ringで示す。",
       "html": "<label class=\"ds-field\"><span>メモ</span><input type=\"text\" placeholder=\"思い出を入力\"></label>",
-      "css": ".ds-field { display: grid; gap: 4px; color: var(--foreground, #171717); font: 500 12px/1.33 Arial, Helvetica, sans-serif; } .ds-field input { border: 1px solid var(--border-strong, #8A8A8A); border-radius: 8px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 8px 12px; font: 400 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field input::placeholder { color: var(--foreground-secondary, #595959); } .ds-field input:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-field input:disabled { cursor: not-allowed; opacity: 0.5; }"
+      "css": ".ds-field { display: grid; gap: 4px; color: var(--foreground, #171717); font: 500 12px/1.33 Arial, Helvetica, sans-serif; } .ds-field input { border: 1px solid var(--border-strong, #8A8A8A); border-radius: 8px; background: var(--background, #fff); color: var(--foreground, #171717); padding: 8px 12px; font: 400 14px/1.43 Arial, Helvetica, sans-serif; } .ds-field input::placeholder { color: var(--foreground-secondary, #595959); } .ds-field input:focus-visible { outline: 2px solid var(--focus-ring, #1D4ED8); outline-offset: 2px; } .ds-field input:disabled { cursor: not-allowed; opacity: 0.5; } .ds-field input[aria-invalid=\"true\"] { border-color: var(--danger, #B42318); }"
     },
     {
       "name": "Interactive Card",
