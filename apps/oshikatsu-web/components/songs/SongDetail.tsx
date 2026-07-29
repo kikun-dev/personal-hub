@@ -55,10 +55,10 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
         <h1 className="text-xl font-bold text-foreground">{song.title}</h1>
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {song.groupNameJa && (
-            <span className="text-sm text-foreground/50">{song.groupNameJa}</span>
+            <span className="text-sm text-foreground-secondary">{song.groupNameJa}</span>
           )}
           {releaseLabelText && (
-            <span className="text-sm text-foreground/50">{releaseLabelText}</span>
+            <span className="text-sm text-foreground-secondary">{releaseLabelText}</span>
           )}
           {labelText && <Badge label={labelText} color={SONG_LABEL_BADGE_COLOR} />}
         </div>
@@ -66,31 +66,31 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       {song.artistName && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">誰の歌か</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">誰の歌か</h2>
           <p className="text-sm text-foreground">{song.artistName}</p>
         </Card>
       )}
 
       {song.note && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">メモ</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">メモ</h2>
           <p className="whitespace-pre-wrap text-sm text-foreground">{song.note}</p>
         </Card>
       )}
 
       {song.releases.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">収録リリース</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">収録リリース</h2>
           <ul className="space-y-2 text-sm">
             {song.releases.map((release) => (
-              <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-foreground/10 p-3">
+              <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-border-subtle p-3">
                 <p className="font-medium text-foreground">
                   <Link href={`/releases/${release.releaseId}`} className="hover:underline">
                     {release.releaseTitle}
                   </Link>
                   （{RELEASE_TYPE_LABELS[release.releaseType]}）
                 </p>
-                <p className="mt-1 text-xs text-foreground/60">
+                <p className="mt-1 text-xs text-foreground-secondary">
                   {release.trackNumber}曲目
                   {release.releaseDate && ` / ${formatDate(release.releaseDate)}`}
                 </p>
@@ -102,11 +102,11 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       {creditsByRole.size > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">楽曲情報</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">楽曲情報</h2>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             {Array.from(creditsByRole.entries()).map(([role, names]) => (
               <Fragment key={role}>
-                <dt className="text-foreground/50">{CREDIT_LABELS[role] ?? role}</dt>
+                <dt className="text-foreground-secondary">{CREDIT_LABELS[role] ?? role}</dt>
                 <dd className="text-foreground">{names.join(" / ")}</dd>
               </Fragment>
             ))}
@@ -121,9 +121,9 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       {song.mv && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">MV</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">MV</h2>
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-            <dt className="text-foreground/50">リンク</dt>
+            <dt className="text-foreground-secondary">リンク</dt>
             <dd className="break-all">
               <a href={song.mv.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
                 {song.mv.url}
@@ -131,25 +131,25 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
             </dd>
             {song.mv.directorName && (
               <>
-                <dt className="text-foreground/50">監督</dt>
+                <dt className="text-foreground-secondary">監督</dt>
                 <dd className="text-foreground">{song.mv.directorName}</dd>
               </>
             )}
             {song.mv.location && (
               <>
-                <dt className="text-foreground/50">ロケ地</dt>
+                <dt className="text-foreground-secondary">ロケ地</dt>
                 <dd className="text-foreground">{song.mv.location}</dd>
               </>
             )}
             {song.mv.publishedOn && (
               <>
-                <dt className="text-foreground/50">配信日</dt>
+                <dt className="text-foreground-secondary">配信日</dt>
                 <dd className="text-foreground">{formatDate(song.mv.publishedOn)}</dd>
               </>
             )}
             {song.mv.memo && (
               <>
-                <dt className="text-foreground/50">メモ</dt>
+                <dt className="text-foreground-secondary">メモ</dt>
                 <dd className="whitespace-pre-wrap text-foreground">{song.mv.memo}</dd>
               </>
             )}
@@ -159,16 +159,16 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       {displayVideos.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">関連動画</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">関連動画</h2>
           <div className="space-y-4">
             {displayVideos.map(({ video, label }) => (
               <dl
                 key={video.type}
-                className="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-foreground/10 pb-4 text-sm last:border-0 last:pb-0"
+                className="grid grid-cols-2 gap-x-4 gap-y-2 border-b border-border-subtle pb-4 text-sm last:border-0 last:pb-0"
               >
-                <dt className="text-foreground/50">種別</dt>
+                <dt className="text-foreground-secondary">種別</dt>
                 <dd className="text-foreground">{label}</dd>
-                <dt className="text-foreground/50">リンク</dt>
+                <dt className="text-foreground-secondary">リンク</dt>
                 <dd className="break-all">
                   <a href={video.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
                     {video.url}
@@ -176,13 +176,13 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
                 </dd>
                 {video.publishedOn && (
                   <>
-                    <dt className="text-foreground/50">配信日</dt>
+                    <dt className="text-foreground-secondary">配信日</dt>
                     <dd className="text-foreground">{formatDate(video.publishedOn)}</dd>
                   </>
                 )}
                 {video.memo && (
                   <>
-                    <dt className="text-foreground/50">メモ</dt>
+                    <dt className="text-foreground-secondary">メモ</dt>
                     <dd className="whitespace-pre-wrap text-foreground">{video.memo}</dd>
                   </>
                 )}
@@ -194,14 +194,14 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       {song.costumes.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">衣装</h2>
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">衣装</h2>
           <ul className="space-y-2 text-sm">
             {song.costumes.map((costume) => (
-              <li key={costume.id} className="rounded-lg border border-foreground/10 p-3">
+              <li key={costume.id} className="rounded-lg border border-border-subtle p-3">
                 <p className="text-foreground">担当: {costume.stylistName}</p>
-                <p className="mt-1 break-all text-xs text-foreground/60">画像: {costume.imagePath}</p>
+                <p className="mt-1 break-all text-xs text-foreground-secondary">画像: {costume.imagePath}</p>
                 {costume.note && (
-                  <p className="mt-1 whitespace-pre-wrap text-xs text-foreground/60">{costume.note}</p>
+                  <p className="mt-1 whitespace-pre-wrap text-xs text-foreground-secondary">{costume.note}</p>
                 )}
               </li>
             ))}
@@ -211,7 +211,7 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
 
       <Card>
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground/70">総披露回数</h2>
+          <h2 className="text-sm font-medium text-foreground-secondary">総披露回数</h2>
           <TextLink
             href={APP_ROUTES.mypageSetlist}
             feedback="global"
@@ -221,7 +221,7 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
           </TextLink>
         </div>
         {performanceSummary.totalCount === 0 ? (
-          <p className="text-sm text-foreground/60">まだ披露記録がありません</p>
+          <p className="text-sm text-foreground-secondary">まだ披露記録がありません</p>
         ) : (
           <div className="space-y-3">
             <span className="text-sm font-semibold text-foreground">
@@ -231,12 +231,12 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
               {performanceSummary.byLive.map((live) => (
                 <li
                   key={live.liveId}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-foreground/10 p-3"
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
                 >
                   <Link href={`/lives/${live.liveId}`} className="text-foreground hover:underline">
                     {live.liveName}
                   </Link>
-                  <span className="text-xs text-foreground/50">{live.count}回披露</span>
+                  <span className="text-xs text-foreground-secondary">{live.count}回披露</span>
                 </li>
               ))}
             </ul>

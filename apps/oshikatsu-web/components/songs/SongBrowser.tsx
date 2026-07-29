@@ -146,7 +146,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {groups.map((group) => (
@@ -161,7 +161,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             handleLabelChange(event.target.value as SongLabel | "")
           }
           aria-label="ラベルで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全ラベル</option>
           {SONG_LABELS.map((value) => (
@@ -175,7 +175,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             value={generation}
             onChange={(event) => handleGenerationChange(event.target.value)}
             aria-label="期で絞り込み"
-            className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+            className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
           >
             <option value="">全期</option>
             {generationOptions.map((g) => (
@@ -191,9 +191,9 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="タイトルで検索"
           aria-label="楽曲タイトルで検索"
-          className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+          className="w-full max-w-xs rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
         />
-        <label className="flex items-center gap-1.5 text-sm text-foreground/70">
+        <label className="flex items-center gap-1.5 text-sm text-foreground-secondary">
           <input
             type="checkbox"
             checked={includeOther}
@@ -201,7 +201,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           />
           その他も含む
         </label>
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {filteredSongs.length}曲
         </span>
       </div>

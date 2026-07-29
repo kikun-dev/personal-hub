@@ -22,13 +22,13 @@ export default function SongDetailError({ error, reset }: SongDetailErrorProps) 
     <div className="space-y-4">
       <Link
         href={APP_ROUTES.songs}
-        className="text-sm text-foreground/60 hover:text-foreground"
+        className="text-sm text-foreground-secondary hover:text-foreground"
       >
         ← 楽曲一覧
       </Link>
-      <div className="rounded-lg border border-foreground/10 p-6 text-center">
+      <div className="rounded-lg border border-border-subtle p-6 text-center">
         <p className="text-sm text-foreground">楽曲情報の読み込みに失敗しました。</p>
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           時間をおいて再度お試しください。
         </p>
         <div className="mt-4">

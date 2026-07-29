@@ -16,19 +16,19 @@ export function SongCard({ showGroupName = true, song }: SongCardProps) {
   return (
     <PendingLink
       href={`/songs/${song.id}`}
-      className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      className="block rounded-lg border border-border-subtle bg-background p-4 transition-colors hover:bg-surface-subtle"
       listBackFallbackHref={APP_ROUTES.songs}
     >
       <p className="text-sm font-medium text-foreground">{song.title}</p>
       {showGroupName && song.groupNameJa && (
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           {song.groupNameJa}
         </p>
       )}
       {(song.representativeReleaseType || labelText) && (
         <div className="mt-1 flex flex-wrap items-center gap-2">
           {song.representativeReleaseType && (
-            <span className="text-xs text-foreground/50">
+            <span className="text-xs text-foreground-secondary">
               {formatReleaseTypeLabel(
                 song.representativeReleaseType,
                 song.representativeNumbering
@@ -39,7 +39,7 @@ export function SongCard({ showGroupName = true, song }: SongCardProps) {
         </div>
       )}
       {song.firstReleaseDate && (
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           初回リリース: {formatDate(song.firstReleaseDate)}
         </p>
       )}
