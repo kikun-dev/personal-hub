@@ -120,21 +120,26 @@ prefetchを戻さないこと。**
 - Recent Attendance footer + NavigationProgressをdesktop/mobile各40回: 236/240 pass。
   4件はmobile通常モーションの既知の独立flakyで、#445へ分割した
 - 最終差分のfull suiteをfresh serverで1回: 205 pass / 9 skip / 0 fail
+  （#453 で seed 041 を追加した後は **227 pass / 7 skip / 0 fail**。内訳は下記）
 - 同じlocal production serverでfull suiteを4反復: 820 pass / 36 skip / 0 fail
 - full suite合計5回: 1025 pass / 45 skip / 0 fail。route teardown errorと
   navigation RSC本文未完了は再発しなかった
 
-各full suiteで発生する9件のskipは、次の意図した条件と一致した。想定外のskipはない。
+各full suiteで発生する7件（seed 041 追加前は9件）のskipは、次の意図した条件と一致した。想定外のskipはない。
 
-- 管理フォームの編集4件: desktop/mobileのメンバー・スポット各1件。ローカルseedは
-  `orbit_members=0` / `orbit_spots=0` のため、「一覧に編集対象がない場合は固定IDに依存せずskipする」
-  条件が成立した。データのある楽曲（551件）・リリース（93件）の編集ケースは両projectでpassした
+- 管理フォームの編集2件: desktop/mobileのスポット各1件。ローカルseedは `orbit_spots=0` のため、
+  「一覧に編集対象がない場合は固定IDに依存せずskipする」条件が成立した。データのある
+  楽曲（551件）・リリース（93件）の編集ケースは両projectでpassした
+  - **#453 でメンバー2件がskipから外れた。** seed 041 が `orbit_members` へ18人投入するため
+    編集対象が存在するようになり、desktop/mobileとも実行されてpassする。これまで一度も
+    実行されていなかったケースなので、#453 で実行してpassすることを確認済み
 - viewport固有の1件: mobile専用ハンバーガー操作をdesktopでskipし、mobileではpassした
 - 共有DBへの書き込み重複を避ける4件: 参加記録の保存・解除、compact badge、保存中表示、
   2ユーザー分離をmobileでskipし、同じケースをdesktopで実行してpassした
 
-したがって9件は環境・project条件による設計どおりのskipで、flakyの隠蔽ではない。メンバー・
-スポットの編集hydrationをローカルでも常時検証したい場合は、#440とは分けて専用fixtureを追加する。
+したがって7件（seed 041 追加前は9件）は環境・project条件による設計どおりのskipで、flakyの
+隠蔽ではない。スポットの編集hydrationをローカルでも常時検証したい場合は、#440とは分けて
+専用fixtureを追加する（メンバー側は #453 の seed 041 で解消済み）。
 
 > route 層で prefetch 要求を `route.abort()` して塞ぐ方法も試したが、App Router が
 > 通常と異なる状態になり、`reduced-motion` の `NavigationProgress` が
