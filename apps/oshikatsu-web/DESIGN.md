@@ -12,10 +12,14 @@ colors:
   surface-subtle-dark: "#1C1C1C"
   surface-selected-light: "#E8E8E8"
   surface-selected-dark: "#2A2A2A"
+  surface-center-light: "#FAF3E0"
+  surface-center-dark: "#2C2517"
   border-subtle-light: "#D4D4D4"
   border-subtle-dark: "#3F3F3F"
   border-strong-light: "#8A8A8A"
   border-strong-dark: "#7A7A7A"
+  border-center-light: "#A87F1E"
+  border-center-dark: "#D4AF37"
   danger-light: "#B42318"
   danger-dark: "#D92D20"
   danger-foreground: "#FFFFFF"
@@ -193,6 +197,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **補助文字**: ライトは `#595959`、ダークは `#B3B3B3`。小さい補助情報を含め、各テーマの背景に対して4.5:1以上を保つ。直接読ませる文字へ未検証のforeground alphaを使わない。
 - **控えめな面 / 選択面**: ライトは `#F3F3F3` / `#E8E8E8`、ダークは `#1C1C1C` / `#2A2A2A`。hoverとcurrent/selected stateに使い、常設の装飾背景として広げない。
 - **境界**: subtleはライト `#D4D4D4` / ダーク `#3F3F3F`、strongはライト `#8A8A8A` / ダーク `#7A7A7A`。コンテナ分離にはsubtle、境界自体が操作部品の識別に必要な場合は背景に対して3:1以上のstrongを使う。
+- **センター面 / センター境界**: 面はライト `#FAF3E0` / ダーク `#2C2517`、境界はライト `#A87F1E` / ダーク `#D4AF37`。セットリスト・楽曲のセンター切り替えでセンター状態だけを示し、境界はページ背景に対して3:1以上を保つ。`surface-selected` / `border-strong` は汎用の選択/境界ペアであり、通常の選択状態とセンターを区別できないため専用tokenとした。
 - **破壊的操作**: 背景はライト `#B42318` / ダーク `#D92D20`、前景は `#FFFFFF`。背景なしのdanger textはライト `#B42318` / ダーク `#FFB4AB`を使う。
 - **補助的な意味の文字（info text）**: 背景なしのinfo textはライト `#3557B7` / ダーク `#93C5FD`を使う。日曜のdanger textと対に、曜日ヘッダの土曜など「種別を色で補助する文字」へ用い、各テーマ背景に対して4.5:1以上を保つ。
 - **フォーカスリング**: ライトは `#1D4ED8`、ダークは `#93C5FD`。背景と隣接色に対して識別可能な2px outlineとして使う。
