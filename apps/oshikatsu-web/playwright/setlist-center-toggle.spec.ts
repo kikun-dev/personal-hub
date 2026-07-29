@@ -134,11 +134,16 @@ async function readToggleAppearance(toggle: Locator): Promise<ToggleAppearance> 
       ancestorBackgrounds.push(getComputedStyle(node).backgroundColor);
     }
 
-    // #465: Chromium が body / main の computed custom property を空で返すことがある。
-    // 発現条件は「emulateMedia(colorScheme) を navigation より前に設定」かつ narrow viewport で、
-    // light のときに観測した。html は正しい値を持ち、より深い子孫（この toggle 自身）も正しい値を持つのに、
-    // 間の body / main だけが空になる。CSS の継承では起こり得ない組み合わせなので、実際の描画ではなく
-    // computed style の報告だけが壊れている。
+    // #465: computed custom property の報告が body / main だけ空になることがある。
+    // html は正しい値を持ち、より深い子孫（この toggle 自身）も正しい値を持つのに、間の body / main
+    // だけが空になる。CSS の継承では起こり得ない組み合わせなので、実際の描画ではなく computed style の
+    // 報告だけが壊れている。
+    //
+    // 観測できたのは mobile project（iPhone 17 descriptor = WebKit）だけで、light の 320px。
+    // desktop project（Desktop Chrome = Chromium）では 12 回試して未再現。
+    // 発現条件は「emulateMedia(colorScheme) を navigation より前に設定」かつ narrow viewport。
+    // mobile project を単独で実行すると 320px で 4/4 再現し、両 project を同時に実行した 6 回では
+    // 再現しなかった。この実行構成依存が「失敗する viewport が実行ごとに移動する」ように見えた原因。
     //
     // このとき `body { background: var(--background) }` は無効化されて transparent と報告され、
     // 祖先スタックが全て透明になって背景を解決できなくなる。Tailwind の utility は @theme inline で
@@ -147,6 +152,7 @@ async function readToggleAppearance(toggle: Locator): Promise<ToggleAppearance> 
     //
     // 最外郭として :root の --background（＝ページの canvas 色）を必ず積むことで、
     // 報告が壊れた場合も正常時と同じ背景（light: #fff / dark: #0a0a0a）へ解決させる。
+    // この対処自体はエンジンに依存しない。
     // 判定のしきい値は緩めない。retry・timeout 増加・プロダクト実装の変更も行わない。
     const themeBackground = getComputedStyle(document.documentElement)
       .getPropertyValue("--background")
