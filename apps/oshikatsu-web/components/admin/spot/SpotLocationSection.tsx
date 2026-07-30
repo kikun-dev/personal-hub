@@ -10,7 +10,7 @@ import {
 
 export const OVERSEAS_VALUE = "__overseas__";
 
-const inputClass = `w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`;
+const inputClass = `w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass}`;
 
 type SpotLocationSectionProps = {
   isOverseas: boolean;
@@ -69,7 +69,7 @@ export function SpotLocationSection({
       />
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
+        <label className="mb-1 block text-sm font-medium text-foreground-secondary">
           都道府県
         </label>
         <select

@@ -28,10 +28,10 @@ export function ReleaseMemberPositionsSection({
 
   return (
     <div className="space-y-2">
-      <label className="block text-sm font-medium text-foreground/70">
+      <label className="block text-sm font-medium text-foreground-secondary">
         選抜ポジション（手動指定）
       </label>
-      <p className="text-xs text-foreground/50">
+      <p className="text-xs text-foreground-secondary">
         選抜/アンダー/列/センターは楽曲のフォーメーションから自動表示されます。
         ここでは{frontSpecialLabel ? `${frontSpecialLabel}・` : ""}休業中のみ指定します。
         {frontSpecialLabel
@@ -44,7 +44,7 @@ export function ReleaseMemberPositionsSection({
           return (
             <div
               key={memberId}
-              className="flex flex-wrap items-center gap-3 rounded-lg border border-foreground/10 p-2 text-xs"
+              className="flex flex-wrap items-center gap-3 rounded-lg border border-border-subtle p-2 text-xs"
             >
               <span className="text-sm text-foreground">
                 {memberNameById.get(memberId) ?? memberId}

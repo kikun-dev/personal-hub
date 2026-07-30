@@ -40,19 +40,19 @@ export function SongCreditsSection({
           .slice(0, 20);
 
         return (
-          <div key={key} className="rounded-lg border border-foreground/10 p-3">
-            <label className="block text-sm font-medium text-foreground/70">{label}</label>
+          <div key={key} className="rounded-lg border border-border-subtle p-3">
+            <label className="block text-sm font-medium text-foreground-secondary">{label}</label>
 
             <div className="mt-2 flex flex-wrap gap-2">
               {selectedPeople.map((personName, index) => (
                 <span
                   key={`${key}-${personName}-${index}`}
-                  className="inline-flex items-center gap-1 rounded-full bg-foreground/10 px-2.5 py-1 text-xs text-foreground"
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-subtle px-2.5 py-1 text-xs text-foreground"
                 >
                   {personName}
                   <button
                     type="button"
-                    className="text-foreground/60 hover:text-foreground"
+                    className="text-foreground-secondary hover:text-foreground"
                     onClick={() => removeCreditPerson(key, index)}
                   >
                     ×
@@ -60,7 +60,7 @@ export function SongCreditsSection({
                 </span>
               ))}
               {selectedPeople.length === 0 && (
-                <span className="text-xs text-foreground/40">未設定</span>
+                <span className="text-xs text-foreground-secondary">未設定</span>
               )}
             </div>
 

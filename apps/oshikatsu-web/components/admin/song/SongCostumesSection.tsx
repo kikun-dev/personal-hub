@@ -28,16 +28,16 @@ export function SongCostumesSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground/70">衣装</label>
+        <label className="text-sm font-medium text-foreground-secondary">衣装</label>
         <Button type="button" variant="ghost" onClick={addCostume}>
           + 衣装を追加
         </Button>
       </div>
       <div className="space-y-3">
         {costumes.map((costume, index) => (
-          <div key={costume._key} className="rounded-lg border border-foreground/10 p-3">
+          <div key={costume._key} className="rounded-lg border border-border-subtle p-3">
             <div className="mb-2 flex items-center justify-between">
-              <p className="text-xs text-foreground/50">#{index + 1}</p>
+              <p className="text-xs text-foreground-secondary">#{index + 1}</p>
               <button
                 type="button"
                 className="text-xs text-red-500 hover:underline"
@@ -73,7 +73,7 @@ export function SongCostumesSection({
           </div>
         ))}
         {costumes.length === 0 && (
-          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+          <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
             衣装は未設定です
           </p>
         )}

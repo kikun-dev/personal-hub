@@ -45,14 +45,14 @@ export function SongBasicInfoSection({
       />
 
       <div>
-        <label htmlFor="groupId" className="mb-1 block text-sm font-medium text-foreground/70">
+        <label htmlFor="groupId" className="mb-1 block text-sm font-medium text-foreground-secondary">
           楽曲グループ*
         </label>
         <select
           id="groupId"
           value={groupId}
           onChange={(e) => onGroupIdChange(e.target.value)}
-          className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm"
         >
           <option value="">選択してください</option>
           {groups.map((group) => (
@@ -68,14 +68,14 @@ export function SongBasicInfoSection({
 
       {!isCatchallGroup && (
         <div>
-          <label htmlFor="label" className="mb-1 block text-sm font-medium text-foreground/70">
+          <label htmlFor="label" className="mb-1 block text-sm font-medium text-foreground-secondary">
             ラベル
           </label>
           <select
             id="label"
             value={label}
             onChange={(e) => onLabelChange(e.target.value)}
-            className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm"
           >
             <option value="">なし</option>
             {SONG_LABELS.map((songLabel) => (
@@ -92,14 +92,14 @@ export function SongBasicInfoSection({
 
       {!isCatchallGroup && label === "generation" && (
         <div>
-          <label htmlFor="generation" className="mb-1 block text-sm font-medium text-foreground/70">
+          <label htmlFor="generation" className="mb-1 block text-sm font-medium text-foreground-secondary">
             期
           </label>
           <select
             id="generation"
             value={generation}
             onChange={(e) => onGenerationChange(e.target.value)}
-            className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm"
           >
             <option value="">選択してください</option>
             {generationOptions.map((g) => (
@@ -109,7 +109,7 @@ export function SongBasicInfoSection({
             ))}
           </select>
           {!groupId && (
-            <p className="mt-1 text-xs text-foreground/40">
+            <p className="mt-1 text-xs text-foreground-secondary">
               先にグループを選択すると期の候補が表示されます
             </p>
           )}

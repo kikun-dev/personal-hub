@@ -25,7 +25,7 @@ export function SongMvSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground/70">MV</label>
+        <label className="text-sm font-medium text-foreground-secondary">MV</label>
         {!isMvFormVisible ? (
           <Button type="button" variant="ghost" onClick={onShow}>
             + MVを追加
@@ -38,7 +38,7 @@ export function SongMvSection({
       </div>
 
       {isMvFormVisible ? (
-        <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
+        <div className="space-y-3 rounded-lg border border-border-subtle p-4">
           <Input
             id="mv-url"
             label="MVリンク"
@@ -80,7 +80,7 @@ export function SongMvSection({
           />
         </div>
       ) : (
-        <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+        <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
           MVは未設定です
         </p>
       )}

@@ -32,7 +32,7 @@ export function SongVideosSection({
     return (
       <div key={type}>
         <div className="mb-2 flex items-center justify-between">
-          <label className="text-sm font-medium text-foreground/70">{label}</label>
+          <label className="text-sm font-medium text-foreground-secondary">{label}</label>
           {!isVisible ? (
             <Button
               type="button"
@@ -49,7 +49,7 @@ export function SongVideosSection({
         </div>
 
         {isVisible ? (
-          <div className="space-y-3 rounded-lg border border-foreground/10 p-4">
+          <div className="space-y-3 rounded-lg border border-border-subtle p-4">
             <Input
               id={`song-video-${type}-url`}
               label={`${label}リンク`}
@@ -74,7 +74,7 @@ export function SongVideosSection({
             />
           </div>
         ) : (
-          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+          <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
             {label}は未設定です
           </p>
         )}
