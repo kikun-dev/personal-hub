@@ -103,7 +103,7 @@ function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
 
   return (
     <div>
-      <label className="mb-1 block text-sm font-medium text-foreground/70">
+      <label className="mb-1 block text-sm font-medium text-foreground-secondary">
         場所を検索
       </label>
       <div
@@ -111,7 +111,7 @@ function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
         className="[&>gmp-place-autocomplete]:w-full"
       />
       {fetchError && <p className="mt-1 text-xs text-red-500">{fetchError}</p>}
-      <p className="mt-1 text-xs text-foreground/40">
+      <p className="mt-1 text-xs text-foreground-secondary">
         検索して選択すると、名前・緯度経度・住所・都道府県が自動入力されます（後から手動修正できます）
       </p>
     </div>
@@ -121,7 +121,7 @@ function PlaceAutocompleteField({ onSelect }: SpotPlaceSearchProps) {
 export function SpotPlaceSearch({ onSelect }: SpotPlaceSearchProps) {
   if (!GOOGLE_MAPS_API_KEY) {
     return (
-      <p className="rounded-lg border border-dashed border-foreground/20 px-3 py-2 text-xs text-foreground/50">
+      <p className="rounded-lg border border-dashed border-border-subtle px-3 py-2 text-xs text-foreground-secondary">
         Google MapsのAPIキーが未設定のため、場所検索は利用できません。下の項目を手入力してください。
       </p>
     );

@@ -38,7 +38,7 @@ export function SongReleaseLinksSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground/70">紐づけリリース*</label>
+        <label className="text-sm font-medium text-foreground-secondary">紐づけリリース*</label>
         <Button type="button" variant="ghost" onClick={addReleaseLink}>
           + リリースを追加
         </Button>
@@ -56,7 +56,7 @@ export function SongReleaseLinksSection({
             : candidates;
 
           return (
-            <div key={link._key} className="rounded-lg border border-foreground/10 p-3">
+            <div key={link._key} className="rounded-lg border border-border-subtle p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_120px_auto] sm:items-end">
                 <Input
                   id={`release-search-${link._key}`}
@@ -66,7 +66,7 @@ export function SongReleaseLinksSection({
                 />
 
                 <div>
-                  <label className="mb-1 block text-xs text-foreground/60">リリース</label>
+                  <label className="mb-1 block text-xs text-foreground-secondary">リリース</label>
                   <select
                     value={link.releaseId}
                     onChange={(e) => {
@@ -76,7 +76,7 @@ export function SongReleaseLinksSection({
                         updateReleaseQuery(link._key, releaseMap.get(nextReleaseId)?.title ?? "");
                       }
                     }}
-                    className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm"
                   >
                     <option value="">選択してください</option>
                     {selectableReleases.map((release) => (
@@ -110,7 +110,7 @@ export function SongReleaseLinksSection({
                 </button>
               </div>
               {selectedRelease && (
-                <p className="mt-2 text-xs text-foreground/50">
+                <p className="mt-2 text-xs text-foreground-secondary">
                   参加メンバー{" "}
                   {formatMemberCountSummary(
                     selectedRelease.participantMemberGenerations

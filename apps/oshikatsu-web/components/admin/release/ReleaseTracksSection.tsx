@@ -38,7 +38,7 @@ export function ReleaseTracksSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <label className="text-sm font-medium text-foreground/70">収録曲（楽曲）</label>
+        <label className="text-sm font-medium text-foreground-secondary">収録曲（楽曲）</label>
         <Button type="button" variant="ghost" onClick={addTrackLink}>
           + 楽曲を追加
         </Button>
@@ -58,7 +58,7 @@ export function ReleaseTracksSection({
             : candidates;
 
           return (
-            <div key={trackLink._key} className="rounded-lg border border-foreground/10 p-3">
+            <div key={trackLink._key} className="rounded-lg border border-border-subtle p-3">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_1fr_120px_auto] sm:items-end">
                 <Input
                   id={`track-search-${trackLink._key}`}
@@ -68,7 +68,7 @@ export function ReleaseTracksSection({
                 />
 
                 <div>
-                  <label className="mb-1 block text-xs text-foreground/60">楽曲</label>
+                  <label className="mb-1 block text-xs text-foreground-secondary">楽曲</label>
                   <select
                     value={trackLink.trackId}
                     onChange={(e) => {
@@ -78,7 +78,7 @@ export function ReleaseTracksSection({
                         updateTrackQuery(trackLink._key, trackTitleById.get(nextTrackId) ?? "");
                       }
                     }}
-                    className="w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm"
+                    className="w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm"
                   >
                     <option value="">選択してください</option>
                     {selectableTracks.map((track) => (
@@ -114,7 +114,7 @@ export function ReleaseTracksSection({
           );
         })}
         {trackLinks.length === 0 && (
-          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+          <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
             楽曲は未設定です
           </p>
         )}

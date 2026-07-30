@@ -18,7 +18,7 @@ import type {
   SpotFormMasterData,
 } from "@/components/admin/spot/spotFormShared";
 
-const inputClass = `w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass}`;
+const inputClass = `w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass}`;
 
 function formatVideoOptionLabel(option: SongVideoOption): string {
   const typeLabel = getSongVideoTypeLabel(option.videoType);
@@ -54,7 +54,7 @@ export function SpotAppearancesSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between">
-        <label className="block text-sm font-medium text-foreground/70">
+        <label className="block text-sm font-medium text-foreground-secondary">
           出来事*
         </label>
         <Button type="button" variant="secondary" onClick={onAdd}>
@@ -72,10 +72,10 @@ export function SpotAppearancesSection({
         return (
           <div
             key={appearance._key}
-            className="space-y-3 rounded-lg border border-foreground/10 p-4"
+            className="space-y-3 rounded-lg border border-border-subtle p-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground/70">
+              <span className="text-sm font-medium text-foreground-secondary">
                 出来事 {index + 1}
               </span>
               <button
@@ -119,7 +119,7 @@ export function SpotAppearancesSection({
 
             {appearance.sourceType === "mv" && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground/70">
+                <label className="mb-1 block text-sm font-medium text-foreground-secondary">
                   出典（楽曲）
                 </label>
                 <Combobox
@@ -145,7 +145,7 @@ export function SpotAppearancesSection({
 
             {appearance.sourceType === "video" && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground/70">
+                <label className="mb-1 block text-sm font-medium text-foreground-secondary">
                   出典（関連動画）
                 </label>
                 <Combobox
@@ -171,7 +171,7 @@ export function SpotAppearancesSection({
 
             {appearance.sourceType === "event" && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground/70">
+                <label className="mb-1 block text-sm font-medium text-foreground-secondary">
                   出典（イベント）
                 </label>
                 <Combobox
@@ -197,7 +197,7 @@ export function SpotAppearancesSection({
 
             {appearance.sourceType === "live" && (
               <div>
-                <label className="mb-1 block text-sm font-medium text-foreground/70">
+                <label className="mb-1 block text-sm font-medium text-foreground-secondary">
                   出典（ライブ）
                 </label>
                 <Combobox
@@ -224,7 +224,7 @@ export function SpotAppearancesSection({
             <div>
               <label
                 htmlFor={`appearance-${appearance._key}-subtypeName`}
-                className="mb-1 block text-sm font-medium text-foreground/70"
+                className="mb-1 block text-sm font-medium text-foreground-secondary"
               >
                 サブ種別
               </label>
@@ -275,7 +275,7 @@ export function SpotAppearancesSection({
             />
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-foreground/70">
+              <label className="mb-1 block text-sm font-medium text-foreground-secondary">
                 関連メンバー（任意）
               </label>
               {fieldError("memberIds") && (
@@ -283,11 +283,11 @@ export function SpotAppearancesSection({
                   {fieldError("memberIds")}
                 </p>
               )}
-              <div className="max-h-48 overflow-y-auto rounded-lg border border-foreground/10 p-2">
+              <div className="max-h-48 overflow-y-auto rounded-lg border border-border-subtle p-2">
                 {masters.members.map((member) => (
                   <label
                     key={member.id}
-                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-foreground/5"
+                    className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
                   >
                     <input
                       type="checkbox"
@@ -298,7 +298,7 @@ export function SpotAppearancesSection({
                       className="rounded"
                     />
                     <span className="text-foreground">{member.nameJa}</span>
-                    <span className="text-xs text-foreground/40">
+                    <span className="text-xs text-foreground-secondary">
                       {member.groupNames.join(", ")}
                     </span>
                   </label>

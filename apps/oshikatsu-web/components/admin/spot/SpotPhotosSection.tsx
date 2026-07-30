@@ -41,7 +41,7 @@ export function SpotPhotosSection({
 }: SpotPhotosSectionProps) {
   return (
     <section className="space-y-3">
-      <label className="block text-sm font-medium text-foreground/70">写真</label>
+      <label className="block text-sm font-medium text-foreground-secondary">写真</label>
       {errors.photos && <p className="text-xs text-red-500">{errors.photos}</p>}
 
       <div className="space-y-3">
@@ -50,7 +50,7 @@ export function SpotPhotosSection({
           return (
             <div
               key={photo._key}
-              className="flex gap-3 rounded-lg border border-foreground/10 p-3"
+              className="flex gap-3 rounded-lg border border-border-subtle p-3"
             >
               {src && (
                 <Image
@@ -79,7 +79,7 @@ export function SpotPhotosSection({
                     type="button"
                     onClick={() => onMoveUp(photo._key)}
                     disabled={index === 0}
-                    className="text-xs text-foreground/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                    className="text-xs text-foreground-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     ↑ 上へ
                   </button>
@@ -87,7 +87,7 @@ export function SpotPhotosSection({
                     type="button"
                     onClick={() => onMoveDown(photo._key)}
                     disabled={index === photos.length - 1}
-                    className="text-xs text-foreground/60 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
+                    className="text-xs text-foreground-secondary hover:text-foreground disabled:cursor-not-allowed disabled:opacity-30"
                   >
                     ↓ 下へ
                   </button>
@@ -104,7 +104,7 @@ export function SpotPhotosSection({
           );
         })}
         {photos.length === 0 && (
-          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+          <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
             写真は未登録です
           </p>
         )}
@@ -113,7 +113,7 @@ export function SpotPhotosSection({
       <div>
         <label
           htmlFor="spotPhotoFile"
-          className="mb-1 block text-sm font-medium text-foreground/70"
+          className="mb-1 block text-sm font-medium text-foreground-secondary"
         >
           写真を追加
         </label>
@@ -123,16 +123,16 @@ export function SpotPhotosSection({
           accept={SPOT_PHOTO_ALLOWED_MIME_TYPES.join(",")}
           onChange={onFileChange}
           disabled={isUploading}
-          className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-foreground/10 file:px-3 file:py-1.5 file:text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
-            uploadError ? "border-red-400" : "border-foreground/10"
+          className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-surface-subtle file:px-3 file:py-1.5 file:text-sm disabled:cursor-not-allowed disabled:opacity-50 ${
+            uploadError ? "border-red-400" : "border-border-strong"
           }`}
         />
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           JPEG / PNG / WebP、最大 {Math.floor(SPOT_PHOTO_MAX_BYTES / (1024 * 1024))}
           MB、最大{SPOT_PHOTO_MAX_COUNT}枚。選択すると即座にアップロードされます
         </p>
         {isUploading && (
-          <p className="mt-1 text-xs text-foreground/50">アップロード中...</p>
+          <p className="mt-1 text-xs text-foreground-secondary">アップロード中...</p>
         )}
         {uploadError && <p className="mt-1 text-xs text-red-500">{uploadError}</p>}
       </div>
@@ -145,4 +145,3 @@ export function withGeneratedPhotoKey(
 ): FormSpotPhoto {
   return { ...photo, _key: crypto.randomUUID() };
 }
-

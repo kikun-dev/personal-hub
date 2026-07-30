@@ -28,7 +28,7 @@ export function ReleaseBonusVideosSection({
   return (
     <div>
       <div className="mb-2 flex items-center justify-between">
-        <label className="block text-sm font-medium text-foreground/70">特典映像</label>
+        <label className="block text-sm font-medium text-foreground-secondary">特典映像</label>
         <Button type="button" variant="ghost" onClick={addBonusVideo}>
           + 特典映像を追加
         </Button>
@@ -37,10 +37,10 @@ export function ReleaseBonusVideosSection({
         {bonusVideos.map((bonus, index) => (
           <div
             key={bonus._key}
-            className="space-y-2 rounded-lg border border-foreground/10 p-3"
+            className="space-y-2 rounded-lg border border-border-subtle p-3"
           >
             <div className="flex items-center justify-between">
-              <p className="text-xs text-foreground/50">#{index + 1}</p>
+              <p className="text-xs text-foreground-secondary">#{index + 1}</p>
               <button
                 type="button"
                 className="text-xs text-red-500 hover:underline"
@@ -81,7 +81,7 @@ export function ReleaseBonusVideosSection({
           </div>
         ))}
         {bonusVideos.length === 0 && (
-          <p className="rounded-lg border border-dashed border-foreground/15 py-4 text-center text-xs text-foreground/40">
+          <p className="rounded-lg border border-dashed border-border-subtle py-4 text-center text-xs text-foreground-secondary">
             特典映像は未設定です
           </p>
         )}

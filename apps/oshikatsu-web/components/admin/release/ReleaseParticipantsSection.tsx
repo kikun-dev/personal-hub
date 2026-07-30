@@ -34,7 +34,7 @@ export function ReleaseParticipantsSection({
   return (
     <div>
       <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-        <label className="block text-sm font-medium text-foreground/70">
+        <label className="block text-sm font-medium text-foreground-secondary">
           参加メンバー
         </label>
         <div className="flex items-center gap-2">
@@ -42,7 +42,7 @@ export function ReleaseParticipantsSection({
             type="button"
             onClick={handleAutoRoster}
             disabled={!canAutoRoster || isComputingRoster}
-            className="rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground hover:bg-foreground/5 disabled:opacity-40"
+            className="rounded-lg border border-border-strong px-2 py-1 text-xs text-foreground hover:bg-surface-subtle disabled:opacity-40"
           >
             {isComputingRoster ? "計算中..." : "リリース日・グループから自動入力"}
           </button>
@@ -56,7 +56,7 @@ export function ReleaseParticipantsSection({
         </div>
       </div>
       {!canAutoRoster && (
-        <p className="mb-1 text-xs text-foreground/40">
+        <p className="mb-1 text-xs text-foreground-secondary">
           ※自動入力にはグループの選択とリリース日の入力が必要です
         </p>
       )}
@@ -64,7 +64,7 @@ export function ReleaseParticipantsSection({
         <p className="mb-1 text-xs text-red-500">{errors.participantMemberIds}</p>
       )}
       {!showAllParticipantMembers && groupId && (
-        <p className="mb-2 text-xs text-foreground/50">
+        <p className="mb-2 text-xs text-foreground-secondary">
           同グループ在籍歴のあるメンバーを優先表示中です
         </p>
       )}
@@ -74,11 +74,11 @@ export function ReleaseParticipantsSection({
           {outOfGroupSelectedMemberNames.join(" / ")}）
         </p>
       )}
-      <div className="max-h-64 overflow-y-auto rounded-lg border border-foreground/10 p-2">
+      <div className="max-h-64 overflow-y-auto rounded-lg border border-border-subtle p-2">
         {visibleParticipantOptions.map((member) => (
           <label
             key={member.id}
-            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-foreground/5"
+            className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
           >
             <input
               type="checkbox"
@@ -95,7 +95,7 @@ export function ReleaseParticipantsSection({
           </label>
         ))}
         {visibleParticipantOptions.length === 0 && (
-          <p className="px-2 py-1 text-xs text-foreground/40">
+          <p className="px-2 py-1 text-xs text-foreground-secondary">
             選択中グループに在籍歴のあるメンバーがいません
           </p>
         )}
