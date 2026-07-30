@@ -23,22 +23,22 @@ export default async function AdminMembersPage() {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
-              <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">グループ</th>
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+            <tr className="border-b border-border-subtle text-left">
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">名前</th>
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">グループ</th>
+              <th className="pb-2 font-medium text-foreground-secondary">操作</th>
             </tr>
           </thead>
           <tbody>
             {members.map((member) => (
               <tr
                 key={member.id}
-                className="border-b border-foreground/5"
+                className="border-b border-border-subtle"
               >
                 <td className="py-2 pr-4">
                   <div>
                     <span className="text-foreground">{member.nameJa}</span>
-                    <span className="ml-2 text-xs text-foreground/40">
+                    <span className="ml-2 text-xs text-foreground-secondary">
                       {member.nameKana}
                     </span>
                   </div>
@@ -72,7 +72,7 @@ export default async function AdminMembersPage() {
       </div>
 
       {members.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           メンバーが登録されていません
         </p>
       )}

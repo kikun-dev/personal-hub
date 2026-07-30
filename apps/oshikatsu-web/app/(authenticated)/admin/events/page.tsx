@@ -45,20 +45,20 @@ export default async function AdminEventsPage({
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
-              <th className="pb-2 pr-4 font-medium text-foreground/70">日付</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">種別</th>
-              <th className="pb-2 pr-4 font-medium text-foreground/70">タイトル</th>
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+            <tr className="border-b border-border-subtle text-left">
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">日付</th>
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">種別</th>
+              <th className="pb-2 pr-4 font-medium text-foreground-secondary">タイトル</th>
+              <th className="pb-2 font-medium text-foreground-secondary">操作</th>
             </tr>
           </thead>
           <tbody>
             {events.map((event) => (
               <tr
                 key={event.id}
-                className="border-b border-foreground/5"
+                className="border-b border-border-subtle"
               >
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {formatDate(event.date)}
                 </td>
                 <td className="py-2 pr-4">
@@ -69,7 +69,7 @@ export default async function AdminEventsPage({
                 </td>
                 <td className="py-2 pr-4 text-foreground">
                   {event.title}
-                  <span className="ml-1 text-xs text-foreground/40">
+                  <span className="ml-1 text-xs text-foreground-secondary">
                     {event.groupNames.join(", ")}
                   </span>
                 </td>
@@ -89,7 +89,7 @@ export default async function AdminEventsPage({
       </div>
 
       {events.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           この月のイベントはありません
         </p>
       )}
