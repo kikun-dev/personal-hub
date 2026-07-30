@@ -22,7 +22,7 @@ type YearlyAttendanceChartProps = {
 export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceChartProps) {
   if (data.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-foreground/40">
+      <p className="py-8 text-center text-sm text-foreground-secondary">
         参戦記録がありません
       </p>
     );
@@ -30,7 +30,7 @@ export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceCh
 
   return (
     <div className="space-y-1">
-      <div className="h-56 w-full text-foreground/60">
+      <div className="h-56 w-full text-foreground-secondary">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="currentColor" opacity={0.15} />
@@ -63,7 +63,7 @@ export function YearlyAttendanceChart({ data, undatedCount }: YearlyAttendanceCh
         </ResponsiveContainer>
       </div>
       {undatedCount > 0 && (
-        <p className="text-xs text-foreground/40">
+        <p className="text-xs text-foreground-secondary">
           日程未定の参加が{undatedCount}件あります（この集計の対象外）
         </p>
       )}

@@ -145,7 +145,7 @@ export function SetlistCountBrowser({
   // 「参戦記録がない」とは断定せず、遭遇記録が無い旨の文言にする。
   if (!hasAnyEncounter) {
     return (
-      <p className="py-12 text-center text-sm text-foreground/60">
+      <p className="py-12 text-center text-sm text-foreground-secondary">
         セットリストが登録された参戦記録がまだありません。
         <TextLink
           href={APP_ROUTES.lives}
@@ -166,7 +166,7 @@ export function SetlistCountBrowser({
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {groups.map((group) => (
@@ -179,7 +179,7 @@ export function SetlistCountBrowser({
           value={label}
           onChange={(event) => handleLabelChange(event.target.value as SongLabel | "")}
           aria-label="ラベルで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全ラベル</option>
           {SONG_LABELS.map((value) => (
@@ -194,9 +194,9 @@ export function SetlistCountBrowser({
           onChange={(event) => setQuery(event.target.value)}
           placeholder="タイトルで検索"
           aria-label="楽曲タイトルで検索"
-          className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+          className="w-full max-w-xs rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
         />
-        <label className="flex items-center gap-1.5 text-sm text-foreground/70">
+        <label className="flex items-center gap-1.5 text-sm text-foreground-secondary">
           <input
             type="checkbox"
             checked={includeOther}
@@ -207,9 +207,9 @@ export function SetlistCountBrowser({
       </div>
 
       <div className="flex flex-wrap items-center gap-4">
-        <div className="flex flex-wrap items-center gap-3 text-sm text-foreground/70">
-          <span className="text-xs text-foreground/50">参戦種別</span>
-          <span className="rounded-full bg-foreground/10 px-2.5 py-1 text-xs text-foreground">
+        <div className="flex flex-wrap items-center gap-3 text-sm text-foreground-secondary">
+          <span className="text-xs text-foreground-secondary">参戦種別</span>
+          <span className="rounded-full bg-surface-subtle px-2.5 py-1 text-xs text-foreground">
             {ATTENDED_TYPE_LABELS.onsite}
           </span>
           {OPTIONAL_ATTENDED_TYPES.map((type) => (
@@ -230,7 +230,7 @@ export function SetlistCountBrowser({
             className={`rounded-lg px-3 py-1.5 text-sm ${
               view === "ranking"
                 ? "bg-foreground text-background"
-                : "border border-foreground/10 text-foreground/60 hover:bg-foreground/5"
+                : "border border-border-strong text-foreground-secondary hover:bg-surface-subtle"
             }`}
           >
             ランキング（{result.ranking.length}曲）
@@ -241,7 +241,7 @@ export function SetlistCountBrowser({
             className={`rounded-lg px-3 py-1.5 text-sm ${
               view === "unencountered"
                 ? "bg-foreground text-background"
-                : "border border-foreground/10 text-foreground/60 hover:bg-foreground/5"
+                : "border border-border-strong text-foreground-secondary hover:bg-surface-subtle"
             }`}
           >
             未遭遇（{result.unencountered.length}曲）

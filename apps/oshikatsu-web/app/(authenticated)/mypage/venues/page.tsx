@@ -21,7 +21,7 @@ export default async function MyPageVenuesPage() {
         <PendingLink
           href={APP_ROUTES.mypage}
           feedback="global"
-          className="text-sm text-foreground/50 hover:underline"
+          className="text-sm text-foreground-secondary hover:underline"
         >
           ← マイページ
         </PendingLink>
@@ -33,15 +33,15 @@ export default async function MyPageVenuesPage() {
         // 現地参戦はあるが全件会場未設定のケースがあるため、unknownVenueCount で出し分ける。
         stats.unknownVenueCount > 0 ? (
           <div className="space-y-1">
-            <p className="text-sm text-foreground/60">
+            <p className="text-sm text-foreground-secondary">
               会場が設定された現地参戦の記録がありません。
             </p>
-            <p className="text-xs text-foreground/40">
+            <p className="text-xs text-foreground-secondary">
               会場未設定の記録{stats.unknownVenueCount}件は集計に含まれていません
             </p>
           </div>
         ) : (
-          <p className="text-sm text-foreground/60">
+          <p className="text-sm text-foreground-secondary">
             現地参戦の記録がありません。
             <TextLink
               href={APP_ROUTES.lives}
@@ -60,12 +60,12 @@ export default async function MyPageVenuesPage() {
               <span className="font-semibold text-foreground">
                 {stats.totalVenues}会場 {stats.totalVisits}回
               </span>
-              <span className="text-xs text-foreground/50">
+              <span className="text-xs text-foreground-secondary">
                 現地参戦のみを集計しています
               </span>
             </div>
             {stats.unknownVenueCount > 0 && (
-              <p className="text-xs text-foreground/40">
+              <p className="text-xs text-foreground-secondary">
                 会場未設定の記録{stats.unknownVenueCount}件は集計に含まれていません
               </p>
             )}

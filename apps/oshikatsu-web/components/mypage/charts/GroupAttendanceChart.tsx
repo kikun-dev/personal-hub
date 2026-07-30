@@ -21,7 +21,7 @@ type GroupAttendanceChartProps = {
 export function GroupAttendanceChart({ data }: GroupAttendanceChartProps) {
   if (data.length === 0) {
     return (
-      <p className="py-8 text-center text-sm text-foreground/40">
+      <p className="py-8 text-center text-sm text-foreground-secondary">
         参戦記録がありません
       </p>
     );
@@ -32,10 +32,10 @@ export function GroupAttendanceChart({ data }: GroupAttendanceChartProps) {
 
   return (
     <div className="space-y-1">
-      <p className="text-xs text-foreground/40">
+      <p className="text-xs text-foreground-secondary">
         延べ（複数グループ出演のライブは各グループにカウント）
       </p>
-      <div className="w-full text-foreground/60" style={{ height }}>
+      <div className="w-full text-foreground-secondary" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
             data={data}

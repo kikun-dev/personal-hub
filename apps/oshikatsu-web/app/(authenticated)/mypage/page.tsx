@@ -23,7 +23,7 @@ export default async function MyPage() {
     <div className="space-y-8">
       <h1 className="text-xl font-bold text-foreground">マイページ</h1>
 
-      <p className="text-sm text-foreground/70">
+      <p className="text-sm text-foreground-secondary">
         今後の予定 <span className="font-semibold text-foreground">{summary.upcomingCount}</span> 件
         ・今年の参戦 <span className="font-semibold text-foreground">{summary.thisYearCount}</span> 件
         ・総ライブ数 <span className="font-semibold text-foreground">{summary.totalCount}</span> 件
@@ -32,7 +32,7 @@ export default async function MyPage() {
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">次のライブ</h2>
         {nextLive === null ? (
-          <p className="text-sm text-foreground/60">予定はありません</p>
+          <p className="text-sm text-foreground-secondary">予定はありません</p>
         ) : (
           <div className="max-w-sm">
             <UpcomingCard entry={nextLive} />
@@ -72,7 +72,7 @@ export default async function MyPage() {
         </div>
         {thisYearPast.length === 0 ? (
           hasAnyAttendance ? (
-            <p className="text-sm text-foreground/60">
+            <p className="text-sm text-foreground-secondary">
               今年の参戦記録はありません。
               <TextLink
                 href={APP_ROUTES.mypageStats}
@@ -84,7 +84,7 @@ export default async function MyPage() {
               で確認できます。
             </p>
           ) : (
-            <p className="text-sm text-foreground/60">
+            <p className="text-sm text-foreground-secondary">
               まだ参戦記録がありません。
               <TextLink
                 href={APP_ROUTES.lives}
@@ -107,7 +107,7 @@ export default async function MyPage() {
 
       {undated.length > 0 && (
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold text-foreground/60">日程未定</h2>
+          <h2 className="text-xs font-semibold text-foreground-secondary">日程未定</h2>
           <ul className="space-y-2">
             {undated.map((entry) => (
               <AttendanceListItem key={entry.id} entry={entry} />

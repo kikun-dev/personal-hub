@@ -19,7 +19,7 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
 
   if (entries.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-foreground/50">
+      <p className="py-12 text-center text-sm text-foreground-secondary">
         該当する会場がありません
       </p>
     );
@@ -45,10 +45,10 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
         return (
           <li
             key={entry.venueId}
-            className="rounded-lg border border-foreground/10 bg-background"
+            className="rounded-lg border border-border-subtle bg-background"
           >
             <div className="flex items-center gap-3 p-4">
-              <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground/40">
+              <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground-secondary">
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
@@ -60,7 +60,7 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
                   {entry.venueName}
                 </PendingLink>
                 {entry.venuePrefecture && (
-                  <p className="mt-1 text-xs text-foreground/50">
+                  <p className="mt-1 text-xs text-foreground-secondary">
                     {entry.venuePrefecture}
                   </p>
                 )}
@@ -72,13 +72,13 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
                 type="button"
                 onClick={() => toggleExpanded(entry.venueId)}
                 aria-expanded={isExpanded}
-                className="shrink-0 rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground/60 hover:bg-foreground/5"
+                className="shrink-0 rounded-lg border border-border-strong px-2 py-1 text-xs text-foreground-secondary hover:bg-surface-subtle"
               >
                 {isExpanded ? "閉じる" : "内訳"}
               </button>
             </div>
             {isExpanded && (
-              <ul className="space-y-1 border-t border-foreground/10 p-4 pt-3">
+              <ul className="space-y-1 border-t border-border-subtle p-4 pt-3">
                 {entry.visits.map((visit, visitIndex) => (
                   <li
                     // 1公演を複数回登録することは無いが、SetlistRankingList と同様に
@@ -86,7 +86,7 @@ export function VenueVisitList({ entries }: VenueVisitListProps) {
                     key={`${visit.liveId}-${visitIndex}`}
                     className="flex flex-wrap items-center gap-2 text-xs"
                   >
-                    <span className="text-foreground/50">
+                    <span className="text-foreground-secondary">
                       {visit.performanceDate
                         ? formatDate(visit.performanceDate)
                         : "日付未定"}
