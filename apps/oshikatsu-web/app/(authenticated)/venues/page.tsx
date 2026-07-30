@@ -21,7 +21,7 @@ export default async function VenuesPage() {
       </div>
 
       {venues.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           会場が登録されていません
         </p>
       ) : (

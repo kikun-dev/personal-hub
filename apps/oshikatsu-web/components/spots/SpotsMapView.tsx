@@ -112,6 +112,18 @@ function SpotInfoWindowContent({
     )
   );
 
+  // #468 レビュー判断: ここの foreground alpha は #461（foreground alpha の除去）の対象から外し、
+  // #469 で扱う。理由は、この InfoWindow の中身が Google Maps 側のコンテナ（.gm-style-iw）へ
+  // 描画され、その背景がページの theme に追随しない可能性があるため。追随しない場合、semantic
+  // token へ単純に置き換えても dark で 4.5:1 を満たせない。
+  //
+  // ただし .gm-style-iw の背景が実際に theme 非依存かは未実測である（ローカルの orbit_spots が
+  // 0件で InfoWindow を開けない。fixture は #470）。Google 側が prefers-color-scheme に追随して
+  // いれば前提自体が成り立たないため、#469 はまず実測から始める設計にしてある。
+  //
+  // したがってここで確定しているのは「単純置換では適合を確認できないので #461 の対象外にする」
+  // というスコープ判断だけであり、背景色の性質は未確定である。
+  // #469 の実測と対応が済むまで、機械的な置換を戻さないこと。
   return (
     <div className="space-y-1 py-1 text-sm">
       <p className="font-bold text-foreground">{spot.name}</p>
@@ -240,7 +252,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           value={sourceType}
           onChange={(event) => handleSourceTypeChange(event.target.value)}
           aria-label="種別で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">すべて</option>
           {SPOT_SOURCE_TYPES.map((value) => (
@@ -253,7 +265,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           value={prefecture}
           onChange={(event) => handlePrefectureChange(event.target.value)}
           aria-label="都道府県で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全都道府県</option>
           {prefectureOptions.map((name) => (
@@ -268,9 +280,9 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           onChange={(event) => handleQueryChange(event.target.value)}
           placeholder="名前・サブ種別・メンバーで検索"
           aria-label="スポット名・サブ種別・メンバー名で検索"
-          className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+          className="w-full max-w-xs rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
         />
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {filteredSpots.length}件
         </span>
       </div>
@@ -278,7 +290,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
       {GOOGLE_MAPS_API_KEY ? (
         <div
           ref={mapContainerRef}
-          className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10"
+          className="h-[60vh] w-full overflow-hidden rounded-lg border border-border-subtle"
         >
           <GoogleMapsProvider>
             <Map
@@ -311,27 +323,27 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           </GoogleMapsProvider>
         </div>
       ) : (
-        <p className="rounded-lg border border-dashed border-foreground/20 px-3 py-2 text-xs text-foreground/50">
+        <p className="rounded-lg border border-dashed border-border-subtle px-3 py-2 text-xs text-foreground-secondary">
           Google MapsのAPIキーが未設定のため、地図は表示できません。一覧のみ表示します。
         </p>
       )}
 
       {filteredSpots.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           該当するスポットがありません
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-foreground/10 text-left">
-                <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
-                <th className="pb-2 pr-4 font-medium text-foreground/70">種別</th>
-                <th className="pb-2 pr-4 font-medium text-foreground/70">
+              <tr className="border-b border-border-subtle text-left">
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">名前</th>
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">種別</th>
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">
                   都道府県
                 </th>
                 {isAdmin && (
-                  <th className="pb-2 font-medium text-foreground/70">操作</th>
+                  <th className="pb-2 font-medium text-foreground-secondary">操作</th>
                 )}
               </tr>
             </thead>
@@ -348,9 +360,22 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                       handleRowClick(spot);
                     }
                   }}
-                  className={`border-b border-foreground/5 ${
+                  // 行は tabIndex={0} でキーボードフォーカスを受ける。focus を面の変化だけで示すと
+                  // surface-subtle と背景のコントラストが light 1.11:1 / dark 1.16:1 しかなく、
+                  // DESIGN.md の「focus indicator は3:1以上」を満たさない（#468 レビュー指摘）。
+                  //
+                  // ただし他の17箇所が使う LINK_FOCUS_CLASS（outline 2px + offset 2px）はここでは使えない。
+                  // この table は overflow-x-auto の中にあり、片軸が auto だともう片軸の visible も
+                  // auto に計算されるため上下左右すべてで clip 境界になる（#441 と同じ構造）。
+                  // 実測では行の左右クリアランスが 0px、最終行の下が 0.5px しかなく、外側 4px を要求する
+                  // ring は確実に切られる。
+                  //
+                  // そこで offset を内側（-2px）にして ring を行の box 内へ描く。色は同じ focus-ring
+                  // token（light #1D4ED8 / dark #93C5FD）で、背景に対して 6.70:1 / 10.98:1 と 3:1 を満たす。
+                  // 面の変化は補助表現として残す。
+                  className={`border-b border-border-subtle ${
                     GOOGLE_MAPS_API_KEY
-                      ? "cursor-pointer hover:bg-foreground/5 focus-visible:bg-foreground/5 focus-visible:outline-none"
+                      ? "cursor-pointer hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus-ring"
                       : ""
                   }`}
                 >
@@ -364,14 +389,14 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                       {spot.name}
                     </TextLink>
                   </td>
-                  <td className="py-2 pr-4 text-foreground/80">
+                  <td className="py-2 pr-4 text-foreground">
                     {spot.sourceTypes.length > 0
                       ? spot.sourceTypes
                           .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
                           .join("、")
                       : "—"}
                   </td>
-                  <td className="py-2 pr-4 text-foreground/80">
+                  <td className="py-2 pr-4 text-foreground">
                     {spot.prefecture ?? "—"}
                   </td>
                   {isAdmin && (

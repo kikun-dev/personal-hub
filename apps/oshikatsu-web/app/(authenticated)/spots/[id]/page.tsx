@@ -26,7 +26,7 @@ export default async function SpotDetailPage({ params }: SpotDetailPageProps) {
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.spots}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← 聖地マップ一覧
         </ListBackButton>

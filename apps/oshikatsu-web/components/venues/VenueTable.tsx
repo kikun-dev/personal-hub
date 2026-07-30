@@ -47,7 +47,7 @@ export function VenueTable({ venues, isAdmin }: VenueTableProps) {
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
-          <tr className="border-b border-foreground/10 text-left">
+          <tr className="border-b border-border-subtle text-left">
             {VENUE_COLUMNS.map((col) => (
               <SortableTh
                 key={col.key}
@@ -59,7 +59,7 @@ export function VenueTable({ venues, isAdmin }: VenueTableProps) {
               />
             ))}
             {isAdmin && (
-              <th scope="col" className="pb-2 font-medium text-foreground/70">
+              <th scope="col" className="pb-2 font-medium text-foreground-secondary">
                 操作
               </th>
             )}
@@ -67,7 +67,7 @@ export function VenueTable({ venues, isAdmin }: VenueTableProps) {
         </thead>
         <tbody>
           {sorted.map((venue) => (
-            <tr key={venue.id} className="border-b border-foreground/5">
+            <tr key={venue.id} className="border-b border-border-subtle">
               <td className="py-2 pr-4">
                 <Link
                   href={`/venues/${venue.id}`}
@@ -76,10 +76,10 @@ export function VenueTable({ venues, isAdmin }: VenueTableProps) {
                   {venue.name}
                 </Link>
               </td>
-              <td className="py-2 pr-4 text-foreground/70">
+              <td className="py-2 pr-4 text-foreground">
                 {venue.prefecture ?? "—"}
               </td>
-              <td className="py-2 pr-4 text-foreground/70">
+              <td className="py-2 pr-4 text-foreground">
                 {venue.capacity != null
                   ? `${venue.capacity.toLocaleString()}人`
                   : "—"}

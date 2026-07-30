@@ -77,10 +77,10 @@ function SpotAppearanceItem({ appearance }: { appearance: SpotAppearance }) {
     .join(" / ");
 
   return (
-    <li className="rounded-lg border border-foreground/10 p-3 text-sm">
+    <li className="rounded-lg border border-border-subtle p-3 text-sm">
       <div className="flex flex-wrap items-center gap-2">
         {appearance.groupName && (
-          <span className="text-foreground/50">{appearance.groupName}</span>
+          <span className="text-foreground-secondary">{appearance.groupName}</span>
         )}
         <span className="font-medium text-foreground">{typeLabel}</span>
       </div>
@@ -92,13 +92,13 @@ function SpotAppearanceItem({ appearance }: { appearance: SpotAppearance }) {
               {sourceInfo.label}
             </TextLink>
           ) : (
-            <span className="text-foreground/80">{sourceInfo.label}</span>
+            <span className="text-foreground">{sourceInfo.label}</span>
           )}
         </p>
       )}
 
       {appearance.members.length > 0 && (
-        <p className="mt-1 flex flex-wrap gap-x-2 text-foreground/80">
+        <p className="mt-1 flex flex-wrap gap-x-2 text-foreground">
           {appearance.members.map((member) => (
             <Link
               key={member.id}
@@ -112,7 +112,7 @@ function SpotAppearanceItem({ appearance }: { appearance: SpotAppearance }) {
       )}
 
       {appearance.note && (
-        <p className="mt-1 whitespace-pre-wrap text-foreground/70">
+        <p className="mt-1 whitespace-pre-wrap text-foreground">
           {appearance.note}
         </p>
       )}
@@ -147,7 +147,7 @@ function SpotPhotoItem({ photo }: { photo: SpotPhoto }) {
         className="aspect-square w-full rounded-lg object-cover"
       />
       {photo.caption && (
-        <p className="mt-1 text-xs text-foreground/60">{photo.caption}</p>
+        <p className="mt-1 text-xs text-foreground-secondary">{photo.caption}</p>
       )}
     </li>
   );
@@ -159,23 +159,23 @@ export function SpotDetail({ spot }: SpotDetailProps) {
       <h1 className="text-xl font-bold text-foreground">{spot.name}</h1>
 
       <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">場所情報</h2>
+        <h2 className="mb-3 text-sm font-medium text-foreground-secondary">場所情報</h2>
         <dl className="space-y-2 text-sm">
           {spot.prefecture && (
             <div className="flex gap-3">
-              <dt className="w-20 shrink-0 text-foreground/50">都道府県</dt>
+              <dt className="w-20 shrink-0 text-foreground-secondary">都道府県</dt>
               <dd className="text-foreground">{spot.prefecture}</dd>
             </div>
           )}
           {spot.address && (
             <div className="flex gap-3">
-              <dt className="w-20 shrink-0 text-foreground/50">住所</dt>
+              <dt className="w-20 shrink-0 text-foreground-secondary">住所</dt>
               <dd className="text-foreground">{spot.address}</dd>
             </div>
           )}
         </dl>
         {spot.description && (
-          <p className="mt-3 whitespace-pre-wrap text-sm text-foreground/80">
+          <p className="mt-3 whitespace-pre-wrap text-sm text-foreground">
             {spot.description}
           </p>
         )}
@@ -198,11 +198,11 @@ export function SpotDetail({ spot }: SpotDetailProps) {
       />
 
       <Card>
-        <h2 className="mb-3 text-sm font-medium text-foreground/70">
+        <h2 className="mb-3 text-sm font-medium text-foreground-secondary">
           出来事（{spot.appearances.length}件）
         </h2>
         {spot.appearances.length === 0 ? (
-          <p className="text-sm text-foreground/50">登録された出来事はありません</p>
+          <p className="text-sm text-foreground-secondary">登録された出来事はありません</p>
         ) : (
           <ul className="space-y-3">
             {spot.appearances.map((appearance) => (
@@ -214,7 +214,7 @@ export function SpotDetail({ spot }: SpotDetailProps) {
 
       {spot.photos.length > 0 && (
         <Card>
-          <h2 className="mb-3 text-sm font-medium text-foreground/70">
+          <h2 className="mb-3 text-sm font-medium text-foreground-secondary">
             写真（{spot.photos.length}件）
           </h2>
           <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3">

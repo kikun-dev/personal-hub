@@ -26,7 +26,7 @@ export function SpotLocationMap({
   const position = { lat: latitude, lng: longitude };
 
   return (
-    <div className="h-[40vh] w-full overflow-hidden rounded-lg border border-foreground/10">
+    <div className="h-[40vh] w-full overflow-hidden rounded-lg border border-border-subtle">
       <GoogleMapsProvider>
         <Map
           defaultCenter={position}
