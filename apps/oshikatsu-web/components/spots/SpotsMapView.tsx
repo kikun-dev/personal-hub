@@ -112,11 +112,18 @@ function SpotInfoWindowContent({
     )
   );
 
-  // #468 レビュー判断: この InfoWindow の中身は Google Maps 側のコンテナ（.gm-style-iw）へ
-  // 描画され、その背景はページの theme に追随しない。foreground alpha を semantic token へ
-  // 置き換えるだけでは dark で 4.5:1 を満たせないため、#461（foreground alpha の除去）の
-  // 対象から外し、theme 非依存の配色ごと直す作業として #469 へ切り出した。
-  // #461 の完了条件でもここを除外扱いにしている。#469 の対応前に機械的な置換を戻さないこと。
+  // #468 レビュー判断: ここの foreground alpha は #461（foreground alpha の除去）の対象から外し、
+  // #469 で扱う。理由は、この InfoWindow の中身が Google Maps 側のコンテナ（.gm-style-iw）へ
+  // 描画され、その背景がページの theme に追随しない可能性があるため。追随しない場合、semantic
+  // token へ単純に置き換えても dark で 4.5:1 を満たせない。
+  //
+  // ただし .gm-style-iw の背景が実際に theme 非依存かは未実測である（ローカルの orbit_spots が
+  // 0件で InfoWindow を開けない。fixture は #470）。Google 側が prefers-color-scheme に追随して
+  // いれば前提自体が成り立たないため、#469 はまず実測から始める設計にしてある。
+  //
+  // したがってここで確定しているのは「単純置換では適合を確認できないので #461 の対象外にする」
+  // というスコープ判断だけであり、背景色の性質は未確定である。
+  // #469 の実測と対応が済むまで、機械的な置換を戻さないこと。
   return (
     <div className="space-y-1 py-1 text-sm">
       <p className="font-bold text-foreground">{spot.name}</p>
