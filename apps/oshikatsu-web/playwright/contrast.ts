@@ -18,6 +18,54 @@ export const viewports = [
   { width: 1440, height: 1000 },
 ] as const;
 
+const CSS_NUMBER_PATTERN = String.raw`[+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?`;
+const OKLCH_PATTERN = new RegExp(
+  String.raw`^oklch\(\s*(${CSS_NUMBER_PATTERN})(%?)\s+(${CSS_NUMBER_PATTERN})\s+(${CSS_NUMBER_PATTERN})(?:deg)?(?:\s*\/\s*(${CSS_NUMBER_PATTERN})(%?))?\s*\)$`,
+  "i"
+);
+const OKLAB_PATTERN = new RegExp(
+  String.raw`^oklab\(\s*(${CSS_NUMBER_PATTERN})(%?)\s+(${CSS_NUMBER_PATTERN})\s+(${CSS_NUMBER_PATTERN})(?:\s*\/\s*(${CSS_NUMBER_PATTERN})(%?))?\s*\)$`,
+  "i"
+);
+
+function parseNumberOrPercentage(value: string, unit: string | undefined): number {
+  const parsed = Number(value);
+  return unit === "%" ? parsed / 100 : parsed;
+}
+
+function oklabToRgba(
+  lightness: number,
+  a: number,
+  b: number,
+  alpha: number
+): Rgba {
+  const lRoot = lightness + 0.3963377774 * a + 0.2158037573 * b;
+  const mRoot = lightness - 0.1055613458 * a - 0.0638541728 * b;
+  const sRoot = lightness - 0.0894841775 * a - 1.291485548 * b;
+  const l = lRoot ** 3;
+  const m = mRoot ** 3;
+  const s = sRoot ** 3;
+  const linear = [
+    4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+    -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+    -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
+  ];
+  const toSrgb = (channel: number): number => {
+    const value =
+      channel <= 0.0031308
+        ? 12.92 * channel
+        : 1.055 * channel ** (1 / 2.4) - 0.055;
+    return Math.min(1, Math.max(0, value)) * 255;
+  };
+
+  return {
+    r: toSrgb(linear[0]),
+    g: toSrgb(linear[1]),
+    b: toSrgb(linear[2]),
+    a: alpha,
+  };
+}
+
 export function parseColor(value: string): Rgba {
   const normalized = value.trim();
   if (normalized.startsWith("#")) {
@@ -40,43 +88,30 @@ export function parseColor(value: string): Rgba {
     };
   }
 
-  const oklchMatch = normalized.match(
-    /^oklch\(\s*([\d.]+)(%?)\s+([\d.]+)\s+([\d.]+)(?:deg)?(?:\s*\/\s*([\d.]+)%?)?\s*\)$/
-  );
+  const oklchMatch = normalized.match(OKLCH_PATTERN);
   if (oklchMatch) {
-    const lightness =
-      Number(oklchMatch[1]) / (oklchMatch[2] === "%" ? 100 : 1);
+    const lightness = parseNumberOrPercentage(oklchMatch[1], oklchMatch[2]);
     const chroma = Number(oklchMatch[3]);
     const hue = (Number(oklchMatch[4]) * Math.PI) / 180;
-    const alpha = oklchMatch[5] ? Number(oklchMatch[5]) : 1;
+    const alpha = oklchMatch[5]
+      ? parseNumberOrPercentage(oklchMatch[5], oklchMatch[6])
+      : 1;
     const a = chroma * Math.cos(hue);
     const b = chroma * Math.sin(hue);
 
-    const lRoot = lightness + 0.3963377774 * a + 0.2158037573 * b;
-    const mRoot = lightness - 0.1055613458 * a - 0.0638541728 * b;
-    const sRoot = lightness - 0.0894841775 * a - 1.291485548 * b;
-    const l = lRoot ** 3;
-    const m = mRoot ** 3;
-    const s = sRoot ** 3;
-    const linear = [
-      4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
-      -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
-      -0.0041960863 * l - 0.7034186147 * m + 1.707614701 * s,
-    ];
-    const toSrgb = (channel: number): number => {
-      const value =
-        channel <= 0.0031308
-          ? 12.92 * channel
-          : 1.055 * channel ** (1 / 2.4) - 0.055;
-      return Math.min(1, Math.max(0, value)) * 255;
-    };
+    return oklabToRgba(lightness, a, b, alpha);
+  }
 
-    return {
-      r: toSrgb(linear[0]),
-      g: toSrgb(linear[1]),
-      b: toSrgb(linear[2]),
-      a: alpha,
-    };
+  const oklabMatch = normalized.match(OKLAB_PATTERN);
+  if (oklabMatch) {
+    return oklabToRgba(
+      parseNumberOrPercentage(oklabMatch[1], oklabMatch[2]),
+      Number(oklabMatch[3]),
+      Number(oklabMatch[4]),
+      oklabMatch[5]
+        ? parseNumberOrPercentage(oklabMatch[5], oklabMatch[6])
+        : 1
+    );
   }
 
   const match = normalized.match(/^rgba?\(([^)]+)\)$/);
