@@ -353,9 +353,22 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                       handleRowClick(spot);
                     }
                   }}
+                  // 行は tabIndex={0} でキーボードフォーカスを受ける。focus を面の変化だけで示すと
+                  // surface-subtle と背景のコントラストが light 1.11:1 / dark 1.16:1 しかなく、
+                  // DESIGN.md の「focus indicator は3:1以上」を満たさない（#468 レビュー指摘）。
+                  //
+                  // ただし他の17箇所が使う LINK_FOCUS_CLASS（outline 2px + offset 2px）はここでは使えない。
+                  // この table は overflow-x-auto の中にあり、片軸が auto だともう片軸の visible も
+                  // auto に計算されるため上下左右すべてで clip 境界になる（#441 と同じ構造）。
+                  // 実測では行の左右クリアランスが 0px、最終行の下が 0.5px しかなく、外側 4px を要求する
+                  // ring は確実に切られる。
+                  //
+                  // そこで offset を内側（-2px）にして ring を行の box 内へ描く。色は同じ focus-ring
+                  // token（light #1D4ED8 / dark #93C5FD）で、背景に対して 6.70:1 / 10.98:1 と 3:1 を満たす。
+                  // 面の変化は補助表現として残す。
                   className={`border-b border-border-subtle ${
                     GOOGLE_MAPS_API_KEY
-                      ? "cursor-pointer hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-none"
+                      ? "cursor-pointer hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-focus-ring"
                       : ""
                   }`}
                 >
