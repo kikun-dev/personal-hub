@@ -299,8 +299,8 @@ export function MemberForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <FormErrorBanner message={errors._form} />
 
-      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
-        <h2 className="text-sm font-medium text-foreground/70">プロフィール情報</h2>
+      <section className="space-y-4 rounded-lg border border-border-subtle p-4">
+        <h2 className="text-sm font-medium text-foreground-secondary">プロフィール情報</h2>
         <Input
           id="nameJa"
           label="名前（日本語）*"
@@ -370,7 +370,7 @@ export function MemberForm({
         <div>
           <label
             htmlFor="imageFile"
-            className="mb-1 block text-sm font-medium text-foreground/70"
+            className="mb-1 block text-sm font-medium text-foreground-secondary"
           >
             プロフィール画像
           </label>
@@ -379,18 +379,18 @@ export function MemberForm({
             type="file"
             accept={MEMBER_IMAGE_ALLOWED_MIME_TYPES.join(",")}
             onChange={handleImageFileChange}
-            className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-foreground/10 file:px-3 file:py-1.5 file:text-sm ${
-              errors.imageUrl ? "border-red-400" : "border-foreground/10"
+            className={`w-full rounded-lg border bg-background px-3 py-2 text-sm text-foreground file:mr-3 file:rounded-md file:border-0 file:bg-surface-subtle file:px-3 file:py-1.5 file:text-sm ${
+              errors.imageUrl ? "border-red-400" : "border-border-strong"
             }`}
           />
-          <p className="mt-1 text-xs text-foreground/50">
+          <p className="mt-1 text-xs text-foreground-secondary">
             JPEG / PNG / WebP、最大 {Math.floor(MEMBER_IMAGE_MAX_BYTES / (1024 * 1024))}
             MB
           </p>
           {errors.imageUrl && <p className="mt-1 text-xs text-red-500">{errors.imageUrl}</p>}
 
           {previewImageSrc && (
-            <div className="mt-3 space-y-2 rounded-lg border border-foreground/10 p-3">
+            <div className="mt-3 space-y-2 rounded-lg border border-border-subtle p-3">
               <Image
                 src={previewImageSrc}
                 alt="プロフィール画像プレビュー"
@@ -415,9 +415,9 @@ export function MemberForm({
         />
       </section>
 
-      <section className="space-y-3 rounded-lg border border-foreground/10 p-4">
+      <section className="space-y-3 rounded-lg border border-border-subtle p-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium text-foreground/70">所属グループ情報</h2>
+          <h2 className="text-sm font-medium text-foreground-secondary">所属グループ情報</h2>
           <Button type="button" variant="ghost" onClick={addGroup}>
             + 追加
           </Button>
@@ -427,10 +427,10 @@ export function MemberForm({
         {values.groups.map((groupValue, i) => (
           <div
             key={groupValue._key}
-            className="space-y-3 rounded-lg border border-foreground/10 p-3"
+            className="space-y-3 rounded-lg border border-border-subtle p-3"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs text-foreground/50">グループ {i + 1}</span>
+              <span className="text-xs text-foreground-secondary">グループ {i + 1}</span>
               {values.groups.length > 1 && (
                 <button
                   type="button"
@@ -482,8 +482,8 @@ export function MemberForm({
         ))}
       </section>
 
-      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
-        <h2 className="text-sm font-medium text-foreground/70">ライブ情報</h2>
+      <section className="space-y-4 rounded-lg border border-border-subtle p-4">
+        <h2 className="text-sm font-medium text-foreground-secondary">ライブ情報</h2>
         <Input
           id="callName"
           label="コール名"
@@ -513,8 +513,8 @@ export function MemberForm({
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-foreground/10 p-4">
-        <h2 className="text-sm font-medium text-foreground/70">発信情報</h2>
+      <section className="space-y-4 rounded-lg border border-border-subtle p-4">
+        <h2 className="text-sm font-medium text-foreground-secondary">発信情報</h2>
         <Input
           id="blogUrl"
           label="ブログ URL"
@@ -556,18 +556,18 @@ export function MemberForm({
           error={errors.talkAppHashtag}
         />
 
-        <div className="space-y-3 rounded-lg border border-foreground/10 p-3">
+        <div className="space-y-3 rounded-lg border border-border-subtle p-3">
           <div className="flex items-center justify-between">
-            <label className="text-sm font-medium text-foreground/70">SNS</label>
+            <label className="text-sm font-medium text-foreground-secondary">SNS</label>
             <Button type="button" variant="ghost" onClick={addSns}>
               + 追加
             </Button>
           </div>
 
           {values.sns.map((sns, i) => (
-            <div key={sns._key} className="space-y-3 rounded-lg border border-foreground/10 p-3">
+            <div key={sns._key} className="space-y-3 rounded-lg border border-border-subtle p-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground/50">SNS {i + 1}</span>
+                <span className="text-xs text-foreground-secondary">SNS {i + 1}</span>
                 <button
                   type="button"
                   onClick={() => removeSns(sns._key)}
