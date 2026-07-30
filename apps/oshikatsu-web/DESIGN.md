@@ -208,7 +208,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 
 **The Group Ownership Rule.** グループ色は対応するグループの情報だけが所有する。主要ボタンや汎用ナビゲーションのブランド装飾には流用しない。
 
-**The Semantic Contrast Rule.** 文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。
+**The Semantic Contrast Rule.** 文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。唯一の例外として、外部コンテナがtheme非追随の白面だと実測済みのGoogle Maps `SpotInfoWindowContent` は、コンポーネント直下だけで固定lightのbackground / foreground / foreground-secondary / focus-ringを再定義してよい。Google生成classへCSSを当てず、この例外を他の外部surfaceへ一般化しない。
 
 ## Typography
 

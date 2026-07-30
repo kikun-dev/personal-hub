@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
-import { TextLink } from "@/components/ui/TextLink";
+import { TEXT_LINK_CLASS, TextLink } from "@/components/ui/TextLink";
 import {
   GOOGLE_MAPS_API_KEY,
   GoogleMapsProvider,
@@ -35,6 +35,13 @@ const JAPAN_ZOOM = 5;
 // ユニーク座標が1点だけのとき fitBounds は最大ズームまで寄ってしまうため、
 // 固定ズームでセンタリングする
 const SINGLE_POINT_ZOOM = 15;
+
+// Google Maps の InfoWindow はページの theme に追随しない白い外部 surface なので、
+// この subtree だけを固定 light 配色の semantic contract として自己完結させる。
+// 要素ごとに raw color を割り当てず、既存の semantic class / TEXT_LINK_CLASS が
+// 参照する custom property をこの境界でまとめて差し替える。
+const INFO_WINDOW_SEMANTIC_CONTRACT =
+  "bg-background text-foreground [--background:#fff] [--focus-ring:#1d4ed8] [--foreground:#171717] [--foreground-secondary:#595959]";
 
 // フィルタ変更・初期表示のたびに全ピンが収まる範囲へフィットする。
 // Map コンポーネントの子として描画し、useMap() で親の Map インスタンスを取得する。
@@ -112,40 +119,34 @@ function SpotInfoWindowContent({
     )
   );
 
-  // #468 レビュー判断: ここの foreground alpha は #461（foreground alpha の除去）の対象から外し、
-  // #469 で扱う。理由は、この InfoWindow の中身が Google Maps 側のコンテナ（.gm-style-iw）へ
-  // 描画され、その背景がページの theme に追随しない可能性があるため。追随しない場合、semantic
-  // token へ単純に置き換えても dark で 4.5:1 を満たせない。
-  //
-  // ただし .gm-style-iw の背景が実際に theme 非依存かは未実測である（ローカルの orbit_spots が
-  // 0件で InfoWindow を開けない。fixture は #470）。Google 側が prefers-color-scheme に追随して
-  // いれば前提自体が成り立たないため、#469 はまず実測から始める設計にしてある。
-  //
-  // したがってここで確定しているのは「単純置換では適合を確認できないので #461 の対象外にする」
-  // というスコープ判断だけであり、背景色の性質は未確定である。
-  // #469 の実測と対応が済むまで、機械的な置換を戻さないこと。
+  // #469: .gm-style-iw は light / dark とも白で theme 非追随と実測済み。
+  // Google の内部 class へ CSS を当てず、コンテンツ側が固定 light surface と対応する
+  // foreground を所有する。上のローカル contract を theme 追従 token へ戻さないこと。
   return (
-    <div className="space-y-1 py-1 text-sm">
-      <p className="font-bold text-foreground">{spot.name}</p>
+    <div
+      data-ui="spot-info-window"
+      className={`space-y-1 py-1 text-sm ${INFO_WINDOW_SEMANTIC_CONTRACT}`}
+    >
+      <p className="font-bold">{spot.name}</p>
       {spot.sourceTypes.length > 0 && (
-        <p className="text-foreground/70">
+        <p className="text-foreground-secondary">
           {spot.sourceTypes
             .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
             .join("、")}
         </p>
       )}
       {subtypeNames.length > 0 && (
-        <p className="text-foreground/70">{subtypeNames.join("、")}</p>
+        <p className="text-foreground-secondary">{subtypeNames.join("、")}</p>
       )}
       {spot.prefecture && (
-        <p className="text-foreground/70">{spot.prefecture}</p>
+        <p className="text-foreground-secondary">{spot.prefecture}</p>
       )}
       {spot.googleMapsUrl && (
         <a
           href={spot.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="block text-foreground underline"
+          className={`block ${TEXT_LINK_CLASS}`}
         >
           Googleマップで開く
         </a>
