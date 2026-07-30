@@ -170,7 +170,35 @@ test timeoutによってPlaywrightがpageを先に閉じた場合は解除を省
   0幅・route teardownエラーはいずれも0件
 - 続けて実行したlocal full suiteも205 passed / 9 skipped / 0 failedで完走した
 
-#445完了時点で、再現を確認できている既知flakyはない。
+#465で、`setlist-center-toggle.spec.ts` の「選択状態を色以外でも判別できる」を解消した。
+
+- 症状は `resolveBackgroundStack` の「祖先がすべて透明です」。lightの320px / 390pxで発現し、
+  失敗するviewportは実行ごとに移動していた（320pxのみ → 320px+390px → 320pxのみ）
+- 原因はcomputed custom propertyの報告不整合。`html`は正しい値を持ち、より深い子孫であるCボタン自身も
+  正しい値を持つのに、間の`body` / `main`だけが空になる。CSSの継承では起こり得ない組み合わせなので、
+  描画ではなく報告だけが壊れている
+- **観測できたのは`mobile` project（iPhone 17 descriptor = WebKit）のみ**で、lightの320px。
+  `desktop` project（Desktop Chrome = Chromium）は12回試して未再現。当初これをChromium由来と記録していたが、
+  再現・検証に使ったのは`--project=mobile`＝WebKitであり、誤りだったため訂正した（#467のレビュー指摘）
+- 発現条件は「`emulateMedia({colorScheme})`をnavigationより前に設定」かつnarrow viewport。
+  reload、rAF待ち、強制レイアウト、class付け外し、`:root`の変数再設定、viewport変更のいずれでも回復しない
+- 実行構成にも依存する。`mobile` projectを単独で実行すると320pxで4/4再現し、両projectを同時に実行した
+  6回では再現しなかった。これが「失敗するviewportが実行ごとに移動する」ように見えた原因
+- Tailwindのutilityは`@theme inline`で値が埋め込まれるため無傷で、手書きの
+  `body { background: var(--background) }` だけがtransparentと報告される
+- 祖先スタックの最外郭へ`:root`の`--background`（＝ページのcanvas色）を必ず積むことで解消した。
+  正常時はbodyが不透明なのでこの層には到達せず、判定は変わらない。この対処自体はエンジンに依存しない。
+  retry・timeout増加、しきい値の緩和、プロダクト実装の変更は行わない
+- local-only反復は当該specがmobile projectで10/10 × 5回＝50/50 pass。
+  続けて実行したlocal full suiteも0 failedで完走した
+
+`semantic-ui-state.spec.ts` も `getComputedStyle(body).backgroundColor` を直接読んでおり、
+同じ「emulateMedia → goto」順序のため理屈上は同じ報告不整合を踏みうる。踏んだ場合は
+`expectAaContrast` が背景を透明として扱い1.15:1相当で誤検知する。ただし54回（18 × 3回）の
+反復では再現しなかったため、#465では変更していない。再発時はここを最初に疑い、
+まず`--project=mobile`単独で再現するかを確認する。
+
+#465完了時点で、再現を確認できている既知flakyはない。
 
 以前候補として記録していたlive detailのcarousel、calendarのhit-area、参加フォームのfocus連動は、
 有効なローカル認証状態でのfull suite 5回では再観測されなかったため、既知flakyの一覧から外した。
