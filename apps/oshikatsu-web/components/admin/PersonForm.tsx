@@ -77,15 +77,15 @@ export function PersonForm({
       />
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
+        <label className="mb-1 block text-sm font-medium text-foreground-secondary">
           担当*
         </label>
         {errors.roles && <p className="mb-1 text-xs text-red-500">{errors.roles}</p>}
-        <div className="grid grid-cols-2 gap-2 rounded-lg border border-foreground/10 p-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 rounded-lg border border-border-subtle p-3 sm:grid-cols-3">
           {PERSON_ROLE_VALUES.map((role) => (
             <label
               key={role}
-              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-foreground/5"
+              className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
             >
               <input
                 type="checkbox"

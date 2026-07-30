@@ -30,7 +30,7 @@ export function UnregisteredStaffModal({
         <h2 className="text-base font-semibold text-foreground">
           未登録の制作陣があります
         </h2>
-        <p className="mt-1 text-sm text-foreground/70">
+        <p className="mt-1 text-sm text-foreground-secondary">
           以下の制作陣は未登録です。担当を登録して続行しますか？
         </p>
 
@@ -38,10 +38,10 @@ export function UnregisteredStaffModal({
           {entries.map((entry) => (
             <li
               key={`${entry.displayName}-${entry.role}`}
-              className="flex items-center justify-between gap-2 rounded-lg border border-foreground/10 px-3 py-2 text-sm"
+              className="flex items-center justify-between gap-2 rounded-lg border border-border-subtle px-3 py-2 text-sm"
             >
               <span className="text-foreground">{entry.displayName}</span>
-              <span className="text-xs text-foreground/60">
+              <span className="text-xs text-foreground-secondary">
                 {PERSON_ROLE_LABELS[entry.role]}
                 {entry.isExisting ? "（担当を追加）" : "（新規登録）"}
               </span>

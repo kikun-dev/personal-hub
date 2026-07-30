@@ -48,7 +48,7 @@ type PerformanceField = {
 };
 
 const inputClass =
-  "w-full rounded-lg border border-foreground/10 bg-background px-3 py-2 text-sm text-foreground";
+  "w-full rounded-lg border border-border-strong bg-background px-3 py-2 text-sm text-foreground";
 
 export function LiveForm({
   mode,
@@ -278,7 +278,7 @@ export function LiveForm({
       />
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
+        <label className="mb-1 block text-sm font-medium text-foreground-secondary">
           種別*
         </label>
         {errors.liveType && (
@@ -296,7 +296,7 @@ export function LiveForm({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           単発ライブ＝1会場（複数日可）／ツアー＝複数会場／配信は複数日程可
         </p>
       </div>
@@ -310,10 +310,10 @@ export function LiveForm({
       />
 
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
+        <label className="mb-1 block text-sm font-medium text-foreground-secondary">
           出演グループ
         </label>
-        <div className="grid grid-cols-2 gap-2 rounded-lg border border-foreground/10 p-3 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 rounded-lg border border-border-subtle p-3 sm:grid-cols-3">
           {groups.map((group) => (
             <label key={group.id} className="flex cursor-pointer items-center gap-2 text-sm">
               <input
@@ -329,24 +329,24 @@ export function LiveForm({
 
       <div>
         <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-          <label className="block text-sm font-medium text-foreground/70">
+          <label className="block text-sm font-medium text-foreground-secondary">
             出演メンバー（基準ロスター）
           </label>
           <button
             type="button"
             onClick={handleAutoRoster}
             disabled={!canAutoRoster || isComputingRoster}
-            className="rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground hover:bg-foreground/5 disabled:opacity-40"
+            className="rounded-lg border border-border-strong px-2 py-1 text-xs text-foreground hover:bg-surface-subtle disabled:opacity-40"
           >
             {isComputingRoster ? "計算中..." : "出演グループ・最初の公演日から自動入力"}
           </button>
         </div>
         {!canAutoRoster && (
-          <p className="mb-1 text-xs text-foreground/40">
+          <p className="mb-1 text-xs text-foreground-secondary">
             ※自動入力には出演グループの選択と公演日の入力が必要です
           </p>
         )}
-        <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-foreground/10 p-3 sm:grid-cols-3">
+        <div className="grid max-h-64 grid-cols-2 gap-2 overflow-y-auto rounded-lg border border-border-subtle p-3 sm:grid-cols-3">
           {members.map((member) => (
             <label key={member.id} className="flex cursor-pointer items-center gap-2 text-sm">
               <input
@@ -362,7 +362,7 @@ export function LiveForm({
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <label className="block text-sm font-medium text-foreground/70">
+          <label className="block text-sm font-medium text-foreground-secondary">
             日程・会場（事前情報）
           </label>
           <Button type="button" variant="secondary" onClick={addPerformance}>
@@ -373,10 +373,10 @@ export function LiveForm({
         {performances.map((performance, index) => (
           <div
             key={performance.key}
-            className="space-y-3 rounded-lg border border-foreground/10 p-4"
+            className="space-y-3 rounded-lg border border-border-subtle p-4"
           >
             <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-foreground/70">
+              <span className="text-sm font-medium text-foreground-secondary">
                 公演 {index + 1}
               </span>
               <button
@@ -390,7 +390,7 @@ export function LiveForm({
 
             <div className="grid gap-3 sm:grid-cols-2">
               <div>
-                <label className="mb-1 block text-xs text-foreground/60">会場</label>
+                <label className="mb-1 block text-xs text-foreground-secondary">会場</label>
                 <Combobox
                   value={performance.venueId}
                   onChange={(venueId) =>
@@ -444,16 +444,16 @@ export function LiveForm({
       </section>
 
       <section className="space-y-3">
-        <label className="block text-sm font-medium text-foreground/70">
+        <label className="block text-sm font-medium text-foreground-secondary">
           公演ごとの当日情報
         </label>
         <div className="-mx-1 flex snap-x snap-mandatory gap-3 overflow-x-auto px-1 pb-2">
           {performances.map((performance, index) => (
             <div
               key={performance.key}
-              className="w-[22rem] shrink-0 snap-start space-y-3 rounded-lg border border-foreground/10 p-4"
+              className="w-[22rem] shrink-0 snap-start space-y-3 rounded-lg border border-border-subtle p-4"
             >
-              <p className="text-sm font-medium text-foreground/70">
+              <p className="text-sm font-medium text-foreground-secondary">
                 公演 {index + 1}
                 {performance.performanceDate ? ` ・ ${performance.performanceDate}` : ""}
               </p>
@@ -486,7 +486,7 @@ export function LiveForm({
 
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-foreground/60">休演メンバー</span>
+                <span className="text-xs text-foreground-secondary">休演メンバー</span>
                 <button
                   type="button"
                   onClick={() => addAbsence(performance.key)}
@@ -509,7 +509,7 @@ export function LiveForm({
                         memberId: e.target.value,
                       })
                     }
-                    className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+                    className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
                   >
                     <option value="">メンバー選択</option>
                     {absenceCandidates.map((member) => (
@@ -526,7 +526,7 @@ export function LiveForm({
                       })
                     }
                     placeholder="理由・メモ（任意）"
-                    className="flex-1 rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+                    className="flex-1 rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
                   />
                   <button
                     type="button"

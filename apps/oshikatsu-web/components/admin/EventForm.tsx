@@ -154,7 +154,7 @@ export function EventForm({
         onChange={(e) => update("description", e.target.value)}
       />
 
-      <label className="flex items-center gap-2 rounded-lg border border-foreground/10 px-3 py-2 text-sm text-foreground">
+      <label className="flex items-center gap-2 rounded-lg border border-border-subtle px-3 py-2 text-sm text-foreground">
         <input
           type="checkbox"
           checked={values.isMemberHistory}
@@ -166,7 +166,7 @@ export function EventForm({
 
       {/* グループ選択 */}
       <div>
-        <label className="mb-1 block text-sm font-medium text-foreground/70">
+        <label className="mb-1 block text-sm font-medium text-foreground-secondary">
           グループ*
         </label>
         {errors.groupIds && (
@@ -181,7 +181,7 @@ export function EventForm({
               className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
                 values.groupIds.includes(group.id)
                   ? "text-white"
-                  : "border border-foreground/10 text-foreground/60"
+                  : "border border-border-strong text-foreground-secondary"
               }`}
               style={
                 values.groupIds.includes(group.id)
@@ -198,17 +198,17 @@ export function EventForm({
       {/* メンバー選択（オプション） */}
       {members.length > 0 && (
         <div>
-          <label className="mb-1 block text-sm font-medium text-foreground/70">
+          <label className="mb-1 block text-sm font-medium text-foreground-secondary">
             {values.isMemberHistory ? "関連メンバー*" : "関連メンバー（任意）"}
           </label>
           {errors.memberIds && (
             <p className="mb-1 text-xs text-red-500">{errors.memberIds}</p>
           )}
-          <div className="max-h-48 overflow-y-auto rounded-lg border border-foreground/10 p-2">
+          <div className="max-h-48 overflow-y-auto rounded-lg border border-border-subtle p-2">
             {members.map((member) => (
               <label
                 key={member.id}
-                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-foreground/5"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm hover:bg-surface-subtle"
               >
                 <input
                   type="checkbox"
@@ -217,7 +217,7 @@ export function EventForm({
                   className="rounded"
                 />
                 <span className="text-foreground">{member.nameJa}</span>
-                <span className="text-xs text-foreground/40">
+                <span className="text-xs text-foreground-secondary">
                   {member.groupNames.join(", ")}
                 </span>
               </label>
