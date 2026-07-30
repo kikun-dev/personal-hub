@@ -116,17 +116,17 @@ function SpotInfoWindowContent({
     <div className="space-y-1 py-1 text-sm">
       <p className="font-bold text-foreground">{spot.name}</p>
       {spot.sourceTypes.length > 0 && (
-        <p className="text-foreground/70">
+        <p className="text-foreground-secondary">
           {spot.sourceTypes
             .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
             .join("、")}
         </p>
       )}
       {subtypeNames.length > 0 && (
-        <p className="text-foreground/70">{subtypeNames.join("、")}</p>
+        <p className="text-foreground-secondary">{subtypeNames.join("、")}</p>
       )}
       {spot.prefecture && (
-        <p className="text-foreground/70">{spot.prefecture}</p>
+        <p className="text-foreground-secondary">{spot.prefecture}</p>
       )}
       {spot.googleMapsUrl && (
         <a
@@ -240,7 +240,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           value={sourceType}
           onChange={(event) => handleSourceTypeChange(event.target.value)}
           aria-label="種別で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">すべて</option>
           {SPOT_SOURCE_TYPES.map((value) => (
@@ -253,7 +253,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           value={prefecture}
           onChange={(event) => handlePrefectureChange(event.target.value)}
           aria-label="都道府県で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全都道府県</option>
           {prefectureOptions.map((name) => (
@@ -268,9 +268,9 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           onChange={(event) => handleQueryChange(event.target.value)}
           placeholder="名前・サブ種別・メンバーで検索"
           aria-label="スポット名・サブ種別・メンバー名で検索"
-          className="w-full max-w-xs rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
+          className="w-full max-w-xs rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
         />
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {filteredSpots.length}件
         </span>
       </div>
@@ -278,7 +278,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
       {GOOGLE_MAPS_API_KEY ? (
         <div
           ref={mapContainerRef}
-          className="h-[60vh] w-full overflow-hidden rounded-lg border border-foreground/10"
+          className="h-[60vh] w-full overflow-hidden rounded-lg border border-border-subtle"
         >
           <GoogleMapsProvider>
             <Map
@@ -311,27 +311,27 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
           </GoogleMapsProvider>
         </div>
       ) : (
-        <p className="rounded-lg border border-dashed border-foreground/20 px-3 py-2 text-xs text-foreground/50">
+        <p className="rounded-lg border border-dashed border-border-subtle px-3 py-2 text-xs text-foreground-secondary">
           Google MapsのAPIキーが未設定のため、地図は表示できません。一覧のみ表示します。
         </p>
       )}
 
       {filteredSpots.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           該当するスポットがありません
         </p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-foreground/10 text-left">
-                <th className="pb-2 pr-4 font-medium text-foreground/70">名前</th>
-                <th className="pb-2 pr-4 font-medium text-foreground/70">種別</th>
-                <th className="pb-2 pr-4 font-medium text-foreground/70">
+              <tr className="border-b border-border-subtle text-left">
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">名前</th>
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">種別</th>
+                <th className="pb-2 pr-4 font-medium text-foreground-secondary">
                   都道府県
                 </th>
                 {isAdmin && (
-                  <th className="pb-2 font-medium text-foreground/70">操作</th>
+                  <th className="pb-2 font-medium text-foreground-secondary">操作</th>
                 )}
               </tr>
             </thead>
@@ -348,9 +348,9 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                       handleRowClick(spot);
                     }
                   }}
-                  className={`border-b border-foreground/5 ${
+                  className={`border-b border-border-subtle ${
                     GOOGLE_MAPS_API_KEY
-                      ? "cursor-pointer hover:bg-foreground/5 focus-visible:bg-foreground/5 focus-visible:outline-none"
+                      ? "cursor-pointer hover:bg-surface-subtle focus-visible:bg-surface-subtle focus-visible:outline-none"
                       : ""
                   }`}
                 >
@@ -364,14 +364,14 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                       {spot.name}
                     </TextLink>
                   </td>
-                  <td className="py-2 pr-4 text-foreground/80">
+                  <td className="py-2 pr-4 text-foreground">
                     {spot.sourceTypes.length > 0
                       ? spot.sourceTypes
                           .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
                           .join("、")
                       : "—"}
                   </td>
-                  <td className="py-2 pr-4 text-foreground/80">
+                  <td className="py-2 pr-4 text-foreground">
                     {spot.prefecture ?? "—"}
                   </td>
                   {isAdmin && (

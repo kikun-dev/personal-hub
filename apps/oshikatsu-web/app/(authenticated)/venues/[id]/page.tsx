@@ -66,7 +66,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       <dl className="space-y-3">
         {rows.map((row) => (
           <div key={row.label} className="flex gap-3 text-sm">
-            <dt className="w-24 shrink-0 text-foreground/50">{row.label}</dt>
+            <dt className="w-24 shrink-0 text-foreground-secondary">{row.label}</dt>
             <dd className="text-foreground">{row.value ?? "—"}</dd>
           </div>
         ))}
@@ -93,7 +93,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       {venue.access && (
         <section className="space-y-1">
           <h2 className="text-sm font-semibold text-foreground">交通情報</h2>
-          <p className="whitespace-pre-wrap text-sm text-foreground/80">
+          <p className="whitespace-pre-wrap text-sm text-foreground">
             {venue.access}
           </p>
         </section>
@@ -102,7 +102,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       {venue.notes && (
         <section className="space-y-1">
           <h2 className="text-sm font-semibold text-foreground">メモ</h2>
-          <p className="whitespace-pre-wrap text-sm text-foreground/80">
+          <p className="whitespace-pre-wrap text-sm text-foreground">
             {venue.notes}
           </p>
         </section>
@@ -111,7 +111,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-foreground">この会場の公演</h2>
         {performances.length === 0 ? (
-          <p className="text-sm text-foreground/50">公演の登録はありません</p>
+          <p className="text-sm text-foreground-secondary">公演の登録はありません</p>
         ) : (
           <ul className="space-y-1">
             {performances.map((performance) => (
@@ -133,7 +133,7 @@ export default async function VenueDetailPage({ params }: VenueDetailPageProps) 
       <section className="space-y-2">
         <h2 className="text-sm font-semibold text-foreground">あなたの参戦記録</h2>
         {!myVisit || myVisit.count === 0 ? (
-          <p className="text-sm text-foreground/50">まだ参戦記録がありません</p>
+          <p className="text-sm text-foreground-secondary">まだ参戦記録がありません</p>
         ) : (
           <div className="space-y-2">
             <p className="text-sm font-semibold text-foreground">
