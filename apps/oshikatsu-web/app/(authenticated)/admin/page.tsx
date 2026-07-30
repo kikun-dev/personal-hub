@@ -40,9 +40,9 @@ export default function AdminPage() {
             href={section.href}
             feedback="global"
           >
-            <Card className="transition-colors hover:bg-foreground/5">
+            <Card className="transition-colors hover:bg-surface-subtle">
               <h2 className="font-medium text-foreground">{section.title}</h2>
-              <p className="mt-1 text-sm text-foreground/60">
+              <p className="mt-1 text-sm text-foreground-secondary">
                 {section.description}
               </p>
             </Card>

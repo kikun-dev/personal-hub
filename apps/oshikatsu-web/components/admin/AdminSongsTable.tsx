@@ -34,7 +34,7 @@ export function AdminSongsTable({ songs }: AdminSongsTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
+            <tr className="border-b border-border-subtle text-left">
               {SONG_COLUMNS.map((col) => (
                 <SortableTh
                   key={col.key}
@@ -45,19 +45,19 @@ export function AdminSongsTable({ songs }: AdminSongsTableProps) {
                   onSort={() => handleSort(col.key)}
                 />
               ))}
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+              <th className="pb-2 font-medium text-foreground-secondary">操作</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((song) => (
-              <tr key={song.id} className="border-b border-foreground/5">
+              <tr key={song.id} className="border-b border-border-subtle">
                 <td className="py-2 pr-4 text-foreground">{song.title}</td>
                 <td className="py-2 pr-4">
                   <div className="flex flex-wrap gap-1">
                     {song.groupNameJa || "—"}
                   </div>
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {song.releaseDate ? formatDate(song.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
@@ -79,7 +79,7 @@ export function AdminSongsTable({ songs }: AdminSongsTableProps) {
       </div>
 
       {songs.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           楽曲が登録されていません
         </p>
       )}

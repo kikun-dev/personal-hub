@@ -36,7 +36,7 @@ export function AdminLivesTable({ lives }: AdminLivesTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
+            <tr className="border-b border-border-subtle text-left">
               {LIVE_COLUMNS.map((col) => (
                 <SortableTh
                   key={col.key}
@@ -47,20 +47,20 @@ export function AdminLivesTable({ lives }: AdminLivesTableProps) {
                   onSort={() => handleSort(col.key)}
                 />
               ))}
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+              <th className="pb-2 font-medium text-foreground-secondary">操作</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((live) => (
-              <tr key={live.id} className="border-b border-foreground/5">
+              <tr key={live.id} className="border-b border-border-subtle">
                 <td className="py-2 pr-4 text-foreground">{live.name}</td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {LIVE_TYPE_LABELS[live.liveType]}
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {live.performanceCount}
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {live.firstDate ? formatDate(live.firstDate) : "—"}
                 </td>
                 <td className="py-2">
@@ -79,7 +79,7 @@ export function AdminLivesTable({ lives }: AdminLivesTableProps) {
       </div>
 
       {lives.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           ライブが登録されていません
         </p>
       )}

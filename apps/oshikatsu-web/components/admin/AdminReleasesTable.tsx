@@ -38,7 +38,7 @@ export function AdminReleasesTable({ releases }: AdminReleasesTableProps) {
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b border-foreground/10 text-left">
+            <tr className="border-b border-border-subtle text-left">
               {RELEASE_COLUMNS.map((col) => (
                 <SortableTh
                   key={col.key}
@@ -49,12 +49,12 @@ export function AdminReleasesTable({ releases }: AdminReleasesTableProps) {
                   onSort={() => handleSort(col.key)}
                 />
               ))}
-              <th className="pb-2 font-medium text-foreground/70">操作</th>
+              <th className="pb-2 font-medium text-foreground-secondary">操作</th>
             </tr>
           </thead>
           <tbody>
             {sorted.map((release) => (
-              <tr key={release.id} className="border-b border-foreground/5">
+              <tr key={release.id} className="border-b border-border-subtle">
                 <td className="py-2 pr-4 text-foreground">{release.title}</td>
                 <td className="py-2 pr-4">
                   <GroupBadge
@@ -62,13 +62,13 @@ export function AdminReleasesTable({ releases }: AdminReleasesTableProps) {
                     groupColor={release.groupColor}
                   />
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {RELEASE_TYPE_LABELS[release.releaseType]}
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {release.numbering ?? "—"}
                 </td>
-                <td className="py-2 pr-4 text-foreground/70">
+                <td className="py-2 pr-4 text-foreground-secondary">
                   {release.releaseDate ? formatDate(release.releaseDate) : "—"}
                 </td>
                 <td className="py-2">
@@ -88,7 +88,7 @@ export function AdminReleasesTable({ releases }: AdminReleasesTableProps) {
       </div>
 
       {releases.length === 0 && (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           リリースが登録されていません
         </p>
       )}
