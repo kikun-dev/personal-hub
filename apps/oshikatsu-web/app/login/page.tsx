@@ -45,7 +45,7 @@ function LoginContent() {
               className="hidden h-auto w-56 dark:inline-block"
             />
           </h1>
-          <p className="mt-2 text-sm text-foreground/60">
+          <p className="mt-2 text-sm text-foreground-secondary">
             坂道グループの情報と推し活の記録をまとめる、個人用アーカイブ。
           </p>
         </div>
@@ -60,7 +60,7 @@ function LoginContent() {
 
         <button
           onClick={handleGoogleLogin}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-foreground/10 bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-foreground/5"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-border-strong bg-background px-4 py-3 text-sm font-medium text-foreground transition-colors hover:bg-surface-subtle"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path

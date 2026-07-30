@@ -203,7 +203,7 @@ export function Header({ isAdmin }: HeaderProps) {
             生成されず、Headless UI（getAnimations ベースの完了待ち）が close を即時完了させる。 */}
         <DialogBackdrop
           transition
-          className="fixed inset-0 bg-foreground/30 backdrop-blur-sm transition duration-200 ease-out data-[closed]:opacity-0 motion-reduce:transition-none"
+          className="fixed inset-0 bg-black/40 backdrop-blur-sm transition duration-200 ease-out data-[closed]:opacity-0 motion-reduce:transition-none"
         />
         <DialogPanel
           transition

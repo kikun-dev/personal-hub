@@ -36,8 +36,8 @@ export function SetlistFormationDisplay({
   }));
 
   return (
-    <div className="rounded-lg border border-foreground/10 p-3">
-      <p className="mb-2 text-xs font-medium text-foreground/60">
+    <div className="rounded-lg border border-border-subtle p-3">
+      <p className="mb-2 text-xs font-medium text-foreground-secondary">
         フォーメーション
       </p>
       <FormationRows rows={normalizedRows} size="xs" />

@@ -42,7 +42,7 @@ export default async function WikiDetailPage({ params }: WikiDetailPageProps) {
       <div className="flex items-center justify-between">
         <ListBackButton
           fallbackHref={APP_ROUTES.wiki}
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← Wiki一覧
         </ListBackButton>
