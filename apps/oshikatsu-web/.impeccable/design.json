@@ -350,7 +350,7 @@
     "rules": [
       { "name": "The Meaningful Color Rule", "body": "色は所属、イベント種別、エラー、選択状態のいずれかを示さなければならない。意味のない彩色は禁止する。", "section": "colors" },
       { "name": "The Group Ownership Rule", "body": "グループ色は対応するグループの情報だけが所有する。主要ボタンや汎用ナビゲーションのブランド装飾には流用しない。", "section": "colors" },
-      { "name": "The Semantic Contrast Rule", "body": "文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。", "section": "colors" },
+      { "name": "The Semantic Contrast Rule", "body": "文字、操作境界、focusをforeground alphaから組み立てない。通常/補助文字は4.5:1、操作部品の境界とfocus indicatorは3:1以上を満たすtheme別semantic pairを使う。唯一の例外として、外部コンテナがtheme非追随の白面だと実測済みのGoogle Maps `SpotInfoWindowContent` は、コンポーネント直下だけで固定lightのbackground / foreground / foreground-secondary / focus-ringを再定義してよい。Google生成classへCSSを当てず、この例外を他の外部surfaceへ一般化しない。", "section": "colors" },
       { "name": "The Compact Clarity Rule", "body": "14pxを標準に密度を保つ代わりに、主要本文のコントラストは WCAG 2.2 AA を下回らせない。", "section": "typography" },
       { "name": "The One-Family Rule", "body": "プロダクトUIへ装飾用ディスプレイ書体を追加しない。親しみやすさは色、余白、言葉でつくる。", "section": "typography" },
       { "name": "The Earned Lift Rule", "body": "影は階層または操作上の重要度を伝える要素だけが使える。通常カードの反復へ影を付けない。", "section": "elevation" },
