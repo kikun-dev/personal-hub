@@ -6,6 +6,7 @@ import {
 } from "./contrast";
 
 const FIXTURE_SPOT_NAME = "【E2E】聖地スポット検証";
+const FIXTURE_SPOT_SUBTYPE = "公演会場";
 
 function toRoundedRgb(value: string): { r: number; g: number; b: number } {
   const { r, g, b } = parseColor(value);
@@ -61,10 +62,11 @@ for (const theme of themes) {
     expect(parseColor(contentBackground).a).toBe(1);
 
     const textElements = content.locator("p, a");
-    await expect(textElements).toHaveCount(6);
+    await expect(textElements).toHaveCount(7);
     for (const expectedText of [
       FIXTURE_SPOT_NAME,
       "ライブ",
+      FIXTURE_SPOT_SUBTYPE,
       "東京都",
       "Googleマップで開く",
       "詳細を見る",

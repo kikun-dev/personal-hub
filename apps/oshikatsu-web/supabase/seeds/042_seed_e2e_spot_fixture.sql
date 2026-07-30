@@ -4,7 +4,8 @@
 -- Scope:
 -- - 公開スポット画面（/spots、/spots/[id]）を E2E で描画できるようにする
 --   ための最小 fixture。
--- - 内訳: スポット1 / 出来事1（source_type='live'）/ 出来事の関係メンバー1。
+-- - 内訳: スポット1 / 出来事1（source_type='live'、サブ種別あり）/
+--   出来事の関係メンバー1。
 --
 -- なぜ必要か:
 -- - ローカル seed は `orbit_spots = 0` で、/spots は絞り込みと空状態しか
@@ -40,6 +41,7 @@
 --     ...-000000000401 : スポット
 --     ...-000000000402 : 出来事
 --     ...-000000000403 : 出来事の関係メンバー
+--     ...-000000000404 : 出来事のサブ種別
 -- - ライブ / グループ / メンバーは決定的な順序で解決する。seed はファイル名順に
 --   適用され、042 は既存のライブ seed（035〜038）とメンバー fixture（041）より
 --   後に走るため参照先は必ず存在する。無い場合は RAISE EXCEPTION で失敗させる。
@@ -61,19 +63,33 @@ DECLARE
   c_spot_id       CONSTANT UUID := 'e2e00000-0000-4000-8000-000000000401';
   c_appearance_id CONSTANT UUID := 'e2e00000-0000-4000-8000-000000000402';
   c_member_id     CONSTANT UUID := 'e2e00000-0000-4000-8000-000000000403';
+  c_subtype_id    CONSTANT UUID := 'e2e00000-0000-4000-8000-000000000404';
   c_spot_name     CONSTANT TEXT := '【E2E】聖地スポット検証';
+  c_subtype_name  CONSTANT TEXT := '公演会場';
 
   v_live_id UUID;
   v_group_id UUID;
   v_appearance_member_id UUID;
+  v_subtype_id UUID;
 
   v_appearance_count INT;
   v_member_count INT;
 BEGIN
-  -- 冪等性: 同じ fixture スポットが既にあれば二重投入しない
+  -- 冪等性: 同じ fixture スポットが既にあれば、関連データの追加分だけ同期する。
+  -- 既存のローカルDBへ本seedを再適用した場合も、サブ種別の回帰テストを有効にする。
   IF EXISTS (
     SELECT 1 FROM public.orbit_spots WHERE name = c_spot_name
   ) THEN
+    INSERT INTO public.orbit_spot_source_subtypes (id, source_type, name)
+    VALUES (c_subtype_id, 'live', c_subtype_name)
+    ON CONFLICT (source_type, name) DO UPDATE SET name = EXCLUDED.name
+    RETURNING id INTO v_subtype_id;
+
+    UPDATE public.orbit_spot_appearances
+       SET subtype_id = v_subtype_id
+     WHERE id = c_appearance_id
+       AND spot_id = c_spot_id;
+
     RETURN;
   END IF;
 
@@ -129,16 +145,23 @@ BEGIN
 
   -- ------------------------------------------------------------
   -- 出来事（source_type='live'）
-  -- getSpotAppearanceSourceInfo の link 分岐（/lives/{id}）を通す。
+  -- getSpotAppearanceSourceInfo の link 分岐（/lives/{id}）と、一覧・InfoWindowの
+  -- サブ種別表示を通す。
   -- ------------------------------------------------------------
+  INSERT INTO public.orbit_spot_source_subtypes (id, source_type, name)
+  VALUES (c_subtype_id, 'live', c_subtype_name)
+  ON CONFLICT (source_type, name) DO UPDATE SET name = EXCLUDED.name
+  RETURNING id INTO v_subtype_id;
+
   INSERT INTO public.orbit_spot_appearances (
-    id, spot_id, source_type, live_id, group_id, note, link_url
+    id, spot_id, source_type, live_id, group_id, subtype_id, note, link_url
   ) VALUES (
     c_appearance_id,
     c_spot_id,
     'live',
     v_live_id,
     v_group_id,
+    v_subtype_id,
     'E2E 検証用の出来事メモです。',
     'https://example.com/e2e-spot-appearance'
   );
