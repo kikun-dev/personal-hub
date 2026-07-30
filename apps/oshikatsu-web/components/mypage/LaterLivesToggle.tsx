@@ -24,7 +24,7 @@ export function LaterLivesToggle({ entries }: LaterLivesToggleProps) {
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
         aria-expanded={isExpanded}
-        className="rounded-lg border border-foreground/10 px-3 py-1.5 text-xs text-foreground/60 hover:bg-foreground/5"
+        className="rounded-lg border border-border-strong px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle"
       >
         次以降のライブ {entries.length}件
       </button>

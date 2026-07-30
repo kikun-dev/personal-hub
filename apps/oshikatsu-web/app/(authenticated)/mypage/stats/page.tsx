@@ -37,7 +37,7 @@ export default async function MyPageStatsPage({ searchParams }: MyPageStatsProps
         <PendingLink
           href={APP_ROUTES.mypage}
           feedback="global"
-          className="text-sm text-foreground/50 hover:underline"
+          className="text-sm text-foreground-secondary hover:underline"
         >
           ← マイページ
         </PendingLink>

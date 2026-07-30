@@ -14,7 +14,7 @@ export function AttendedTypeBreakdown({ data }: AttendedTypeBreakdownProps) {
 
   if (total === 0) {
     return (
-      <p className="py-4 text-center text-sm text-foreground/40">
+      <p className="py-4 text-center text-sm text-foreground-secondary">
         参戦記録がありません
       </p>
     );

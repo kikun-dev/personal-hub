@@ -23,7 +23,7 @@ export function SetlistRankingList({ entries }: SetlistRankingListProps) {
 
   if (entries.length === 0) {
     return (
-      <p className="py-12 text-center text-sm text-foreground/50">
+      <p className="py-12 text-center text-sm text-foreground-secondary">
         該当する楽曲がありません
       </p>
     );
@@ -54,10 +54,10 @@ export function SetlistRankingList({ entries }: SetlistRankingListProps) {
         return (
           <li
             key={entry.song.id}
-            className="rounded-lg border border-foreground/10 bg-background"
+            className="rounded-lg border border-border-subtle bg-background"
           >
             <div className="flex items-center gap-3 p-4">
-              <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground/40">
+              <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground-secondary">
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
@@ -73,7 +73,7 @@ export function SetlistRankingList({ entries }: SetlistRankingListProps) {
                 </PendingLink>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   {entry.song.groupNameJa && (
-                    <span className="text-xs text-foreground/50">
+                    <span className="text-xs text-foreground-secondary">
                       {entry.song.groupNameJa}
                     </span>
                   )}
@@ -89,20 +89,20 @@ export function SetlistRankingList({ entries }: SetlistRankingListProps) {
                 type="button"
                 onClick={() => toggleExpanded(entry.song.id)}
                 aria-expanded={isExpanded}
-                className="shrink-0 rounded-lg border border-foreground/10 px-2 py-1 text-xs text-foreground/60 hover:bg-foreground/5"
+                className="shrink-0 rounded-lg border border-border-strong px-2 py-1 text-xs text-foreground-secondary hover:bg-surface-subtle"
               >
                 {isExpanded ? "閉じる" : "内訳"}
               </button>
             </div>
             {isExpanded && (
-              <ul className="space-y-1 border-t border-foreground/10 p-4 pt-3">
+              <ul className="space-y-1 border-t border-border-subtle p-4 pt-3">
                 {entry.encounters.map((encounter, encounterIndex) => (
                   <li
                     // 1公演で同じ曲を複数回披露している場合 performanceId が重複しうるため index を含める
                     key={`${encounter.performanceId}-${encounterIndex}`}
                     className="flex flex-wrap items-center gap-2 text-xs"
                   >
-                    <span className="text-foreground/50">
+                    <span className="text-foreground-secondary">
                       {encounter.performanceDate
                         ? formatDate(encounter.performanceDate)
                         : "日付未定"}

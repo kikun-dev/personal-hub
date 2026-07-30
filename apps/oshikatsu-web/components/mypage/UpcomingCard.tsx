@@ -15,20 +15,20 @@ export function UpcomingCard({ entry }: UpcomingCardProps) {
   return (
     <PendingLink
       href={`/lives/${entry.liveId}`}
-      className="block rounded-lg border border-foreground/10 bg-background p-4 transition-colors hover:bg-foreground/5"
+      className="block rounded-lg border border-border-subtle bg-background p-4 transition-colors hover:bg-surface-subtle"
       listBackFallbackHref={APP_ROUTES.mypage}
     >
-      <p className="text-xs text-foreground/50">
+      <p className="text-xs text-foreground-secondary">
         {entry.performanceDate ? formatDate(entry.performanceDate) : "日付未定"}
         {entry.startsAt ? ` ${formatTime(entry.startsAt)}〜` : ""}
       </p>
       <p className="mt-1 text-sm font-medium text-foreground">{entry.liveName}</p>
       <div className="mt-1 flex flex-wrap items-center gap-2">
-        <span className="text-xs text-foreground/50">
+        <span className="text-xs text-foreground-secondary">
           {LIVE_TYPE_LABELS[entry.liveType]}
         </span>
         {entry.venueName && (
-          <span className="text-xs text-foreground/60">{entry.venueName}</span>
+          <span className="text-xs text-foreground-secondary">{entry.venueName}</span>
         )}
         {entry.groups.map((g) => (
           <GroupBadge key={g.id} groupName={g.nameJa} groupColor={g.color} />

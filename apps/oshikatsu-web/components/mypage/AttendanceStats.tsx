@@ -42,7 +42,7 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
           value={year !== undefined ? String(year) : ""}
           onChange={(event) => updateParam("year", event.target.value)}
           aria-label="年で絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全期間</option>
           {stats.availableYears.map((availableYear) => (
@@ -56,7 +56,7 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
           value={groupId ?? ""}
           onChange={(event) => updateParam("group", event.target.value)}
           aria-label="グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {stats.availableGroups.map((group) => (
@@ -69,7 +69,7 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
           )}
         </select>
 
-        <span className="ml-auto shrink-0 text-sm text-foreground/50">
+        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
           {stats.filteredEntries.length}件
         </span>
       </div>
@@ -92,7 +92,7 @@ export function AttendanceStats({ stats, year, groupId }: AttendanceStatsProps) 
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-foreground">記録一覧</h2>
         {stats.filteredEntries.length === 0 ? (
-          <p className="text-sm text-foreground/60">
+          <p className="text-sm text-foreground-secondary">
             該当する参戦記録がありません
           </p>
         ) : (
