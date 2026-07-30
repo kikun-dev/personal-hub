@@ -31,7 +31,7 @@ export function WikiToc({ headings }: WikiTocProps) {
 
   return (
     <>
-      <details className="rounded-lg border border-foreground/10 bg-background p-3 md:hidden">
+      <details className="rounded-lg border border-border-subtle bg-background p-3 md:hidden">
         <summary className="cursor-pointer text-sm font-semibold text-foreground">
           目次
         </summary>
@@ -42,7 +42,7 @@ export function WikiToc({ headings }: WikiTocProps) {
 
       <nav
         aria-label="目次"
-        className="hidden rounded-lg border border-foreground/10 bg-background p-3 md:block"
+        className="hidden rounded-lg border border-border-subtle bg-background p-3 md:block"
       >
         <p className="text-sm font-semibold text-foreground">目次</p>
         <div className="mt-2">

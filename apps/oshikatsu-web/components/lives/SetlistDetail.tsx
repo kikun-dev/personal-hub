@@ -63,7 +63,7 @@ function shouldShowSectionHeading(groups: readonly SetlistSectionGroup[]): boole
 
 function SectionHeading({ section }: { section: SetlistSection }) {
   return (
-    <span className="rounded bg-foreground/10 px-2 py-0.5 text-xs font-semibold text-foreground/70">
+    <span className="rounded bg-surface-subtle px-2 py-0.5 text-xs font-semibold text-foreground-secondary">
       {SETLIST_SECTION_LABELS[section]}
     </span>
   );
@@ -78,7 +78,7 @@ function PerformanceStyleBadges({ item }: { item: SetlistItem }) {
       {item.performanceStyles.map((style) => (
         <span
           key={style}
-          className="rounded bg-foreground/10 px-1.5 py-0.5 text-[10px] text-foreground/60"
+          className="rounded bg-surface-subtle px-1.5 py-0.5 text-[10px] text-foreground-secondary"
         >
           {PERFORMANCE_STYLE_LABELS[style]}
         </span>
@@ -98,8 +98,8 @@ function SongItemRow({
   const title = item.trackTitle ?? item.songTitle ?? "（曲名未設定）";
 
   return (
-    <li className="flex gap-3 rounded-lg border border-foreground/10 p-3">
-      <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground/40">
+    <li className="flex gap-3 rounded-lg border border-border-subtle p-3">
+      <span className="w-8 shrink-0 text-right text-sm font-semibold text-foreground-secondary">
         {numberLabel}
       </span>
       <div className="min-w-0 flex-1 space-y-1.5">
@@ -115,12 +115,12 @@ function SongItemRow({
         </div>
 
         {center && (
-          <p className="text-xs text-foreground/70">C: {center.memberNameJa}</p>
+          <p className="text-xs text-foreground-secondary">C: {center.memberNameJa}</p>
         )}
 
         {item.members.length > 0 && (
-          <details className="text-xs text-foreground/70">
-            <summary className="cursor-pointer text-foreground/50">
+          <details className="text-xs text-foreground-secondary">
+            <summary className="cursor-pointer text-foreground-secondary">
               披露メンバー {item.members.length}人
             </summary>
             <p className="mt-1">
@@ -138,9 +138,11 @@ function SongItemRow({
         <SetlistFormationDisplay rows={item.formationRows} members={item.members} />
 
         {item.costumeNote && (
-          <p className="text-xs text-foreground/70">衣装: {item.costumeNote}</p>
+          <p className="text-xs text-foreground-secondary">衣装: {item.costumeNote}</p>
         )}
-        {item.note && <p className="text-xs text-foreground/70">メモ: {item.note}</p>}
+        {item.note && (
+          <p className="text-xs text-foreground-secondary">メモ: {item.note}</p>
+        )}
       </div>
     </li>
   );
@@ -148,16 +150,18 @@ function SongItemRow({
 
 function NonSongItemRow({ item }: { item: SetlistItem }) {
   return (
-    <li className="flex gap-3 rounded-lg border border-foreground/10 p-3">
+    <li className="flex gap-3 rounded-lg border border-border-subtle p-3">
       <span className="w-8 shrink-0" aria-hidden />
       <div className="min-w-0 flex-1 space-y-1.5">
-        <span className="rounded bg-foreground/10 px-1.5 py-0.5 text-xs text-foreground/70">
+        <span className="rounded bg-surface-subtle px-1.5 py-0.5 text-xs text-foreground-secondary">
           {SETLIST_ITEM_TYPE_LABELS[item.itemType]}
         </span>
         {item.costumeNote && (
-          <p className="text-xs text-foreground/70">衣装: {item.costumeNote}</p>
+          <p className="text-xs text-foreground-secondary">衣装: {item.costumeNote}</p>
         )}
-        {item.note && <p className="text-xs text-foreground/70">メモ: {item.note}</p>}
+        {item.note && (
+          <p className="text-xs text-foreground-secondary">メモ: {item.note}</p>
+        )}
       </div>
     </li>
   );
@@ -175,7 +179,7 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <PendingLink
           href={`${APP_ROUTES.lives}/${live.id}`}
           feedback="global"
-          className="text-sm text-foreground/60 hover:text-foreground"
+          className="text-sm text-foreground-secondary hover:text-foreground"
         >
           ← {live.name}
         </PendingLink>
@@ -187,14 +191,14 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
             </TextLink>
           )}
         </div>
-        <p className="text-sm text-foreground/70">
+        <p className="text-sm text-foreground-secondary">
           {formatScheduleLabel(live.liveType, performance)}
           {performance.venueName ? ` ${performance.venueName}` : ""}
         </p>
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-lg border border-foreground/10 p-6 text-center text-sm text-foreground/60">
+        <div className="rounded-lg border border-border-subtle p-6 text-center text-sm text-foreground-secondary">
           <p>この公演のセットリストはまだ登録されていません。</p>
           {isAdmin && (
             <TextLink href={editHref} className="mt-1 inline-block text-xs">

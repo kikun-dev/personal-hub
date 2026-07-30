@@ -21,7 +21,7 @@ export default async function WikiPage() {
       </div>
 
       {pages.length === 0 ? (
-        <p className="py-12 text-center text-sm text-foreground/50">
+        <p className="py-12 text-center text-sm text-foreground-secondary">
           ページが登録されていません
         </p>
       ) : (
@@ -29,7 +29,7 @@ export default async function WikiPage() {
           {pages.map((page) => (
             <li key={page.id}>
               <Link href={`/wiki/${page.slug}`}>
-                <Card className="transition-colors hover:border-foreground/30">
+                <Card className="transition-colors hover:border-border-strong">
                   <span className="text-sm font-semibold text-foreground">
                     {page.title}
                   </span>

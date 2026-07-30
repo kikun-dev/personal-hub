@@ -5,15 +5,15 @@ import Link from "next/link";
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
-      <div className="w-full max-w-md rounded-lg border border-foreground/10 p-6 text-center">
+      <div className="w-full max-w-md rounded-lg border border-border-subtle p-6 text-center">
         <p className="text-sm text-foreground">ページが見つかりません。</p>
-        <p className="mt-1 text-xs text-foreground/50">
+        <p className="mt-1 text-xs text-foreground-secondary">
           URLが間違っているか、ページが削除された可能性があります。
         </p>
         <div className="mt-4">
           <Link
             href="/"
-            className="text-sm text-foreground/60 hover:text-foreground"
+            className="text-sm text-foreground-secondary hover:text-foreground"
           >
             ← トップへ戻る
           </Link>

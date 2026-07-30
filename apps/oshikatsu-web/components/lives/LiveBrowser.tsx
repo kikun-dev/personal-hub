@@ -45,7 +45,7 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="出演グループで絞り込み"
-          className="rounded-lg border border-foreground/10 bg-background px-3 py-1.5 text-sm text-foreground"
+          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
           {groups.map((group) => (

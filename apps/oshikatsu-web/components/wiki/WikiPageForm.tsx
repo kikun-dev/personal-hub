@@ -49,7 +49,7 @@ export function WikiPageForm({ mode, initialValues, onSubmit }: WikiPageFormProp
     `rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
       bodyTab === tab
         ? "bg-foreground text-background"
-        : "border border-foreground/10 bg-background text-foreground/60 hover:bg-foreground/5"
+        : "border border-border-strong bg-background text-foreground-secondary hover:bg-surface-subtle"
     }`;
 
   return (
@@ -85,7 +85,7 @@ export function WikiPageForm({ mode, initialValues, onSubmit }: WikiPageFormProp
 
       <div>
         <div className="mb-2 flex items-center justify-between">
-          <label className="block text-sm font-medium text-foreground/70">
+          <label className="block text-sm font-medium text-foreground-secondary">
             本文（Markdown）
           </label>
           <div className="flex gap-1">
@@ -112,16 +112,16 @@ export function WikiPageForm({ mode, initialValues, onSubmit }: WikiPageFormProp
             value={values.bodyMarkdown}
             onChange={(e) => update("bodyMarkdown", e.target.value)}
             rows={20}
-            className={`w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground/30 ${focusRingClass} ${
-              errors.bodyMarkdown ? "border-red-400" : "border-foreground/10"
+            className={`w-full rounded-lg border bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-foreground-secondary ${focusRingClass} ${
+              errors.bodyMarkdown ? "border-red-400" : "border-border-strong"
             }`}
           />
         ) : (
-          <div className="rounded-lg border border-foreground/10 bg-background px-4 py-3">
+          <div className="rounded-lg border border-border-subtle bg-background px-4 py-3">
             {values.bodyMarkdown.trim() ? (
               <WikiPageContent bodyMarkdown={values.bodyMarkdown} />
             ) : (
-              <p className="text-sm text-foreground/50">本文が空です</p>
+              <p className="text-sm text-foreground-secondary">本文が空です</p>
             )}
           </div>
         )}

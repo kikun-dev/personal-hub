@@ -60,10 +60,10 @@ export function TourOverview({ heading, groups }: TourOverviewProps) {
                   {group.venueName}
                 </TextLink>
               ) : (
-                <span className="text-foreground/50">会場未定</span>
+                <span className="text-foreground-secondary">会場未定</span>
               )}
             </p>
-            <div className="mt-1 space-y-0.5 text-xs text-foreground/70">
+            <div className="mt-1 space-y-0.5 text-xs text-foreground-secondary">
               {group.scheduleLines.map((line, index) => (
                 <p key={index}>{line}</p>
               ))}
@@ -76,7 +76,7 @@ export function TourOverview({ heading, groups }: TourOverviewProps) {
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
           aria-expanded={isExpanded}
-          className="rounded-lg border border-foreground/10 px-3 py-1.5 text-xs text-foreground/60 hover:bg-foreground/5"
+          className="rounded-lg border border-border-strong px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle"
         >
           {isExpanded ? "折りたたむ" : `残り${restCount}会場を見る`}
         </button>

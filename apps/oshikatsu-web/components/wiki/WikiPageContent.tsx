@@ -47,7 +47,7 @@ export function WikiPageContent({ bodyMarkdown }: WikiPageContentProps) {
       return (
         <h2
           id={id}
-          className="mt-8 scroll-mt-20 border-b border-foreground/10 pb-1 text-base font-bold text-foreground first:mt-0"
+          className="mt-8 scroll-mt-20 border-b border-border-subtle pb-1 text-base font-bold text-foreground first:mt-0"
         >
           {children}
         </h2>
@@ -74,17 +74,17 @@ export function WikiPageContent({ bodyMarkdown }: WikiPageContentProps) {
       <h6 className="mt-4 text-sm font-semibold text-foreground">{children}</h6>
     ),
     p: ({ children }) => (
-      <p className="mt-3 text-sm leading-relaxed text-foreground/90 first:mt-0">
+      <p className="mt-3 text-sm leading-relaxed text-foreground first:mt-0">
         {children}
       </p>
     ),
     ul: ({ children }) => (
-      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground/90">
+      <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-foreground">
         {children}
       </ul>
     ),
     ol: ({ children }) => (
-      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-foreground/90">
+      <ol className="mt-3 list-decimal space-y-1 pl-5 text-sm text-foreground">
         {children}
       </ol>
     ),
@@ -95,12 +95,12 @@ export function WikiPageContent({ bodyMarkdown }: WikiPageContentProps) {
       </div>
     ),
     th: ({ children }) => (
-      <th className="border border-foreground/10 bg-foreground/5 px-3 py-2 text-left font-semibold text-foreground">
+      <th className="border border-border-subtle bg-surface-subtle px-3 py-2 text-left font-semibold text-foreground">
         {children}
       </th>
     ),
     td: ({ children }) => (
-      <td className="border border-foreground/10 px-3 py-2 text-foreground/90">
+      <td className="border border-border-subtle px-3 py-2 text-foreground">
         {children}
       </td>
     ),
@@ -134,22 +134,22 @@ export function WikiPageContent({ bodyMarkdown }: WikiPageContentProps) {
       }
 
       return (
-        <code className="rounded bg-foreground/10 px-1 py-0.5 font-mono text-[0.85em] text-foreground">
+        <code className="rounded bg-surface-subtle px-1 py-0.5 font-mono text-[0.85em] text-foreground">
           {children}
         </code>
       );
     },
     pre: ({ children }) => (
-      <pre className="mt-3 overflow-x-auto rounded-lg bg-foreground/5 p-3 text-sm">
+      <pre className="mt-3 overflow-x-auto rounded-lg bg-surface-subtle p-3 text-sm">
         {children}
       </pre>
     ),
     blockquote: ({ children }) => (
-      <blockquote className="mt-3 border-l-2 border-foreground/20 pl-3 text-sm text-foreground/70">
+      <blockquote className="mt-3 border-l-2 border-border-subtle pl-3 text-sm text-foreground-secondary">
         {children}
       </blockquote>
     ),
-    hr: () => <hr className="my-6 border-foreground/10" />,
+    hr: () => <hr className="my-6 border-border-subtle" />,
   };
 
   return (
