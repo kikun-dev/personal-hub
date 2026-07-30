@@ -166,6 +166,36 @@ handler だけを解除し、解除前に開始した処理の完了まで待つ
 test timeoutによってPlaywrightがpageを先に閉じた場合は解除を省略し、一次timeoutを
 `Target page, context or browser has been closed` で上書きしない。
 
+### 地図のある画面で `table` を数えない（#470）
+
+Google Maps は地図を初期化するとき、キーボードショートカット一覧の `<table>`
+（`LGLeeN-keyboard-shortcuts-view`、`tbody tr` が10行）を DOM へ注入する。
+
+そのため `/spots` や `/spots/[id]` のように地図を含む画面で `page.locator("table tbody tr")`
+と素朴に書くと、**アプリ側の行が0件でも10件返る**。#470 でスポット fixture を検証した際、
+スポット1件の一覧に対して11行が返り、原因の分かりにくい失敗になった。
+
+地図を含む画面で表を取るときは、アプリ側の内容で絞り込む。
+
+```ts
+const rows = page
+  .locator("table")
+  .filter({ has: page.locator('a[href^="/spots/"]') })
+  .locator("tbody tr");
+```
+
+同じ理由で、地図のある画面では `getByRole("table")` や `getByRole("row")` も
+Google 側の表を拾う。role で取る場合もアプリ側の内容で絞り込むこと。
+
+### seed を DB へ直接流したら `.next` を消す（#470）
+
+一覧系のページは Next のデータキャッシュに載る。`supabase db reset` を使わず
+DB へ直接 seed を流した場合、`.next/cache` に残った旧結果がそのまま使われ、
+`next build` をやり直しても一覧が空のままになる。
+
+**詳細ページは表示されるのに一覧だけ空**という紛らわしい状態になるため、
+seed を直接適用したときは `.next` を削除してからビルドする。#470 で実際に踏んだ。
+
 ### 既知の flaky test（最終状態）
 
 #445で、`reduced-motion.spec.ts` のNavigationProgress通常モーション幅計測を解消した。

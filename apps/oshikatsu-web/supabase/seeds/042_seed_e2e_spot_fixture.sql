@@ -10,8 +10,11 @@
 -- - ローカル seed は `orbit_spots = 0` で、/spots は絞り込みと空状態しか
 --   描画されず、/spots/[id] は開けなかった。そのため SpotDetail 全体と
 --   SpotsMapView の一覧テーブル・マーカーが一度も検証されていない。
--- - #468（#461 の PR3）では semantic token 移行45箇所のうち26箇所が
+-- - #468（#461 の PR3）では semantic token 移行42箇所のうち23箇所が
 --   「描画されないため rendered contrast を実測できない」状態になった。
+--   内訳は SpotDetail 全13行、SpotsMapView の一覧テーブル9行、APIキー未設定時の
+--   注意書き1行。加えて InfoWindow の3箇所は #468 で対象外へ戻し #469 へ切り出したが、
+--   その #469 も前提（.gm-style-iw の背景）の実測ができず止まっていた。
 -- - playwright/README.md の skip 一覧にも、`orbit_spots = 0` を理由に
 --   skip している管理フォーム編集2件が記録されており、同ファイルに
 --   「スポットの編集hydrationをローカルでも常時検証したい場合は専用
