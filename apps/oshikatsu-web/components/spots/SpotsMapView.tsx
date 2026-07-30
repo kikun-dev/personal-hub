@@ -112,21 +112,26 @@ function SpotInfoWindowContent({
     )
   );
 
+  // #468 レビュー判断: この InfoWindow の中身は Google Maps 側のコンテナ（.gm-style-iw）へ
+  // 描画され、その背景はページの theme に追随しない。foreground alpha を semantic token へ
+  // 置き換えるだけでは dark で 4.5:1 を満たせないため、#461（foreground alpha の除去）の
+  // 対象から外し、theme 非依存の配色ごと直す作業として #469 へ切り出した。
+  // #461 の完了条件でもここを除外扱いにしている。#469 の対応前に機械的な置換を戻さないこと。
   return (
     <div className="space-y-1 py-1 text-sm">
       <p className="font-bold text-foreground">{spot.name}</p>
       {spot.sourceTypes.length > 0 && (
-        <p className="text-foreground-secondary">
+        <p className="text-foreground/70">
           {spot.sourceTypes
             .map((sourceType) => SPOT_SOURCE_TYPE_LABELS[sourceType])
             .join("、")}
         </p>
       )}
       {subtypeNames.length > 0 && (
-        <p className="text-foreground-secondary">{subtypeNames.join("、")}</p>
+        <p className="text-foreground/70">{subtypeNames.join("、")}</p>
       )}
       {spot.prefecture && (
-        <p className="text-foreground-secondary">{spot.prefecture}</p>
+        <p className="text-foreground/70">{spot.prefecture}</p>
       )}
       {spot.googleMapsUrl && (
         <a
