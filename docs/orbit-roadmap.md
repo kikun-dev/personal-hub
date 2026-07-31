@@ -304,7 +304,9 @@
   - [x] `orbit_setlist_item_members`（is_center）＋ `orbit_setlist_items.performance_style` を追加、RPC 拡張
   - [x] 披露タイプ（フル/ワンハーフ/間奏ロング/その他）＝ enum＋その他
   - [x] LiveForm に披露タイプ・披露メンバー（センター）編集、LiveDetail に表示
-- [ ] E（実装中）: 参加記録＋現地カウント/ランキング（アンブレラ #103。分割: 基盤 #246 / マイページ #247 / ビジュアライズ #248 / セトリカウント #249 / 会場集計 #250 / 座席記録(Backlog) #251）
+- [x] E: 参加記録＋現地カウント/ランキング（アンブレラ #103）
+  - [x] 基盤 #246 / マイページ #247 / ビジュアライズ #248 / セトリカウント #249 / 会場集計 #250
+  - [ ] 座席記録は Backlog #251 として継続
 
 #### 入力UX改善（A/B/C）
 
@@ -368,8 +370,8 @@
     jsdom・Testing Libraryを採用。#450で独立したComponent Test stepと`SetlistEditor`の代表テストを追加した
   - 「テストは対象外」としてきた方針の転換。規約は `rules/implementation.md`「テスト」節、
     選定理由と3層（純粋関数 / component / Playwright）の対象範囲は ADR 0014 を正とする
-- [ ] **P2-2: エラー監視**（Issue #324）
-  - まず「サーバーエラーに気づける」最小構成として Vercel Runtime Logs / Observability の運用手順を整備する
+- [x] **P2-2: エラー監視**（Issue #324 / PR #332）
+  - Vercel Runtime Logs / Observability の運用手順を整備し、Web Analytics / Speed Insights を導入した
 - P3（テスト・環境が定着してから検討）:
   - 依存更新の自動化（Renovate / Dependabot）
   - E2E スモークテスト（Playwright）
@@ -406,12 +408,12 @@
 | ~~`readOrbitData.ts` の単調成長~~ | ~~ページローダー集約点として 402 行・12 ローダーに成長~~ | ✅ Issue #306 で orbitReadLoader（基盤）+ readOrbitMusicData / readOrbitLiveData / readOrbitSpotData に分割済み |
 | migration 全件適用が冗長 | 61 本の migration に開発中の中間物が多く、`db reset`（ローカル / CI db-verify）が全件リプレイで遅い | Issue #329 で baseline 化を検討（本番 `schema_migrations` 整合が本丸。ADR 昇格候補） |
 | ~~Primary routeの未使用Geist転送~~ | ~~body正典はArialだがRootLayoutがGeist Sans / Monoを固定転送する~~ | ✅ Issue #397 で対応済み（Decision B: 局所化ではなくwebfontを全廃し、monoをsystem monospaceへ統一。Primary / Wiki含む全ルートでfont転送ゼロ） |
-| Primary journeyのcopy / external affordance残差 | 動画linkのnew-tab accessible hintと一部英語向け区切りが残る | P3 Backlog: Issue #395で日本語copyとexternal link contractを整える |
-| Mobile Next Eventsのread density | 390pxでNext EventsがToday Scheduleの約2.3倍の縦量を占める | P3 Backlog: Issue #396で件数・sort・read modelを変えずpresentationをpolishする |
+| ~~Primary journeyのcopy / external affordance残差~~ | ~~動画linkのnew-tab accessible hintと一部英語向け区切りが残る~~ | ✅ Issue #395 / PR #410 でnew-tab hintと日本語区切りへ対応済み |
+| ~~Mobile Next Eventsのread density~~ | ~~390pxでNext EventsがToday Scheduleの約2.3倍の縦量を占める~~ | ✅ Issue #396 / PR #417 でMobileをcompact表示＋先頭4件へ調整済み（Desktopは6件を維持） |
 | ~~foreground alphaによる文字・境界の組み立て~~ | ~~`DESIGN.md` の The Semantic Contrast Rule に反し、`text-foreground/NN` 等で文字色・操作境界を作っている。#455 完了時点で **grep該当452行 / クラス出現506件 / 83ファイル**（`SongDetail` 29行、`MemberProfile` 25行など公開画面が上位）~~ | ✅ Issue #461 の8分割PR（#463 / #464 / #468 / #475〜#479）とInfoWindow対応 #474で解消済み。最終grepで残るのは、`DESIGN.md` に沿った意図的な使用である `Button.tsx` のprimary hover 1行と `NavigationProgress.tsx` の装飾塗り2行のみ |
 | Comboboxの `aria-controls` が閉時に存在しないidを指す | リストを閉じている間も `aria-controls` が listbox の id を指したままで、参照先の要素が存在しない | Issue #458 のスコープ外として据え置き。実害は確認されていないが、ARIA 的には厳密でない |
 | ~~`setlist-center-toggle` specがnarrow viewportで間欠失敗する~~ | ~~light の 320px / 390px で `resolveBackgroundStack` が「祖先がすべて透明です」で throw する。失敗する viewport は実行ごとに移動する（320pxのみ → 320px+390px → 320pxのみ）~~ | ✅ Issue #465 で対応済み。原因は computed custom property の報告不整合で、`body` / `main` だけが空になる（`html` とより深い子孫は正しい値を持つ＝描画ではなく報告が壊れている）。観測できたのは `mobile` project（iPhone 17 descriptor = WebKit）のみで、`desktop`（Chromium）は12回未再現。祖先スタックの最外郭へ `:root` の `--background` を積んで解消した（対処自体はエンジン非依存）。詳細は [`apps/oshikatsu-web/playwright/README.md`](../apps/oshikatsu-web/playwright/README.md) の「既知の flaky test（最終状態）」 |
 
-2026-07-20 Full Design QAではP0 / P1 / P2の残件なし。同QAがP3として残したのは **CF-R08（#397）/ CF-R09（#395）/ CF-R10（#396）** の3件で、うち CF-R08 は Issue #397 で対応済み、CF-R09 / CF-R10 は P3 backlog として継続中。詳細な判定と証跡は[`docs/advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md`](advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md)を正本とする。
+2026-07-20 Full Design QAではP0 / P1 / P2の残件なし。同QAがP3として残した **CF-R08（#397）/ CF-R09（#395）/ CF-R10（#396）** の3件も、PR #409 / #410 / #417 で対応済み。監査時点の判定と証跡は[`docs/advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md`](advisor/design/2026-07-20-sakalog-primary-journey-full-design-qa.md)を正本とする。
 
 なお上表の「foreground alphaによる文字・境界の組み立て」（#461で解消済み）と「Comboboxの `aria-controls`」は、この Full Design QA の総括とは別に、2026-07-30 のマージ後同期（#441 / #452 / #453 / #455 / #458）で記録した項目である。「`setlist-center-toggle` specがnarrow viewportで間欠失敗する」も同じく Full Design QA とは別で、#461 の PR2（#464）の検証中に発見して記録した。
