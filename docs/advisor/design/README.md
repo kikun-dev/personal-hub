@@ -16,7 +16,7 @@ Product DesignとImpeccableによる監査を統合した、正式なDesign Audi
 | 2026-07-20 | Sakalog | #361 / #362 Calendar primary date exploration Focused Design QA | [Focused Design QA](./2026-07-20-sakalog-calendar-primary-date-exploration-focused-design-qa.md) |
 | 2026-07-20 | Sakalog | #357〜#390実装後のPrimary Journey Full Design QA / Impeccable reconciliation | [Full Design QA](./2026-07-20-sakalog-primary-journey-full-design-qa.md) |
 
-2026-07-15〜16の3 reportは、2026-07-13 Auditを置換しない実装後follow-up snapshotである。Consolidated Findingsに示した13件のRecommended Issue BoundariesのうちI-01〜I-10は#357〜#390で判断・実装され、2026-07-20 Full Design QAでcanonical 10件をResolved 7 / Improved 1 / Remaining 2 / Regressed 0と判定した。未実装のI-11〜I-13は#395 / #396 / #397へP3 backlogとして分割した。
+2026-07-15〜16の3 reportは、2026-07-13 Auditを置換しない実装後follow-up snapshotである。Consolidated Findingsに示した13件のRecommended Issue BoundariesのうちI-01〜I-10は#357〜#390で判断・実装され、2026-07-20 Full Design QAでcanonical 10件をResolved 7 / Improved 1 / Remaining 2 / Regressed 0と判定した。当時未実装だったI-11〜I-13は#395 / #396 / #397へP3 backlogとして分割し、その後PR #410 / #417 / #409で対応済み。
 
 2026-07-19 Auditの`Shared cache enabled-path contract`未実施（Verification Record）は、#382で追加したshared cache contract test（`orbitReadLoader.test.ts` / `readOrbitMusicData.cache.test.ts`）を含むunit 22件と2026-07-20 Full Design QAの表示parity確認により解消済みである。
 
