@@ -12,9 +12,13 @@ export default function NotFound() {
           URLが間違っているか、ページが削除された可能性があります。
         </p>
         <div className="mt-4">
+          {/* この 404 は root layout 直下で、NavigationProgressProvider を持つ
+              (authenticated) layout の外側にある。feedback="global" にすると
+              startProgress が no-op fallback になり、inline state も立たないため
+              pending 表示が一切出ない。ここは inline feedback を使う（#482）。 */}
           <PendingLink
             href="/"
-            feedback="global"
+            feedback="inline"
             className={`text-sm text-foreground-secondary hover:text-foreground ${standaloneTargetClass}`}
           >
             ← トップへ戻る
