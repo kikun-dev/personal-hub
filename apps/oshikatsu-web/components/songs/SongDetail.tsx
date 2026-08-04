@@ -1,11 +1,10 @@
 import type { Song, SongVideo } from "@/types/song";
 import { Fragment } from "react";
-import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { SongParticipantsDisplay } from "@/components/songs/SongParticipantsDisplay";
-import { textLinkClass } from "@/components/ui/interactionStyles";
+import { inlineTargetClass, textLinkClass } from "@/components/ui/interactionStyles";
 import { TextLink } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
@@ -86,9 +85,12 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
             {song.releases.map((release) => (
               <li key={`${release.releaseId}-${release.trackNumber}`} className="rounded-lg border border-border-subtle p-3">
                 <p className="font-medium text-foreground">
-                  <Link href={`/releases/${release.releaseId}`} className="hover:underline">
+                  <TextLink
+                    href={`/releases/${release.releaseId}`}
+                    className={inlineTargetClass}
+                  >
                     {release.releaseTitle}
-                  </Link>
+                  </TextLink>
                   （{RELEASE_TYPE_LABELS[release.releaseType]}）
                 </p>
                 <p className="mt-1 text-xs text-foreground-secondary">
@@ -234,9 +236,12 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
                   key={live.liveId}
                   className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border-subtle p-3"
                 >
-                  <Link href={`/lives/${live.liveId}`} className="text-foreground hover:underline">
+                  <TextLink
+                    href={`/lives/${live.liveId}`}
+                    className={inlineTargetClass}
+                  >
                     {live.liveName}
-                  </Link>
+                  </TextLink>
                   <span className="text-xs text-foreground-secondary">{live.count}回披露</span>
                 </li>
               ))}

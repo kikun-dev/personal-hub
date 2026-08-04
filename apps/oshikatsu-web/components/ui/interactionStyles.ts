@@ -35,4 +35,8 @@ export const standaloneTargetClass =
 
 // 本文中の inline text link 用。44px block 化はせず、
 // WCAG 2.2 Target Size Minimum の 24px を下限にする。
-export const inlineTargetClass = "inline-flex min-h-6 items-center";
+// inline-flex / inline-block にすると atomic inline box になり、長い楽曲名や
+// リリース名が行内で折り返せず狭い viewport で overflow する。display は inline の
+// まま padding で hit area だけを広げる（inline box の padding は行box高さを
+// 変えずに当たり判定を拡張する）。
+export const inlineTargetClass = "py-1";

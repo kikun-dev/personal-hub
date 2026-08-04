@@ -10,6 +10,10 @@ import {
 } from "react";
 import { useNavigationProgress } from "@/components/ui/NavigationProgress";
 import { consumeListBackNavigation } from "@/components/ui/listBackNavigation";
+import {
+  focusRingClass,
+  standaloneTargetClass,
+} from "@/components/ui/interactionStyles";
 
 type ListBackButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
@@ -64,7 +68,7 @@ export function ListBackButton({
   return (
     <button
       {...props}
-      className={`${className} cursor-pointer bg-transparent p-0`.trim()}
+      className={`${className} ${standaloneTargetClass} ${focusRingClass} cursor-pointer bg-transparent p-0`.trim()}
       onClick={handleClick}
       type="button"
     >
