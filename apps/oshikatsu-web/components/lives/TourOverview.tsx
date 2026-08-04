@@ -3,8 +3,9 @@
 // context 時のツアー全体 overview（#346 Critique P2 対応）。
 // 全会場の単列全件表示は overview として縦量が過剰なため、
 // 初期表示を先頭グループに限定し、group 単位で展開する（Desktop は2列で圧縮）。
-import { useState } from "react";
+import { useId, useState } from "react";
 import { TextLink } from "@/components/ui/TextLink";
+import { focusRingClass, standaloneTargetClass } from "@/components/ui/interactionStyles";
 
 // 初期表示する会場グループ数
 const VISIBLE_GROUPS = 4;
@@ -26,6 +27,7 @@ type TourOverviewProps = {
 
 export function TourOverview({ heading, groups }: TourOverviewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const regionId = useId();
   const hasMore = groups.length > VISIBLE_GROUPS;
   const visibleGroups = isExpanded ? groups : groups.slice(0, VISIBLE_GROUPS);
   const restCount = groups.length - VISIBLE_GROUPS;
@@ -34,7 +36,7 @@ export function TourOverview({ heading, groups }: TourOverviewProps) {
     <section className="space-y-2">
       <h2 className="text-sm font-semibold text-foreground">{heading}</h2>
       {/* Desktop は読み順（行優先）を保ったまま2列で圧縮する */}
-      <div className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
+      <div id={regionId} className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
         {visibleGroups.map((group) => (
           <div key={group.key}>
             <p className="flex flex-wrap items-baseline gap-x-2 text-sm">
@@ -76,7 +78,8 @@ export function TourOverview({ heading, groups }: TourOverviewProps) {
           type="button"
           onClick={() => setIsExpanded((prev) => !prev)}
           aria-expanded={isExpanded}
-          className="rounded-lg border border-border-strong px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle"
+          aria-controls={regionId}
+          className={`rounded-lg border border-border-strong px-3 py-1.5 text-xs text-foreground-secondary hover:bg-surface-subtle ${standaloneTargetClass} ${focusRingClass}`}
         >
           {isExpanded ? "折りたたむ" : `残り${restCount}会場を見る`}
         </button>

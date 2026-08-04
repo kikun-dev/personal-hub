@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LiveCard } from "@/components/lives/LiveCard";
+import { focusRingClass, standaloneTargetMinHeightClass } from "@/components/ui/interactionStyles";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { LiveListItem } from "@/types/live";
@@ -45,7 +46,7 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="出演グループで絞り込み"
-          className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
+          className={`rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground ${standaloneTargetMinHeightClass} ${focusRingClass}`}
         >
           <option value="">全グループ</option>
           {groups.map((group) => (
