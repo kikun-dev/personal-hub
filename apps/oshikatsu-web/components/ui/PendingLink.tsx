@@ -8,13 +8,11 @@ import {
   useEffect,
   useState,
 } from "react";
+import { focusRingClass } from "@/components/ui/interactionStyles";
 import { useNavigationProgress } from "@/components/ui/NavigationProgress";
 import { registerListBackNavigation } from "@/components/ui/listBackNavigation";
 
 type PendingLinkFeedback = "inline" | "global" | "none";
-
-export const LINK_FOCUS_CLASS =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus-ring";
 
 type PendingLinkProps = LinkProps &
   Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof LinkProps> & {
@@ -167,7 +165,7 @@ export function PendingLink({
       {...props}
       aria-busy={isInlineNavigating}
       aria-disabled={isInlineNavigating}
-      className={`${className} relative ${LINK_FOCUS_CLASS} ${navigatingClassName}`.trim()}
+      className={`${className} relative ${focusRingClass} ${navigatingClassName}`.trim()}
       onClick={handleClick}
       target={target}
     >

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { TEXT_LINK_CLASS } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
 import { APP_ROUTES } from "@/lib/routes";
 import type {
   ExclusionReason,
@@ -44,7 +44,7 @@ export function OriginalMembersNotice({
               href={`${APP_ROUTES.admin}/songs/${trackId}/edit`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`ml-1 ${TEXT_LINK_CLASS}`}
+              className={`ml-1 ${textLinkClass}`}
             >
               楽曲を編集（新しいタブ）
             </Link>
@@ -57,7 +57,7 @@ export function OriginalMembersNotice({
               href={`${APP_ROUTES.admin}/lives/${liveId}/edit`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`ml-1 ${TEXT_LINK_CLASS}`}
+              className={`ml-1 ${textLinkClass}`}
             >
               ライブを編集（新しいタブ）
             </Link>
@@ -70,7 +70,7 @@ export function OriginalMembersNotice({
               href={`${APP_ROUTES.admin}/songs/${trackId}/edit`}
               target="_blank"
               rel="noopener noreferrer"
-              className={`ml-1 ${TEXT_LINK_CLASS}`}
+              className={`ml-1 ${textLinkClass}`}
             >
               楽曲を編集（新しいタブ）
             </Link>
@@ -130,7 +130,7 @@ export function OriginalMembersNotice({
             href={`${APP_ROUTES.admin}/lives/${liveId}/edit`}
             target="_blank"
             rel="noopener noreferrer"
-            className={`ml-1 ${TEXT_LINK_CLASS}`}
+            className={`ml-1 ${textLinkClass}`}
           >
             ライブを編集（新しいタブ）
           </Link>

@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { FormationDisplay } from "@/components/songs/FormationDisplay";
 import { SongParticipantsDisplay } from "@/components/songs/SongParticipantsDisplay";
-import { TextLink, TEXT_LINK_CLASS } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
+import { TextLink } from "@/components/ui/TextLink";
 import { formatDate } from "@/lib/formatters";
 import { formatReleaseTypeLabel, RELEASE_TYPE_LABELS } from "@/types/release";
 import {
@@ -125,7 +126,7 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
           <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
             <dt className="text-foreground-secondary">リンク</dt>
             <dd className="break-all">
-              <a href={song.mv.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
+              <a href={song.mv.url} target="_blank" rel="noopener noreferrer" className={textLinkClass}>
                 {song.mv.url}
               </a>
             </dd>
@@ -170,7 +171,7 @@ export function SongDetail({ song, performanceSummary }: SongDetailProps) {
                 <dd className="text-foreground">{label}</dd>
                 <dt className="text-foreground-secondary">リンク</dt>
                 <dd className="break-all">
-                  <a href={video.url} target="_blank" rel="noopener noreferrer" className={TEXT_LINK_CLASS}>
+                  <a href={video.url} target="_blank" rel="noopener noreferrer" className={textLinkClass}>
                     {video.url}
                   </a>
                 </dd>

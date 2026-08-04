@@ -1,5 +1,5 @@
 import type { WikiHeading } from "@/lib/markdownHeadings";
-import { TEXT_LINK_CLASS } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
 
 type WikiTocProps = {
   headings: WikiHeading[];
@@ -10,7 +10,7 @@ function WikiTocList({ headings }: WikiTocProps) {
     <ul className="space-y-1 text-sm">
       {headings.map((heading) => (
         <li key={heading.id} className={heading.level === 3 ? "pl-4" : ""}>
-          <a href={`#${heading.id}`} className={`${TEXT_LINK_CLASS} text-sm`}>
+          <a href={`#${heading.id}`} className={`${textLinkClass} text-sm`}>
             {heading.text}
           </a>
         </li>

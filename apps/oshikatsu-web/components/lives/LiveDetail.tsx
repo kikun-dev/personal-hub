@@ -9,7 +9,7 @@ import { PerformanceAttendanceArea } from "@/components/lives/PerformanceAttenda
 import { PerformanceCarousel } from "@/components/lives/PerformanceCarousel";
 import { TourOverview } from "@/components/lives/TourOverview";
 import { TextLink } from "@/components/ui/TextLink";
-import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
+import { focusRingClass } from "@/components/ui/interactionStyles";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { formatScheduleLine, formatScheduleTime } from "@/lib/performanceSchedule";
@@ -552,7 +552,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           <Link
             href={topPageDateHref(context.date)}
             prefetch={false}
-            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${focusRingClass}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
           </Link>
@@ -560,7 +560,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           <Link
             href="/lives"
             prefetch={false}
-            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${focusRingClass}`}
           >
             ← ライブ一覧へ戻る
           </Link>

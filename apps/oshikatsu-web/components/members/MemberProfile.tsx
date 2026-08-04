@@ -5,7 +5,7 @@ import type { Song } from "@/types/song";
 import { ordinalNumber } from "@/types/release";
 import { GroupBadge } from "@/components/ui/GroupBadge";
 import { Card } from "@/components/ui/Card";
-import { TEXT_LINK_CLASS } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
 import { MemberSongsSection } from "@/components/members/MemberSongsSection";
 import { formatBirthday, calculateAge, formatDate } from "@/lib/formatters";
 import { resolveMemberImageSrc } from "@/lib/memberImage";
@@ -87,7 +87,7 @@ function linkifyRawText(text: string, keyPrefix: string): ReactNode[] {
             href={cleanUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={TEXT_LINK_CLASS}
+            className={textLinkClass}
           >
             {cleanUrl}
           </a>
@@ -134,7 +134,7 @@ function linkifyNote(note: string): ReactNode[] {
         href={markdownLink.url}
         target="_blank"
         rel="noopener noreferrer"
-        className={TEXT_LINK_CLASS}
+        className={textLinkClass}
       >
         {markdownLink.label}
       </a>
@@ -313,7 +313,7 @@ export function MemberProfile({
                     href={member.blogUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`block ${TEXT_LINK_CLASS}`}
+                    className={`block ${textLinkClass}`}
                   >
                     ブログ
                   </a>
@@ -332,7 +332,7 @@ export function MemberProfile({
                     href={member.talkAppUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className={`block ${TEXT_LINK_CLASS}`}
+                    className={`block ${textLinkClass}`}
                   >
                     {member.talkAppName || "トークアプリ"}
                   </a>
@@ -353,7 +353,7 @@ export function MemberProfile({
                       href={sns.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`block ${TEXT_LINK_CLASS}`}
+                      className={`block ${textLinkClass}`}
                     >
                       {snsLabel}
                     </a>
