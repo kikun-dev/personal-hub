@@ -320,15 +320,15 @@ test("MemberSongsSectionのdisclosureがprogrammatic stateを正しく持つ（#
   const href = await resolveFirstDetailHref(page, "/members", "/members/", showAllMembers);
   await page.goto(href);
 
-  const button = page.getByRole("button", { name: "全曲を表示 ▼" });
+  const collapsedButton = page.getByRole("button", { name: "全曲を表示 ▼" });
   await expect(
-    button,
+    collapsedButton,
     "MemberSongsSectionのdisclosure buttonが見つかりません" +
       "（参加楽曲を持つメンバーが一覧の先頭にいない可能性があります）"
   ).toBeVisible();
-  await expect(button).toHaveAttribute("aria-expanded", "false");
+  await expect(collapsedButton).toHaveAttribute("aria-expanded", "false");
 
-  const controlsId = await button.getAttribute("aria-controls");
+  const controlsId = await collapsedButton.getAttribute("aria-controls");
   expect(controlsId, "aria-controlsが設定されていません").not.toBeNull();
   // idにReactのuseIdが生成するコロンを含みうるため、CSS ID選択子ではなく属性選択子で探す。
   const region = page.locator(`[id="${controlsId}"]`);
@@ -337,6 +337,9 @@ test("MemberSongsSectionのdisclosureがprogrammatic stateを正しく持つ（#
     `aria-controlsが指すid=${controlsId}の要素がDOMに存在しません`
   ).toHaveCount(1);
 
+  // 展開するとaccessible nameが「閉じる ▲」へ変わるため、nameベースのlocatorでは
+  // 追跡できない。開閉で変わらないaria-controlsで同じbuttonを指し続ける。
+  const button = page.locator(`button[aria-controls="${controlsId}"]`);
   await button.click();
   await expect(button).toHaveAttribute("aria-expanded", "true");
   await expect(button).toHaveText("閉じる ▲");
