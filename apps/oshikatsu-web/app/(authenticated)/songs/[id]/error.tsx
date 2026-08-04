@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import Link from "next/link";
 import { Button } from "@/components/ui/Button";
+import { PendingLink } from "@/components/ui/PendingLink";
+import { standaloneTargetClass } from "@/components/ui/interactionStyles";
 import { APP_ROUTES } from "@/lib/routes";
 
 type SongDetailErrorProps = {
@@ -20,12 +21,13 @@ export default function SongDetailError({ error, reset }: SongDetailErrorProps) 
 
   return (
     <div className="space-y-4">
-      <Link
+      <PendingLink
         href={APP_ROUTES.songs}
-        className="text-sm text-foreground-secondary hover:text-foreground"
+        feedback="global"
+        className={`text-sm text-foreground-secondary hover:text-foreground ${standaloneTargetClass}`}
       >
         ← 楽曲一覧
-      </Link>
+      </PendingLink>
       <div className="rounded-lg border border-border-subtle p-6 text-center">
         <p className="text-sm text-foreground">楽曲情報の読み込みに失敗しました。</p>
         <p className="mt-1 text-xs text-foreground-secondary">

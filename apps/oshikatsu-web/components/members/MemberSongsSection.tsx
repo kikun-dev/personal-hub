@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import Link from "next/link";
+import { useId, useState } from "react";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { PendingLink } from "@/components/ui/PendingLink";
+import { focusRingClass, standaloneTargetClass } from "@/components/ui/interactionStyles";
 import type { Song } from "@/types/song";
 import {
   SONG_LABELS,
@@ -25,6 +26,7 @@ export function MemberSongsSection({
   centerTrackIds,
 }: MemberSongsSectionProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const regionId = useId();
 
   if (songs.length === 0) {
     return null;
@@ -73,14 +75,18 @@ export function MemberSongsSection({
       <button
         type="button"
         onClick={() => setIsExpanded((prev) => !prev)}
-        className="mt-3 text-xs text-foreground-secondary hover:text-foreground"
+        aria-expanded={isExpanded}
+        aria-controls={regionId}
+        className={`mt-3 text-xs text-foreground-secondary hover:text-foreground ${standaloneTargetClass} ${focusRingClass}`}
       >
         {isExpanded ? "閉じる ▲" : "全曲を表示 ▼"}
       </button>
 
-      {isExpanded && (
-        <div className="mt-2 space-y-2">
-          {songs.map((song) => {
+      {/* aria-controls が常にDOM上の要素を指せるよう、展開領域自体は常にレンダリングし、
+          中身（曲一覧）だけをisExpandedで出し分ける */}
+      <div id={regionId} className="mt-2 space-y-2">
+        {isExpanded &&
+          songs.map((song) => {
             const isCenter = centerTrackIdSet.has(song.id);
             const releaseLabel = song.representativeReleaseType
               ? formatReleaseTypeLabel(
@@ -94,7 +100,7 @@ export function MemberSongsSection({
               song.groupNameJa
             );
             return (
-              <Link
+              <PendingLink
                 key={song.id}
                 href={`/songs/${song.id}`}
                 className="block rounded-lg border border-border-subtle px-3 py-2 text-sm text-foreground hover:bg-surface-subtle"
@@ -112,11 +118,10 @@ export function MemberSongsSection({
                   {releaseLabel && <span>{releaseLabel}</span>}
                   {song.groupNameJa && <span>{song.groupNameJa}</span>}
                 </div>
-              </Link>
+              </PendingLink>
             );
           })}
-        </div>
-      )}
+      </div>
     </Card>
   );
 }

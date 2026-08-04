@@ -56,6 +56,10 @@ E2E_REUSE_SERVER=1 E2E_FIXED_TODAY=2026-08-23 pnpm test:e2e <spec名>    # test
 - ローカル専用adminユーザーとRecent Attendance用の最小fixtureを冪等に準備する
 - hostedには存在するがlocal `db reset`では欠けるrole GRANTを、既存の
   `scripts/perf/grant-local-roles.sql`でローカルDBだけへ冪等適用する
+- `.next/cache/fetch-cache`（`unstable_cache` の共有読み取りキャッシュ）を破棄する。
+  cache tagはアプリ経由の書き込みでしか無効化されないため、`supabase db reset` や
+  seed追加でDBを直接変えても古い結果が返り続け、「seedを足したのに一覧が0件のまま」
+  という形でE2Eが紛らわしく落ちる（#482）
 - `playwright/.auth/local-user.json` を生成し、通常のGoogle認証状態
   (`playwright/.auth/user.json`) と分離する
 - build / Next.js server / Playwright Node processの全てへ同じローカル接続情報を渡す

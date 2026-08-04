@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import type { CalendarEvent } from "@/types/event";
 import { Badge } from "@/components/ui/Badge";
-import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
+import { focusRingClass } from "@/components/ui/interactionStyles";
 import {
   formatGroupNames,
   formatTime,
@@ -92,7 +92,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
             // TOPのイベント一覧は多数の内部リンクを同時表示する。カレンダー日付リンクと
             // 合わせた自動prefetchがローカルproduction serverを飽和させるため無効化する（#440）。
             prefetch={false}
-            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-foreground hover:underline ${focusRingClass}`}
           >
             {event.name}
           </Link>
@@ -108,7 +108,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
           <Link
             href={`/releases/${event.releaseId}`}
             prefetch={false}
-            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-foreground hover:underline ${focusRingClass}`}
           >
             {event.title}
           </Link>
@@ -130,7 +130,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
               event.trackTitle,
               event.videoLabel
             )}
-            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-foreground hover:underline ${focusRingClass}`}
           >
             {event.trackTitle}（{event.videoLabel}）
           </a>
@@ -158,7 +158,7 @@ export function getEventPresentation(event: CalendarEvent): EventPresentation {
           <Link
             href={`/members/${event.memberId}`}
             prefetch={false}
-            className={`text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            className={`text-foreground hover:underline ${focusRingClass}`}
           >
             {event.memberName}
           </Link>

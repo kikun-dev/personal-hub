@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
-import { TEXT_LINK_CLASS, TextLink } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
+import { TextLink } from "@/components/ui/TextLink";
 import { SpotLocationMap } from "@/components/spots/SpotLocationMap";
 import { formatDate } from "@/lib/formatters";
 import { resolveSpotPhotoSrc } from "@/lib/spotPhoto";
@@ -122,7 +123,7 @@ function SpotAppearanceItem({ appearance }: { appearance: SpotAppearance }) {
           href={appearance.linkUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={`mt-1 inline-block ${TEXT_LINK_CLASS}`}
+          className={`mt-1 inline-block ${textLinkClass}`}
         >
           リンク
         </a>
@@ -184,7 +185,7 @@ export function SpotDetail({ spot }: SpotDetailProps) {
             href={spot.googleMapsUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`mt-3 inline-block ${TEXT_LINK_CLASS}`}
+            className={`mt-3 inline-block ${textLinkClass}`}
           >
             Googleマップで開く
           </a>

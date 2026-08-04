@@ -2,7 +2,7 @@ import { isValidElement, type ReactNode } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { createHeadingIdAssigner } from "@/lib/markdownHeadings";
-import { TEXT_LINK_CLASS } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
 
 type WikiPageContentProps = {
   bodyMarkdown: string;
@@ -110,7 +110,7 @@ export function WikiPageContent({ bodyMarkdown }: WikiPageContentProps) {
       return (
         <a
           href={url}
-          className={TEXT_LINK_CLASS}
+          className={textLinkClass}
           {...(internal
             ? {}
             : { target: "_blank", rel: "noopener noreferrer" })}

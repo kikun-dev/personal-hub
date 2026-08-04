@@ -12,6 +12,12 @@ import {
 } from "@/types/live";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { TextLink } from "@/components/ui/TextLink";
+import {
+  focusRingClass,
+  inlineTargetClass,
+  standaloneTargetClass,
+  standaloneTargetMinHeightClass,
+} from "@/components/ui/interactionStyles";
 import { SetlistFormationDisplay } from "@/components/lives/SetlistFormationDisplay";
 import { groupBySection, numberSetlistItems } from "@/usecases/setlistNumbering";
 import type { SetlistSectionGroup } from "@/usecases/setlistNumbering";
@@ -105,7 +111,10 @@ function SongItemRow({
       <div className="min-w-0 flex-1 space-y-1.5">
         <div className="flex flex-wrap items-center gap-1.5">
           {item.trackId ? (
-            <TextLink href={`${APP_ROUTES.songs}/${item.trackId}`}>
+            <TextLink
+              href={`${APP_ROUTES.songs}/${item.trackId}`}
+              className={inlineTargetClass}
+            >
               {title}
             </TextLink>
           ) : (
@@ -120,7 +129,9 @@ function SongItemRow({
 
         {item.members.length > 0 && (
           <details className="text-xs text-foreground-secondary">
-            <summary className="cursor-pointer text-foreground-secondary">
+            <summary
+              className={`cursor-pointer text-foreground-secondary ${standaloneTargetMinHeightClass} ${focusRingClass}`}
+            >
               披露メンバー {item.members.length}人
             </summary>
             <p className="mt-1">
@@ -179,14 +190,14 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <PendingLink
           href={`${APP_ROUTES.lives}/${live.id}`}
           feedback="global"
-          className="text-sm text-foreground-secondary hover:text-foreground"
+          className={`text-sm text-foreground-secondary hover:text-foreground ${standaloneTargetClass}`}
         >
           ← {live.name}
         </PendingLink>
         <div className="flex items-center justify-between gap-2">
           <h1 className="text-lg font-bold text-foreground">セットリスト</h1>
           {isAdmin && (
-            <TextLink href={editHref} className="text-sm">
+            <TextLink href={editHref} className={`text-sm ${standaloneTargetClass}`}>
               編集
             </TextLink>
           )}
@@ -201,7 +212,7 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
         <div className="rounded-lg border border-border-subtle p-6 text-center text-sm text-foreground-secondary">
           <p>この公演のセットリストはまだ登録されていません。</p>
           {isAdmin && (
-            <TextLink href={editHref} className="mt-1 inline-block text-xs">
+            <TextLink href={editHref} className={`mt-1 text-xs ${standaloneTargetClass}`}>
               セットリストを編集
             </TextLink>
           )}

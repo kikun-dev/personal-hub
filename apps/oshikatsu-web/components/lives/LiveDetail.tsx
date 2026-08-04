@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { Live, LivePerformance, SetlistItem } from "@/types/live";
 import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
@@ -8,8 +7,9 @@ import { AttendanceExpansionProvider } from "@/components/lives/AttendanceExpans
 import { PerformanceAttendanceArea } from "@/components/lives/PerformanceAttendanceArea";
 import { PerformanceCarousel } from "@/components/lives/PerformanceCarousel";
 import { TourOverview } from "@/components/lives/TourOverview";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { TextLink } from "@/components/ui/TextLink";
-import { LINK_FOCUS_CLASS } from "@/components/ui/PendingLink";
+import { standaloneTargetClass } from "@/components/ui/interactionStyles";
 import { formatMonthDayWithWeekday } from "@/lib/formatters";
 import { formatMemberCountSummary } from "@/lib/memberCountSummary";
 import { formatScheduleLine, formatScheduleTime } from "@/lib/performanceSchedule";
@@ -549,21 +549,23 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           直接訪問・invalid context では ライブ一覧へ戻す。日付や該当公演を推測しない。 */}
       <p>
         {context !== null && targetPerformance !== null ? (
-          <Link
+          <PendingLink
             href={topPageDateHref(context.date)}
             prefetch={false}
-            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            feedback="global"
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
-          </Link>
+          </PendingLink>
         ) : (
-          <Link
+          <PendingLink
             href="/lives"
             prefetch={false}
-            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${LINK_FOCUS_CLASS}`}
+            feedback="global"
+            className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
             ← ライブ一覧へ戻る
-          </Link>
+          </PendingLink>
         )}
       </p>
 

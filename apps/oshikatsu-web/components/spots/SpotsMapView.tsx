@@ -3,7 +3,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { InfoWindow, Map, Marker, useMap } from "@vis.gl/react-google-maps";
-import { TEXT_LINK_CLASS, TextLink } from "@/components/ui/TextLink";
+import { textLinkClass } from "@/components/ui/interactionStyles";
+import { TextLink } from "@/components/ui/TextLink";
 import {
   GOOGLE_MAPS_API_KEY,
   GoogleMapsProvider,
@@ -38,7 +39,7 @@ const SINGLE_POINT_ZOOM = 15;
 
 // Google Maps の InfoWindow はページの theme に追随しない白い外部 surface なので、
 // この subtree だけを固定 light 配色の semantic contract として自己完結させる。
-// 要素ごとに raw color を割り当てず、既存の semantic class / TEXT_LINK_CLASS が
+// 要素ごとに raw color を割り当てず、既存の semantic class / textLinkClass が
 // 参照する custom property をこの境界でまとめて差し替える。
 const INFO_WINDOW_SEMANTIC_CONTRACT =
   "bg-background text-foreground [--background:#fff] [--focus-ring:#1d4ed8] [--foreground:#171717] [--foreground-secondary:#595959]";
@@ -146,7 +147,7 @@ function SpotInfoWindowContent({
           href={spot.googleMapsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className={`block ${TEXT_LINK_CLASS}`}
+          className={`block ${textLinkClass}`}
         >
           Googleマップで開く
         </a>
@@ -365,7 +366,7 @@ export function SpotsMapView({ spots, memberOptions, isAdmin }: SpotsMapViewProp
                   // surface-subtle と背景のコントラストが light 1.11:1 / dark 1.16:1 しかなく、
                   // DESIGN.md の「focus indicator は3:1以上」を満たさない（#468 レビュー指摘）。
                   //
-                  // ただし他の17箇所が使う LINK_FOCUS_CLASS（outline 2px + offset 2px）はここでは使えない。
+                  // ただし他の17箇所が使う focusRingClass（outline 2px + offset 2px）はここでは使えない。
                   // この table は overflow-x-auto の中にあり、片軸が auto だともう片軸の visible も
                   // auto に計算されるため上下左右すべてで clip 境界になる（#441 と同じ構造）。
                   // 実測では行の左右クリアランスが 0px、最終行の下が 0.5px しかなく、外側 4px を要求する

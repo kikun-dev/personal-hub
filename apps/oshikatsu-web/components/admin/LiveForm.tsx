@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { Button } from "@/components/ui/Button";
 import { FormErrorBanner } from "@/components/ui/FormErrorBanner";
-import { TEXT_ACTION_CLASS } from "@/components/ui/TextLink";
+import { textActionClass } from "@/components/ui/interactionStyles";
 import { addKeyedItem, removeKeyedItem, updateKeyedItem } from "@/lib/keyedList";
 import { toErrorMap } from "@/hooks/useAdminForm";
 
@@ -490,7 +490,7 @@ export function LiveForm({
                 <button
                   type="button"
                   onClick={() => addAbsence(performance.key)}
-                  className={`text-xs ${TEXT_ACTION_CLASS}`}
+                  className={`text-xs ${textActionClass}`}
                 >
                   休演を追加
                 </button>
