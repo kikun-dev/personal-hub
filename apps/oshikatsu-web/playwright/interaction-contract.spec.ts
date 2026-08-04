@@ -1,6 +1,5 @@
 import { expect, test, type ConsoleMessage, type Locator, type Page } from "@playwright/test";
 import { composite, expectContrastAtLeast, focusWithKeyboard, parseColor, themes, viewports } from "./contrast";
-import { inlineTargetClass } from "@/components/ui/interactionStyles";
 
 // #482 / GF-SAKA-002: shared interaction contract の回帰テスト。
 //
@@ -39,13 +38,27 @@ if (hitAreaViewports.length !== 2) {
   throw new Error("contrast.ts の viewports に 390px / 1440px が定義されていません。");
 }
 
+// メンバー一覧の既定filterは「現役」。卒業メンバーしかいない環境でも一覧が0件に
+// ならないよう、在籍状況を「全員」へ広げてからdetail linkを解決する。
+async function showAllMembers(page: Page): Promise<void> {
+  await page
+    .getByRole("combobox", { name: "在籍状況で絞り込み" })
+    .selectOption({ label: "全員" });
+}
+
 // 一覧ページから最初のdetail linkのhrefを解決する。固定IDに依存しないための共通ヘルパー。
+// prepare は一覧側の絞り込みを前提データに合わせるためのフック（例: メンバー一覧の
+// 既定filterは「現役」なので、卒業メンバーしかいない環境では0件になる）。
 async function resolveFirstDetailHref(
   page: Page,
   listPath: string,
-  hrefPrefix: string
+  hrefPrefix: string,
+  prepare?: (page: Page) => Promise<void>
 ): Promise<string> {
   await page.goto(listPath);
+  if (prepare) {
+    await prepare(page);
+  }
   const link = page.locator(`a[href^="${hrefPrefix}"]`).first();
   await expect(
     link,
@@ -124,7 +137,7 @@ const focusTargets: FocusTarget[] = [
   },
   {
     label: "Member detail の MemberSongsSection disclosure button",
-    resolveHref: (page) => resolveFirstDetailHref(page, "/members", "/members/"),
+    resolveHref: (page) => resolveFirstDetailHref(page, "/members", "/members/", showAllMembers),
     locator: (page) => page.getByRole("button", { name: "全曲を表示 ▼" }),
     // ヘッダーnav + 発信情報カードの外部リンク群を経由するため遠い。
     maxTabs: 80,
@@ -222,7 +235,7 @@ async function openSongListBackButton(page: Page): Promise<Locator> {
 }
 
 async function openMemberDisclosureButton(page: Page): Promise<Locator> {
-  const href = await resolveFirstDetailHref(page, "/members", "/members/");
+  const href = await resolveFirstDetailHref(page, "/members", "/members/", showAllMembers);
   await page.goto(href);
   const locator = page.getByRole("button", { name: "全曲を表示 ▼" });
   await expect(
@@ -240,15 +253,15 @@ async function openLiveGroupFilterSelect(page: Page): Promise<Locator> {
   return locator;
 }
 
-// Song detail の inline text link。収録リリース / 披露ライブ のどちらもinlineTargetClass
-// を持つため、data非依存にclass選択子で拾える。tokenを二重管理しないよう、
-// 選択子は実装が使っているclassそのものから組み立てる。
-const inlineTargetSelector = `a.${inlineTargetClass.split(" ").join(".")}`;
-
+// Song detail の inline text link（収録リリース / 披露ライブ）。
+// inlineTargetClass（"py-1"）はheader navなど無関係な要素も持つ汎用utilityなので、
+// class選択子では対象を特定できない。main配下の関連resourceへのhrefで特定する。
 async function openSongInlineTextLink(page: Page): Promise<Locator> {
   const href = await resolveFirstDetailHref(page, "/songs", "/songs/");
   await page.goto(href);
-  const locator = page.locator(inlineTargetSelector).first();
+  const locator = page
+    .locator('main a[href^="/releases/"], main a[href^="/lives/"]')
+    .first();
   await expect(
     locator,
     "Song detail のinline text link（収録リリースまたは披露ライブ）が見つかりません" +
@@ -304,7 +317,7 @@ for (const viewport of hitAreaViewports) {
 test("MemberSongsSectionのdisclosureがprogrammatic stateを正しく持つ（#482 D）", async ({
   page,
 }) => {
-  const href = await resolveFirstDetailHref(page, "/members", "/members/");
+  const href = await resolveFirstDetailHref(page, "/members", "/members/", showAllMembers);
   await page.goto(href);
 
   const button = page.getByRole("button", { name: "全曲を表示 ▼" });
