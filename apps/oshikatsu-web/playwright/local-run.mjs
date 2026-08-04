@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import { chmod, mkdir, writeFile } from "node:fs/promises";
+import { chmod, mkdir, rm, writeFile } from "node:fs/promises";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -246,6 +246,19 @@ async function writeLocalStorageState() {
   await chmod(authFile, 0o600);
 }
 
+// 共有読み取りキャッシュ（usecases/orbitReadLoader.ts の unstable_cache）の
+// エントリは .next/cache/fetch-cache にビルドをまたいで残る。cache tag は
+// アプリ経由の書き込みでしか無効化されないため、`supabase db reset` や seed 追加で
+// DB を直接変えても、次の `pnpm build` 後まで古い結果が返り続ける。
+// 「seedを足したのに一覧が0件のまま」という形で E2E が紛らわしく落ちるので、
+// ローカル実行では毎回破棄して DB の現状と一致させる（#482）。
+async function clearSharedReadCache() {
+  await rm(resolve(appRoot, ".next/cache/fetch-cache"), {
+    force: true,
+    recursive: true,
+  });
+}
+
 async function main() {
   assertLocalSupabaseUrl(LOCAL_SUPABASE_URL);
   const keys = readLocalKeys();
@@ -255,6 +268,7 @@ async function main() {
   applyLocalRoleGrants();
   await ensureLocalAdminAndFixture();
   await writeLocalStorageState();
+  await clearSharedReadCache();
 
   const command = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
   const playwrightArgs = process.argv.slice(2);
