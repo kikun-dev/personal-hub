@@ -20,6 +20,8 @@ colors:
   border-strong-dark: "#7A7A7A"
   border-center-light: "#A87F1E"
   border-center-dark: "#D4AF37"
+  center-text-light: "#8A5A00"
+  center-text-dark: "#D4AF37"
   danger-light: "#B42318"
   danger-dark: "#D92D20"
   danger-foreground: "#FFFFFF"
@@ -198,6 +200,7 @@ Sakalog は、今日の出来事を確認する軽さと、積み重なった思
 - **控えめな面 / 選択面**: ライトは `#F3F3F3` / `#E8E8E8`、ダークは `#1C1C1C` / `#2A2A2A`。hoverとcurrent/selected stateに使い、常設の装飾背景として広げない。
 - **境界**: subtleはライト `#D4D4D4` / ダーク `#3F3F3F`、strongはライト `#8A8A8A` / ダーク `#7A7A7A`。コンテナ分離にはsubtle、境界自体が操作部品の識別に必要な場合は背景に対して3:1以上のstrongを使う。
 - **センター面 / センター境界**: 面はライト `#FAF3E0` / ダーク `#2C2517`、境界はライト `#A87F1E` / ダーク `#D4AF37`。セットリスト・楽曲のセンター切り替えでセンター状態だけを示し、境界はページ背景に対して3:1以上を保つ。`surface-selected` / `border-strong` は汎用の選択/境界ペアであり、通常の選択状態とセンターを区別できないため専用tokenとした。
+- **センター文字**: ライトは `#8A5A00`、ダークは `#D4AF37`。通常文字として背景（`background`）に対してライト5.93:1 / ダーク9.42:1を確保し、12〜14pxの通常文字に必要な4.5:1を満たす。dark値は`border-center`と同値だが、文字と境界は役割が異なるため専用tokenとして分けている。色だけに意味を依存させず、`★`と太字を併用してセンターを示す。
 - **破壊的操作**: 背景はライト `#B42318` / ダーク `#D92D20`、前景は `#FFFFFF`。背景なしのdanger textはライト `#B42318` / ダーク `#FFB4AB`を使う。
 - **補助的な意味の文字（info text）**: 背景なしのinfo textはライト `#3557B7` / ダーク `#93C5FD`を使う。日曜のdanger textと対に、曜日ヘッダの土曜など「種別を色で補助する文字」へ用い、各テーマ背景に対して4.5:1以上を保つ。
 - **フォーカスリング**: ライトは `#1D4ED8`、ダークは `#93C5FD`。背景と隣接色に対して識別可能な2px outlineとして使う。

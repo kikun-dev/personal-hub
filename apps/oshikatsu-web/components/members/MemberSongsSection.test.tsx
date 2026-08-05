@@ -85,3 +85,47 @@ describe("MemberSongsSection のトグル", () => {
     expect(region).toContainElement(songLink);
   });
 });
+
+// #484: センター文字のraw palette(text-amber-600)をsemantic token(text-center-text)へ
+// 置換したことの回帰固定テスト。
+describe("MemberSongsSection のセンター表示 (#484)", () => {
+  it("センター曲がある場合、★ センター N曲がtext-center-textを持ちtext-amber-を持たない", () => {
+    render(
+      <MemberSongsSection
+        songs={[
+          createSong({ id: "song-1" }),
+          createSong({ id: "song-2" }),
+        ]}
+        centerTrackIds={["song-1"]}
+      />
+    );
+
+    const centerCountText = screen.getByText("★ センター 1曲");
+    expect(centerCountText.className).toContain("text-center-text");
+    expect(centerCountText.className).not.toMatch(/text-amber-/);
+  });
+
+  it("展開後、センター曲の★はtext-center-textを持ち、非センター曲には★が付かない", async () => {
+    const user = userEvent.setup();
+    render(
+      <MemberSongsSection
+        songs={[
+          createSong({ id: "song-1", title: "センター曲" }),
+          createSong({ id: "song-2", title: "通常曲" }),
+        ]}
+        centerTrackIds={["song-1"]}
+      />
+    );
+
+    await user.click(screen.getByRole("button", { name: "全曲を表示 ▼" }));
+
+    const centerStar = screen.getByText("★");
+    expect(centerStar.className).toContain("text-center-text");
+    expect(centerStar.className).not.toMatch(/text-amber-/);
+
+    const centerSongLink = screen.getByRole("link", { name: /センター曲/ });
+    const normalSongLink = screen.getByRole("link", { name: /通常曲/ });
+    expect(centerSongLink).toContainElement(centerStar);
+    expect(normalSongLink.textContent).not.toContain("★");
+  });
+});

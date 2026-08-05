@@ -55,7 +55,7 @@ export function FormationRows({ rows, size = "sm" }: FormationRowsProps) {
                 <span key={`${row.rowNumber}-${member.memberId}`} className="shrink-0">
                   {index > 0 && " ・ "}
                   {member.isCenter ? (
-                    <span className="font-bold text-amber-600">
+                    <span className="font-bold text-center-text">
                       ★{member.memberNameJa}
                     </span>
                   ) : (

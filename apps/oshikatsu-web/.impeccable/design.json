@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-07-29T07:42:07Z",
+  "generatedAt": "2026-08-05T01:45:05Z",
   "title": "Design System: Sakalog",
   "extensions": {
     "colorMeta": {
@@ -111,6 +111,18 @@
         "displayName": "ダークセンター境界",
         "canonical": "#D4AF37",
         "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#A87F1E", "#D4AF37", "#E3C766", "#EFDDA3", "#FAF3E0"]
+      },
+      "center-text-light": {
+        "role": "tertiary",
+        "displayName": "ライトセンター文字",
+        "canonical": "#8A5A00",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#8A5A00", "#A87F1E", "#D4AF37", "#E3C766", "#FAF3E0"]
+      },
+      "center-text-dark": {
+        "role": "tertiary",
+        "displayName": "ダークセンター文字",
+        "canonical": "#D4AF37",
+        "tonalRamp": ["#2E2208", "#4A380D", "#6B5014", "#8A5A00", "#A87F1E", "#D4AF37", "#E3C766", "#FAF3E0"]
       },
       "danger-light": {
         "role": "tertiary",

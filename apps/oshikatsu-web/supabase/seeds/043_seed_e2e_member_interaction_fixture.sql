@@ -31,10 +31,36 @@
 --   release / track を新設すると リリース一覧・楽曲一覧の見え方が変わり、
 --   検証に不要な差分が増える。
 --
+-- なぜ orbit_release_members も入れるか（PR #485 レビュー #P1 対応）:
+-- - ADR 0007 追記（2026-07-26, #427）§1 は「楽曲参加メンバー ⊆ 初出リリース
+--   参加メンバー」を不変条件とし、初出リリース参加メンバー外の楽曲参加メンバー
+--   登録を許容しない。ローカル seed は orbit_release_members が0件のまま
+--   member01 の orbit_track_members だけを入れていたため、production の
+--   楽曲保存境界（初出リリース参加メンバー検証）では拒否されるはずの状態を
+--   fixture 自身が作っていた（レビューで実データにより確認済み）。
+-- - よって、上で入れる2曲それぞれの初出リリースへ member01 の
+--   orbit_release_members を追加し、fixture 自体が不変条件を満たす状態にする。
+-- - 初出リリースの決定規則（本ファイルと 044 で共通。変更する場合は両方
+--   直すこと）: その楽曲に紐づくリリースのうち release_date が非NULLで
+--   最も古いもの。同日が複数ある場合は release_id の昇順でタイブレークする。
+--
+-- なぜ2曲のうち先頭1曲だけを is_center = TRUE にするか（#484）:
+-- - #484 は `--center-text` semantic token（Member detail の
+--   `★ センター N曲` と展開後のセンター曲 `★`）の contrast 回帰テストを追加する。
+--   2件とも is_center = FALSE のままだとセンター表示自体が描画されず、
+--   実測できない。かといって2件とも TRUE にすると「センター曲のみ」の
+--   構成になり、センター表示と非センター表示を並べて比較できない。
+--   よって「センター1曲・非センター1曲」というドメインとして成立した
+--   構成にし、両方の表示を1つの fixture で検証できるようにする。
+--
 -- 影響範囲:
 -- - メンバー一覧が 0件 → 1件になる。/members を訪れる既存 spec は
 --   reduced-motion.spec.ts の URL 遷移確認のみで、件数に依存しない。
 -- - 参照した track の楽曲詳細に参加メンバーが1人表示される。
+-- - 上記2曲それぞれの初出リリースの詳細ページで「参加メンバー」に
+--   member01 が1人追加される（PR #485 レビュー #P1 対応で追加）。
+--   全 spec 実行で回帰が無いことを確認済み（本 fixture の変更に紐づく
+--   PR コメント参照）。
 --
 -- Notes:
 -- - seeds/ は config.toml の [db.seed] により **ローカル db reset のみ**
@@ -43,7 +69,15 @@
 --   orbit_track_members が既に1件でもある）へは投入しない。
 --   人手で調べた正典へ合成 fixture を混ぜないための 040 / 041 と同じ考え方。
 -- - 投入後に件数を検証し、不一致なら RAISE EXCEPTION で seed 自体を
---   失敗させる（041 と同じ方針）。
+--   失敗させる（041 と同じ方針）。加えて orbit_track_members ⊆ 初出リリースの
+--   orbit_release_members（ADR 0007 §1）も検証する。
+-- - orbit_release_members.id は明示せず DEFAULT（gen_random_uuid）に任せる。
+--   041/042/044 は「どの行が E2E fixture かひと目で分かる」ことを理由に
+--   決定的 UUID を明示しているが、本 fixture が対象にする2曲は固定 UUID
+--   ではなく実行時にクエリで選ばれる（`orbit_track_members` の INSERT
+--   参照）。行数（何曲が同一の初出リリースを共有するか）も投入時まで
+--   確定しない。そのため対応する release_members の行にも決定的 UUID を
+--   割り当てず、同じ track_member の INSERT が id を明示しないことに揃える。
 -- ============================================================
 
 DO $seed$
@@ -56,6 +90,8 @@ DECLARE
   v_group_id UUID;
   v_member_group_count INT;
   v_track_member_count INT;
+  v_center_count INT;
+  v_release_invariant_violation_count INT;
 BEGIN
   -- 冪等性: 所属が既にあれば二重投入しない。
   -- curated data 運用中の環境（実在メンバーの所属が入っている）も同じ条件で弾ける。
@@ -96,14 +132,51 @@ BEGIN
 
   -- 参加楽曲。対象グループのリリース収録曲から先頭2曲を紐づける。
   -- 曲そのものは検証対象ではないので title は固定しない。
+  -- 先頭（t.id昇順で1件目）だけを is_center = TRUE にする（#484 のコメント参照）。
   INSERT INTO public.orbit_track_members (track_id, member_id, is_center)
-  SELECT t.id, c_member_id, FALSE
-    FROM public.orbit_tracks t
-    JOIN public.orbit_release_tracks rt ON rt.track_id = t.id
-    JOIN public.orbit_releases r ON r.id = rt.release_id
-   WHERE r.group_id = v_group_id
-   ORDER BY t.id
-   LIMIT c_track_count;
+  SELECT ranked.track_id, c_member_id, ranked.rn = 1
+    FROM (
+      SELECT t.id AS track_id, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+        FROM public.orbit_tracks t
+        JOIN public.orbit_release_tracks rt ON rt.track_id = t.id
+        JOIN public.orbit_releases r ON r.id = rt.release_id
+       WHERE r.group_id = v_group_id
+       ORDER BY t.id
+       LIMIT c_track_count
+    ) AS ranked;
+
+  -- ------------------------------------------------------------
+  -- 初出リリース参加メンバー（orbit_release_members）
+  -- PR #485 レビュー #P1 対応。ADR 0007 §1「楽曲参加メンバー ⊆ 初出
+  -- リリース参加メンバー」を、上で入れた2曲について満たす（ヘッダー
+  -- コメントの「なぜ orbit_release_members も入れるか」参照）。
+  --
+  -- 初出リリースの決定規則（ヘッダーコメント・044 と共通）:
+  --   その楽曲に紐づくリリースのうち release_date が非NULLで最も古いもの。
+  --   同日が複数ある場合は release_id の昇順でタイブレークする。
+  --
+  -- 2曲の初出リリースが同一になる場合、(release_id, member_id) の
+  -- UNIQUE 制約（idx_orbit_release_members_unique）に触れる。
+  -- ON CONFLICT DO NOTHING で握りつぶすと、本来起きないはずの別原因の
+  -- 衝突まで隠してしまうため、SELECT DISTINCT で挿入行そのものを
+  -- 一意にしてから INSERT する。
+  -- ------------------------------------------------------------
+  WITH member_first_release AS (
+    SELECT tm.track_id, r.id AS release_id,
+           ROW_NUMBER() OVER (
+             PARTITION BY tm.track_id
+             ORDER BY r.release_date ASC, r.id ASC
+           ) AS rn
+      FROM public.orbit_track_members tm
+      JOIN public.orbit_release_tracks rt ON rt.track_id = tm.track_id
+      JOIN public.orbit_releases r ON r.id = rt.release_id
+     WHERE tm.member_id = c_member_id
+       AND r.release_date IS NOT NULL
+  )
+  INSERT INTO public.orbit_release_members (release_id, member_id)
+  SELECT DISTINCT release_id, c_member_id
+    FROM member_first_release
+   WHERE rn = 1;
 
   -- ------------------------------------------------------------
   -- 投入後の検証（041 と同じ方針）
@@ -118,10 +191,55 @@ BEGIN
     FROM public.orbit_track_members
    WHERE member_id = c_member_id;
 
-  IF v_member_group_count <> 1 OR v_track_member_count <> c_track_count THEN
+  SELECT COUNT(*) INTO v_center_count
+    FROM public.orbit_track_members
+   WHERE member_id = c_member_id
+     AND is_center;
+
+  IF v_member_group_count <> 1
+     OR v_track_member_count <> c_track_count
+     OR v_center_count <> 1
+  THEN
     RAISE EXCEPTION
-      'E2E member fixture の投入に失敗しました（所属=%件 期待=1件, 参加楽曲=%件 期待=%件）',
-      v_member_group_count, v_track_member_count, c_track_count;
+      'E2E member fixture の投入に失敗しました（所属=%件 期待=1件, 参加楽曲=%件 期待=%件, センター=%件 期待=1件）',
+      v_member_group_count, v_track_member_count, c_track_count, v_center_count;
+  END IF;
+
+  -- ------------------------------------------------------------
+  -- 追加検証（PR #485 レビュー #P1 対応）:
+  -- orbit_track_members ⊆ 初出リリースの orbit_release_members
+  -- （ADR 0007 §1）。初出リリースの算出規則は上の INSERT と同じ
+  -- （ヘッダーコメント・上記コメント参照。変更する場合は両方直すこと）。
+  -- ------------------------------------------------------------
+  WITH member_first_release AS (
+    SELECT tm.track_id, r.id AS release_id,
+           ROW_NUMBER() OVER (
+             PARTITION BY tm.track_id
+             ORDER BY r.release_date ASC, r.id ASC
+           ) AS rn
+      FROM public.orbit_track_members tm
+      JOIN public.orbit_release_tracks rt ON rt.track_id = tm.track_id
+      JOIN public.orbit_releases r ON r.id = rt.release_id
+     WHERE tm.member_id = c_member_id
+       AND r.release_date IS NOT NULL
+  )
+  SELECT COUNT(*) INTO v_release_invariant_violation_count
+    FROM public.orbit_track_members tm
+   WHERE tm.member_id = c_member_id
+     AND NOT EXISTS (
+       SELECT 1
+         FROM member_first_release fr
+         JOIN public.orbit_release_members rm ON rm.release_id = fr.release_id
+        WHERE fr.track_id = tm.track_id
+          AND fr.rn = 1
+          AND rm.member_id = tm.member_id
+     );
+
+  IF v_release_invariant_violation_count <> 0 THEN
+    RAISE EXCEPTION
+      'E2E member fixture: orbit_track_members が初出リリースの'
+      ' orbit_release_members に含まれない行があります（ADR 0007 §1 違反）。違反件数=%件',
+      v_release_invariant_violation_count;
   END IF;
 END
 $seed$;
