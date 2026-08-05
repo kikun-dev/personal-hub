@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LiveCard } from "@/components/lives/LiveCard";
+import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
 import { focusRingClass, standaloneTargetMinHeightClass } from "@/components/ui/interactionStyles";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
@@ -55,12 +56,12 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
             </option>
           ))}
         </select>
-        <span
+        <CollectionResultStatus
           className="ml-auto shrink-0 text-sm text-foreground-secondary"
           data-ui="live-count"
-        >
-          {filteredLives.length}件
-        </span>
+          count={filteredLives.length}
+          unit="件"
+        />
       </div>
 
       {filteredLives.length === 0 ? (

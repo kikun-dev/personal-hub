@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberSectionList } from "@/components/members/MemberSectionList";
+import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { MemberListItem } from "@/types/member";
@@ -167,9 +168,11 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             </option>
           ))}
         </select>
-        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
-          {flatMembers.length}人
-        </span>
+        <CollectionResultStatus
+          className="ml-auto shrink-0 text-sm text-foreground-secondary"
+          count={flatMembers.length}
+          unit="人"
+        />
       </div>
       {isGroupFiltered ? (
         <MemberGrid members={flatMembers} />

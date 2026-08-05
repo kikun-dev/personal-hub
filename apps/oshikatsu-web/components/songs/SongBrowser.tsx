@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SongGrid } from "@/components/songs/SongGrid";
 import { SongSectionList } from "@/components/songs/SongSectionList";
+import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { SongLabel, SongListItem, SongSection } from "@/types/song";
@@ -201,9 +202,11 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           />
           その他も含む
         </label>
-        <span className="ml-auto shrink-0 text-sm text-foreground-secondary">
-          {filteredSongs.length}曲
-        </span>
+        <CollectionResultStatus
+          className="ml-auto shrink-0 text-sm text-foreground-secondary"
+          count={filteredSongs.length}
+          unit="曲"
+        />
       </div>
       {isGroupFiltered ? (
         <SongGrid songs={filteredSongs} />
