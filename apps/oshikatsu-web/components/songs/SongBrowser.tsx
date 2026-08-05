@@ -158,6 +158,14 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
     generation !== "" ||
     includeOther !== false ||
     query !== "";
+  // hasActiveFilterは「現在値が既定と異なるか」しか見ないため、既定条件
+  // （includeOther=false かつ groupId=""＝catch-all除外）自体が対象を0件に
+  // する場合（例：catch-all楽曲だけ）はresetを押しても復帰しない。実際に
+  // 復帰できるかは既定条件での対象有無で別途判定する（PR #487 レビュー追加指摘）。
+  const canRestoreByReset = useMemo(
+    () => songs.filter((song) => !song.isCatchall).length > 0,
+    [songs]
+  );
 
   const handleReset = () => {
     setGroupId("");
@@ -255,7 +263,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
       ) : isEmptyFiltered ? (
         <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
           <p>条件に一致する楽曲が見つかりません</p>
-          {hasActiveFilter && (
+          {hasActiveFilter && canRestoreByReset && (
             <Button
               type="button"
               variant="ghost"
@@ -264,6 +272,11 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             >
               絞り込みを解除
             </Button>
+          )}
+          {!canRestoreByReset && (
+            <p>
+              「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。「その他も含む」を有効にすると表示できます。
+            </p>
           )}
         </div>
       ) : isGroupFiltered ? (

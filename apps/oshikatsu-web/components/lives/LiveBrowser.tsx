@@ -55,6 +55,13 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
   // になる。つまりLiveではこのgateは実質的にno-opだが、Member/Songと同じ判定
   // 方針を揃えるために置く（PR #487 P2-1）。
   const hasActiveFilter = groupId !== "";
+  // Member/Songには「hasActiveFilter=trueでもreset後の既定条件で0件のまま」
+  // というケースがあり、そのためcanRestoreByResetを別途持って
+  // hasActiveFilter && canRestoreByResetでreset表示を絞る（PR #487レビュー
+  // 追加指摘）。Liveは既定filter（groupId=""）自体がfilterLivesByGroupを
+  // 素通りしてlives全体を返す＝isEmptySourceがfalseなら既定条件は必ず
+  // 非0件になるため、canRestoreByResetは常にtrueで意味を持たない。
+  // よってLiveだけcanRestoreByResetの変数やno-match時の専用文言分岐は作らない。
 
   const handleReset = () => {
     setGroupId("");

@@ -135,6 +135,8 @@ describe("LiveBrowser のEmpty分岐", () => {
     expect(
       screen.getByRole("combobox", { name: "出演グループで絞り込み" })
     ).toHaveValue("");
+    // 0件表示が消えるだけでなく、実際にライブが描画されるところまで確認する
+    expect(screen.getByText("テストライブ")).toBeInTheDocument();
   });
 
   it("resetでreplaceListFilterParamsが既定値で呼ばれる", async () => {

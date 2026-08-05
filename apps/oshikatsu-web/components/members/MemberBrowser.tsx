@@ -136,6 +136,14 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
   // （例：全員卒業済み）。resetは「押せば表示が変わる」ときだけ出すため、既定値と
   // 1つでも異なるかを別途判定する（PR #487 P2-1）。
   const hasActiveFilter = groupId !== "" || generation !== "" || status !== "active";
+  // hasActiveFilterは「現在値が既定と異なるか」しか見ないため、既定条件
+  // （status="active"、group/generationは未適用）自体が対象を0件にする場合
+  // （例：全員卒業済み）はresetを押しても復帰しない。実際に復帰できるかは
+  // 既定条件での対象有無で別途判定する（PR #487 レビュー追加指摘）。
+  const canRestoreByReset = useMemo(
+    () => filterMembersByStatus(members, "active").length > 0,
+    [members]
+  );
 
   const handleReset = () => {
     setGroupId("");
@@ -206,7 +214,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
       ) : isEmptyFiltered ? (
         <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
           <p>条件に一致するメンバーが見つかりません</p>
-          {hasActiveFilter && (
+          {hasActiveFilter && canRestoreByReset && (
             <Button
               type="button"
               variant="ghost"
@@ -215,6 +223,11 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             >
               絞り込みを解除
             </Button>
+          )}
+          {!canRestoreByReset && (
+            <p>
+              現役のメンバーがいないため、既定の絞り込みでは表示できません。在籍状況を「全員」に変えると表示できます。
+            </p>
           )}
         </div>
       ) : isGroupFiltered ? (

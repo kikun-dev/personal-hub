@@ -218,6 +218,8 @@ describe("MemberBrowser のEmpty分岐", () => {
     expect(
       screen.getByRole("combobox", { name: "在籍状況で絞り込み" })
     ).toHaveValue("active");
+    // 0件表示が消えるだけでなく、実際にメンバーが描画されるところまで確認する
+    expect(screen.getByText("メンバー1")).toBeInTheDocument();
   });
 
   it("resetでreplaceListFilterParamsが既定値で呼ばれる", async () => {
@@ -286,6 +288,51 @@ describe("MemberBrowser のEmpty分岐", () => {
     expect(
       screen.queryByRole("button", { name: "絞り込みを解除" })
     ).not.toBeInTheDocument();
+  });
+
+  // レビュー追加指摘: hasActiveFilter（現在値が既定と異なるか）だけでは、
+  // reset後の既定条件（status="active"）自体が0件になる場合を判定できない。
+  // 全員卒業済みのデータでグループを選択するとhasActiveFilter=trueになるが、
+  // resetしても既定status="active"のままでは0件が続くため、resetボタンは
+  // 出さず理由と対処を示す文言を出す。
+  it("全員卒業済み＋グループ選択のとき、resetボタンは出ず既定条件で表示できない旨の説明が出る", async () => {
+    const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
+    const members: MemberListItem[] = [
+      createMember({
+        id: "member-1",
+        nameJa: "メンバー1",
+        groups: [
+          {
+            id: "mg-1",
+            groupId: "group-a",
+            groupNameJa: "グループA",
+            groupColor: "#000000",
+            generation: null,
+            joinedAt: null,
+            graduatedAt: "2020-01-01",
+          },
+        ],
+      }),
+    ];
+    const user = userEvent.setup();
+    render(<MemberBrowser groups={[groupA]} members={members} />);
+
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "グループで絞り込み" }),
+      "group-a"
+    );
+
+    expect(
+      screen.getByText("条件に一致するメンバーが見つかりません")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "絞り込みを解除" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "現役のメンバーがいないため、既定の絞り込みでは表示できません。在籍状況を「全員」に変えると表示できます。"
+      )
+    ).toBeInTheDocument();
   });
 });
 

@@ -133,6 +133,8 @@ describe("SongBrowser のEmpty分岐", () => {
     expect(
       screen.getByRole("combobox", { name: "ラベルで絞り込み" })
     ).toHaveValue("");
+    // 0件表示が消えるだけでなく、実際に楽曲が描画されるところまで確認する
+    expect(screen.getByText("テスト楽曲")).toBeInTheDocument();
   });
 
   it("resetでreplaceListFilterParamsが既定値で呼ばれる", async () => {
@@ -196,6 +198,38 @@ describe("SongBrowser のEmpty分岐", () => {
     expect(
       screen.queryByRole("button", { name: "絞り込みを解除" })
     ).not.toBeInTheDocument();
+  });
+
+  // レビュー追加指摘: hasActiveFilter（現在値が既定と異なるか）だけでは、
+  // reset後の既定条件（includeOther=false）自体が0件になる場合を判定できない。
+  // catch-all楽曲だけのデータで検索語を入力するとhasActiveFilter=trueになるが、
+  // resetしても既定includeOther=falseのままでは0件が続くため、resetボタンは
+  // 出さず理由と対処を示す文言を出す。
+  it("catch-allの曲だけ＋検索語入力のとき、resetボタンは出ず既定条件で表示できない旨の説明が出る", async () => {
+    const catchallGroup = createGroup({ id: "catchall", isCatchall: true });
+    const songs = [
+      createSong({ groupId: "catchall", groupNameJa: "その他", isCatchall: true }),
+    ];
+    const songSections = buildSections(songs, catchallGroup);
+    const user = userEvent.setup();
+    render(<SongBrowser groups={[catchallGroup]} songs={songs} songSections={songSections} />);
+
+    await user.type(
+      screen.getByRole("searchbox", { name: "楽曲タイトルで検索" }),
+      "検索語"
+    );
+
+    expect(
+      screen.getByText("条件に一致する楽曲が見つかりません")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "絞り込みを解除" })
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。「その他も含む」を有効にすると表示できます。"
+      )
+    ).toBeInTheDocument();
   });
 });
 
