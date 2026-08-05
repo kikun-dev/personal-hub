@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LiveCard } from "@/components/lives/LiveCard";
 import { Button } from "@/components/ui/Button";
@@ -17,6 +17,9 @@ type LiveBrowserProps = {
 };
 
 export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
+  // 件数(CollectionResultStatus)とそれに影響するfilter controlを
+  // aria-controlsで関連付けるための安定id（#486 Decision 2 / PR #487 P2-2）
+  const statusId = useId();
   const searchParams = useSearchParams();
   const urlGroupId = searchParams.get("groupId") ?? "";
   const [groupId, setGroupId] = useState(urlGroupId);
@@ -45,6 +48,13 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
   const isEmptySource = lives.length === 0;
   // 元データはあるがfilterの結果0件になっている
   const isEmptyFiltered = !isEmptySource && filteredLives.length === 0;
+  // 既定filter（groupId=""）のままでも0件になりうるか。他Browser（Member/Song）
+  // との対称性のため同じ形で持つが、Liveのfilterは出演グループ絞り込みのみで、
+  // groupId===""のときfilterLivesByGroupは絞り込まずlives全体を返すため、
+  // isEmptyFiltered===trueならgroupIdは必ず非既定（=hasActiveFilterは常にtrue）
+  // になる。つまりLiveではこのgateは実質的にno-opだが、Member/Songと同じ判定
+  // 方針を揃えるために置く（PR #487 P2-1）。
+  const hasActiveFilter = groupId !== "";
 
   const handleReset = () => {
     setGroupId("");
@@ -58,6 +68,7 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="出演グループで絞り込み"
+          aria-controls={statusId}
           className={`rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground ${standaloneTargetMinHeightClass} ${focusRingClass}`}
         >
           <option value="">全グループ</option>
@@ -68,6 +79,7 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
           ))}
         </select>
         <CollectionResultStatus
+          id={statusId}
           className="ml-auto shrink-0 text-sm text-foreground-secondary"
           data-ui="live-count"
           count={filteredLives.length}
@@ -88,14 +100,16 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
           data-ui="live-empty"
         >
           <p>条件に一致するライブが見つかりません</p>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleReset}
-            className={standaloneTargetMinHeightClass}
-          >
-            絞り込みを解除
-          </Button>
+          {hasActiveFilter && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleReset}
+              className={standaloneTargetMinHeightClass}
+            >
+              絞り込みを解除
+            </Button>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

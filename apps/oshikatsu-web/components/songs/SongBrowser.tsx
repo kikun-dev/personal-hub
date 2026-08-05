@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SongGrid } from "@/components/songs/SongGrid";
 import { SongSectionList } from "@/components/songs/SongSectionList";
@@ -31,6 +31,9 @@ function toLabel(value: string | null): SongLabel | "" {
 }
 
 export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
+  // 件数(CollectionResultStatus)とそれに影響するfilter controlを
+  // aria-controlsで関連付けるための安定id（#486 Decision 2 / PR #487 P2-2）
+  const statusId = useId();
   // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
   const searchParams = useSearchParams();
   const urlGroupId = searchParams.get("groupId") ?? "";
@@ -146,6 +149,15 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
   const isEmptySource = songs.length === 0;
   // 元データはあるがfilterの結果0件になっている
   const isEmptyFiltered = !isEmptySource && filteredSongs.length === 0;
+  // 既定filter（groupId=""/label=""/generation=""/includeOther=false/query=""）の
+  // ままでも0件になりうる（例：catch-allラベルの曲だけ）。resetは「押せば表示が
+  // 変わる」ときだけ出すため、既定値と1つでも異なるかを別途判定する（PR #487 P2-1）。
+  const hasActiveFilter =
+    groupId !== "" ||
+    label !== "" ||
+    generation !== "" ||
+    includeOther !== false ||
+    query !== "";
 
   const handleReset = () => {
     setGroupId("");
@@ -169,6 +181,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
+          aria-controls={statusId}
           className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
@@ -184,6 +197,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             handleLabelChange(event.target.value as SongLabel | "")
           }
           aria-label="ラベルで絞り込み"
+          aria-controls={statusId}
           className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全ラベル</option>
@@ -198,6 +212,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             value={generation}
             onChange={(event) => handleGenerationChange(event.target.value)}
             aria-label="期で絞り込み"
+            aria-controls={statusId}
             className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
           >
             <option value="">全期</option>
@@ -214,6 +229,7 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           onChange={(event) => setQuery(event.target.value)}
           placeholder="タイトルで検索"
           aria-label="楽曲タイトルで検索"
+          aria-controls={statusId}
           className="w-full max-w-xs rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground placeholder:text-foreground-secondary"
         />
         <label className="flex items-center gap-1.5 text-sm text-foreground-secondary">
@@ -221,10 +237,12 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             type="checkbox"
             checked={includeOther}
             onChange={(event) => handleIncludeOtherChange(event.target.checked)}
+            aria-controls={statusId}
           />
           その他も含む
         </label>
         <CollectionResultStatus
+          id={statusId}
           className="ml-auto shrink-0 text-sm text-foreground-secondary"
           count={filteredSongs.length}
           unit="曲"
@@ -237,14 +255,16 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
       ) : isEmptyFiltered ? (
         <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
           <p>条件に一致する楽曲が見つかりません</p>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleReset}
-            className={standaloneTargetMinHeightClass}
-          >
-            絞り込みを解除
-          </Button>
+          {hasActiveFilter && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleReset}
+              className={standaloneTargetMinHeightClass}
+            >
+              絞り込みを解除
+            </Button>
+          )}
         </div>
       ) : isGroupFiltered ? (
         <SongGrid songs={filteredSongs} />

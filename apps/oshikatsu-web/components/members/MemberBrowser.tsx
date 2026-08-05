@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberSectionList } from "@/components/members/MemberSectionList";
@@ -35,6 +35,9 @@ function toMemberStatus(value: string | null): MemberStatus {
 }
 
 export function MemberBrowser({ groups, members }: MemberBrowserProps) {
+  // 件数(CollectionResultStatus)とそれに影響するfilter controlを
+  // aria-controlsで関連付けるための安定id（#486 Decision 2 / PR #487 P2-2）
+  const statusId = useId();
   // 即時反映は local state、戻る/リロード等の URL 変化は useEffect で同期する
   const searchParams = useSearchParams();
   const urlGroupId = searchParams.get("groupId") ?? "";
@@ -129,6 +132,10 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
   const isEmptySource = members.length === 0;
   // 元データはあるがfilterの結果0件になっている
   const isEmptyFiltered = !isEmptySource && flatMembers.length === 0;
+  // 既定filter（groupId=""/generation=""/status="active"）のままでも0件になりうる
+  // （例：全員卒業済み）。resetは「押せば表示が変わる」ときだけ出すため、既定値と
+  // 1つでも異なるかを別途判定する（PR #487 P2-1）。
+  const hasActiveFilter = groupId !== "" || generation !== "" || status !== "active";
 
   const handleReset = () => {
     setGroupId("");
@@ -144,6 +151,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
           value={groupId}
           onChange={(event) => handleGroupChange(event.target.value)}
           aria-label="グループで絞り込み"
+          aria-controls={statusId}
           className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           <option value="">全グループ</option>
@@ -158,6 +166,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             value={effectiveGeneration}
             onChange={(event) => handleGenerationChange(event.target.value)}
             aria-label="期で絞り込み"
+            aria-controls={statusId}
             className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
           >
             <option value="">全期</option>
@@ -174,6 +183,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             handleStatusChange(event.target.value as MemberStatus)
           }
           aria-label="在籍状況で絞り込み"
+          aria-controls={statusId}
           className="rounded-lg border border-border-strong bg-background px-3 py-1.5 text-sm text-foreground"
         >
           {STATUS_OPTIONS.map((option) => (
@@ -183,6 +193,7 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
           ))}
         </select>
         <CollectionResultStatus
+          id={statusId}
           className="ml-auto shrink-0 text-sm text-foreground-secondary"
           count={flatMembers.length}
           unit="人"
@@ -195,14 +206,16 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
       ) : isEmptyFiltered ? (
         <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
           <p>条件に一致するメンバーが見つかりません</p>
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={handleReset}
-            className={standaloneTargetMinHeightClass}
-          >
-            絞り込みを解除
-          </Button>
+          {hasActiveFilter && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleReset}
+              className={standaloneTargetMinHeightClass}
+            >
+              絞り込みを解除
+            </Button>
+          )}
         </div>
       ) : isGroupFiltered ? (
         <MemberGrid members={flatMembers} />

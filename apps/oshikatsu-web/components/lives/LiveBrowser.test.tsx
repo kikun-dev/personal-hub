@@ -163,4 +163,24 @@ describe("LiveBrowser のEmpty分岐", () => {
       groupId: "",
     });
   });
+
+  // #487 P2-1: Liveのfilterは出演グループ絞り込みのみで、groupId=""（既定）の
+  // ときはfilterLivesByGroupが絞り込まずlives全体を返す。そのためisEmptyFiltered
+  // （元データがありfilter結果が0件）がtrueになるのは、常にgroupIdが非既定
+  // （=hasActiveFilter===true）のときに限られ、「既定filterのまま0件」は
+  // isEmptySourceと同義になり作れない。Member/Songのような専用ケースは無理に
+  // 作らず、上の「filter適用で0件→resetが出る」テストがこの前提を実質カバーする。
+});
+
+describe("LiveBrowser のstatus id / aria-controls", () => {
+  it("CollectionResultStatusがidを持ち、出演グループselectがaria-controlsで同じidを参照する", () => {
+    const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
+    render(<LiveBrowser groups={[groupA]} lives={[]} />);
+
+    const status = screen.getByRole("status");
+    expect(status.id).toBeTruthy();
+    expect(
+      screen.getByRole("combobox", { name: "出演グループで絞り込み" })
+    ).toHaveAttribute("aria-controls", status.id);
+  });
 });

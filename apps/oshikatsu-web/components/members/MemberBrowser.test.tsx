@@ -256,4 +256,78 @@ describe("MemberBrowser のEmpty分岐", () => {
       status: "",
     });
   });
+
+  // #487 P2-1: 既定filter（status="active"）のままでも0件になりうる
+  // （全員卒業済みの場合）。押しても何も変わらないresetを出さないことを確認する。
+  it("既定のstatus=activeのまま全員卒業済みで0件のとき、no-match文言は出るがresetボタンは出ない", () => {
+    const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
+    const members: MemberListItem[] = [
+      createMember({
+        id: "member-1",
+        nameJa: "メンバー1",
+        groups: [
+          {
+            id: "mg-1",
+            groupId: "group-a",
+            groupNameJa: "グループA",
+            groupColor: "#000000",
+            generation: null,
+            joinedAt: null,
+            graduatedAt: "2020-01-01",
+          },
+        ],
+      }),
+    ];
+    render(<MemberBrowser groups={[groupA]} members={members} />);
+
+    expect(
+      screen.getByText("条件に一致するメンバーが見つかりません")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "絞り込みを解除" })
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("MemberBrowser のstatus id / aria-controls", () => {
+  it("CollectionResultStatusがidを持ち、件数に影響する各filter controlがaria-controlsで同じidを参照する", async () => {
+    const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
+    const members: MemberListItem[] = [
+      createMember({
+        id: "member-1",
+        nameJa: "メンバー1",
+        groups: [
+          {
+            id: "mg-1",
+            groupId: "group-a",
+            groupNameJa: "グループA",
+            groupColor: "#000000",
+            generation: "1",
+            joinedAt: null,
+            graduatedAt: null,
+          },
+        ],
+      }),
+    ];
+    const user = userEvent.setup();
+    render(<MemberBrowser groups={[groupA]} members={members} />);
+
+    const status = screen.getByRole("status");
+    expect(status.id).toBeTruthy();
+
+    // 期selectはグループ選択時のみ出現するため、先にグループを選択する
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "グループで絞り込み" }),
+      "group-a"
+    );
+
+    const controls = [
+      screen.getByRole("combobox", { name: "グループで絞り込み" }),
+      screen.getByRole("combobox", { name: "期で絞り込み" }),
+      screen.getByRole("combobox", { name: "在籍状況で絞り込み" }),
+    ];
+    for (const control of controls) {
+      expect(control).toHaveAttribute("aria-controls", status.id);
+    }
+  });
 });

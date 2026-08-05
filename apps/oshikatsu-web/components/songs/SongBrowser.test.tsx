@@ -179,4 +179,56 @@ describe("SongBrowser のEmpty分岐", () => {
     ).not.toBeInTheDocument();
     expect(queryInput).toHaveValue("");
   });
+
+  // #487 P2-1: 既定filter（includeOther=false）のままでもcatch-allラベルの曲だけの
+  // ときは0件になりうる。押しても何も変わらないresetを出さないことを確認する。
+  it("既定のincludeOther=falseのままcatch-allラベルの曲だけで0件のとき、no-match文言は出るがresetボタンは出ない", () => {
+    const catchallGroup = createGroup({ id: "catchall", isCatchall: true });
+    const songs = [
+      createSong({ groupId: "catchall", groupNameJa: "その他", isCatchall: true }),
+    ];
+    const songSections = buildSections(songs, catchallGroup);
+    render(<SongBrowser groups={[catchallGroup]} songs={songs} songSections={songSections} />);
+
+    expect(
+      screen.getByText("条件に一致する楽曲が見つかりません")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "絞り込みを解除" })
+    ).not.toBeInTheDocument();
+  });
+});
+
+describe("SongBrowser のstatus id / aria-controls", () => {
+  it("CollectionResultStatusがidを持ち、件数に影響する各filter controlがaria-controlsで同じidを参照する", async () => {
+    const groupA = createGroup();
+    const songs = [createSong({ label: "generation", generation: "1" })];
+    const songSections = buildSections(songs, groupA);
+    const user = userEvent.setup();
+    render(<SongBrowser groups={[groupA]} songs={songs} songSections={songSections} />);
+
+    const status = screen.getByRole("status");
+    expect(status.id).toBeTruthy();
+
+    // 期selectはグループ選択かつラベル=期別のときのみ出現するため、先に選択する
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "グループで絞り込み" }),
+      "group-a"
+    );
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: "ラベルで絞り込み" }),
+      "generation"
+    );
+
+    const controls = [
+      screen.getByRole("combobox", { name: "グループで絞り込み" }),
+      screen.getByRole("combobox", { name: "ラベルで絞り込み" }),
+      screen.getByRole("combobox", { name: "期で絞り込み" }),
+      screen.getByRole("searchbox", { name: "楽曲タイトルで検索" }),
+      screen.getByRole("checkbox", { name: "その他も含む" }),
+    ];
+    for (const control of controls) {
+      expect(control).toHaveAttribute("aria-controls", status.id);
+    }
+  });
 });
