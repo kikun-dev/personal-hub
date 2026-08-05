@@ -31,6 +31,15 @@
 --   release / track を新設すると リリース一覧・楽曲一覧の見え方が変わり、
 --   検証に不要な差分が増える。
 --
+-- なぜ2曲のうち先頭1曲だけを is_center = TRUE にするか（#484）:
+-- - #484 は `--center-text` semantic token（Member detail の
+--   `★ センター N曲` と展開後のセンター曲 `★`）の contrast 回帰テストを追加する。
+--   2件とも is_center = FALSE のままだとセンター表示自体が描画されず、
+--   実測できない。かといって2件とも TRUE にすると「センター曲のみ」の
+--   構成になり、センター表示と非センター表示を並べて比較できない。
+--   よって「センター1曲・非センター1曲」というドメインとして成立した
+--   構成にし、両方の表示を1つの fixture で検証できるようにする。
+--
 -- 影響範囲:
 -- - メンバー一覧が 0件 → 1件になる。/members を訪れる既存 spec は
 --   reduced-motion.spec.ts の URL 遷移確認のみで、件数に依存しない。
@@ -56,6 +65,7 @@ DECLARE
   v_group_id UUID;
   v_member_group_count INT;
   v_track_member_count INT;
+  v_center_count INT;
 BEGIN
   -- 冪等性: 所属が既にあれば二重投入しない。
   -- curated data 運用中の環境（実在メンバーの所属が入っている）も同じ条件で弾ける。
@@ -96,14 +106,18 @@ BEGIN
 
   -- 参加楽曲。対象グループのリリース収録曲から先頭2曲を紐づける。
   -- 曲そのものは検証対象ではないので title は固定しない。
+  -- 先頭（t.id昇順で1件目）だけを is_center = TRUE にする（#484 のコメント参照）。
   INSERT INTO public.orbit_track_members (track_id, member_id, is_center)
-  SELECT t.id, c_member_id, FALSE
-    FROM public.orbit_tracks t
-    JOIN public.orbit_release_tracks rt ON rt.track_id = t.id
-    JOIN public.orbit_releases r ON r.id = rt.release_id
-   WHERE r.group_id = v_group_id
-   ORDER BY t.id
-   LIMIT c_track_count;
+  SELECT ranked.track_id, c_member_id, ranked.rn = 1
+    FROM (
+      SELECT t.id AS track_id, ROW_NUMBER() OVER (ORDER BY t.id) AS rn
+        FROM public.orbit_tracks t
+        JOIN public.orbit_release_tracks rt ON rt.track_id = t.id
+        JOIN public.orbit_releases r ON r.id = rt.release_id
+       WHERE r.group_id = v_group_id
+       ORDER BY t.id
+       LIMIT c_track_count
+    ) AS ranked;
 
   -- ------------------------------------------------------------
   -- 投入後の検証（041 と同じ方針）
@@ -118,10 +132,18 @@ BEGIN
     FROM public.orbit_track_members
    WHERE member_id = c_member_id;
 
-  IF v_member_group_count <> 1 OR v_track_member_count <> c_track_count THEN
+  SELECT COUNT(*) INTO v_center_count
+    FROM public.orbit_track_members
+   WHERE member_id = c_member_id
+     AND is_center;
+
+  IF v_member_group_count <> 1
+     OR v_track_member_count <> c_track_count
+     OR v_center_count <> 1
+  THEN
     RAISE EXCEPTION
-      'E2E member fixture の投入に失敗しました（所属=%件 期待=1件, 参加楽曲=%件 期待=%件）',
-      v_member_group_count, v_track_member_count, c_track_count;
+      'E2E member fixture の投入に失敗しました（所属=%件 期待=1件, 参加楽曲=%件 期待=%件, センター=%件 期待=1件）',
+      v_member_group_count, v_track_member_count, c_track_count, v_center_count;
   END IF;
 END
 $seed$;
