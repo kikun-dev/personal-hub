@@ -7,7 +7,7 @@ export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-background px-4">
       <div className="w-full max-w-md rounded-lg border border-border-subtle p-6 text-center">
-        <p className="text-sm text-foreground">ページが見つかりません。</p>
+        <h1 className="text-sm font-semibold text-foreground">ページが見つかりません</h1>
         <p className="mt-1 text-xs text-foreground-secondary">
           URLが間違っているか、ページが削除された可能性があります。
         </p>
