@@ -17,6 +17,19 @@ const APP_ROOT = path.resolve(__dirname, "..", "..");
 const GLOBALS_CSS_PATH = path.join(APP_ROOT, "app/globals.css");
 const DESIGN_MD_PATH = path.join(APP_ROOT, "DESIGN.md");
 
+// センター文字のraw palette(text-amber-600等)を--center-textへ置換した2ファイルに
+// 限定した回帰ガード（#484 コミット2）。
+//
+// なぜ対象を2ファイルへ限定するのか：amber系utilityはリポジトリ全体で
+// 「センター」以外の意味（例: ReleaseParticipantsSection.tsxの「グループ外」警告）でも
+// 使われており、その用途まで一律禁止するとwarning/accent表現の選択肢を奪ってしまう。
+// このテストはセンター文字の表示を担う2ファイルに限定して、raw paletteの再導入だけを防ぐ。
+const RAW_CENTER_COLOR_GUARD_TARGETS = [
+  "components/ui/FormationRows.tsx",
+  "components/members/MemberSongsSection.tsx",
+];
+const RAW_PALETTE_CLASS_PATTERN = /\b(?:text|bg|border)-amber-\d{2,3}\b/;
+
 const globalsCssSource = readFileSync(GLOBALS_CSS_PATH, "utf-8");
 const designMdSource = readFileSync(DESIGN_MD_PATH, "utf-8");
 
@@ -126,4 +139,14 @@ describe("app/globals.css の --center-text token (#484)", () => {
     const ratio = contrastRatio(parseColor(darkHex), parseColor(backgroundHex));
     expect(ratio).toBeGreaterThanOrEqual(MINIMUM_NORMAL_TEXT_CONTRAST);
   });
+});
+
+describe("センター文字のraw palette再導入ガード (#484)", () => {
+  it.each(RAW_CENTER_COLOR_GUARD_TARGETS)(
+    "%s に text-amber- / bg-amber- / border-amber- が出現しない",
+    (relativePath) => {
+      const source = readFileSync(path.join(APP_ROOT, relativePath), "utf-8");
+      expect(source).not.toMatch(RAW_PALETTE_CLASS_PATTERN);
+    }
+  );
 });

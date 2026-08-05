@@ -67,7 +67,7 @@ export function MemberSongsSection({
         <p className="text-xs text-foreground-secondary">{breakdown.join("、")}</p>
       )}
       {centerCount > 0 && (
-        <p className="mt-1 text-xs font-medium text-amber-600">
+        <p className="mt-1 text-xs font-medium text-center-text">
           ★ センター {centerCount}曲
         </p>
       )}
@@ -107,7 +107,7 @@ export function MemberSongsSection({
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <p className="font-medium">
-                    {isCenter && <span className="text-amber-600">★ </span>}
+                    {isCenter && <span className="text-center-text">★ </span>}
                     {song.title}
                   </p>
                   {labelText && (
