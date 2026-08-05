@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { LiveCard } from "@/components/lives/LiveCard";
+import { Button } from "@/components/ui/Button";
 import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
 import { focusRingClass, standaloneTargetMinHeightClass } from "@/components/ui/interactionStyles";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
@@ -40,6 +41,16 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
     replaceListFilterParams({ groupId: nextGroupId });
   };
 
+  // 元データ自体が0件（filterの結果ではない）
+  const isEmptySource = lives.length === 0;
+  // 元データはあるがfilterの結果0件になっている
+  const isEmptyFiltered = !isEmptySource && filteredLives.length === 0;
+
+  const handleReset = () => {
+    setGroupId("");
+    replaceListFilterParams({ groupId: "" });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -64,13 +75,28 @@ export function LiveBrowser({ groups, lives }: LiveBrowserProps) {
         />
       </div>
 
-      {filteredLives.length === 0 ? (
+      {isEmptySource ? (
         <p
           className="py-12 text-center text-sm text-foreground-secondary"
           data-ui="live-empty"
         >
-          ライブが見つかりません
+          まだライブが登録されていません
         </p>
+      ) : isEmptyFiltered ? (
+        <div
+          className="space-y-3 py-12 text-center text-sm text-foreground-secondary"
+          data-ui="live-empty"
+        >
+          <p>条件に一致するライブが見つかりません</p>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleReset}
+            className={standaloneTargetMinHeightClass}
+          >
+            絞り込みを解除
+          </Button>
+        </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredLives.map((live) => (

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { MemberGrid } from "@/components/members/MemberGrid";
 import { MemberSectionList } from "@/components/members/MemberSectionList";
+import { Button } from "@/components/ui/Button";
 import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
+import { standaloneTargetMinHeightClass } from "@/components/ui/interactionStyles";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { MemberListItem } from "@/types/member";
@@ -123,6 +125,18 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
     });
   };
 
+  // 元データ自体が0件（filterの結果ではない）
+  const isEmptySource = members.length === 0;
+  // 元データはあるがfilterの結果0件になっている
+  const isEmptyFiltered = !isEmptySource && flatMembers.length === 0;
+
+  const handleReset = () => {
+    setGroupId("");
+    setGeneration("");
+    setStatus("active");
+    replaceListFilterParams({ groupId: "", generation: "", status: "" });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -174,7 +188,23 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
           unit="人"
         />
       </div>
-      {isGroupFiltered ? (
+      {isEmptySource ? (
+        <p className="py-12 text-center text-sm text-foreground-secondary">
+          まだメンバーが登録されていません
+        </p>
+      ) : isEmptyFiltered ? (
+        <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
+          <p>条件に一致するメンバーが見つかりません</p>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleReset}
+            className={standaloneTargetMinHeightClass}
+          >
+            絞り込みを解除
+          </Button>
+        </div>
+      ) : isGroupFiltered ? (
         <MemberGrid members={flatMembers} />
       ) : (
         <MemberSectionList sections={memberSections} />

@@ -4,7 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { SongGrid } from "@/components/songs/SongGrid";
 import { SongSectionList } from "@/components/songs/SongSectionList";
+import { Button } from "@/components/ui/Button";
 import { CollectionResultStatus } from "@/components/ui/CollectionResultStatus";
+import { standaloneTargetMinHeightClass } from "@/components/ui/interactionStyles";
 import { replaceListFilterParams } from "@/lib/listFilterUrl";
 import type { Group } from "@/types/group";
 import type { SongLabel, SongListItem, SongSection } from "@/types/song";
@@ -140,6 +142,26 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
     replaceListFilterParams({ includeOther: nextIncludeOther ? "1" : "" });
   };
 
+  // 元データ自体が0件（filterの結果ではない）
+  const isEmptySource = songs.length === 0;
+  // 元データはあるがfilterの結果0件になっている
+  const isEmptyFiltered = !isEmptySource && filteredSongs.length === 0;
+
+  const handleReset = () => {
+    setGroupId("");
+    setLabel("");
+    setGeneration("");
+    setIncludeOther(false);
+    // queryはURL非同期のlocal stateだが、絞り込み解除としてまとめて戻す
+    setQuery("");
+    replaceListFilterParams({
+      groupId: "",
+      label: "",
+      generation: "",
+      includeOther: "",
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -208,7 +230,23 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
           unit="曲"
         />
       </div>
-      {isGroupFiltered ? (
+      {isEmptySource ? (
+        <p className="py-12 text-center text-sm text-foreground-secondary">
+          まだ楽曲が登録されていません
+        </p>
+      ) : isEmptyFiltered ? (
+        <div className="space-y-3 py-12 text-center text-sm text-foreground-secondary">
+          <p>条件に一致する楽曲が見つかりません</p>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={handleReset}
+            className={standaloneTargetMinHeightClass}
+          >
+            絞り込みを解除
+          </Button>
+        </div>
+      ) : isGroupFiltered ? (
         <SongGrid songs={filteredSongs} />
       ) : (
         <SongSectionList sections={filteredSections} />
