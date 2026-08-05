@@ -182,6 +182,27 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
     });
   };
 
+  // !canRestoreByResetのとき、単一filterの変更を促す説明文では他のactive filter
+  // （検索語など）が残っていると復帰しない場合がある（例：catch-all楽曲だけの
+  // データで検索語を入力していると、「その他も含む」を有効にするだけでは検索語が
+  // 残り0件のまま）。説明文の正確性に依存せず必ず表示できる状態へ全関連filterを
+  // まとめて変更するactionにすることで復帰を構造上保証する
+  // （PR #487 レビュー追加指摘）。
+  const handleShowAll = () => {
+    setGroupId("");
+    setLabel("");
+    setGeneration("");
+    setIncludeOther(true);
+    // queryはURL非同期のlocal stateだが、handleResetと同様にまとめて戻す
+    setQuery("");
+    replaceListFilterParams({
+      groupId: "",
+      label: "",
+      generation: "",
+      includeOther: "1",
+    });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -274,9 +295,17 @@ export function SongBrowser({ groups, songs, songSections }: SongBrowserProps) {
             </Button>
           )}
           {!canRestoreByReset && (
-            <p>
-              「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。「その他も含む」を有効にすると表示できます。
-            </p>
+            <>
+              <p>「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。</p>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleShowAll}
+                className={standaloneTargetMinHeightClass}
+              >
+                すべての楽曲を表示
+              </Button>
+            </>
           )}
         </div>
       ) : isGroupFiltered ? (

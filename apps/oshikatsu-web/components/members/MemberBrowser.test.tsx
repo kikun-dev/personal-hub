@@ -261,7 +261,9 @@ describe("MemberBrowser のEmpty分岐", () => {
 
   // #487 P2-1: 既定filter（status="active"）のままでも0件になりうる
   // （全員卒業済みの場合）。押しても何も変わらないresetを出さないことを確認する。
-  it("既定のstatus=activeのまま全員卒業済みで0件のとき、no-match文言は出るがresetボタンは出ない", () => {
+  // #487 P2 追加指摘: 代わりに出る「すべてのメンバーを表示」actionを押すと、
+  // groupId="" / generation="" / status="all"へまとめて変わり実際に復帰することまで確認する。
+  it("既定のstatus=activeのまま全員卒業済みで0件のとき、resetボタンは出ずactionを押すと復帰する", async () => {
     const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
     const members: MemberListItem[] = [
       createMember({
@@ -280,6 +282,7 @@ describe("MemberBrowser のEmpty分岐", () => {
         ],
       }),
     ];
+    const user = userEvent.setup();
     render(<MemberBrowser groups={[groupA]} members={members} />);
 
     expect(
@@ -288,14 +291,34 @@ describe("MemberBrowser のEmpty分岐", () => {
     expect(
       screen.queryByRole("button", { name: "絞り込みを解除" })
     ).not.toBeInTheDocument();
+    const showAllButton = screen.getByRole("button", {
+      name: "すべてのメンバーを表示",
+    });
+    expect(showAllButton).toBeInTheDocument();
+    vi.mocked(replaceListFilterParams).mockClear();
+
+    await user.click(showAllButton);
+
+    expect(
+      screen.queryByText("条件に一致するメンバーが見つかりません")
+    ).not.toBeInTheDocument();
+    // 0件表示が消えるだけでなく、実際にメンバーが描画されるところまで確認する
+    expect(screen.getByText("メンバー1")).toBeInTheDocument();
+    expect(replaceListFilterParams).toHaveBeenCalledExactlyOnceWith({
+      groupId: "",
+      generation: "",
+      status: "all",
+    });
   });
 
   // レビュー追加指摘: hasActiveFilter（現在値が既定と異なるか）だけでは、
   // reset後の既定条件（status="active"）自体が0件になる場合を判定できない。
   // 全員卒業済みのデータでグループを選択するとhasActiveFilter=trueになるが、
-  // resetしても既定status="active"のままでは0件が続くため、resetボタンは
-  // 出さず理由と対処を示す文言を出す。
-  it("全員卒業済み＋グループ選択のとき、resetボタンは出ず既定条件で表示できない旨の説明が出る", async () => {
+  // resetしても既定status="active"のままでは0件が続く。かつ、対象メンバーが
+  // 所属しないグループを選んでいる場合はstatusだけ「全員」に変えても復帰しない
+  // ため、「すべてのメンバーを表示」actionでgroupIdも含めてまとめて解除する
+  // 必要がある（PR #487 レビュー追加指摘）。
+  it("全員卒業済み＋グループ選択のとき、resetボタンは出ずactionを押すと復帰する", async () => {
     const groupA = createGroup({ id: "group-a", nameJa: "グループA" });
     const members: MemberListItem[] = [
       createMember({
@@ -330,9 +353,26 @@ describe("MemberBrowser のEmpty分岐", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "現役のメンバーがいないため、既定の絞り込みでは表示できません。在籍状況を「全員」に変えると表示できます。"
+        "現役のメンバーがいないため、既定の絞り込みでは表示できません。"
       )
     ).toBeInTheDocument();
+    const showAllButton = screen.getByRole("button", {
+      name: "すべてのメンバーを表示",
+    });
+    vi.mocked(replaceListFilterParams).mockClear();
+
+    await user.click(showAllButton);
+
+    expect(
+      screen.queryByText("条件に一致するメンバーが見つかりません")
+    ).not.toBeInTheDocument();
+    // 0件表示が消えるだけでなく、実際にメンバーが描画されるところまで確認する
+    expect(screen.getByText("メンバー1")).toBeInTheDocument();
+    expect(replaceListFilterParams).toHaveBeenCalledExactlyOnceWith({
+      groupId: "",
+      generation: "",
+      status: "all",
+    });
   });
 });
 

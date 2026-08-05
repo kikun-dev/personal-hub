@@ -152,6 +152,19 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
     replaceListFilterParams({ groupId: "", generation: "", status: "" });
   };
 
+  // !canRestoreByResetのとき、単一filterの変更を促す説明文では他のactive filter
+  // （groupId/generation）が残っていると復帰しない場合がある（例：全員卒業済みの
+  // データで対象メンバーが所属しないグループを選んでいると、在籍状況を「全員」に
+  // 変えるだけでは0件のまま）。説明文の正確性に依存せず必ず表示できる状態へ全関連
+  // filterをまとめて変更するactionにすることで復帰を構造上保証する
+  // （PR #487 レビュー追加指摘）。
+  const handleShowAll = () => {
+    setGroupId("");
+    setGeneration("");
+    setStatus("all");
+    replaceListFilterParams({ groupId: "", generation: "", status: "all" });
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
@@ -225,9 +238,17 @@ export function MemberBrowser({ groups, members }: MemberBrowserProps) {
             </Button>
           )}
           {!canRestoreByReset && (
-            <p>
-              現役のメンバーがいないため、既定の絞り込みでは表示できません。在籍状況を「全員」に変えると表示できます。
-            </p>
+            <>
+              <p>現役のメンバーがいないため、既定の絞り込みでは表示できません。</p>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={handleShowAll}
+                className={standaloneTargetMinHeightClass}
+              >
+                すべてのメンバーを表示
+              </Button>
+            </>
           )}
         </div>
       ) : isGroupFiltered ? (

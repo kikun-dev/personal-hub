@@ -184,28 +184,10 @@ describe("SongBrowser のEmpty分岐", () => {
 
   // #487 P2-1: 既定filter（includeOther=false）のままでもcatch-allラベルの曲だけの
   // ときは0件になりうる。押しても何も変わらないresetを出さないことを確認する。
-  it("既定のincludeOther=falseのままcatch-allラベルの曲だけで0件のとき、no-match文言は出るがresetボタンは出ない", () => {
-    const catchallGroup = createGroup({ id: "catchall", isCatchall: true });
-    const songs = [
-      createSong({ groupId: "catchall", groupNameJa: "その他", isCatchall: true }),
-    ];
-    const songSections = buildSections(songs, catchallGroup);
-    render(<SongBrowser groups={[catchallGroup]} songs={songs} songSections={songSections} />);
-
-    expect(
-      screen.getByText("条件に一致する楽曲が見つかりません")
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: "絞り込みを解除" })
-    ).not.toBeInTheDocument();
-  });
-
-  // レビュー追加指摘: hasActiveFilter（現在値が既定と異なるか）だけでは、
-  // reset後の既定条件（includeOther=false）自体が0件になる場合を判定できない。
-  // catch-all楽曲だけのデータで検索語を入力するとhasActiveFilter=trueになるが、
-  // resetしても既定includeOther=falseのままでは0件が続くため、resetボタンは
-  // 出さず理由と対処を示す文言を出す。
-  it("catch-allの曲だけ＋検索語入力のとき、resetボタンは出ず既定条件で表示できない旨の説明が出る", async () => {
+  // #487 P2 追加指摘: 代わりに出る「すべての楽曲を表示」actionを押すと、
+  // groupId="" / label="" / generation="" / includeOther=trueへまとめて変わり
+  // 実際に復帰することまで確認する。
+  it("既定のincludeOther=falseのままcatch-allラベルの曲だけで0件のとき、resetボタンは出ずactionを押すと復帰する", async () => {
     const catchallGroup = createGroup({ id: "catchall", isCatchall: true });
     const songs = [
       createSong({ groupId: "catchall", groupNameJa: "その他", isCatchall: true }),
@@ -214,10 +196,51 @@ describe("SongBrowser のEmpty分岐", () => {
     const user = userEvent.setup();
     render(<SongBrowser groups={[catchallGroup]} songs={songs} songSections={songSections} />);
 
-    await user.type(
-      screen.getByRole("searchbox", { name: "楽曲タイトルで検索" }),
-      "検索語"
-    );
+    expect(
+      screen.getByText("条件に一致する楽曲が見つかりません")
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: "絞り込みを解除" })
+    ).not.toBeInTheDocument();
+    const showAllButton = screen.getByRole("button", {
+      name: "すべての楽曲を表示",
+    });
+    expect(showAllButton).toBeInTheDocument();
+    vi.mocked(replaceListFilterParams).mockClear();
+
+    await user.click(showAllButton);
+
+    expect(
+      screen.queryByText("条件に一致する楽曲が見つかりません")
+    ).not.toBeInTheDocument();
+    // 0件表示が消えるだけでなく、実際に楽曲が描画されるところまで確認する
+    expect(screen.getByText("テスト楽曲")).toBeInTheDocument();
+    expect(replaceListFilterParams).toHaveBeenCalledExactlyOnceWith({
+      groupId: "",
+      label: "",
+      generation: "",
+      includeOther: "1",
+    });
+  });
+
+  // レビュー追加指摘: hasActiveFilter（現在値が既定と異なるか）だけでは、
+  // reset後の既定条件（includeOther=false）自体が0件になる場合を判定できない。
+  // catch-all楽曲だけのデータで検索語を入力するとhasActiveFilter=trueになるが、
+  // resetしても既定includeOther=falseのままでは0件が続く。かつ、検索語が残った
+  // ままでは「その他も含む」を有効にするだけでも復帰しないため、「すべての楽曲を
+  // 表示」actionで検索語のクリアも含めてまとめて解除する必要がある
+  // （PR #487 レビュー追加指摘）。
+  it("catch-allの曲だけ＋検索語入力のとき、resetボタンは出ずactionを押すと復帰する", async () => {
+    const catchallGroup = createGroup({ id: "catchall", isCatchall: true });
+    const songs = [
+      createSong({ groupId: "catchall", groupNameJa: "その他", isCatchall: true }),
+    ];
+    const songSections = buildSections(songs, catchallGroup);
+    const user = userEvent.setup();
+    render(<SongBrowser groups={[catchallGroup]} songs={songs} songSections={songSections} />);
+
+    const queryInput = screen.getByRole("searchbox", { name: "楽曲タイトルで検索" });
+    await user.type(queryInput, "検索語");
 
     expect(
       screen.getByText("条件に一致する楽曲が見つかりません")
@@ -227,9 +250,28 @@ describe("SongBrowser のEmpty分岐", () => {
     ).not.toBeInTheDocument();
     expect(
       screen.getByText(
-        "「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。「その他も含む」を有効にすると表示できます。"
+        "「その他」以外の楽曲がないため、既定の絞り込みでは表示できません。"
       )
     ).toBeInTheDocument();
+    const showAllButton = screen.getByRole("button", {
+      name: "すべての楽曲を表示",
+    });
+    vi.mocked(replaceListFilterParams).mockClear();
+
+    await user.click(showAllButton);
+
+    expect(
+      screen.queryByText("条件に一致する楽曲が見つかりません")
+    ).not.toBeInTheDocument();
+    // 0件表示が消えるだけでなく、実際に楽曲が描画され検索語も消えることを確認する
+    expect(screen.getByText("テスト楽曲")).toBeInTheDocument();
+    expect(queryInput).toHaveValue("");
+    expect(replaceListFilterParams).toHaveBeenCalledExactlyOnceWith({
+      groupId: "",
+      label: "",
+      generation: "",
+      includeOther: "1",
+    });
   });
 });
 
