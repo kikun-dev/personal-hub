@@ -35,6 +35,11 @@ describe("app/not-found.tsx", () => {
     const user = userEvent.setup();
     render(<NotFound />);
 
+    // #486 Decision 6: notFound()は通常のページ状態として扱い、headingで理解可能にする。
+    expect(
+      screen.getByRole("heading", { level: 1, name: "ページが見つかりません" })
+    ).toBeInTheDocument();
+
     const link = screen.getByRole("link", { name: "← トップへ戻る" });
     expect(link).toHaveAttribute("aria-busy", "false");
 
