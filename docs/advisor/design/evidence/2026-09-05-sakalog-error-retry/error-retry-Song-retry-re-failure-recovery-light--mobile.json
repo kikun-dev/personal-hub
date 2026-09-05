@@ -1,0 +1,35 @@
+{
+  "target": "Song",
+  "theme": "light",
+  "project": "mobile",
+  "targetHeight": 44,
+  "outlineWidth": "2px",
+  "cycles": [
+    {
+      "recovered": false,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    },
+    {
+      "recovered": true,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    }
+  ],
+  "requests": [
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/songs/0268272f-67a8-4d93-856b-256e802cd709"
+    },
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/songs/0268272f-67a8-4d93-856b-256e802cd709"
+    }
+  ],
+  "sameDocument": true,
+  "recovered": true
+}

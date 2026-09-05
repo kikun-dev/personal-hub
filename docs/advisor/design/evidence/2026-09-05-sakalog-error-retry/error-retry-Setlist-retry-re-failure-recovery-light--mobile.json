@@ -1,0 +1,35 @@
+{
+  "target": "Setlist",
+  "theme": "light",
+  "project": "mobile",
+  "targetHeight": 44,
+  "outlineWidth": "2px",
+  "cycles": [
+    {
+      "recovered": false,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    },
+    {
+      "recovered": true,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    }
+  ],
+  "requests": [
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/37aa8ddd-9a92-4126-b303-f8400dab9698/performances/caed5097-1cfe-4d63-813d-a2c4c4e1dd50/setlist"
+    },
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/37aa8ddd-9a92-4126-b303-f8400dab9698/performances/caed5097-1cfe-4d63-813d-a2c4c4e1dd50/setlist"
+    }
+  ],
+  "sameDocument": true,
+  "recovered": true
+}

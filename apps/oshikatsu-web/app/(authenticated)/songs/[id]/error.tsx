@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { standaloneTargetClass } from "@/components/ui/interactionStyles";
+import {
+  standaloneTargetClass,
+  standaloneTargetMinHeightClass,
+} from "@/components/ui/interactionStyles";
 import { APP_ROUTES } from "@/lib/routes";
 
 type SongDetailErrorProps = {
@@ -14,6 +18,19 @@ type SongDetailErrorProps = {
 // 楽曲詳細の読み込み/描画で例外が出ても、ページ全体を 500 にせず
 // 回復可能な表示に留める（原因調査用に digest をログへ残す）。
 export default function SongDetailError({ error, reset }: SongDetailErrorProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleRetry(): void {
+    if (isPending) return;
+    startTransition(() => {
+      // reset単独では失敗したRSCを再取得しない。refreshと同じtransitionに
+      // まとめ、実routeの再取得完了までpendingを維持する（#488 E2E）。
+      router.refresh();
+      reset();
+    });
+  }
+
   useEffect(() => {
     // クライアントコンソールへの露出を最小化し、サーバーログ突合用の digest のみ記録する
     console.error("song detail render error", { digest: error.digest });
@@ -39,7 +56,14 @@ export default function SongDetailError({ error, reset }: SongDetailErrorProps) 
           </p>
         </div>
         <div className="mt-4">
-          <Button onClick={reset}>再試行</Button>
+          <Button
+            onClick={handleRetry}
+            disabled={isPending}
+            aria-busy={isPending}
+            className={standaloneTargetMinHeightClass}
+          >
+            {isPending ? "再試行中…" : "再試行"}
+          </Button>
         </div>
       </div>
     </div>

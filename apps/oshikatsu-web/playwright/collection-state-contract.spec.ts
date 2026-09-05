@@ -29,10 +29,8 @@ import { installTrackedRoute, type DisposeRoute } from "./trackedRoute";
 //   D. Not Found: 実在しないが形式は正しいUUIDでdetail routeを開いたとき、h1が1つ・
 //      期待するrecovery linkがあり、role="alert"を持たず、keyboardで操作できること。
 //
-// **Error boundary（error.tsx）はPlaywrightで発火させない。** Issue #486のVerificationに
-// 「Loading / Errorを実データや通信障害の偶発性へ依存して発火させない」とあり、Errorは
-// 各error.test.tsx（component test）で担保済み。実データ・実通信でerror.tsxを狙って
-// 発火させる決定的な手段が無いため、本specの対象から除外する。
+// Error boundaryは本specの対象外。#488 の error-retry.spec.ts がローカルDBの
+// 決定的な障害注入とcleanupを所有し、実RSC再取得・再失敗・正常復帰を検証する。
 //
 // theme × viewportの組み合わせを絞る（workers: 1の直列実行のため、全組み合わせを
 // 全項目で回すと極端に遅くなる）。
