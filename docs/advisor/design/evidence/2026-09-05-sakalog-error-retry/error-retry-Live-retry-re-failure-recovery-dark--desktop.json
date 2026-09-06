@@ -1,0 +1,35 @@
+{
+  "target": "Live",
+  "theme": "dark",
+  "project": "desktop",
+  "targetHeight": 44,
+  "outlineWidth": "2px",
+  "cycles": [
+    {
+      "recovered": false,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    },
+    {
+      "recovered": true,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    }
+  ],
+  "requests": [
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/05709854-8e27-4acb-80aa-fd5fdb865e66"
+    },
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/05709854-8e27-4acb-80aa-fd5fdb865e66"
+    }
+  ],
+  "sameDocument": true,
+  "recovered": true
+}

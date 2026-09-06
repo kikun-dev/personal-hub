@@ -81,6 +81,33 @@ pnpm test:e2e:local -- playwright/recent-attendance-isolation.spec.ts --repeat-e
 Docker container名を変えている場合は `E2E_LOCAL_SUPABASE_KONG_CONTAINER` /
 `E2E_LOCAL_SUPABASE_DB_CONTAINER` も指定する。
 
+### Error retry のローカル回帰検証（#488）
+
+```bash
+pnpm test:e2e:local -- error-retry
+```
+
+- Song / Live / Setlist × desktop 1440px（Chromium）/ mobile 390px（WebKit）× light / dark の12件。
+- 一時障害 → Retryで再失敗 → 障害解除 → Retryで復帰を実routeで確認する。
+  各Retryの `RSC: 1` request数、document navigationが0件、同じdocumentの維持、
+  pending中のdisabled / aria-busy、二重操作防止、44px / 2px focusを検証する。
+- `errorRetryDb.mjs` がローカルDocker DB内の専用UUIDによるrelease / song / live /
+  performance / setlistを作る。成功cacheで障害が隠れないよう、UUIDはテストごとに変える。
+  URLへのnonce追加やproduction codeのテスト専用分岐は使わない。
+- 障害注入は `service_role` の `orbit_tracks` または `orbit_lives` のSELECTだけ。
+  初期grantが復元可能な直接付与（grant optionなし）であることを確認し、他の権限は変更しない。
+- fixture teardownはテスト本体と別の30秒budgetで動作する。失敗・timeoutでも先にGRANTと
+  `has_table_privilege`確認を行い、その後に専用データだけを削除して残件0を確認する。
+- workerと別の障害管理プロセスがIPC切断、SIGINT/SIGTERM、90秒watchdogでも同じcleanupを行う。
+  IPCの応答IDを照合し、timeout前の操作完了をcleanup完了と誤認しない。
+- `workers: 1` を必須とし、同一DBの障害管理プロセスは一時ディレクトリの排他lockで二重起動を拒否する。
+  テーブル全体のSELECTへ作用するため、別の開発serverや独立したsuiteと同じDBを同時利用しない。
+  hosted実行では本specはskipする。
+- 各テストの出力先へ `retry-evidence.json`、`db-cleanup.json`、Error / pending /
+  再失敗 / 正常復帰のスクリーンショットを保存する。認証cookieやAPI keyはJSONへ保存しない。
+- Docker / DB自体が停止して復旧SQLを実行できない場合はcleanup失敗を報告し、lockを残す。
+  その場合はローカルstack復帰後に対象SELECTと専用UUIDの残件を確認してからlockを解除する。
+
 ### 失敗の証跡は trace に残る（#440）
 
 `use.trace: "retain-on-failure"` を設定してある。ローカルは `retries: 0` なので

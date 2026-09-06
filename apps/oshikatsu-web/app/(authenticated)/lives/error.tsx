@@ -1,9 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/Button";
 import { PendingLink } from "@/components/ui/PendingLink";
-import { standaloneTargetClass } from "@/components/ui/interactionStyles";
+import {
+  standaloneTargetClass,
+  standaloneTargetMinHeightClass,
+} from "@/components/ui/interactionStyles";
 import { APP_ROUTES } from "@/lib/routes";
 
 type LiveErrorProps = {
@@ -16,6 +20,19 @@ type LiveErrorProps = {
 // Live subtree（list / [id] / [id]/performances/[performanceId]/setlist）は
 // この1つの boundary で受け、route ごとに同じ boundary を複製しない（#486 Decision 5）。
 export default function LiveError({ error, reset }: LiveErrorProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
+  function handleRetry(): void {
+    if (isPending) return;
+    startTransition(() => {
+      // reset単独では失敗したRSCを再取得しない。refreshと同じtransitionに
+      // まとめ、実routeの再取得完了までpendingを維持する（#488 E2E）。
+      router.refresh();
+      reset();
+    });
+  }
+
   useEffect(() => {
     // クライアントコンソールへの露出を最小化し、サーバーログ突合用の digest のみ記録する
     console.error("live render error", { digest: error.digest });
@@ -41,7 +58,14 @@ export default function LiveError({ error, reset }: LiveErrorProps) {
           </p>
         </div>
         <div className="mt-4">
-          <Button onClick={reset}>再試行</Button>
+          <Button
+            onClick={handleRetry}
+            disabled={isPending}
+            aria-busy={isPending}
+            className={standaloneTargetMinHeightClass}
+          >
+            {isPending ? "再試行中…" : "再試行"}
+          </Button>
         </div>
       </div>
     </div>

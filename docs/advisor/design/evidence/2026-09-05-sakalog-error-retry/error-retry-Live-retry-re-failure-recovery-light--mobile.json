@@ -1,0 +1,35 @@
+{
+  "target": "Live",
+  "theme": "light",
+  "project": "mobile",
+  "targetHeight": 44,
+  "outlineWidth": "2px",
+  "cycles": [
+    {
+      "recovered": false,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    },
+    {
+      "recovered": true,
+      "rscRequests": 1,
+      "documentRequests": 0,
+      "pendingDisabled": true
+    }
+  ],
+  "requests": [
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/1704df46-28ad-4416-bd7e-38db9e7c5b90"
+    },
+    {
+      "rsc": true,
+      "document": false,
+      "path": "/lives/1704df46-28ad-4416-bd7e-38db9e7c5b90"
+    }
+  ],
+  "sameDocument": true,
+  "recovered": true
+}
