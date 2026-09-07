@@ -143,10 +143,10 @@ const focusTargets: FocusTarget[] = [
     maxTabs: 80,
   },
   {
-    label: "Live detail の back link",
+    label: "Live detail の ListBackButton",
     resolveHref: (page) => resolveFirstDetailHref(page, "/lives", "/lives/"),
     locator: (page) =>
-      page.getByRole("link", { name: /^← (ライブ一覧へ戻る|.+の出来事へ戻る)$/ }),
+      page.getByRole("button", { name: "← ライブ一覧へ戻る" }),
   },
 ];
 

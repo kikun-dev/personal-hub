@@ -71,7 +71,9 @@ async function expectFallbackScrollOwnership(
   browserName: string
 ): Promise<void> {
   const carousel = page.getByTestId("live-performance-carousel");
-  await expect(page.getByRole("link", { name: "← ライブ一覧へ戻る" })).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "← ライブ一覧へ戻る" })
+  ).toBeVisible();
   await expect(carousel).toBeVisible();
 
   const initialMetrics = await carousel.evaluate((element) => {
