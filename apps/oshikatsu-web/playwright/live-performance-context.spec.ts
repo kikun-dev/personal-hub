@@ -256,6 +256,51 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
   });
 }
 
+test("参戦記録の編集中に別公演へ切り替えると未保存stateを引き継がない", async ({
+  page,
+}) => {
+  const liveHref = await resolveTargetLiveHref(page);
+  await page.goto(liveHref);
+  const editingTarget = await readPerformanceExpectation(
+    performanceLinks(page, liveHref).nth(1)
+  );
+  const nextTarget = await readPerformanceExpectation(
+    performanceLinks(page, liveHref).nth(2)
+  );
+  expect(nextTarget.performanceId).not.toBe(editingTarget.performanceId);
+
+  await page.goto(editingTarget.href);
+  await expectPrimaryMatches(page, editingTarget);
+  const currentSection = page.locator("section", {
+    has: page.getByRole("heading", { level: 2, name: "この公演" }),
+  });
+  await currentSection
+    .getByRole("button", { name: /^(参戦を記録|編集)$/ })
+    .click();
+  const unsavedNote = "切り替え前の未保存入力";
+  const noteField = currentSection.getByLabel("メモ", { exact: true });
+  await noteField.fill(unsavedNote);
+  await expect(noteField).toHaveValue(unsavedNote);
+
+  await page.locator(`main a[href="${nextTarget.href}"]`).click();
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return `${url.pathname}${url.search}`;
+    })
+    .toBe(nextTarget.href);
+  await expectPrimaryMatches(page, nextTarget);
+  expect(
+    await page.locator("textarea").evaluateAll(
+      (textareas, value) =>
+        textareas.some(
+          (textarea) => (textarea as HTMLTextAreaElement).value === value
+        ),
+      unsavedNote
+    )
+  ).toBe(false);
+});
+
 test("invalid・nonexistent・cross-live IDはbare overviewへfallbackする", async ({
   page,
 }) => {

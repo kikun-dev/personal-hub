@@ -491,8 +491,11 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         {/* #363: 自分の参戦記録がsetlistより下に押されると「解除」が「編集」より
             視覚的に強く見える問題があったため、基本情報・配信badge・休演の直後、
             setlistブロックより前に配置する（D5）。この公演セクションはprovider不要で
-            AttendanceControlを直接mountする（fallback carouselと異なり常に1公演のみ表示） */}
+            AttendanceControlを直接mountする（fallback carouselと異なり常に1公演のみ表示）。
+            search parameterだけで別公演へ切り替わっても編集中の値と保存対象を再利用しないよう、
+            performance IDをcomponent identityにする。 */}
         <AttendanceControl
+          key={targetPerformance.id}
           performanceId={targetPerformance.id}
           attendance={myAttendances[targetPerformance.id] ?? null}
         />
