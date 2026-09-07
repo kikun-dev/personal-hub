@@ -4,8 +4,10 @@
 // 全会場の単列全件表示は overview として縦量が過剰なため、
 // 初期表示を先頭グループに限定し、group 単位で展開する（Desktop は2列で圧縮）。
 import { useId, useState } from "react";
+import { PendingLink } from "@/components/ui/PendingLink";
 import { TextLink } from "@/components/ui/TextLink";
 import { focusRingClass, standaloneTargetClass } from "@/components/ui/interactionStyles";
+import { APP_ROUTES } from "@/lib/routes";
 
 // 初期表示する会場グループ数
 const VISIBLE_GROUPS = 4;
@@ -16,16 +18,17 @@ export type TourOverviewGroup = {
   areaLabel: string | null;
   venueId: string | null;
   venueName: string | null;
-  // 整形済みの日程行（例: "7/15(水) 開場 16:30 / 開演 18:00"）
-  scheduleLines: string[];
+  // 公演選択URLの構築に必要なIDと、整形済みの日程行。
+  schedules: { performanceId: string; label: string }[];
 };
 
 type TourOverviewProps = {
+  liveId: string;
   heading: string;
   groups: TourOverviewGroup[];
 };
 
-export function TourOverview({ heading, groups }: TourOverviewProps) {
+export function TourOverview({ liveId, heading, groups }: TourOverviewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const regionId = useId();
   const hasMore = groups.length > VISIBLE_GROUPS;
@@ -66,8 +69,17 @@ export function TourOverview({ heading, groups }: TourOverviewProps) {
               )}
             </p>
             <div className="mt-1 space-y-0.5 text-xs text-foreground-secondary">
-              {group.scheduleLines.map((line, index) => (
-                <p key={index}>{line}</p>
+              {group.schedules.map((schedule) => (
+                <p key={schedule.performanceId}>
+                  <PendingLink
+                    href={`${APP_ROUTES.lives}/${liveId}?performance=${schedule.performanceId}`}
+                    prefetch={false}
+                    feedback="global"
+                    className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
+                  >
+                    {schedule.label}
+                  </PendingLink>
+                </p>
               ))}
             </div>
           </div>

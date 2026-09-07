@@ -188,7 +188,7 @@ export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps
     <div className="space-y-6">
       <div className="space-y-1">
         <PendingLink
-          href={`${APP_ROUTES.lives}/${live.id}`}
+          href={`${APP_ROUTES.lives}/${live.id}?performance=${performance.id}`}
           feedback="global"
           className={`text-sm text-foreground-secondary hover:text-foreground ${standaloneTargetClass}`}
         >

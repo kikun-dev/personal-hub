@@ -4,11 +4,7 @@ import { LiveDetail } from "@/components/lives/LiveDetail";
 import { getLiveDetailPageData } from "@/usecases/readOrbitLiveData";
 import { createAttendanceRepository } from "@/repositories/attendanceRepository";
 import { getMyAttendancesForLive } from "@/usecases/getMyAttendancesForLive";
-import {
-  parseLiveDateParam,
-  parseLivePerformanceParam,
-  type LiveDateContext,
-} from "@/lib/liveDateContext";
+import { resolveLiveDetailContext } from "@/lib/liveDateContext";
 
 type LiveDetailPageProps = {
   params: Promise<{ id: string }>;
@@ -27,20 +23,10 @@ export default async function LiveDetailPage({
     notFound();
   }
 
-  // 日付 context（#346）: date（戻り先の日次文脈）と performance（この公演）の両方を
-  // 境界で検証し、さらに「対象ライブの公演に存在」かつ「その公演の performanceDate === date」
-  // の場合のみ有効とする。欠落・不正・不一致はすべて直接訪問と同じ fallback（null）。
-  const parsedDate = parseLiveDateParam(date);
-  const parsedPerformanceId = parseLivePerformanceParam(performance);
-  const isValidContext =
-    parsedDate !== null &&
-    parsedPerformanceId !== null &&
-    live.performances.some(
-      (p) => p.id === parsedPerformanceId && p.performanceDate === parsedDate
-    );
-  const context: LiveDateContext | null = isValidContext
-    ? { date: parsedDate, performanceId: parsedPerformanceId }
-    : null;
+  // #491: 取得済みの対象 Live の performances だけを使い、query の UUID・
+  // 実在・所属・Top context の日付一致をサーバー境界で検証する。
+  // 検証のための Repository 追加や追加 DB query は行わない。
+  const context = resolveLiveDetailContext(date, performance, live.performances);
 
   // グローバル部分（公演・セトリ）は従来どおり shared cache 経由の getLiveDetailPageData
   // を使い、ここには手を入れない。参戦記録はユーザー別データ（ADR 0009）のため
