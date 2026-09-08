@@ -3,7 +3,9 @@ import { focusWithKeyboard } from "./contrast";
 import { installTrackedRoute } from "./trackedRoute";
 
 const TARGET_LIVE_NAME = /乃木坂46 真夏の全国ツアー2026/;
+const TARGET_GROUP_NAME = "乃木坂46";
 const NONEXISTENT_PERFORMANCE_ID = "77777777-7777-4777-8777-777777777777";
+const TOP_SETLIST_DATE = "2026-06-13";
 
 function viewportForProject(projectName: string): { width: number; height: number } {
   return projectName === "mobile"
@@ -178,6 +180,162 @@ async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   ).toBe(false);
 }
 
+function pathAndSearch(page: Page): string {
+  const url = new URL(page.url());
+  return `${url.pathname}${url.search}`;
+}
+
+async function expectPath(page: Page, expected: string): Promise<void> {
+  await expect.poll(() => pathAndSearch(page)).toBe(expected);
+}
+
+type FilteredLiveEntry = {
+  filteredListHref: string;
+  liveHref: string;
+  selectedGroupId: string;
+};
+
+async function enterTargetLiveFromFilteredList(
+  page: Page
+): Promise<FilteredLiveEntry> {
+  await page.goto("/lives");
+  const groupSelect = page.getByLabel("出演グループで絞り込み");
+  const targetOption = groupSelect
+    .locator("option")
+    .filter({ hasText: new RegExp(`^${TARGET_GROUP_NAME}$`) });
+  const selectedGroupId = await targetOption.getAttribute("value");
+  if (!selectedGroupId) {
+    throw new Error("対象Liveのgroup filter valueを取得できませんでした。");
+  }
+  await groupSelect.selectOption(selectedGroupId);
+  await expect(groupSelect).toHaveValue(selectedGroupId);
+  const filteredListHref = `/lives?groupId=${encodeURIComponent(selectedGroupId)}`;
+  await expectPath(page, filteredListHref);
+
+  const liveLink = page.getByRole("link", { name: TARGET_LIVE_NAME }).first();
+  await expect(liveLink).toBeVisible();
+  const liveHref = await liveLink.getAttribute("href");
+  if (liveHref === null) {
+    throw new Error("filter済み一覧から対象Liveのhrefを取得できませんでした。");
+  }
+  await liveLink.focus();
+  await page.keyboard.press("Enter");
+  await expectPath(page, liveHref);
+  await expect(
+    page.getByRole("button", { name: "← ライブ一覧へ戻る" })
+  ).toBeVisible();
+
+  return { filteredListHref, liveHref, selectedGroupId };
+}
+
+async function expectFilteredListRestored(
+  page: Page,
+  entry: FilteredLiveEntry
+): Promise<void> {
+  await expectPath(page, entry.filteredListHref);
+  await expect(page.getByLabel("出演グループで絞り込み")).toHaveValue(
+    entry.selectedGroupId
+  );
+}
+
+async function performanceWithSetlist(
+  page: Page,
+  liveHref: string
+): Promise<{
+  expected: PerformanceExpectation;
+  setlistHref: string;
+}> {
+  const carouselGroups = page
+    .getByTestId("live-performance-carousel")
+    .getByRole("group");
+  const groupCount = await carouselGroups.count();
+
+  for (let index = 0; index < groupCount; index += 1) {
+    const group = carouselGroups.nth(index);
+    if ((await group.locator("ol").count()) === 0) continue;
+    const setlistHref = await group
+      .getByRole("link", { name: "詳細を見る →" })
+      .getAttribute("href");
+    const performanceId =
+      setlistHref?.match(/\/performances\/([0-9a-f-]{36})\/setlist$/i)?.[1] ??
+      null;
+    if (setlistHref === null || performanceId === null) continue;
+
+    const scheduleLink = page
+      .locator(`main a[href="${liveHref}?performance=${performanceId}"]`)
+      .first();
+    return {
+      expected: await readPerformanceExpectation(scheduleLink),
+      setlistHref,
+    };
+  }
+
+  throw new Error("セットリストを持つ公演が必要です。");
+}
+
+async function returnToBareLive(page: Page, liveHref: string): Promise<void> {
+  const backLink = page.getByRole("link", { name: "← ライブ全体へ戻る" });
+  await expect(backLink).toHaveAttribute("href", liveHref);
+  await backLink.click();
+  await expectPath(page, liveHref);
+  await expect(page.getByTestId("live-performance-carousel")).toBeVisible();
+}
+
+async function returnToFilteredList(
+  page: Page,
+  entry: FilteredLiveEntry
+): Promise<void> {
+  await page.getByRole("button", { name: "← ライブ一覧へ戻る" }).click();
+  await expectFilteredListRestored(page, entry);
+}
+
+type TopEntry = {
+  date: string;
+  expected: PerformanceExpectation;
+  liveHref: string;
+  sourceHref: string;
+  topHref: string;
+};
+
+async function enterTopSetlistPerformance(page: Page): Promise<TopEntry> {
+  const sourceHref = "/?year=2026&month=6&day=13";
+  await page.goto(sourceHref);
+  const topLink = page
+    .locator(
+      `main a[href^="/lives/"][href*="date=${TOP_SETLIST_DATE}"][href*="&performance="]`
+    )
+    .filter({ hasText: TARGET_LIVE_NAME })
+    .first();
+  await expect(topLink).toBeVisible();
+  const topHref = await topLink.getAttribute("href");
+  if (topHref === null) {
+    throw new Error("TopのSetlist fixture公演へのhrefを取得できませんでした。");
+  }
+  const topUrl = new URL(topHref, page.url());
+  const performanceId = topUrl.searchParams.get("performance");
+  if (performanceId === null) {
+    throw new Error("Top導線にperformance IDがありません。");
+  }
+  const liveHref = topUrl.pathname;
+
+  await page.goto(liveHref);
+  const expected = await readPerformanceExpectation(
+    page.locator(`main a[href="${liveHref}?performance=${performanceId}"]`).first()
+  );
+  await page.goto(sourceHref);
+  await page.locator(`main a[href="${topHref}"]`).first().click();
+  await expectPath(page, topHref);
+  await expectPrimaryMatches(page, expected);
+
+  return {
+    date: TOP_SETLIST_DATE,
+    expected,
+    liveHref,
+    sourceHref,
+    topHref,
+  };
+}
+
 test.beforeEach(async ({ page }, testInfo) => {
   await page.setViewportSize(viewportForProject(testInfo.project.name));
 });
@@ -216,15 +374,23 @@ test("bare日程Linkをkeyboardで選び、performance単独contextをreload後�
       page.getByRole("link", { name: "← ライブ全体へ戻る" })
     ).toHaveAttribute("href", liveHref);
   });
+});
+
+test("Journey 7: direct P → D はperformance entryをbare Liveへ置換する", async ({
+  page,
+}) => {
+  const liveHref = await resolveTargetLiveHref(page);
+  await page.goto(liveHref);
+  const expected = await readPerformanceExpectation(
+    performanceLinks(page, liveHref).nth(1)
+  );
 
   await test.step("direct visit", async () => {
-    await page.goto(liveHref);
     await page.goto(expected.href);
     await expectPrimaryMatches(page, expected);
   });
-
   await page.getByRole("link", { name: "← ライブ全体へ戻る" }).click();
-  await expect(page).toHaveURL(new RegExp(`${liveHref.replaceAll("/", "\\/")}$`));
+  await expectPath(page, liveHref);
   await expect(page.getByTestId("live-performance-carousel")).toBeVisible();
   await expect(page.getByRole("heading", { name: "この公演" })).toHaveCount(0);
 });
@@ -256,7 +422,7 @@ for (const reducedMotion of ["no-preference", "reduce"] as const) {
   });
 }
 
-test("参戦記録の編集中に別公演へ切り替えると未保存stateを引き継がない", async ({
+test("Journey 8: P_A編集中 → P_B はperformance固有stateを引き継がない", async ({
   page,
 }) => {
   const liveHref = await resolveTargetLiveHref(page);
@@ -342,124 +508,149 @@ test("invalid・nonexistent・cross-live IDはbare overviewへfallbackする", a
   });
 });
 
-test("Topのdate + performance導線は対象公演と選択日への戻り先を維持する", async ({
+test("Journey 1: F → D → F はURLとfilter controlを復元する", async ({
   page,
 }) => {
-  await page.goto("/");
-  const topLiveLink = page
-    .locator('main a[href^="/lives/"][href*="?date="][href*="&performance="]')
-    .first();
-  await expect(topLiveLink).toBeVisible();
-  const href = await topLiveLink.getAttribute("href");
-  if (href === null) {
-    throw new Error("Topのdate + performance導線を取得できませんでした。");
-  }
-  const url = new URL(href, page.url());
-  const date = url.searchParams.get("date");
-  const performanceId = url.searchParams.get("performance");
-  if (date === null || performanceId === null) {
-    throw new Error("Top導線にdateまたはperformanceがありません。");
-  }
-  const [, month, day] = date.split("-").map(Number);
-  const liveHref = url.pathname;
+  const entry = await enterTargetLiveFromFilteredList(page);
+  await returnToFilteredList(page, entry);
+});
 
-  await page.goto(liveHref);
-  const expected = await readPerformanceExpectation(
-    page.locator(
-      `main a[href="${liveHref}?performance=${performanceId}"]`
-    )
+test("Journey 2: F → D → P → D → F を1つのfamily slotで往復する", async ({
+  page,
+}) => {
+  const entry = await enterTargetLiveFromFilteredList(page);
+  const selected = await readPerformanceExpectation(
+    performanceLinks(page, entry.liveHref).nth(1)
   );
 
-  await page.goto("/");
-  const verifiedTopLiveLink = page.locator(`main a[href="${href}"]`);
-  await expect(verifiedTopLiveLink).toHaveCount(1);
-  await verifiedTopLiveLink.click();
-  await expect
-    .poll(() => {
-      const currentUrl = new URL(page.url());
-      return `${currentUrl.pathname}${currentUrl.search}`;
+  await page.locator(`main a[href="${selected.href}"]`).first().click();
+  await expectPath(page, selected.href);
+  await expectPrimaryMatches(page, selected);
+  await returnToBareLive(page, entry.liveHref);
+  await returnToFilteredList(page, entry);
+});
+
+test("Journey 3: F → D → P → S → P → D → F とSetlist browser backを固定する", async ({
+  page,
+}) => {
+  let entry = await enterTargetLiveFromFilteredList(page);
+  let setlist = await performanceWithSetlist(page, entry.liveHref);
+
+  await page.locator(`main a[href="${setlist.expected.href}"]`).first().click();
+  await expectPath(page, setlist.expected.href);
+  await expectPrimaryMatches(page, setlist.expected);
+  let liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+  if (!liveName) throw new Error("Setlistの親Live名を取得できませんでした。");
+  const primary = page.locator("section", {
+    has: page.getByRole("heading", { level: 2, name: "この公演" }),
+  });
+  await primary.getByRole("link", { name: "詳細を見る →" }).click();
+  await expectPath(page, setlist.setlistHref);
+
+  await page.goBack();
+  await expectFilteredListRestored(page, entry);
+
+  entry = await enterTargetLiveFromFilteredList(page);
+  setlist = await performanceWithSetlist(page, entry.liveHref);
+  await page.locator(`main a[href="${setlist.expected.href}"]`).first().click();
+  await expectPath(page, setlist.expected.href);
+  liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+  if (!liveName) throw new Error("Setlistの親Live名を取得できませんでした。");
+  await page
+    .locator("section", {
+      has: page.getByRole("heading", { level: 2, name: "この公演" }),
     })
-    .toBe(href);
-  await expectPrimaryMatches(page, expected);
-  await expect(
-    page.getByRole("link", { name: `← ${month}/${day}の出来事へ戻る` })
-  ).toHaveAttribute("href", `/?year=${date.slice(0, 4)}&month=${month}&day=${day}`);
+    .getByRole("link", { name: "詳細を見る →" })
+    .click();
+  await expectPath(page, setlist.setlistHref);
+
+  const parentLiveLink = page.getByRole("link", { name: `← ${liveName}` });
+  await expect(parentLiveLink).toHaveAttribute("href", setlist.expected.href);
+  await parentLiveLink.click();
+  await expectPath(page, setlist.expected.href);
+  await expectPrimaryMatches(page, setlist.expected);
+  await returnToBareLive(page, entry.liveHref);
+  await returnToFilteredList(page, entry);
+});
+
+test("Journey 4: F → D → S → P → D → F を1つのfamily slotで往復する", async ({
+  page,
+}) => {
+  const entry = await enterTargetLiveFromFilteredList(page);
+  const setlist = await performanceWithSetlist(page, entry.liveHref);
+  const liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+  if (!liveName) throw new Error("Setlistの親Live名を取得できませんでした。");
+  const carouselSetlistLink = page
+    .getByTestId("live-performance-carousel")
+    .locator(`a[href="${setlist.setlistHref}"]`);
+  await expect(carouselSetlistLink).toHaveCount(1);
+  await carouselSetlistLink.click();
+  await expectPath(page, setlist.setlistHref);
+
+  const parentLiveLink = page.getByRole("link", { name: `← ${liveName}` });
+  await expect(parentLiveLink).toHaveAttribute("href", setlist.expected.href);
+  await parentLiveLink.click();
+  await expectPath(page, setlist.expected.href);
+  await expectPrimaryMatches(page, setlist.expected);
+  await returnToBareLive(page, entry.liveHref);
+  await returnToFilteredList(page, entry);
+});
+
+test("Journey 5: Top/date → T → Top/date はdate・performance・primaryを維持する", async ({
+  page,
+}) => {
+  const entry = await enterTopSetlistPerformance(page);
+  const [, month, day] = entry.date.split("-").map(Number);
+  const topBackLink = page.getByRole("link", {
+    name: `← ${month}/${day}の出来事へ戻る`,
+  });
+  await expect(topBackLink).toHaveAttribute("href", entry.sourceHref);
+  expect(new URL(page.url()).searchParams.get("date")).toBe(entry.date);
+  expect(new URL(page.url()).searchParams.get("performance")).toBe(
+    entry.expected.performanceId
+  );
+  await topBackLink.click();
+  await expectPath(page, entry.sourceHref);
   await expectNoHorizontalOverflow(page);
 });
 
-test("Setlistからroute上のperformance contextを復元する", async ({ page }) => {
-  const liveHref = await resolveTargetLiveHref(page);
-  await page.goto(liveHref);
-  const carouselGroups = page.getByTestId("live-performance-carousel").getByRole("group");
-  const groupCount = await carouselGroups.count();
-  let performanceId: string | null = null;
-
-  for (let index = 0; index < groupCount; index += 1) {
-    const group = carouselGroups.nth(index);
-    if ((await group.locator("ol").count()) === 0) continue;
-    const setlistHref = await group
-      .getByRole("link", { name: "詳細を見る →" })
-      .getAttribute("href");
-    performanceId =
-      setlistHref?.match(/\/performances\/([0-9a-f-]{36})\/setlist$/i)?.[1] ??
-      null;
-    if (performanceId !== null) break;
-  }
-  expect(performanceId, "セットリストを持つ公演が必要です").not.toBeNull();
-  if (performanceId === null) return;
-
-  await page.goto(`${liveHref}?performance=${performanceId}`);
-  const liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
-  if (!liveName) {
-    throw new Error("親Live導線のラベル検証用ライブ名を取得できませんでした。");
-  }
-
-  const thisPerformance = page.locator("section", {
-    has: page.getByRole("heading", { level: 2, name: "この公演" }),
-  });
-  const setlistLink = thisPerformance.getByRole("link", { name: "詳細を見る →" });
-  await expect(setlistLink).toBeVisible();
-  await setlistLink.click();
-
-  const parentLiveLink = page.getByRole("link", { name: `← ${liveName}` });
-  await expect(parentLiveLink).toHaveAttribute(
-    "href",
-    `${liveHref}?performance=${performanceId}`
-  );
-  await parentLiveLink.click();
-  await expect(page).toHaveURL(new RegExp(`\\?performance=${performanceId}$`));
-  await expect(page.getByRole("heading", { name: "この公演" })).toBeVisible();
-});
-
-test("一覧filterからbare detailへ進み、ListBackButtonでfilterを復元する", async ({
+test("Journey 6: Top/date → T → S → 親Live → Top/date とSetlist browser backを固定する", async ({
   page,
 }) => {
-  await page.goto("/lives");
-  const groupSelect = page.getByLabel("出演グループで絞り込み");
-  const options = groupSelect.locator("option");
-  const optionCount = await options.count();
-  let selectedGroupId: string | null = null;
+  let entry = await enterTopSetlistPerformance(page);
+  let primary = page.locator("section", {
+    has: page.getByRole("heading", { level: 2, name: "この公演" }),
+  });
+  let liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+  if (!liveName) throw new Error("Setlistの親Live名を取得できませんでした。");
+  let setlistLink = primary.getByRole("link", { name: "詳細を見る →" });
+  const expectedSetlistHref = `${entry.liveHref}/performances/${entry.expected.performanceId}/setlist?date=${entry.date}`;
+  await expect(setlistLink).toHaveAttribute("href", expectedSetlistHref);
+  await setlistLink.click();
+  await expectPath(page, expectedSetlistHref);
 
-  for (let index = 1; index < optionCount; index += 1) {
-    const value = await options.nth(index).getAttribute("value");
-    if (!value) continue;
-    await groupSelect.selectOption(value);
-    if ((await page.locator('[data-ui="live-card"]').count()) > 0) {
-      selectedGroupId = value;
-      break;
-    }
-  }
-  expect(selectedGroupId, "ライブを持つgroup filterが必要です").not.toBeNull();
-  await expect(page).toHaveURL(new RegExp(`groupId=${selectedGroupId}`));
+  await page.goBack();
+  await expectPath(page, entry.sourceHref);
 
-  const liveCard = page.locator('[data-ui="live-card"]').first();
-  await liveCard.focus();
-  await page.keyboard.press("Enter");
-  await expect(
-    page.getByRole("button", { name: "← ライブ一覧へ戻る" })
-  ).toBeVisible();
-  await page.getByRole("button", { name: "← ライブ一覧へ戻る" }).click();
+  entry = await enterTopSetlistPerformance(page);
+  liveName = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
+  if (!liveName) throw new Error("Setlistの親Live名を取得できませんでした。");
+  primary = page.locator("section", {
+    has: page.getByRole("heading", { level: 2, name: "この公演" }),
+  });
+  setlistLink = primary.getByRole("link", { name: "詳細を見る →" });
+  await setlistLink.click();
+  await expectPath(page, expectedSetlistHref);
 
-  await expect(page).toHaveURL(new RegExp(`\/lives\\?groupId=${selectedGroupId}$`));
-  await expect(groupSelect).toHaveValue(selectedGroupId ?? "");
+  const parentLiveLink = page.getByRole("link", { name: `← ${liveName}` });
+  await expect(parentLiveLink).toHaveAttribute("href", entry.topHref);
+  await parentLiveLink.click();
+  await expectPath(page, entry.topHref);
+  await expectPrimaryMatches(page, entry.expected);
+
+  const [, month, day] = entry.date.split("-").map(Number);
+  await page
+    .getByRole("link", { name: `← ${month}/${day}の出来事へ戻る` })
+    .click();
+  await expectPath(page, entry.sourceHref);
 });
