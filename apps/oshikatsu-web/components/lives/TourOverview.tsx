@@ -75,6 +75,7 @@ export function TourOverview({ liveId, heading, groups }: TourOverviewProps) {
                     href={`${APP_ROUTES.lives}/${liveId}?performance=${schedule.performanceId}`}
                     prefetch={false}
                     feedback="global"
+                    replace
                     className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
                   >
                     {schedule.label}

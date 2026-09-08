@@ -45,6 +45,18 @@ export function parseLivePerformanceParam(raw: string | undefined): string | nul
   return raw.toLowerCase();
 }
 
+/**
+ * Setlist へ引き継がれた日付を、route 上で所属確認済みの公演日と照合する。
+ * Top 起点で明示された日付だけを復元し、performance の日付からは推測しない。
+ */
+export function resolveSetlistDateContext(
+  rawDate: string | undefined,
+  performanceDate: string | null
+): string | null {
+  const date = parseLiveDateParam(rawDate);
+  return date !== null && date === performanceDate ? date : null;
+}
+
 type PerformanceContextSource = {
   id: string;
   performanceDate: string | null;

@@ -30,6 +30,8 @@ type SetlistDetailProps = {
   // 参照は admin / viewer 共通のため出し分けはしないが、セトリ0件時の空状態にのみ
   // admin 向けの予告テキストを出す（編集導線自体はPR2まで出さない）
   isAdmin: boolean;
+  // Top起点でSetlistまで進んだ場合だけ、route performanceと再照合済みの日付を持つ。
+  dateContext: string | null;
 };
 
 // LiveDetail.tsx の formatScheduleTime/formatScheduleLine と同じ方針（種別ごとの
@@ -178,18 +180,27 @@ function NonSongItemRow({ item }: { item: SetlistItem }) {
   );
 }
 
-export function SetlistDetail({ live, performance, isAdmin }: SetlistDetailProps) {
+export function SetlistDetail({
+  live,
+  performance,
+  isAdmin,
+  dateContext,
+}: SetlistDetailProps) {
   const numbered = numberSetlistItems(performance.setlistItems);
   const groups = groupBySection(numbered);
   const showHeading = shouldShowSectionHeading(groups);
   const editHref = `${APP_ROUTES.lives}/${live.id}/performances/${performance.id}/setlist/edit`;
+  const parentLiveHref = `${APP_ROUTES.lives}/${live.id}?${
+    dateContext === null ? "" : `date=${dateContext}&`
+  }performance=${performance.id}`;
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <PendingLink
-          href={`${APP_ROUTES.lives}/${live.id}?performance=${performance.id}`}
+          href={parentLiveHref}
           feedback="global"
+          replace
           className={`text-sm text-foreground-secondary hover:text-foreground ${standaloneTargetClass}`}
         >
           ← {live.name}

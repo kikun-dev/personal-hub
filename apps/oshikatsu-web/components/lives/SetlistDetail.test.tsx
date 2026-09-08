@@ -8,12 +8,18 @@ vi.mock("next/link", () => ({
   default: ({
     children,
     href,
+    replace: _replace,
     ...props
   }: {
     children: ReactNode;
     href: string | { pathname?: string };
+    replace?: boolean;
   } & Omit<ComponentProps<"a">, "href">) => (
-    <a href={typeof href === "string" ? href : (href.pathname ?? "#")} {...props}>
+    <a
+      data-replace={_replace ? "true" : undefined}
+      href={typeof href === "string" ? href : (href.pathname ?? "#")}
+      {...props}
+    >
       {children}
     </a>
   ),
@@ -45,6 +51,7 @@ describe("SetlistDetail の親Live導線", () => {
         live={{ id: LIVE_ID, name: "テストライブ", liveType: "tour" }}
         performance={performance}
         isAdmin={false}
+        dateContext={null}
       />
     );
 
@@ -53,6 +60,25 @@ describe("SetlistDetail の親Live導線", () => {
     ).toHaveAttribute(
       "href",
       `/lives/${LIVE_ID}?performance=${PERFORMANCE_ID}`
+    );
+    expect(
+      screen.getByRole("link", { name: "← テストライブ" })
+    ).toHaveAttribute("data-replace", "true");
+  });
+
+  it("Top起点の検証済みdateとperformance IDを親Liveへ引き継ぐ", () => {
+    render(
+      <SetlistDetail
+        live={{ id: LIVE_ID, name: "テストライブ", liveType: "tour" }}
+        performance={performance}
+        isAdmin={false}
+        dateContext="2026-08-23"
+      />
+    );
+
+    expect(screen.getByRole("link", { name: "← テストライブ" })).toHaveAttribute(
+      "href",
+      `/lives/${LIVE_ID}?date=2026-08-23&performance=${PERFORMANCE_ID}`
     );
   });
 });

@@ -9,15 +9,18 @@ vi.mock("next/link", () => ({
     children,
     href,
     prefetch: _prefetch,
+    replace: _replace,
     ...props
   }: {
     children: ReactNode;
     href: string | { pathname?: string };
     prefetch?: boolean;
+    replace?: boolean;
   } & Omit<ComponentProps<"a">, "href">) => {
     void _prefetch;
     return (
       <a
+        data-replace={_replace ? "true" : undefined}
         href={typeof href === "string" ? href : (href.pathname ?? "#")}
         {...props}
       >
@@ -73,7 +76,22 @@ const live: Live = {
       hasLiveViewing: false,
       sortOrder: 0,
       absences: [],
-      setlistItems: [],
+      setlistItems: [
+        {
+          itemType: "song",
+          trackId: null,
+          trackTitle: null,
+          songTitle: "テスト曲",
+          note: null,
+          performanceStyle: null,
+          performanceStyles: [],
+          section: "main",
+          costumeNote: null,
+          formationRows: [],
+          members: [],
+          position: 0,
+        },
+      ],
     },
     {
       id: PERFORMANCE_B_ID,
@@ -87,7 +105,22 @@ const live: Live = {
       hasLiveViewing: false,
       sortOrder: 1,
       absences: [],
-      setlistItems: [],
+      setlistItems: [
+        {
+          itemType: "song",
+          trackId: null,
+          trackTitle: null,
+          songTitle: "テスト曲B",
+          note: null,
+          performanceStyle: null,
+          performanceStyles: [],
+          section: "main",
+          costumeNote: null,
+          formationRows: [],
+          members: [],
+          position: 0,
+        },
+      ],
     },
   ],
 };
@@ -103,12 +136,14 @@ describe("LiveDetail の閲覧context", () => {
     expect(
       screen.getByRole("button", { name: "← ライブ一覧へ戻る" })
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: /8\/23.*開場 15:30.*開演 18:00/ })
-    ).toHaveAttribute(
+    const scheduleLink = screen.getByRole("link", {
+      name: /8\/23.*開場 15:30.*開演 18:00/,
+    });
+    expect(scheduleLink).toHaveAttribute(
       "href",
       `/lives/${LIVE_ID}?performance=${PERFORMANCE_A_ID}`
     );
+    expect(scheduleLink).toHaveAttribute("data-replace", "true");
   });
 
   it("performance単独選択は対象公演をprimary表示し、bare overviewへ戻せる", () => {
@@ -132,9 +167,11 @@ describe("LiveDetail の閲覧context", () => {
     expect(
       within(thisPerformanceSection as HTMLElement).getByText(/8\/24\(月\)/)
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "← ライブ全体へ戻る" })
-    ).toHaveAttribute("href", `/lives/${LIVE_ID}`);
+    const overviewLink = screen.getByRole("link", {
+      name: "← ライブ全体へ戻る",
+    });
+    expect(overviewLink).toHaveAttribute("href", `/lives/${LIVE_ID}`);
+    expect(overviewLink).toHaveAttribute("data-replace", "true");
     expect(screen.queryByTestId("live-performance-carousel")).toBeNull();
   });
 
@@ -159,8 +196,18 @@ describe("LiveDetail の閲覧context", () => {
     expect(
       within(thisPerformanceSection as HTMLElement).getByText("東京公演")
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("link", { name: "← 8/24の出来事へ戻る" })
-    ).toHaveAttribute("href", "/?year=2026&month=8&day=24");
+    const topBackLink = screen.getByRole("link", {
+      name: "← 8/24の出来事へ戻る",
+    });
+    expect(topBackLink).toHaveAttribute("href", "/?year=2026&month=8&day=24");
+    expect(topBackLink).toHaveAttribute("data-replace", "true");
+    const setlistLink = within(
+      thisPerformanceSection as HTMLElement
+    ).getByRole("link", { name: "詳細を見る →" });
+    expect(setlistLink).toHaveAttribute(
+      "href",
+      `/lives/${LIVE_ID}/performances/${PERFORMANCE_B_ID}/setlist?date=2026-08-24`
+    );
+    expect(setlistLink).toHaveAttribute("data-replace", "true");
   });
 });

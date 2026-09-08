@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { resolveLiveDetailContext } from "@/lib/liveDateContext";
+import {
+  resolveLiveDetailContext,
+  resolveSetlistDateContext,
+} from "@/lib/liveDateContext";
 
 const PERFORMANCE_ID = "11111111-1111-4111-8111-111111111111";
 const OTHER_PERFORMANCE_ID = "22222222-2222-4222-8222-222222222222";
@@ -67,4 +70,21 @@ describe("resolveLiveDetailContext", () => {
       });
     }
   );
+});
+
+describe("resolveSetlistDateContext", () => {
+  it("Topから渡されたvalid dateがroute performanceの日付と一致すれば維持する", () => {
+    expect(resolveSetlistDateContext("2026-08-23", "2026-08-23")).toBe(
+      "2026-08-23"
+    );
+  });
+
+  it.each([
+    ["dateなし", undefined, "2026-08-23"],
+    ["malformed date", "invalid-date", "2026-08-23"],
+    ["公演日との不一致", "2026-08-24", "2026-08-23"],
+    ["公演日未定", "2026-08-23", null],
+  ])("%sではdate contextを生成しない", (_label, date, performanceDate) => {
+    expect(resolveSetlistDateContext(date, performanceDate)).toBeNull();
+  });
 });

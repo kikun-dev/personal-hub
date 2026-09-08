@@ -15,13 +15,16 @@ vi.mock("next/link", () => ({
     children,
     href,
     prefetch: _prefetch,
+    replace: _replace,
     ...props
   }: {
     children: ReactNode;
     href: string | { pathname?: string };
     prefetch?: boolean;
+    replace?: boolean;
   } & Omit<ComponentProps<"a">, "href">) => {
     void _prefetch;
+    void _replace;
     return (
       <a
         href={typeof href === "string" ? href : (href.pathname ?? "#")}

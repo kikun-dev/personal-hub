@@ -98,6 +98,7 @@ function PerformanceSelectionLink({
       href={`${APP_ROUTES.lives}/${liveId}?performance=${performanceId}`}
       prefetch={false}
       feedback="global"
+      replace
       className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
     >
       {children}
@@ -221,6 +222,7 @@ function PerformanceCard({
             // offscreenを含む全carousel cardがDOMに存在するため、自動prefetchすると
             // 公演数に比例してRSC requestが増える。操作時の遷移だけ許可する（#440）。
             prefetch={false}
+            replace
             className="text-xs"
           >
             詳細を見る →
@@ -508,8 +510,11 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs font-medium text-foreground-secondary">セットリスト</p>
               <TextLink
-                href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
+                href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist${
+                  context.kind === "top" ? `?date=${context.date}` : ""
+                }`}
                 className="text-xs"
+                replace
               >
                 詳細を見る →
               </TextLink>
@@ -593,6 +598,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             href={topPageDateHref(context.date)}
             prefetch={false}
             feedback="global"
+            replace
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
@@ -602,6 +608,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             href={`${APP_ROUTES.lives}/${live.id}`}
             prefetch={false}
             feedback="global"
+            replace
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
             ← ライブ全体へ戻る

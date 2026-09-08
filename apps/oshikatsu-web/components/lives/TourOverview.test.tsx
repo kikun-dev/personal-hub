@@ -8,12 +8,18 @@ vi.mock("next/link", () => ({
   default: ({
     children,
     href,
+    replace: _replace,
     ...props
   }: {
     children: ReactNode;
     href: string | { pathname?: string };
+    replace?: boolean;
   } & Omit<ComponentProps<"a">, "href">) => (
-    <a href={typeof href === "string" ? href : (href.pathname ?? "#")} {...props}>
+    <a
+      data-replace={_replace ? "true" : undefined}
+      href={typeof href === "string" ? href : (href.pathname ?? "#")}
+      {...props}
+    >
       {children}
     </a>
   ),
@@ -83,6 +89,10 @@ describe("TourOverview のトグル", () => {
     ).toHaveAttribute(
       "href",
       `/lives/${LIVE_ID}?performance=${schedule.performanceId}`
+    );
+    expect(screen.getByRole("link", { name: schedule.label })).toHaveAttribute(
+      "data-replace",
+      "true"
     );
   });
 });
