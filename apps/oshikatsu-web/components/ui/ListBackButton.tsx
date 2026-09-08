@@ -9,7 +9,10 @@ import {
   useRef,
 } from "react";
 import { useNavigationProgress } from "@/components/ui/NavigationProgress";
-import { consumeListBackNavigation } from "@/components/ui/listBackNavigation";
+import {
+  consumeListBackNavigation,
+  hasListBackNavigation,
+} from "@/components/ui/listBackNavigation";
 import {
   focusRingClass,
   standaloneTargetClass,
@@ -33,16 +36,16 @@ export function ListBackButton({
 }: ListBackButtonProps) {
   const router = useRouter();
   const canReturnToListRef = useRef(false);
-  const hasConsumedRef = useRef(false);
+  const hasCheckedRef = useRef(false);
   const { startProgress } = useNavigationProgress();
 
   useEffect(() => {
-    if (hasConsumedRef.current) {
+    if (hasCheckedRef.current) {
       return;
     }
 
-    hasConsumedRef.current = true;
-    canReturnToListRef.current = consumeListBackNavigation({
+    hasCheckedRef.current = true;
+    canReturnToListRef.current = hasListBackNavigation({
       currentHref: window.location.href,
       fallbackHref,
     });
@@ -55,7 +58,14 @@ export function ListBackButton({
       return;
     }
 
-    if (canReturnToListRef.current) {
+    const hadListNavigation = canReturnToListRef.current;
+    canReturnToListRef.current = false;
+    const hasValidListNavigation = consumeListBackNavigation({
+      currentHref: window.location.href,
+      fallbackHref,
+    });
+
+    if (hadListNavigation && hasValidListNavigation) {
       router.back();
       return;
     }

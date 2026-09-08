@@ -1,6 +1,7 @@
-// ライブ詳細の日付 context（/lives/[id]?date=YYYY-MM-DD&performance=<performanceId>、
-// Issue #346）。context 入力は信頼せず、境界で形式・実在日付を厳密に検証する
-// （不正は null = fallback）。
+import { isValidUuid } from "@/lib/validation";
+
+// ライブ詳細の閲覧 context（Issue #346 / #491）。query 入力は信頼せず、
+// 形式だけでなく、取得済みの対象 Live の公演と照合して解決する。
 
 const DATE_PARAM_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -35,20 +36,78 @@ export function monthDayLabel(dateStr: string): string {
   return `${month}/${day}`;
 }
 
-const PERFORMANCE_PARAM_PATTERN =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
-
 /**
  * `?performance=` の生値（公演の UUID）を検証する。形式不一致は null。
  * 実在・対象ライブとの対応はサーバー側（page）で performances と照合して検証する。
  */
 export function parseLivePerformanceParam(raw: string | undefined): string | null {
-  if (typeof raw !== "string" || !PERFORMANCE_PARAM_PATTERN.test(raw)) return null;
-  return raw;
+  if (typeof raw !== "string" || !isValidUuid(raw)) return null;
+  return raw.toLowerCase();
 }
 
-/** ライブ詳細の有効 context（#346）: date = 戻り先の日次文脈、performanceId = 「この公演」。 */
-export type LiveDateContext = {
-  date: string;
-  performanceId: string;
+/**
+ * Setlist へ引き継がれた日付を、route 上で所属確認済みの公演日と照合する。
+ * Top 起点で明示された日付だけを復元し、performance の日付からは推測しない。
+ */
+export function resolveSetlistDateContext(
+  rawDate: string | undefined,
+  performanceDate: string | null
+): string | null {
+  const date = parseLiveDateParam(rawDate);
+  return date !== null && date === performanceDate ? date : null;
+}
+
+type PerformanceContextSource = {
+  id: string;
+  performanceDate: string | null;
 };
+
+/**
+ * ライブ詳細の閲覧状態。Top の日付起点と、通常閲覧中の明示的な
+ * 公演選択を区別し、どちらでもない bare URL を overview として表す。
+ */
+export type LiveDetailContext =
+  | { kind: "overview" }
+  | { kind: "top"; date: string; performanceId: string }
+  | { kind: "performance"; performanceId: string };
+
+/**
+ * query と、取得済みの対象 Live に属する公演から閲覧 context を解決する。
+ *
+ * `date` が指定された場合は Top context として扱い、日付形式・公演の存在・
+ * performanceDate との一致をすべて満たすときだけ受理する。不正な date を
+ * performance 単独選択へ格下げしない。
+ */
+export function resolveLiveDetailContext(
+  rawDate: string | undefined,
+  rawPerformanceId: string | undefined,
+  performances: readonly PerformanceContextSource[]
+): LiveDetailContext {
+  const hasDateParam = rawDate !== undefined;
+  const performanceId = parseLivePerformanceParam(rawPerformanceId);
+  const performance =
+    performanceId === null
+      ? null
+      : performances.find(
+          (candidate) => candidate.id.toLowerCase() === performanceId
+        ) ?? null;
+
+  if (hasDateParam) {
+    const date = parseLiveDateParam(rawDate);
+    if (
+      date !== null &&
+      performanceId !== null &&
+      performance !== null &&
+      performance.performanceDate === date
+    ) {
+      return { kind: "top", date, performanceId };
+    }
+    return { kind: "overview" };
+  }
+
+  if (performanceId !== null && performance !== null) {
+    return { kind: "performance", performanceId };
+  }
+
+  return { kind: "overview" };
+}

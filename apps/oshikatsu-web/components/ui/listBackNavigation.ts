@@ -12,7 +12,7 @@ type RegisterListBackNavigationOptions = {
   targetHref: string;
 };
 
-type ConsumeListBackNavigationOptions = {
+type ListBackNavigationMatchOptions = {
   currentHref: string;
   fallbackHref: string;
 };
@@ -70,6 +70,26 @@ function removeSessionValue(): void {
   }
 }
 
+function matchesListBackNavigation(
+  state: ListBackNavigationState | null,
+  { currentHref, fallbackHref }: ListBackNavigationMatchOptions
+): boolean {
+  if (!state) {
+    return false;
+  }
+
+  const currentUrl = new URL(currentHref);
+  const fallbackUrl = new URL(fallbackHref, currentUrl);
+  const isExpired =
+    Date.now() - state.createdAt > LIST_BACK_NAVIGATION_MAX_AGE_MS;
+
+  return (
+    !isExpired &&
+    state.targetPath === toPath(currentUrl) &&
+    state.fallbackPathname === fallbackUrl.pathname
+  );
+}
+
 export function registerListBackNavigation({
   fallbackHref,
   targetHref,
@@ -104,24 +124,18 @@ export function registerListBackNavigation({
 export function consumeListBackNavigation({
   currentHref,
   fallbackHref,
-}: ConsumeListBackNavigationOptions): boolean {
-  const rawValue = readSessionValue();
+}: ListBackNavigationMatchOptions): boolean {
+  const state = parseListBackNavigationState(readSessionValue());
   removeSessionValue();
 
-  const state = parseListBackNavigationState(rawValue);
+  return matchesListBackNavigation(state, { currentHref, fallbackHref });
+}
 
-  if (!state) {
-    return false;
-  }
-
-  const currentUrl = new URL(currentHref);
-  const fallbackUrl = new URL(fallbackHref, currentUrl);
-  const isExpired =
-    Date.now() - state.createdAt > LIST_BACK_NAVIGATION_MAX_AGE_MS;
-
-  return (
-    !isExpired &&
-    state.targetPath === toPath(currentUrl) &&
-    state.fallbackPathname === fallbackUrl.pathname
-  );
+/** detail の表示中は marker を消費せず、最終的な一覧復帰時まで保持する。 */
+export function hasListBackNavigation({
+  currentHref,
+  fallbackHref,
+}: ListBackNavigationMatchOptions): boolean {
+  const state = parseListBackNavigationState(readSessionValue());
+  return matchesListBackNavigation(state, { currentHref, fallbackHref });
 }

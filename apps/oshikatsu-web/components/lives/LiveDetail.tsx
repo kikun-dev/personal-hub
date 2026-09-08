@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import type { Live, LivePerformance, SetlistItem } from "@/types/live";
 import { LIVE_TYPE_LABELS } from "@/types/live";
 import type { LiveAttendance } from "@/types/attendance";
@@ -7,6 +8,7 @@ import { AttendanceExpansionProvider } from "@/components/lives/AttendanceExpans
 import { PerformanceAttendanceArea } from "@/components/lives/PerformanceAttendanceArea";
 import { PerformanceCarousel } from "@/components/lives/PerformanceCarousel";
 import { TourOverview } from "@/components/lives/TourOverview";
+import { ListBackButton } from "@/components/ui/ListBackButton";
 import { PendingLink } from "@/components/ui/PendingLink";
 import { TextLink } from "@/components/ui/TextLink";
 import { standaloneTargetClass } from "@/components/ui/interactionStyles";
@@ -17,8 +19,9 @@ import { numberSetlistItems } from "@/usecases/setlistNumbering";
 import {
   topPageDateHref,
   monthDayLabel,
-  type LiveDateContext,
+  type LiveDetailContext,
 } from "@/lib/liveDateContext";
+import { APP_ROUTES } from "@/lib/routes";
 import { findNextPerformance } from "@/usecases/performanceChronology";
 
 type LiveDetailProps = {
@@ -26,9 +29,9 @@ type LiveDetailProps = {
   // ユーザー別データ（ADR 0009）。公演IDをキーに自分の参戦記録を持つ。未登録の公演は
   // キーが存在しない（page.tsx で Object.fromEntries した Map をそのまま渡す）。
   myAttendances: Record<string, LiveAttendance>;
-  // 日付+公演 context（#346）。トップの選択日から遷移した場合のみ検証済み
-  // { date, performanceId }、それ以外（直接訪問・不正値・対象ライブの公演と不一致）は null。
-  context: LiveDateContext | null;
+  // サーバー境界で検証済みの bare overview / Top日付起点 /
+  // 通常閲覧での公演単独選択。
+  context: LiveDetailContext;
 };
 
 type VenueGroup = {
@@ -78,6 +81,28 @@ function VenueLink({ performance }: { performance: LivePerformance }) {
     <TextLink href={`/venues/${performance.venueId}`} prefetch={false}>
       {performance.venueName}
     </TextLink>
+  );
+}
+
+function PerformanceSelectionLink({
+  liveId,
+  performanceId,
+  children,
+}: {
+  liveId: string;
+  performanceId: string;
+  children: ReactNode;
+}) {
+  return (
+    <PendingLink
+      href={`${APP_ROUTES.lives}/${liveId}?performance=${performanceId}`}
+      prefetch={false}
+      feedback="global"
+      replace
+      className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
+    >
+      {children}
+    </PendingLink>
   );
 }
 
@@ -197,6 +222,7 @@ function PerformanceCard({
             // offscreenを含む全carousel cardがDOMに存在するため、自動prefetchすると
             // 公演数に比例してRSC requestが増える。操作時の遷移だけ許可する（#440）。
             prefetch={false}
+            replace
             className="text-xs"
           >
             詳細を見る →
@@ -215,9 +241,9 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
   // ツアー、または会場が複数ある場合は会場ごとのカードで表示する
   const useVenueGrid = live.liveType === "tour" || venueGroups.length > 1;
 
-  // 有効 context の対象公演・次の公演（#346）。
+  // Top 起点と公演単独選択の対象公演・次の公演。
   const targetPerformance =
-    context !== null
+    context.kind !== "overview"
       ? live.performances.find((p) => p.id === context.performanceId) ?? null
       : null;
   const nextPerformance =
@@ -264,7 +290,12 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
                     <div className="space-y-0.5 text-xs text-foreground-secondary">
                       {group.performances.map((performance) => (
                         <p key={performance.id}>
-                          {formatScheduleLine(live.liveType, performance)}
+                          <PerformanceSelectionLink
+                            liveId={live.id}
+                            performanceId={performance.id}
+                          >
+                            {formatScheduleLine(live.liveType, performance)}
+                          </PerformanceSelectionLink>
                         </p>
                       ))}
                     </div>
@@ -290,7 +321,12 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
               <div className="space-y-0.5 text-sm text-foreground-secondary">
                 {live.performances.map((performance) => (
                   <p key={performance.id}>
-                    {formatScheduleLine(live.liveType, performance)}
+                    <PerformanceSelectionLink
+                      liveId={live.id}
+                      performanceId={performance.id}
+                    >
+                      {formatScheduleLine(live.liveType, performance)}
+                    </PerformanceSelectionLink>
                   </p>
                 ))}
               </div>
@@ -457,8 +493,11 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         {/* #363: 自分の参戦記録がsetlistより下に押されると「解除」が「編集」より
             視覚的に強く見える問題があったため、基本情報・配信badge・休演の直後、
             setlistブロックより前に配置する（D5）。この公演セクションはprovider不要で
-            AttendanceControlを直接mountする（fallback carouselと異なり常に1公演のみ表示） */}
+            AttendanceControlを直接mountする（fallback carouselと異なり常に1公演のみ表示）。
+            search parameterだけで別公演へ切り替わっても編集中の値と保存対象を再利用しないよう、
+            performance IDをcomponent identityにする。 */}
         <AttendanceControl
+          key={targetPerformance.id}
           performanceId={targetPerformance.id}
           attendance={myAttendances[targetPerformance.id] ?? null}
         />
@@ -471,8 +510,11 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
             <div className="flex items-baseline justify-between gap-2">
               <p className="text-xs font-medium text-foreground-secondary">セットリスト</p>
               <TextLink
-                href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist`}
+                href={`/lives/${live.id}/performances/${targetPerformance.id}/setlist${
+                  context.kind === "top" ? `?date=${context.date}` : ""
+                }`}
                 className="text-xs"
+                replace
               >
                 詳細を見る →
               </TextLink>
@@ -528,6 +570,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
   // context 時のツアー全体 overview（#346）: 静かな行リスト + group 単位の展開。
   const quietScheduleSection = live.performances.length > 0 && (
     <TourOverview
+      liveId={live.id}
       heading={useVenueGrid ? "公演・日程" : "会場・日程"}
       groups={venueGroups.map((group) => ({
         key: group.venueId ?? "none",
@@ -536,36 +579,47 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           : null,
         venueId: group.venueId,
         venueName: group.venueName,
-        scheduleLines: group.performances.map((performance) =>
-          formatScheduleLine(live.liveType, performance)
-        ),
+        schedules: group.performances.map((performance) => ({
+          performanceId: performance.id,
+          label: formatScheduleLine(live.liveType, performance),
+        })),
       }))}
     />
   );
 
   return (
     <div className="space-y-6">
-      {/* 閲覧文脈の戻り導線（#346）: 有効 context では元の選択日へ、
-          直接訪問・invalid context では ライブ一覧へ戻す。日付や該当公演を推測しない。 */}
+      {/* 閲覧 context ごとの戻り導線。Top 起点は選択日、公演単独選択は
+          同じ Live の bare overview、bare detail は一覧の filter 復帰が可能な
+          ListBackButton を使う。 */}
       <p>
-        {context !== null && targetPerformance !== null ? (
+        {context.kind === "top" && targetPerformance !== null ? (
           <PendingLink
             href={topPageDateHref(context.date)}
             prefetch={false}
             feedback="global"
+            replace
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
             ← {monthDayLabel(context.date)}の出来事へ戻る
           </PendingLink>
-        ) : (
+        ) : context.kind === "performance" && targetPerformance !== null ? (
           <PendingLink
-            href="/lives"
+            href={`${APP_ROUTES.lives}/${live.id}`}
             prefetch={false}
             feedback="global"
+            replace
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >
-            ← ライブ一覧へ戻る
+            ← ライブ全体へ戻る
           </PendingLink>
+        ) : (
+          <ListBackButton
+            fallbackHref={APP_ROUTES.lives}
+            className="text-sm text-foreground-secondary hover:text-foreground hover:underline"
+          >
+            ← ライブ一覧へ戻る
+          </ListBackButton>
         )}
       </p>
 
@@ -585,9 +639,9 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
         )}
       </div>
 
-      {/* 有効 context（#346）: この公演 → 次の公演 → ツアー全体 → メンバー。
+      {/* 有効な Top / performance context: この公演 → 次の公演 → ツアー全体 → メンバー。
           全公演のセトリ付き横スライドは表示しない。fallback は従来 UI を維持。 */}
-      {context !== null && targetPerformance !== null ? (
+      {context.kind !== "overview" && targetPerformance !== null ? (
         <>
           {thisPerformanceSection}
           {nextPerformanceSection}

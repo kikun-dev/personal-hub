@@ -2,9 +2,11 @@ import { notFound } from "next/navigation";
 import { SetlistDetail } from "@/components/lives/SetlistDetail";
 import { getSessionRole, isAdminRole } from "@/lib/getSessionRole";
 import { getLiveDetailPageData } from "@/usecases/readOrbitLiveData";
+import { resolveSetlistDateContext } from "@/lib/liveDateContext";
 
 type SetlistDetailPageProps = {
   params: Promise<{ id: string; performanceId: string }>;
+  searchParams: Promise<{ date?: string }>;
 };
 
 // #261: セトリ詳細の参照ビュー。公演ごとURL（Issue Decision）。
@@ -13,8 +15,10 @@ type SetlistDetailPageProps = {
 // 変更しない）
 export default async function SetlistDetailPage({
   params,
+  searchParams,
 }: SetlistDetailPageProps) {
   const { id, performanceId } = await params;
+  const { date } = await searchParams;
   const live = await getLiveDetailPageData(id);
 
   if (!live) {
@@ -36,6 +40,10 @@ export default async function SetlistDetailPage({
       live={{ id: live.id, name: live.name, liveType: live.liveType }}
       performance={performance}
       isAdmin={isAdmin}
+      dateContext={resolveSetlistDateContext(
+        date,
+        performance.performanceDate
+      )}
     />
   );
 }
