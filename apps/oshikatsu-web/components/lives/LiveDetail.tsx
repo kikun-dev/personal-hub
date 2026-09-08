@@ -97,6 +97,7 @@ function PerformanceSelectionLink({
     <PendingLink
       href={`${APP_ROUTES.lives}/${liveId}?performance=${performanceId}`}
       prefetch={false}
+      replace
       feedback="global"
       className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
     >
@@ -601,6 +602,7 @@ export function LiveDetail({ live, myAttendances, context }: LiveDetailProps) {
           <PendingLink
             href={`${APP_ROUTES.lives}/${live.id}`}
             prefetch={false}
+            replace
             feedback="global"
             className={`text-sm text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
           >

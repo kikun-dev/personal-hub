@@ -431,7 +431,7 @@ test("Setlistからroute上のperformance contextを復元する", async ({ page
   await expect(page.getByRole("heading", { name: "この公演" })).toBeVisible();
 });
 
-test("一覧filterからbare detailへ進み、ListBackButtonでfilterを復元する", async ({
+test("一覧filterから公演選択を挟んでもbare detail経由でfilterを復元する", async ({
   page,
 }) => {
   await page.goto("/lives");
@@ -453,11 +453,31 @@ test("一覧filterからbare detailへ進み、ListBackButtonでfilterを復元�
   await expect(page).toHaveURL(new RegExp(`groupId=${selectedGroupId}`));
 
   const liveCard = page.locator('[data-ui="live-card"]').first();
+  const liveHref = await liveCard.getAttribute("href");
+  if (liveHref === null) {
+    throw new Error("filter復元検証用のLive detail hrefを取得できませんでした。");
+  }
   await liveCard.focus();
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("button", { name: "← ライブ一覧へ戻る" })
   ).toBeVisible();
+
+  const selectedPerformance = await readPerformanceExpectation(
+    performanceLinks(page, liveHref).nth(1)
+  );
+  await page.locator(`main a[href="${selectedPerformance.href}"]`).first().click();
+  await expectPrimaryMatches(page, selectedPerformance);
+
+  await page.getByRole("link", { name: "← ライブ全体へ戻る" }).click();
+  await expect
+    .poll(() => {
+      const url = new URL(page.url());
+      return `${url.pathname}${url.search}`;
+    })
+    .toBe(liveHref);
+  await expect(page.getByTestId("live-performance-carousel")).toBeVisible();
+
   await page.getByRole("button", { name: "← ライブ一覧へ戻る" }).click();
 
   await expect(page).toHaveURL(new RegExp(`\/lives\\?groupId=${selectedGroupId}$`));

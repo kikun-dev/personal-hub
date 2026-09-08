@@ -12,7 +12,7 @@ type RegisterListBackNavigationOptions = {
   targetHref: string;
 };
 
-type ConsumeListBackNavigationOptions = {
+type ListBackNavigationMatchOptions = {
   currentHref: string;
   fallbackHref: string;
 };
@@ -70,6 +70,26 @@ function removeSessionValue(): void {
   }
 }
 
+function matchesListBackNavigation(
+  state: ListBackNavigationState | null,
+  { currentHref, fallbackHref }: ListBackNavigationMatchOptions
+): boolean {
+  if (!state) {
+    return false;
+  }
+
+  const currentUrl = new URL(currentHref);
+  const fallbackUrl = new URL(fallbackHref, currentUrl);
+  const isExpired =
+    Date.now() - state.createdAt > LIST_BACK_NAVIGATION_MAX_AGE_MS;
+
+  return (
+    !isExpired &&
+    state.targetPath === toPath(currentUrl) &&
+    state.fallbackPathname === fallbackUrl.pathname
+  );
+}
+
 export function registerListBackNavigation({
   fallbackHref,
   targetHref,
@@ -104,24 +124,22 @@ export function registerListBackNavigation({
 export function consumeListBackNavigation({
   currentHref,
   fallbackHref,
-}: ConsumeListBackNavigationOptions): boolean {
-  const rawValue = readSessionValue();
+}: ListBackNavigationMatchOptions): boolean {
+  const state = parseListBackNavigationState(readSessionValue());
+
   removeSessionValue();
+  return matchesListBackNavigation(state, { currentHref, fallbackHref });
+}
 
-  const state = parseListBackNavigationState(rawValue);
-
-  if (!state) {
-    return false;
-  }
-
-  const currentUrl = new URL(currentHref);
-  const fallbackUrl = new URL(fallbackHref, currentUrl);
-  const isExpired =
-    Date.now() - state.createdAt > LIST_BACK_NAVIGATION_MAX_AGE_MS;
-
-  return (
-    !isExpired &&
-    state.targetPath === toPath(currentUrl) &&
-    state.fallbackPathname === fallbackUrl.pathname
-  );
+/**
+ * markerを消費せず、現在のdetailから元の一覧へ戻れるかだけを確認する。
+ * detail内の子resource・selection遷移を挟む場合も、実際に一覧へ戻る操作までは
+ * markerを維持するために使う。
+ */
+export function hasListBackNavigation({
+  currentHref,
+  fallbackHref,
+}: ListBackNavigationMatchOptions): boolean {
+  const state = parseListBackNavigationState(readSessionValue());
+  return matchesListBackNavigation(state, { currentHref, fallbackHref });
 }
