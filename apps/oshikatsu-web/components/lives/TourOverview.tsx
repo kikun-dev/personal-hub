@@ -74,7 +74,6 @@ export function TourOverview({ liveId, heading, groups }: TourOverviewProps) {
                   <PendingLink
                     href={`${APP_ROUTES.lives}/${liveId}?performance=${schedule.performanceId}`}
                     prefetch={false}
-                    replace
                     feedback="global"
                     className={`text-foreground-secondary hover:text-foreground hover:underline ${standaloneTargetClass}`}
                   >
