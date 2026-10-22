@@ -11,6 +11,10 @@ runs:
         node-version-file: ".nvmrc"
         cache: "pnpm"
 
+    - name: Show Node.js version
+      run: node --version
+      shell: bash
+
     - name: Install dependencies
       run: pnpm install --frozen-lockfile
       shell: bash
